@@ -1,8 +1,11 @@
 
+import { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { SupplierFormValues } from "../SupplierFormSchema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Function to get cities based on country
 export const getCitiesByCountry = (country: string) => {
@@ -36,9 +39,10 @@ export const getCitiesByCountry = (country: string) => {
     "Portugal": ["Lisbonne", "Porto", "Vila Nova de Gaia", "Amadora", "Braga", "Coimbra", "Funchal", "Setúbal", "Almada", "Agualva-Cacém"],
     "Cameroun": ["Douala", "Yaoundé", "Garoua", "Bamenda", "Maroua", "Bafoussam", "Ngaoundéré", "Bertoua", "Loum", "Kumba"],
     "Gabon": ["Libreville", "Port-Gentil", "Franceville", "Oyem", "Moanda", "Mouila", "Lambaréné", "Tchibanga", "Koulamoutou", "Makokou"],
+    "Guinée": ["Conakry", "Nzérékoré", "Kindia", "Kankan", "Labé", "Mamou", "Boké", "Faranah", "Siguiri", "Guéckédou"],
   };
 
-  return citiesByCountry[country] || ["Veuillez contacter le support pour ajouter des villes pour ce pays"];
+  return citiesByCountry[country] || [];
 };
 
 interface CityFieldProps {
@@ -48,6 +52,9 @@ interface CityFieldProps {
 }
 
 export const CityField = ({ form, watchedCountry, cities }: CityFieldProps) => {
+  const [activeTab, setActiveTab] = useState("liste");
+  const [customCity, setCustomCity] = useState("");
+
   return (
     <FormField
       control={form.control}
@@ -55,24 +62,49 @@ export const CityField = ({ form, watchedCountry, cities }: CityFieldProps) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Ville</FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value || ""}
-            disabled={!watchedCountry || cities.length === 0}
-          >
-            <FormControl>
-              <SelectTrigger className="glass-effect">
-                <SelectValue placeholder={!watchedCountry ? "Sélectionnez d'abord un pays" : "Sélectionnez une ville"} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {cities.map((city) => (
-                <SelectItem key={city} value={city}>
-                  {city}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="liste">Choisir dans la liste</TabsTrigger>
+              <TabsTrigger value="personnalise">Saisie personnalisée</TabsTrigger>
+            </TabsList>
+            <TabsContent value="liste" className="mt-2">
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  setActiveTab("liste");
+                }}
+                value={activeTab === "liste" ? field.value : ""}
+                disabled={!watchedCountry || cities.length === 0}
+              >
+                <FormControl>
+                  <SelectTrigger className="glass-effect">
+                    <SelectValue placeholder={!watchedCountry ? "Sélectionnez d'abord un pays" : "Sélectionnez une ville"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TabsContent>
+            <TabsContent value="personnalise" className="mt-2">
+              <FormControl>
+                <Input 
+                  placeholder="Saisissez le nom de la ville" 
+                  className="glass-effect"
+                  value={activeTab === "personnalise" ? field.value : customCity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCustomCity(value);
+                    field.onChange(value);
+                  }}
+                />
+              </FormControl>
+            </TabsContent>
+          </Tabs>
           <FormMessage />
         </FormItem>
       )}
