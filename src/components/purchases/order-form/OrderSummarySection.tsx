@@ -10,32 +10,32 @@ interface OrderSummarySectionProps {
 
 export const OrderSummarySection = ({ subtotal, tax, total }: OrderSummarySectionProps) => {
   return (
-    <div className="space-y-4 mt-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-8 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80">Sous-total</label>
+          <label className="text-sm font-medium text-white">Sous-total</label>
           <Input
             value={formatGNF(subtotal)}
             readOnly
-            className="neo-blur bg-white/5 border-white/20 text-white"
+            className="h-14 rounded-xl bg-white/5 border-[#1EAEDB] border-2 text-white text-base"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80">TVA</label>
+          <label className="text-sm font-medium text-white">TVA</label>
           <Input
             value={formatGNF(tax)}
             readOnly
-            className="neo-blur bg-white/5 border-white/20 text-white"
+            className="h-14 rounded-xl bg-white/5 border-[#1EAEDB] border-2 text-white text-base"
           />
         </div>
       </div>
       
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white/80">Total TTC</label>
+        <label className="text-sm font-medium text-white">Total TTC</label>
         <Input
           value={formatGNF(total)}
           readOnly
-          className="neo-blur bg-white/5 border-white/20 text-white font-bold text-lg"
+          className="h-14 rounded-xl bg-white/5 border-[#1EAEDB] border-2 text-white font-bold text-lg"
         />
       </div>
     </div>
