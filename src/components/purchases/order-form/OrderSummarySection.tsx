@@ -17,7 +17,7 @@ export const OrderSummarySection = ({ subtotal, tax, total }: OrderSummarySectio
           <Input
             value={formatGNF(subtotal)}
             readOnly
-            className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white text-base neo-blur"
+            className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white text-base"
           />
         </div>
         <div className="space-y-2">
@@ -25,7 +25,7 @@ export const OrderSummarySection = ({ subtotal, tax, total }: OrderSummarySectio
           <Input
             value={formatGNF(tax)}
             readOnly
-            className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white text-base neo-blur"
+            className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white text-base"
           />
         </div>
       </div>
@@ -35,7 +35,7 @@ export const OrderSummarySection = ({ subtotal, tax, total }: OrderSummarySectio
         <Input
           value={formatGNF(total)}
           readOnly
-          className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white font-bold text-lg neo-blur"
+          className="h-14 rounded-xl bg-transparent border-[#1EAEDB] border-2 text-white font-bold text-lg"
         />
       </div>
     </div>
