@@ -7,7 +7,7 @@ import { OrderStatusSelect } from "@/components/suppliers/order-form/OrderStatus
 import { PaymentStatusSelect } from "@/components/suppliers/order-form/PaymentStatusSelect";
 import { PaymentSection } from "@/components/suppliers/order-form/PaymentSection";
 import { PurchaseOrderItem } from "@/types/purchaseOrder";
-import { Product } from "@/types/catalog";
+import { CatalogProduct } from "@/types/catalog";
 
 interface PurchaseFormContentProps {
   orderNumber: string;
@@ -27,8 +27,8 @@ interface PurchaseFormContentProps {
   setShowProductModal: (value: boolean) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
-  filteredProducts: Product[];
-  addProductToOrder: (product: Product) => void;
+  filteredProducts: CatalogProduct[];
+  addProductToOrder: (product: CatalogProduct) => void;
   removeProductFromOrder: (index: number) => void;
   updateProductQuantity: (index: number, quantity: number) => void;
   updateProductPrice: (index: number, price: number) => void;

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { PurchaseOrderItem } from "@/types/purchaseOrder";
 import { CatalogProduct } from "@/types/catalog";
 import { useProducts } from "@/hooks/use-products";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useProductSelection = () => {
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
@@ -41,24 +40,24 @@ export const useProductSelection = () => {
     setShowProductModal(false);
   };
 
-  const removeProductFromOrder = (productId: string) => {
-    setOrderItems(orderItems.filter(item => item.id !== productId));
+  const removeProductFromOrder = (index: number) => {
+    setOrderItems(orderItems.filter((_, idx) => idx !== index));
   };
 
-  const updateProductQuantity = (productId: string, quantity: number) => {
+  const updateProductQuantity = (index: number, quantity: number) => {
     setOrderItems(
-      orderItems.map(item => 
-        item.id === productId 
+      orderItems.map((item, idx) => 
+        idx === index 
           ? { ...item, quantity, total_price: item.unit_price * quantity } 
           : item
       )
     );
   };
 
-  const updateProductPrice = (productId: string, price: number) => {
+  const updateProductPrice = (index: number, price: number) => {
     setOrderItems(
-      orderItems.map(item => 
-        item.id === productId 
+      orderItems.map((item, idx) => 
+        idx === index 
           ? { ...item, unit_price: price, total_price: price * item.quantity } 
           : item
       )

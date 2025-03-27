@@ -15,9 +15,9 @@ interface ProductsSectionProps {
   setSearchQuery: (query: string) => void;
   filteredProducts: CatalogProduct[];
   addProductToOrder: (product: CatalogProduct) => void;
-  removeProductFromOrder: (productId: string) => void;
-  updateProductQuantity: (productId: string, quantity: number) => void;
-  updateProductPrice: (productId: string, price: number) => void;
+  removeProductFromOrder: (index: number) => void;
+  updateProductQuantity: (index: number, quantity: number) => void;
+  updateProductPrice: (index: number, price: number) => void;
   calculateTotal: () => number;
 }
 
@@ -66,7 +66,7 @@ export const ProductsSection = ({
               </TableCell>
             </TableRow>
           ) : (
-            orderItems.map((item) => (
+            orderItems.map((item, index) => (
               <TableRow key={item.id}>
                 <TableCell>{item.designation}</TableCell>
                 <TableCell>
@@ -74,7 +74,7 @@ export const ProductsSection = ({
                     type="number"
                     value={item.quantity}
                     min="1"
-                    onChange={(e) => updateProductQuantity(item.id, parseInt(e.target.value) || 1)}
+                    onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
                     className="w-20"
                   />
                 </TableCell>
@@ -83,7 +83,7 @@ export const ProductsSection = ({
                     type="number"
                     value={item.unit_price}
                     min="0"
-                    onChange={(e) => updateProductPrice(item.id, parseInt(e.target.value) || 0)}
+                    onChange={(e) => updateProductPrice(index, parseInt(e.target.value) || 0)}
                     className="w-32"
                   />
                 </TableCell>
@@ -93,7 +93,7 @@ export const ProductsSection = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeProductFromOrder(item.id)}
+                    onClick={() => removeProductFromOrder(index)}
                   >
                     <Trash className="h-4 w-4 text-red-500" />
                   </Button>
