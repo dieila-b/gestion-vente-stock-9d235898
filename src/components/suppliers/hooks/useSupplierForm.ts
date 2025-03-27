@@ -46,6 +46,7 @@ export const useSupplierForm = ({ onSuccess }: UseSupplierFormProps) => {
     mutationFn: async (values: SupplierFormValues) => {
       const supplierCode = await generateSupplierCode();
       
+      // Only include fields that exist in the database
       const { data, error } = await supabase
         .from('suppliers')
         .insert([{
@@ -68,15 +69,15 @@ export const useSupplierForm = ({ onSuccess }: UseSupplierFormProps) => {
           pending_orders: 0,
           total_revenue: 0,
           supplier_code: supplierCode,
-          country: values.country,
-          city: values.city,
-          postal_box: values.postal_box,
-          landline: values.landline
+          // Remove country, city, postal_box, landline fields that don't exist in the database schema
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors de l'ajout du fournisseur:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

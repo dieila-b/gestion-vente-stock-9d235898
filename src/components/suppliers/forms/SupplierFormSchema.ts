@@ -1,4 +1,3 @@
-
 import * as z from "zod";
 
 export const supplierFormSchema = z.object({
@@ -10,8 +9,8 @@ export const supplierFormSchema = z.object({
   website: z.string().url("URL invalide").optional(),
   status: z.enum(["Actif", "En attente", "Inactif"]),
   supplier_code: z.string().optional(),
-  country: z.string().min(2, "Pays requis"),
-  city: z.string().min(2, "Ville requise"),
+  country: z.string().optional(),
+  city: z.string().optional(),
   postal_box: z.string().optional(),
   landline: z.string().optional(),
 });
