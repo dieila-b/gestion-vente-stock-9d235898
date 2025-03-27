@@ -25,6 +25,7 @@ export function useCreatePurchaseOrder() {
       order_number: orderNumber,
       status: isValidOrderStatus(orderData.status || 'draft') ? orderData.status : 'draft',
       payment_status: isValidPaymentStatus(orderData.payment_status || 'pending') ? orderData.payment_status : 'pending',
+      paid_amount: orderData.paid_amount || 0,
       deleted: false
     };
 
@@ -51,6 +52,7 @@ export function useCreatePurchaseOrder() {
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
       payment_status: 'pending', // Default value
+      paid_amount: data.paid_amount || 0,
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array
       logistics_cost: data.logistics_cost || 0,

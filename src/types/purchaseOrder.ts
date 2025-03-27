@@ -10,6 +10,7 @@ export interface PurchaseOrder {
   status: 'draft' | 'pending' | 'delivered' | 'approved';
   payment_status: 'pending' | 'partial' | 'paid';
   total_amount: number;
+  paid_amount: number;
   items: Array<PurchaseOrderItem>;
   logistics_cost: number;
   transit_cost: number;

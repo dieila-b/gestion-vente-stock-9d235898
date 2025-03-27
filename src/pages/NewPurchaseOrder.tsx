@@ -11,6 +11,9 @@ import { NotesSection } from "@/components/purchases/order-form/NotesSection";
 import { useProductSelection } from "@/hooks/use-product-selection";
 import { supabase } from "@/integrations/supabase/client";
 import { OrderPriceSection } from "@/components/suppliers/order-form/OrderPriceSection";
+import { OrderStatusSelect } from "@/components/suppliers/order-form/OrderStatusSelect";
+import { PaymentStatusSelect } from "@/components/suppliers/order-form/PaymentStatusSelect";
+import { PaymentSection } from "@/components/suppliers/order-form/PaymentSection";
 
 const NewPurchaseOrder = () => {
   const navigate = useNavigate();
@@ -31,6 +34,11 @@ const NewPurchaseOrder = () => {
   const [transitCost, setTransitCost] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
+  
+  // Nouveaux champs pour statut et paiement
+  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
+  const [paidAmount, setPaidAmount] = useState(0);
   
   // Products management with custom hook
   const {
@@ -63,6 +71,10 @@ const NewPurchaseOrder = () => {
     return subtotal + tax + shippingCost + logisticsCost + transitCost - discount;
   };
 
+  const calculateRemainingAmount = () => {
+    return calculateTotalTTC() - paidAmount;
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -92,9 +104,10 @@ const NewPurchaseOrder = () => {
         expected_delivery_date: deliveryDate,
         warehouse_id: warehouseId || undefined,
         notes,
-        status: 'draft' as 'draft' | 'pending' | 'delivered' | 'approved',
+        status: orderStatus,
         total_amount: calculateTotal(),
-        payment_status: 'pending' as 'pending' | 'partial' | 'paid',
+        payment_status: paymentStatus,
+        paid_amount: paidAmount,
         logistics_cost: logisticsCost,
         transit_cost: transitCost,
         tax_rate: taxRate,
@@ -174,6 +187,17 @@ const NewPurchaseOrder = () => {
               setWarehouseId={setWarehouseId}
             />
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PaymentStatusSelect
+                value={paymentStatus}
+                onChange={setPaymentStatus}
+              />
+              <OrderStatusSelect
+                value={orderStatus}
+                onChange={setOrderStatus}
+              />
+            </div>
+            
             <ProductsSection 
               orderItems={orderItems}
               showProductModal={showProductModal}
@@ -202,6 +226,14 @@ const NewPurchaseOrder = () => {
               subtotal={calculateSubtotal()}
               tax={calculateTax()}
               total={calculateTotalTTC()}
+              formatPrice={formatPrice}
+            />
+            
+            <PaymentSection
+              paidAmount={paidAmount}
+              totalAmount={calculateTotalTTC()}
+              remainingAmount={calculateRemainingAmount()}
+              onPaidAmountChange={setPaidAmount}
               formatPrice={formatPrice}
             />
             
