@@ -14,9 +14,15 @@ export const useProductSelection = () => {
   const { products } = useProducts();
 
   const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
+    (product) => {
+      // Safely check for product name and reference properties
+      const productName = product.name || "";
+      const productReference = product.reference || "";
+      const query = searchQuery.toLowerCase();
+      
+      return productName.toLowerCase().includes(query) || 
+             productReference.toLowerCase().includes(query);
+    }
   );
 
   const addProductToOrder = (product: CatalogProduct) => {
