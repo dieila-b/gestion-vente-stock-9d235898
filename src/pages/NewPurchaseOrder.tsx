@@ -11,6 +11,7 @@ import { NotesSection } from "@/components/purchases/order-form/NotesSection";
 import { useProductSelection } from "@/hooks/use-product-selection";
 import { supabase } from "@/integrations/supabase/client";
 import { OrderPriceSection } from "@/components/suppliers/order-form/OrderPriceSection";
+import { OrderSummarySection } from "@/components/purchases/order-form/OrderSummarySection";
 
 const NewPurchaseOrder = () => {
   const navigate = useNavigate();
@@ -203,6 +204,13 @@ const NewPurchaseOrder = () => {
               tax={calculateTax()}
               total={calculateTotalTTC()}
               formatPrice={formatPrice}
+            />
+            
+            {/* Nouvelle section résumé des montants */}
+            <OrderSummarySection 
+              subtotal={calculateSubtotal()}
+              tax={calculateTax()}
+              total={calculateTotalTTC()}
             />
             
             <NotesSection 

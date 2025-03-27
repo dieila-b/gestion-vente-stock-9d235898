@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { X, FileText, Plus, CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatGNF } from "@/lib/currency";
+import { OrderSummarySection } from "@/components/purchases/order-form/OrderSummarySection";
 
 const Purchase = () => {
   const navigate = useNavigate();
@@ -378,33 +379,11 @@ const Purchase = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-white/80">Sous-total</Label>
-            <Input
-              value={formatGNF(calculateSubtotal())}
-              readOnly
-              className="neo-blur bg-white/5"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-white/80">TVA</Label>
-            <Input
-              value={formatGNF(calculateTax())}
-              readOnly
-              className="neo-blur bg-white/5"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-white/80">Total TTC</Label>
-          <Input
-            value={formatGNF(calculateTotal())}
-            readOnly
-            className="neo-blur bg-white/5 text-lg font-bold"
-          />
-        </div>
+        <OrderSummarySection 
+          subtotal={calculateSubtotal()}
+          tax={calculateTax()}
+          total={calculateTotal()}
+        />
       </Card>
     </div>
   );
