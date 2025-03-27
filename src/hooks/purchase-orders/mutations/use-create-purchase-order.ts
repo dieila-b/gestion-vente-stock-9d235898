@@ -51,7 +51,7 @@ export function useCreatePurchaseOrder() {
       supplier_id: data.supplier_id,
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
-      payment_status: 'pending', // Default value
+      payment_status: isValidPaymentStatus(data.payment_status || 'pending') ? data.payment_status : 'pending',
       paid_amount: data.paid_amount || 0,
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array
@@ -69,19 +69,13 @@ export function useCreatePurchaseOrder() {
       deleted: data.deleted || false
     };
     
-    // Check if payment_status exists in raw data with type assertion
-    const rawData = data as any;
-    if (rawData.payment_status && isValidPaymentStatus(rawData.payment_status)) {
-      transformedOrder.payment_status = rawData.payment_status;
-    }
-    
     // Add optional properties if they exist in the data
-    if (rawData.customs_duty) {
-      transformedOrder.customs_duty = rawData.customs_duty;
+    if ('customs_duty' in data) {
+      transformedOrder.customs_duty = data.customs_duty;
     }
     
-    if (rawData.delivery_note_id) {
-      transformedOrder.delivery_note_id = rawData.delivery_note_id;
+    if ('delivery_note_id' in data) {
+      transformedOrder.delivery_note_id = data.delivery_note_id;
     }
     
     return transformedOrder;

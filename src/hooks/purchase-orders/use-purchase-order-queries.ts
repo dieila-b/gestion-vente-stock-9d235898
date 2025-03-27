@@ -44,9 +44,18 @@ export const usePurchaseOrderQueries = (id?: string) => {
             supplier_id: order.supplier_id,
             created_at: order.created_at,
             status: isValidOrderStatus(order.status) ? order.status : 'draft',
-            payment_status: 'pending', // Default value
+            payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status : 'pending',
             total_amount: order.total_amount || 0,
-            items: order.items || [],
+            items: Array.isArray(order.items) ? order.items.map((item: any) => ({
+              id: item.id || '',
+              product_id: item.product_id || '',
+              product_code: item.product_code,
+              designation: item.designation,
+              quantity: item.quantity || 0,
+              unit_price: item.unit_price || 0,
+              selling_price: item.selling_price || 0,
+              total_price: item.total_price || 0
+            })) : [],
             logistics_cost: order.logistics_cost || 0,
             transit_cost: order.transit_cost || 0,
             tax_rate: order.tax_rate || 0,
@@ -62,19 +71,13 @@ export const usePurchaseOrderQueries = (id?: string) => {
             deleted: order.deleted || false
           };
           
-          // Type assertion to safely check for payment_status
-          const rawData = order as any;
-          if (rawData.payment_status && isValidPaymentStatus(rawData.payment_status)) {
-            transformedOrder.payment_status = rawData.payment_status;
-          }
-          
           // Add optional properties if they exist in the data
-          if (rawData.customs_duty) {
-            transformedOrder.customs_duty = rawData.customs_duty;
+          if ('customs_duty' in order) {
+            transformedOrder.customs_duty = order.customs_duty;
           }
           
-          if (rawData.delivery_note_id) {
-            transformedOrder.delivery_note_id = rawData.delivery_note_id;
+          if ('delivery_note_id' in order) {
+            transformedOrder.delivery_note_id = order.delivery_note_id;
           }
           
           return transformedOrder;
@@ -118,9 +121,18 @@ export const usePurchaseOrderQueries = (id?: string) => {
           supplier_id: order.supplier_id,
           created_at: order.created_at,
           status: isValidOrderStatus(order.status) ? order.status : 'draft',
-          payment_status: 'pending', // Default value
+          payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status : 'pending',
           total_amount: order.total_amount || 0,
-          items: order.items || [],
+          items: Array.isArray(order.items) ? order.items.map((item: any) => ({
+            id: item.id || '',
+            product_id: item.product_id || '',
+            product_code: item.product_code,
+            designation: item.designation,
+            quantity: item.quantity || 0,
+            unit_price: item.unit_price || 0,
+            selling_price: item.selling_price || 0,
+            total_price: item.total_price || 0
+          })) : [],
           logistics_cost: order.logistics_cost || 0,
           transit_cost: order.transit_cost || 0,
           tax_rate: order.tax_rate || 0,
@@ -136,19 +148,13 @@ export const usePurchaseOrderQueries = (id?: string) => {
           deleted: order.deleted || false
         };
         
-        // Type assertion to safely check for payment_status
-        const rawOrder = order as any;
-        if (rawOrder.payment_status && isValidPaymentStatus(rawOrder.payment_status)) {
-          transformedOrder.payment_status = rawOrder.payment_status;
-        }
-        
         // Add optional properties if they exist in the data
-        if (rawOrder.customs_duty) {
-          transformedOrder.customs_duty = rawOrder.customs_duty;
+        if ('customs_duty' in order) {
+          transformedOrder.customs_duty = order.customs_duty;
         }
         
-        if (rawOrder.delivery_note_id) {
-          transformedOrder.delivery_note_id = rawOrder.delivery_note_id;
+        if ('delivery_note_id' in order) {
+          transformedOrder.delivery_note_id = order.delivery_note_id;
         }
         
         return transformedOrder;

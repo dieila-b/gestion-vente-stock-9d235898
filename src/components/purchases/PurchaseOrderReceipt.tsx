@@ -1,6 +1,7 @@
 
 import { formatGNF } from "@/lib/currency";
 import { CartItem } from "@/types/pos";
+import { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
 import { useRef } from "react";
 import { PurchaseOrderReceiptActions } from "./receipt/PurchaseOrderReceiptActions";
 import { PurchaseOrderReceiptHeader } from "./receipt/PurchaseOrderReceiptHeader";
@@ -8,24 +9,7 @@ import { PurchaseOrderReceiptItems } from "./receipt/PurchaseOrderReceiptItems";
 import { PurchaseOrderReceiptSummary } from "./receipt/PurchaseOrderReceiptSummary";
 
 interface PurchaseOrderReceiptProps {
-  order: {
-    order_number: string;
-    created_at: string;
-    supplier: {
-      name: string;
-      phone?: string;
-      email?: string;
-    };
-    items: Array<{
-      id: string;
-      product_id?: string;
-      designation?: string;
-      quantity?: number;
-      unit_price?: number;
-      total_price?: number;
-    }>;
-    total_amount: number;
-  };
+  order: PurchaseOrder;
   showPrintButton?: boolean;
   showShareButtons?: boolean;
 }

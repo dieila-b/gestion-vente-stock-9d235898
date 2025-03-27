@@ -5,7 +5,7 @@ import { PurchaseOrderReceipt } from "@/components/purchases/PurchaseOrderReceip
 import { PurchaseOrderHeader } from "@/components/purchases/PurchaseOrderHeader";
 import { PurchaseOrderTable } from "@/components/purchases/PurchaseOrderTable";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
-import type { PurchaseOrder } from "@/types/purchaseOrder";
+import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
 import type { Supplier } from "@/types/supplier";
 
 const PurchaseOrderPage = () => {

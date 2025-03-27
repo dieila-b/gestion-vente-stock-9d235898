@@ -1,9 +1,9 @@
 
 export interface PurchaseOrderItem {
-  id?: string;
+  id: string; // Changed from optional to required
   product_id: string;
-  product_code?: string;  // Added this field
-  designation?: string;   // Added this field
+  product_code?: string;
+  designation?: string;
   quantity: number;
   unit_price: number;
   selling_price: number;
@@ -19,7 +19,7 @@ export interface PurchaseOrder {
   status: "draft" | "pending" | "delivered" | "approved";
   payment_status: "pending" | "partial" | "paid";
   total_amount: number;
-  items: PurchaseOrderItem[]; // Updated to use proper type
+  items: PurchaseOrderItem[];
   logistics_cost: number;
   transit_cost: number;
   tax_rate: number;
@@ -32,7 +32,7 @@ export interface PurchaseOrder {
   expected_delivery_date: string;
   warehouse_id: string;
   paid_amount: number;
-  customs_duty?: number; // Added as optional
-  delivery_note_id?: string; // Added as optional
+  customs_duty?: number;
+  delivery_note_id?: string;
   deleted: boolean;
 }
