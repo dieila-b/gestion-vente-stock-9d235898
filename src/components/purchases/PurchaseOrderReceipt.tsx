@@ -14,7 +14,7 @@ interface PurchaseOrderReceiptProps {
   showShareButtons?: boolean;
 }
 
-// Corrected interface for CartItem to include the total property
+// Enhanced interface for CartItem to include the total property
 interface EnhancedCartItem extends CartItem {
   total: number;
 }

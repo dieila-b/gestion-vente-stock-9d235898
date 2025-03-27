@@ -17,7 +17,7 @@ export function useCreatePurchaseOrder() {
     // Generate order number if not provided
     const orderNumber = orderData.order_number || `BC-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-    // Créer une copie de orderData sans la propriété items
+    // Create a copy of orderData without the items property
     const { items, ...orderDataWithoutItems } = orderData;
 
     const finalOrderData = {
@@ -45,7 +45,7 @@ export function useCreatePurchaseOrder() {
     if (error) throw error;
     if (!data) throw new Error('No data returned from insert');
 
-    // Create a base order object with default values
+    // Map the returned data to the PurchaseOrder type
     const transformedOrder: PurchaseOrder = {
       id: data.id,
       order_number: data.order_number,
