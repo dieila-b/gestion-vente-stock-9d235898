@@ -20,41 +20,8 @@ const PurchaseOrderPage = () => {
   ) || [];
 
   const handlePrint = (order: PurchaseOrder) => {
-    // Create a supplier object with required properties
-    let supplierWithContacts: Supplier = {
-      ...order.supplier,
-      id: order.supplier_id,
-      // Check if supplier.phone exists in the type before accessing it
-      phone: null,
-      email: null,
-      contact: null,
-      address: null,
-      website: null,
-      products_count: null,
-      orders_count: null,
-      reliability: null,
-      status: "Actif",
-      rating: null,
-      last_delivery: null,
-      product_categories: null,
-      performance_score: null,
-      quality_score: null,
-      delivery_score: null,
-      pending_orders: null,
-      total_revenue: null,
-      verified: null,
-      created_at: null,
-      updated_at: null
-    };
-    
-    // Create enhanced order object with supplier contact info
-    const enhancedOrder = {
-      ...order,
-      supplier: supplierWithContacts
-    };
-    
     // Set the selected order and show the receipt dialog
-    setSelectedOrder(enhancedOrder);
+    setSelectedOrder(order);
     setShowReceipt(true);
   };
 

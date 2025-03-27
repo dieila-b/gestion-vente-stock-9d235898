@@ -35,7 +35,9 @@ export function useCreatePurchaseOrder() {
       .select(`
         *,
         supplier:suppliers (
-          name
+          name,
+          phone,
+          email
         )
       `)
       .single();
@@ -47,11 +49,15 @@ export function useCreatePurchaseOrder() {
     const transformedOrder: PurchaseOrder = {
       id: data.id,
       order_number: data.order_number,
-      supplier: data.supplier || { name: '' },
+      supplier: {
+        name: data.supplier?.name || '',
+        phone: data.supplier?.phone || null,
+        email: data.supplier?.email || null
+      },
       supplier_id: data.supplier_id,
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
-      payment_status: isValidPaymentStatus(data.payment_status || 'pending') ? data.payment_status : 'pending',
+      payment_status: isValidPaymentStatus(data.payment_status) ? data.payment_status : 'pending',
       paid_amount: data.paid_amount || 0,
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array

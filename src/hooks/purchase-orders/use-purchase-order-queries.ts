@@ -23,7 +23,9 @@ export const usePurchaseOrderQueries = (id?: string) => {
           .select(`
             *,
             supplier:suppliers (
-              name
+              name,
+              phone,
+              email
             ),
             items:purchase_order_items (
               *
@@ -40,11 +42,15 @@ export const usePurchaseOrderQueries = (id?: string) => {
           const transformedOrder: PurchaseOrder = {
             id: order.id,
             order_number: order.order_number,
-            supplier: order.supplier || { name: '' },
+            supplier: {
+              name: order.supplier?.name || '',
+              phone: order.supplier?.phone || null,
+              email: order.supplier?.email || null
+            },
             supplier_id: order.supplier_id,
             created_at: order.created_at,
             status: isValidOrderStatus(order.status) ? order.status : 'draft',
-            payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status : 'pending',
+            payment_status: isValidPaymentStatus(order.payment_status) ? order.payment_status : 'pending',
             total_amount: order.total_amount || 0,
             items: Array.isArray(order.items) ? order.items.map((item: any) => ({
               id: item.id || '',
@@ -101,7 +107,9 @@ export const usePurchaseOrderQueries = (id?: string) => {
           .select(`
             *,
             supplier:suppliers (
-              name
+              name,
+              phone,
+              email
             ),
             items:purchase_order_items (
               *
@@ -117,11 +125,15 @@ export const usePurchaseOrderQueries = (id?: string) => {
         const transformedOrder: PurchaseOrder = {
           id: order.id,
           order_number: order.order_number,
-          supplier: order.supplier || { name: '' },
+          supplier: {
+            name: order.supplier?.name || '',
+            phone: order.supplier?.phone || null,
+            email: order.supplier?.email || null
+          },
           supplier_id: order.supplier_id,
           created_at: order.created_at,
           status: isValidOrderStatus(order.status) ? order.status : 'draft',
-          payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status : 'pending',
+          payment_status: isValidPaymentStatus(order.payment_status) ? order.payment_status : 'pending',
           total_amount: order.total_amount || 0,
           items: Array.isArray(order.items) ? order.items.map((item: any) => ({
             id: item.id || '',

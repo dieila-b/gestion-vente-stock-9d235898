@@ -13,7 +13,11 @@ export interface PurchaseOrderItem {
 export interface PurchaseOrder {
   id: string;
   order_number: string;
-  supplier: { name: string };
+  supplier: { 
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+  };
   supplier_id: string;
   created_at: string;
   status: "draft" | "pending" | "delivered" | "approved";
