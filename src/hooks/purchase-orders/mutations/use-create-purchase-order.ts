@@ -62,12 +62,10 @@ export function useCreatePurchaseOrder() {
       tax_amount: data.tax_amount || 0,
       total_ttc: data.total_ttc || 0,
       shipping_cost: data.shipping_cost || 0,
-      customs_duty: data.customs_duty || 0,
       discount: data.discount || 0,
-      expected_delivery_date: data.expected_delivery_date,
-      notes: data.notes,
-      warehouse_id: data.warehouse_id,
-      delivery_note_id: data.delivery_note_id,
+      notes: data.notes || '',
+      expected_delivery_date: data.expected_delivery_date || '',
+      warehouse_id: data.warehouse_id || '',
       deleted: data.deleted || false
     };
     
@@ -75,6 +73,15 @@ export function useCreatePurchaseOrder() {
     const rawData = data as any;
     if (rawData.payment_status && isValidPaymentStatus(rawData.payment_status)) {
       transformedOrder.payment_status = rawData.payment_status;
+    }
+    
+    // Add optional properties if they exist in the data
+    if (rawData.customs_duty) {
+      transformedOrder.customs_duty = rawData.customs_duty;
+    }
+    
+    if (rawData.delivery_note_id) {
+      transformedOrder.delivery_note_id = rawData.delivery_note_id;
     }
     
     return transformedOrder;

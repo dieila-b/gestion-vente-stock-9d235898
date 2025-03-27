@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
@@ -56,7 +55,9 @@ export const usePurchaseEdit = (id?: string) => {
       ...updatedProducts[index],
       product_id: productId,
       designation: selectedProduct.name,
+      product_code: selectedProduct.reference,
       unit_price: selectedProduct.purchase_price || selectedProduct.price,
+      selling_price: selectedProduct.price || 0,
       total_price: (updatedProducts[index].quantity || 0) * (selectedProduct.purchase_price || selectedProduct.price)
     };
     setSelectedProducts(updatedProducts);
@@ -79,6 +80,7 @@ export const usePurchaseEdit = (id?: string) => {
     const newProduct: PurchaseOrderItem = {
       id: crypto.randomUUID(),
       product_id: "",
+      product_code: "",
       designation: "",
       quantity: 1,
       unit_price: 0,

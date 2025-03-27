@@ -68,7 +68,7 @@ export const ProductsSection = ({
           ) : (
             orderItems.map((item, index) => (
               <TableRow key={item.id}>
-                <TableCell>{item.designation}</TableCell>
+                <TableCell>{item.designation || "Produit sans nom"}</TableCell>
                 <TableCell>
                   <Input
                     type="number"

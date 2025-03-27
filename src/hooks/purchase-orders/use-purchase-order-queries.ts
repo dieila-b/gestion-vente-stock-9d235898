@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { PurchaseOrder } from "@/types/purchaseOrder";
+import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
 
 // Type guard function to validate order status
 function isValidOrderStatus(status: string): status is PurchaseOrder['status'] {
@@ -54,12 +54,11 @@ export const usePurchaseOrderQueries = (id?: string) => {
             tax_amount: order.tax_amount || 0,
             total_ttc: order.total_ttc || 0,
             shipping_cost: order.shipping_cost || 0,
-            customs_duty: order.customs_duty || 0,
             discount: order.discount || 0,
-            expected_delivery_date: order.expected_delivery_date,
-            notes: order.notes,
-            warehouse_id: order.warehouse_id,
-            delivery_note_id: order.delivery_note_id,
+            notes: order.notes || '',
+            expected_delivery_date: order.expected_delivery_date || '',
+            warehouse_id: order.warehouse_id || '',
+            paid_amount: order.paid_amount || 0,
             deleted: order.deleted || false
           };
           
@@ -67,6 +66,15 @@ export const usePurchaseOrderQueries = (id?: string) => {
           const rawData = order as any;
           if (rawData.payment_status && isValidPaymentStatus(rawData.payment_status)) {
             transformedOrder.payment_status = rawData.payment_status;
+          }
+          
+          // Add optional properties if they exist in the data
+          if (rawData.customs_duty) {
+            transformedOrder.customs_duty = rawData.customs_duty;
+          }
+          
+          if (rawData.delivery_note_id) {
+            transformedOrder.delivery_note_id = rawData.delivery_note_id;
           }
           
           return transformedOrder;
@@ -120,12 +128,11 @@ export const usePurchaseOrderQueries = (id?: string) => {
           tax_amount: order.tax_amount || 0,
           total_ttc: order.total_ttc || 0,
           shipping_cost: order.shipping_cost || 0,
-          customs_duty: order.customs_duty || 0,
           discount: order.discount || 0,
-          expected_delivery_date: order.expected_delivery_date,
-          notes: order.notes,
-          warehouse_id: order.warehouse_id,
-          delivery_note_id: order.delivery_note_id,
+          notes: order.notes || '',
+          expected_delivery_date: order.expected_delivery_date || '',
+          warehouse_id: order.warehouse_id || '',
+          paid_amount: order.paid_amount || 0,
           deleted: order.deleted || false
         };
         
@@ -133,6 +140,15 @@ export const usePurchaseOrderQueries = (id?: string) => {
         const rawOrder = order as any;
         if (rawOrder.payment_status && isValidPaymentStatus(rawOrder.payment_status)) {
           transformedOrder.payment_status = rawOrder.payment_status;
+        }
+        
+        // Add optional properties if they exist in the data
+        if (rawOrder.customs_duty) {
+          transformedOrder.customs_duty = rawOrder.customs_duty;
+        }
+        
+        if (rawOrder.delivery_note_id) {
+          transformedOrder.delivery_note_id = rawOrder.delivery_note_id;
         }
         
         return transformedOrder;
