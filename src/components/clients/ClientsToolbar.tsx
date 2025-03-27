@@ -48,7 +48,7 @@ export const ClientsToolbar = ({
           <SelectValue placeholder="Type de client" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Tous les types</SelectItem>
+          <SelectItem value="all">Tous les types</SelectItem>
           <SelectItem value="occasionnel">Occasionnel</SelectItem>
           <SelectItem value="grossiste">Grossiste</SelectItem>
           <SelectItem value="semi-grossiste">Semi-Grossiste</SelectItem>

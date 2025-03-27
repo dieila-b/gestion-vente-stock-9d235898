@@ -38,13 +38,14 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       <div className="space-y-2">
         <label className="text-sm text-muted-foreground">Statut Client</label>
         <Select
-          value={formData.status || ""}
+          value={formData.status || "none"}
           onValueChange={handleSelectChange("status")}
         >
           <SelectTrigger className="enhanced-glass">
             <SelectValue placeholder="Sélectionner un statut" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">Non spécifié</SelectItem>
             <SelectItem value="particulier">Particulier</SelectItem>
             <SelectItem value="entreprise">Entreprise</SelectItem>
           </SelectContent>
@@ -54,13 +55,14 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       <div className="space-y-2">
         <label className="text-sm text-muted-foreground">Type de Client</label>
         <Select
-          value={formData.client_type || ""}
+          value={formData.client_type || "none"}
           onValueChange={handleSelectChange("client_type")}
         >
           <SelectTrigger className="enhanced-glass">
             <SelectValue placeholder="Sélectionner un type" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">Non spécifié</SelectItem>
             <SelectItem value="occasionnel">Occasionnel</SelectItem>
             <SelectItem value="grossiste">Grossiste</SelectItem>
             <SelectItem value="semi-grossiste">Semi-Grossiste</SelectItem>

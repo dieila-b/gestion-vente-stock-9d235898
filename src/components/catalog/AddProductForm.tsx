@@ -1,4 +1,5 @@
 
+// I'll focus just on the part with SelectItem that might have empty values
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -298,4 +299,3 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
     </div>
   );
 };
-
