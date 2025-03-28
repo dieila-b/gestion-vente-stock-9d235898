@@ -57,8 +57,9 @@ export function useCreatePurchaseOrder() {
       supplier_id: data.supplier_id,
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
-      payment_status: isValidPaymentStatus(data.payment_status) ? data.payment_status : 'pending',
-      paid_amount: data.paid_amount || 0,
+      // Define payment_status with a safer approach
+      payment_status: 'pending', // Default value
+      paid_amount: 0, // Default value
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array
       logistics_cost: data.logistics_cost || 0,
@@ -74,6 +75,17 @@ export function useCreatePurchaseOrder() {
       warehouse_id: data.warehouse_id || '',
       deleted: data.deleted || false
     };
+    
+    // Override with actual values if they exist
+    if ('payment_status' in data && typeof data.payment_status === 'string') {
+      transformedOrder.payment_status = isValidPaymentStatus(data.payment_status) 
+        ? data.payment_status as PurchaseOrder['payment_status']
+        : 'pending';
+    }
+    
+    if ('paid_amount' in data && typeof data.paid_amount === 'number') {
+      transformedOrder.paid_amount = data.paid_amount;
+    }
     
     // Add optional properties if they exist in the data
     if ('customs_duty' in data) {
