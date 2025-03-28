@@ -1,8 +1,7 @@
 
 import { CartItem as CartItemType } from "@/types/pos";
-import { Receipt as ReceiptComponent } from "../Receipt";
-import { DynamicInvoice } from "@/components/invoices/dynamic/DynamicInvoice";
 import { Client } from "@/types/client";
+import { InvoiceTemplate } from "@/components/invoices/InvoiceTemplate";
 
 interface CartReceiptViewProps {
   showReceipt: boolean;
@@ -31,28 +30,46 @@ export function CartReceiptView({
 }: CartReceiptViewProps) {
   if (showInvoice) {
     return (
-      <DynamicInvoice
+      <InvoiceTemplate
         invoiceNumber={invoiceNumber}
+        date={currentDate}
         items={items}
         subtotal={subtotal}
         discount={totalDiscount}
         total={total}
-        date={currentDate}
-        clientName={selectedClient?.company_name}
+        clientName={selectedClient?.company_name || selectedClient?.contact_name}
         clientEmail={selectedClient?.email}
+        clientPhone={selectedClient?.phone}
+        clientAddress={selectedClient?.address}
+        clientCode={selectedClient?.client_code}
+        paymentStatus="paid"
+        paidAmount={total}
+        remainingAmount={0}
+        deliveryStatus="delivered"
+        onShare={true}
       />
     );
   }
 
   if (showReceipt) {
     return (
-      <ReceiptComponent
+      <InvoiceTemplate
+        invoiceNumber={invoiceNumber}
+        date={currentDate}
         items={items}
         subtotal={subtotal}
         discount={totalDiscount}
         total={total}
-        onPrint={onPrint}
-        selectedClient={selectedClient}
+        clientName={selectedClient?.company_name || selectedClient?.contact_name}
+        clientEmail={selectedClient?.email}
+        clientPhone={selectedClient?.phone}
+        clientAddress={selectedClient?.address}
+        clientCode={selectedClient?.client_code}
+        paymentStatus="paid"
+        paidAmount={total}
+        remainingAmount={0}
+        deliveryStatus="delivered"
+        onShare={true}
       />
     );
   }
