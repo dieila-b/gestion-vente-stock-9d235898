@@ -1,8 +1,9 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, ArrowUpDown, Plus, Building2, Pencil, Trash2 } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -20,7 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
 import { useState } from "react";
@@ -39,25 +39,9 @@ interface Warehouse {
   occupied: number;
 }
 
-interface NewWarehouse {
-  name: string;
-  location: string;
-  surface: number;
-  capacity: number;
-  manager: string;
-}
-
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isWarehouseDialogOpen, setIsWarehouseDialogOpen] = useState(false);
-  const [newWarehouse, setNewWarehouse] = useState<NewWarehouse>({
-    name: "",
-    location: "",
-    surface: 0,
-    capacity: 0,
-    manager: "",
-  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedWarehouse, false);
@@ -74,37 +58,6 @@ export default function MainStock() {
       return data as Warehouse[];
     }
   });
-
-  const handleCreateWarehouse = async () => {
-    try {
-      const { error } = await supabase
-        .from('warehouses')
-        .insert([newWarehouse]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Entrepôt créé",
-        description: "Le nouvel entrepôt a été ajouté avec succès.",
-      });
-
-      setNewWarehouse({
-        name: "",
-        location: "",
-        surface: 0,
-        capacity: 0,
-        manager: "",
-      });
-      setIsWarehouseDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['warehouses'] });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création de l'entrepôt.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const filteredItems = stockItems.filter((item) => {
     const matchesWarehouse = selectedWarehouse === "_all" 
@@ -130,70 +83,6 @@ export default function MainStock() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isWarehouseDialogOpen} onOpenChange={setIsWarehouseDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="glass-effect hover:neon-glow">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvel Entrepôt
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Ajouter un entrepôt</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom</Label>
-                  <Input
-                    id="name"
-                    value={newWarehouse.name}
-                    onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Localisation</Label>
-                  <Input
-                    id="location"
-                    value={newWarehouse.location}
-                    onChange={(e) => setNewWarehouse({ ...newWarehouse, location: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="surface">Surface (m²)</Label>
-                  <Input
-                    id="surface"
-                    type="number"
-                    value={newWarehouse.surface}
-                    onChange={(e) => setNewWarehouse({ ...newWarehouse, surface: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacité</Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    value={newWarehouse.capacity}
-                    onChange={(e) => setNewWarehouse({ ...newWarehouse, capacity: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="manager">Responsable</Label>
-                  <Input
-                    id="manager"
-                    value={newWarehouse.manager}
-                    onChange={(e) => setNewWarehouse({ ...newWarehouse, manager: e.target.value })}
-                  />
-                </div>
-                <Button 
-                  className="w-full mt-4"
-                  onClick={handleCreateWarehouse}
-                  disabled={!newWarehouse.name || !newWarehouse.location || !newWarehouse.manager}
-                >
-                  Créer
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
           <Button className="glass-effect hover:neon-glow">
             Exporter les données
           </Button>
@@ -232,13 +121,12 @@ export default function MainStock() {
                   <TableHead>Occupation</TableHead>
                   <TableHead>Responsable</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {warehouses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10">
+                    <TableCell colSpan={7} className="text-center py-10">
                       Aucun entrepôt trouvé
                     </TableCell>
                   </TableRow>
@@ -290,16 +178,6 @@ export default function MainStock() {
                           >
                             {warehouse.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </TableCell>
                       </TableRow>
                     );
