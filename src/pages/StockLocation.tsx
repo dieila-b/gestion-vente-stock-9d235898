@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -59,12 +58,12 @@ const StockLocation = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("geographic_zones")
-        .select("id, name")
+        .select("id, name, type")
         .in("type", ["region", "zone"])
         .order("name");
 
       if (error) throw error;
-      return data as Pick<GeographicZone, "id" | "name">[];
+      return data as Pick<GeographicZone, "id" | "name" | "type">[];
     },
   });
 
@@ -217,7 +216,7 @@ const StockLocation = () => {
                       <SelectItem value="">Aucun parent</SelectItem>
                       {parentZones?.map((zone) => (
                         <SelectItem key={zone.id} value={zone.id}>
-                          {zone.name} ({getZoneTypeName(zone.type as GeographicZone["type"])})
+                          {zone.name} ({getZoneTypeName(zone.type)})
                         </SelectItem>
                       ))}
                     </SelectContent>

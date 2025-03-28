@@ -30,8 +30,13 @@ type POSLocation = {
   name: string;
   address: string;
   phone: string | null;
-  email: string | null;
-  is_active: boolean;
+  email?: string | null;
+  manager: string;
+  status: string;
+  capacity: number;
+  occupied: number;
+  surface: number;
+  is_active?: boolean;
   created_at: string;
   updated_at: string | null;
 };
@@ -53,7 +58,12 @@ const POSLocations = () => {
         throw error;
       }
 
-      return data as POSLocation[];
+      // Add is_active property if it doesn't exist in the data
+      return (data as POSLocation[]).map(loc => ({
+        ...loc,
+        is_active: loc.is_active !== undefined ? loc.is_active : loc.status === 'active',
+        email: loc.email || null
+      }));
     },
   });
 
@@ -192,6 +202,14 @@ const POSLocations = () => {
                     defaultValue={selectedLocation?.email || ""}
                   />
                 </div>
+                <div className="space-y-2">
+                  <label htmlFor="manager">Responsable</label>
+                  <Input
+                    id="manager"
+                    name="manager"
+                    defaultValue={selectedLocation?.manager || ""}
+                  />
+                </div>
                 <div className="flex justify-end gap-4">
                   <Button
                     type="button"
@@ -220,6 +238,7 @@ const POSLocations = () => {
                 <TableHead>Adresse</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Responsable</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -231,9 +250,10 @@ const POSLocations = () => {
                   <TableCell>{location.address}</TableCell>
                   <TableCell>{location.phone || "-"}</TableCell>
                   <TableCell>{location.email || "-"}</TableCell>
+                  <TableCell>{location.manager || "-"}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs ${location.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {location.is_active ? 'Actif' : 'Inactif'}
+                    <span className={`px-2 py-1 rounded text-xs ${location.status === 'active' || location.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {location.status === 'active' || location.is_active ? 'Actif' : 'Inactif'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
