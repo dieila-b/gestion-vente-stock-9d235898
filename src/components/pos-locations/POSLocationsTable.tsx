@@ -17,29 +17,35 @@ import {
 
 interface POSLocationsTableProps {
   posLocations: POSLocation[];
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  onEdit?: (location: POSLocation) => void;
+  onDelete?: (location: POSLocation) => Promise<void>;
 }
 
 export function POSLocationsTable({ 
   posLocations, 
-  searchQuery, 
-  setSearchQuery 
+  searchQuery = "",
+  setSearchQuery = () => {},
+  onEdit,
+  onDelete
 }: POSLocationsTableProps) {
   return (
     <Card className="enhanced-glass p-6">
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h2 className="text-lg font-semibold text-gradient">Liste des PDV</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="Rechercher un PDV..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 glass-effect w-full md:w-60 lg:w-72"
-            />
-          </div>
+          {setSearchQuery && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input 
+                placeholder="Rechercher un PDV..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 glass-effect w-full md:w-60 lg:w-72"
+              />
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border">
@@ -53,12 +59,13 @@ export function POSLocationsTable({
                 <TableHead>Occupation</TableHead>
                 <TableHead>Responsable</TableHead>
                 <TableHead>Statut</TableHead>
+                {(onEdit || onDelete) && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {posLocations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
+                  <TableCell colSpan={onEdit || onDelete ? 8 : 7} className="text-center py-10">
                     Aucun PDV trouvé
                   </TableCell>
                 </TableRow>
@@ -111,6 +118,26 @@ export function POSLocationsTable({
                           {location.status}
                         </Badge>
                       </TableCell>
+                      {(onEdit || onDelete) && (
+                        <TableCell className="text-right space-x-2">
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(location)}
+                              className="px-2 py-1 text-xs rounded-md bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
+                            >
+                              Modifier
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              onClick={() => onDelete(location)}
+                              className="px-2 py-1 text-xs rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                            >
+                              Supprimer
+                            </button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
