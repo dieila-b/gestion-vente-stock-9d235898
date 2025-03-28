@@ -9,16 +9,16 @@ import {
   ContactFields,
   CountryField,
   StatusField,
-  SupplierCodeField,
   WebsiteField
 } from "./fields";
 import { getCitiesByCountry } from "./fields/CityField";
 
 interface SupplierFormFieldsProps {
   form: UseFormReturn<SupplierFormValues>;
+  showSupplierCode?: boolean;
 }
 
-export const SupplierFormFields = ({ form }: SupplierFormFieldsProps) => {
+export const SupplierFormFields = ({ form, showSupplierCode = false }: SupplierFormFieldsProps) => {
   const [cities, setCities] = useState<string[]>([]);
   const watchedCountry = form.watch("country");
   
@@ -39,7 +39,7 @@ export const SupplierFormFields = ({ form }: SupplierFormFieldsProps) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <SupplierCodeField form={form} />
+      {/* N'afficher le champ SupplierCodeField que si explicitement demandé */}
       <CompanyNameField form={form} />
       <ContactFields form={form} />
       <CountryField form={form} />

@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Form,
 } from "@/components/ui/form";
 import { SupplierFormFields } from "./forms/SupplierFormFields";
-import { SupplierDialogHeader } from "./forms/SupplierDialogHeader";
 import { useSupplierForm } from "./hooks/useSupplierForm";
 
 interface AddSupplierDialogProps {
@@ -24,7 +24,9 @@ export const AddSupplierDialog = ({ isOpen, onOpenChange }: AddSupplierDialogPro
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="glass-panel border-0 max-w-2xl transform perspective-1000 rotate-x-1 hover:rotate-x-0 transition-transform duration-300">
-        <SupplierDialogHeader />
+        <DialogTitle className="text-2xl font-bold text-gradient bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 mb-4">
+          Ajouter un nouveau fournisseur
+        </DialogTitle>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
             <SupplierFormFields form={form} />

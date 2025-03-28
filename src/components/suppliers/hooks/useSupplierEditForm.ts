@@ -27,7 +27,6 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
       address: "",
       website: "",
       status: "En attente",
-      supplier_code: "",
       country: "",
       city: "",
       postal_box: "",
@@ -46,8 +45,7 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
         address: supplier.address || "",
         website: supplier.website || "",
         status: supplier.status || "En attente",
-        supplier_code: "",  // This field is read-only
-        country: "",  // These fields might not exist in the database
+        country: "",  // Ces champs peuvent ne pas exister dans la base de données
         city: "",
         postal_box: "",
         landline: "",
@@ -68,7 +66,7 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
           address: values.address,
           website: values.website,
           status: values.status,
-          // Don't update supplier_code or other fields that shouldn't change
+          // Ne pas mettre à jour supplier_code ou autres champs qui ne devraient pas changer
         })
         .eq('id', supplier.id)
         .select()

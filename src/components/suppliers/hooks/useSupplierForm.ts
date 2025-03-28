@@ -19,33 +19,8 @@ export const useSupplierForm = ({ onSuccess }: UseSupplierFormProps) => {
     defaultValues: defaultSupplierValues,
   });
 
-  // Generate a supplier code
-  const generateSupplierCode = async (): Promise<string> => {
-    // Get current date for code generation
-    const today = new Date();
-    const year = today.getFullYear().toString().slice(2); // Get last 2 digits of year
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    
-    // Get count of existing suppliers for sequential numbering
-    const { count, error } = await supabase
-      .from('suppliers')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error("Error getting suppliers count:", error);
-      return `FOUR-${year}${month}-0001`;
-    }
-    
-    // Format sequential number with leading zeros
-    const sequentialNumber = ((count || 0) + 1).toString().padStart(4, '0');
-    
-    return `FOUR-${year}${month}-${sequentialNumber}`;
-  };
-
   const createSupplierMutation = useMutation({
     mutationFn: async (values: SupplierFormValues) => {
-      const supplierCode = await generateSupplierCode();
-      
       // Only include fields that exist in the database
       const { data, error } = await supabase
         .from('suppliers')
@@ -68,8 +43,7 @@ export const useSupplierForm = ({ onSuccess }: UseSupplierFormProps) => {
           delivery_score: 0,
           pending_orders: 0,
           total_revenue: 0,
-          supplier_code: supplierCode,
-          // Remove country, city, postal_box, landline fields that don't exist in the database schema
+          // Suppression du champ supplier_code qui n'existe pas dans la base de données
         }])
         .select()
         .single();
