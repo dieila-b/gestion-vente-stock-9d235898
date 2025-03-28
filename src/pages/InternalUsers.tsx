@@ -5,10 +5,8 @@ import { InternalUserForm } from "@/components/internal-users/InternalUserForm";
 import { InternalUserHeader } from "@/components/internal-users/InternalUserHeader";
 import { AuthorizationCheck } from "@/components/internal-users/AuthorizationCheck";
 import { useInternalUsers } from "@/components/internal-users/useInternalUsers";
-import { useNavigate } from "react-router-dom";
 
 const InternalUsers = () => {
-  const navigate = useNavigate();
   const {
     users,
     isLoading,
@@ -38,7 +36,6 @@ const InternalUsers = () => {
       <AuthorizationCheck
         isAuthChecking={isAuthChecking}
         isAuthorized={isAuthorized}
-        onLoginClick={() => navigate("/auth")}
       />
 
       {isAuthorized && (

@@ -1,18 +1,15 @@
 
 import { Loader2, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 interface AuthorizationCheckProps {
   isAuthChecking: boolean;
   isAuthorized: boolean;
-  onLoginClick: () => void;
 }
 
 export const AuthorizationCheck = ({
   isAuthChecking,
   isAuthorized,
-  onLoginClick,
 }: AuthorizationCheckProps) => {
   if (isAuthChecking) {
     return (
@@ -35,11 +32,8 @@ export const AuthorizationCheck = ({
             <User className="h-16 w-16 text-red-500" />
             <h1 className="text-2xl font-bold">Accès non autorisé</h1>
             <p className="text-muted-foreground">
-              Vous devez être connecté pour accéder à cette page. Veuillez vous connecter et réessayer.
+              Vous n'avez pas les autorisations nécessaires pour accéder à cette page.
             </p>
-            <Button onClick={onLoginClick}>
-              Se connecter
-            </Button>
           </div>
         </div>
       </DashboardLayout>
