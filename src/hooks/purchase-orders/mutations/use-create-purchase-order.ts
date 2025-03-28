@@ -57,7 +57,7 @@ export function useCreatePurchaseOrder() {
       supplier_id: data.supplier_id,
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
-      payment_status: isValidPaymentStatus(data.payment_status) ? data.payment_status : 'pending',
+      payment_status: isValidPaymentStatus(data.payment_status || 'pending') ? data.payment_status || 'pending' : 'pending',
       paid_amount: data.paid_amount || 0,
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array

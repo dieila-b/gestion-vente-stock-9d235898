@@ -50,7 +50,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
             supplier_id: order.supplier_id,
             created_at: order.created_at,
             status: isValidOrderStatus(order.status) ? order.status : 'draft',
-            payment_status: isValidPaymentStatus(order.payment_status) ? order.payment_status : 'pending',
+            payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status || 'pending' : 'pending',
             total_amount: order.total_amount || 0,
             items: Array.isArray(order.items) ? order.items.map((item: any) => ({
               id: item.id || '',
@@ -133,7 +133,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
           supplier_id: order.supplier_id,
           created_at: order.created_at,
           status: isValidOrderStatus(order.status) ? order.status : 'draft',
-          payment_status: isValidPaymentStatus(order.payment_status) ? order.payment_status : 'pending',
+          payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status || 'pending' : 'pending',
           total_amount: order.total_amount || 0,
           items: Array.isArray(order.items) ? order.items.map((item: any) => ({
             id: item.id || '',
