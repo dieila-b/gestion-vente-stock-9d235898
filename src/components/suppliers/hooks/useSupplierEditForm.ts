@@ -45,10 +45,10 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
         address: supplier.address || "",
         website: supplier.website || "",
         status: supplier.status || "En attente",
-        country: "",  // Ces champs peuvent ne pas exister dans la base de données
-        city: "",
-        postal_box: "",
-        landline: "",
+        country: supplier.country || "",
+        city: supplier.city || "",
+        postal_box: supplier.postal_box || "",
+        landline: supplier.landline || "",
       });
     }
   }, [supplier, form]);
@@ -66,7 +66,10 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
           address: values.address,
           website: values.website,
           status: values.status,
-          // Ne pas mettre à jour supplier_code ou autres champs qui ne devraient pas changer
+          country: values.country,
+          city: values.city,
+          postal_box: values.postal_box,
+          landline: values.landline,
         })
         .eq('id', supplier.id)
         .select()

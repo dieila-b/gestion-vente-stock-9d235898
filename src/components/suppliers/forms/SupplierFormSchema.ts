@@ -9,8 +9,6 @@ export const supplierFormSchema = z.object({
   address: z.string().min(5, "L'adresse doit contenir au moins 5 caractères"),
   website: z.string().url("URL invalide").optional(),
   status: z.enum(["Actif", "En attente", "Inactif"]),
-  // Rendre le champ supplier_code optionnel
-  supplier_code: z.string().optional(),
   country: z.string().optional(),
   city: z.string().optional(),
   postal_box: z.string().optional(),
@@ -27,7 +25,6 @@ export const defaultSupplierValues: SupplierFormValues = {
   address: "",
   website: "",
   status: "En attente",
-  supplier_code: "",
   country: "",
   city: "",
   postal_box: "",
