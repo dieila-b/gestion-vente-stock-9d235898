@@ -1,7 +1,7 @@
 
 import { SupplierCard } from "./SupplierCard";
 import { Button } from "@/components/ui/button";
-import { Package, FileText, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Package, FileText, Pencil, Trash2 } from "lucide-react";
 import type { Supplier } from "@/types/supplier";
 import {
   Table,
@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useState } from "react";
+import { SupplierEditDialog } from "./SupplierEditDialog";
 
 interface SupplierListProps {
   suppliers: Supplier[];
@@ -37,13 +38,12 @@ export const SupplierList = ({
   onRequestPrice,
   onDeleteSupplier 
 }: SupplierListProps) => {
-  const { toast } = useToast();
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleEdit = (supplier: Supplier) => {
-    toast({
-      title: "Modification du fournisseur",
-      description: `Modification de ${supplier.name} en cours...`,
-    });
+    setSelectedSupplier(supplier);
+    setIsEditDialogOpen(true);
   };
 
   return (
@@ -140,6 +140,14 @@ export const SupplierList = ({
           </TableBody>
         </Table>
       </div>
+
+      {selectedSupplier && (
+        <SupplierEditDialog
+          supplier={selectedSupplier}
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
+      )}
     </div>
   );
 };

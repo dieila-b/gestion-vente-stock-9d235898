@@ -6,6 +6,7 @@ import { Supplier } from "@/types/supplier";
 import { useState } from "react";
 import { SupplierDetailsDialog } from "./SupplierDetailsDialog";
 import { SupplierModals } from "./SupplierModals";
+import { SupplierEditDialog } from "./SupplierEditDialog";
 
 interface SupplierCardProps {
   supplier: Supplier;
@@ -16,6 +17,7 @@ export const SupplierCard = ({ supplier }: SupplierCardProps) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [isPriceRequestFormOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
     <>
@@ -115,6 +117,14 @@ export const SupplierCard = ({ supplier }: SupplierCardProps) => {
             variant="outline"
             size="sm"
             className="w-full glass-effect"
+            onClick={() => setIsEditOpen(true)}
+          >
+            Modifier
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full glass-effect"
             onClick={() => setIsOrderFormOpen(true)}
           >
             Commander
@@ -126,6 +136,12 @@ export const SupplierCard = ({ supplier }: SupplierCardProps) => {
         supplier={supplier}
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
+      />
+
+      <SupplierEditDialog
+        supplier={supplier}
+        isOpen={isEditOpen}
+        onOpenChange={setIsEditOpen}
       />
 
       <SupplierModals
