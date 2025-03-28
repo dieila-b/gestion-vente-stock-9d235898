@@ -1,3 +1,4 @@
+
 import { formatGNF } from './currency';
 
 // Fonction pour convertir un nombre en mots en français

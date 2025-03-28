@@ -31,6 +31,8 @@ interface InvoiceTemplateProps {
   remainingAmount?: number;
   deliveryStatus?: 'delivered' | 'partial' | 'pending' | 'awaiting';
   onShare?: boolean;
+  shipping_cost?: number;
+  supplierNumber?: string;
 }
 
 export function InvoiceTemplate({
@@ -49,7 +51,9 @@ export function InvoiceTemplate({
   paidAmount = 0,
   remainingAmount = 0,
   deliveryStatus = 'pending',
-  onShare = true
+  onShare = true,
+  shipping_cost = 0,
+  supplierNumber
 }: InvoiceTemplateProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
   
@@ -120,6 +124,7 @@ export function InvoiceTemplate({
           <div className="w-1/2 p-4 border-r border-black">
             <p><strong>DATE:</strong> {date}</p>
             <p><strong>FACTURE N°:</strong> {invoiceNumber}</p>
+            {supplierNumber && <p><strong>FOURNISSEUR N°:</strong> {supplierNumber}</p>}
           </div>
           <div className="w-1/2 p-4">
             <p><strong>CLIENT:</strong></p>
@@ -179,6 +184,12 @@ export function InvoiceTemplate({
               <div className="p-2 border-r border-black font-medium">Remise</div>
               <div className="p-2 text-right">{formatGNF(discount)}</div>
             </div>
+            {shipping_cost > 0 && (
+              <div className="grid grid-cols-2 border-b border-black">
+                <div className="p-2 border-r border-black font-medium">Frais de transport</div>
+                <div className="p-2 text-right">{formatGNF(shipping_cost)}</div>
+              </div>
+            )}
             <div className="grid grid-cols-2 font-bold">
               <div className="p-2 border-r border-black">Net à Payer</div>
               <div className="p-2 text-right">{formatGNF(total)}</div>

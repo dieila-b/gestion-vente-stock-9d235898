@@ -26,6 +26,11 @@ interface DynamicInvoiceProps {
     email: string;
     phone: string;
   };
+  // Add the missing properties
+  actions?: boolean;
+  onShare?: boolean;
+  shipping_cost?: number;
+  supplierNumber?: string;
 }
 
 export function DynamicInvoice({
@@ -45,6 +50,10 @@ export function DynamicInvoice({
   paidAmount = 0,
   remainingAmount = total,
   deliveryStatus = 'pending',
+  onShare,
+  actions,
+  shipping_cost,
+  supplierNumber,
 }: DynamicInvoiceProps) {
   // Use the display name if present, otherwise use company name
   const displayName = clientContactName || clientName;
@@ -66,6 +75,9 @@ export function DynamicInvoice({
       paidAmount={paidAmount}
       remainingAmount={remainingAmount}
       deliveryStatus={deliveryStatus}
+      onShare={onShare}
+      shipping_cost={shipping_cost}
+      supplierNumber={supplierNumber}
     />
   );
 }
