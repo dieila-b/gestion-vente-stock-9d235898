@@ -50,6 +50,9 @@ type InternalUser = {
   require_password_change: boolean;
   two_factor_enabled: boolean;
   last_login: string | null;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
 };
 
 const InternalUsers = () => {
@@ -96,7 +99,26 @@ const InternalUsers = () => {
         throw error;
       }
 
-      return data as InternalUser[];
+      // Transform the data to ensure it matches InternalUser type
+      const transformedData = data.map(user => ({
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role as "admin" | "manager" | "employee",
+        address: user.address,
+        is_active: user.is_active,
+        // Set default values for potentially missing properties
+        require_password_change: user.require_password_change !== undefined ? user.require_password_change : false,
+        two_factor_enabled: user.two_factor_enabled !== undefined ? user.two_factor_enabled : false,
+        last_login: user.last_login || null,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        user_id: user.user_id
+      }));
+
+      return transformedData as InternalUser[];
     },
   });
 
