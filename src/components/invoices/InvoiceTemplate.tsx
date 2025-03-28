@@ -62,9 +62,9 @@ export function InvoiceTemplate({
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto">
       {onShare && (
-        <div className="mb-4">
+        <div className="mb-2">
           <InvoiceShareActions
             invoiceNumber={invoiceNumber}
             clientName={clientName}

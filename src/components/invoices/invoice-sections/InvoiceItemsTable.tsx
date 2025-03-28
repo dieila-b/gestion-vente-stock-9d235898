@@ -18,7 +18,7 @@ interface InvoiceItemsTableProps {
 export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
   return (
     <>
-      <div className="grid grid-cols-6 border-b border-black text-center text-sm">
+      <div className="grid grid-cols-6 border-b border-black text-center text-sm font-bold bg-gray-100">
         <div className="p-2 border-r border-black">Produit</div>
         <div className="p-2 border-r border-black">Prix unitaire</div>
         <div className="p-2 border-r border-black">Remise</div>
@@ -36,10 +36,10 @@ export function InvoiceItemsTable({ items }: InvoiceItemsTableProps) {
           <div className="grid grid-cols-6 border-b border-black text-sm" key={index}>
             <div className="p-2 border-r border-black flex items-center">
               {item.image_url ? (
-                <img src={item.image_url} alt="" className="w-5 h-5 mr-2 object-cover" />
+                <img src={item.image_url} alt="" className="w-4 h-4 mr-1 object-cover" />
               ) : (
-                <div className="w-5 h-5 mr-2 flex-shrink-0 bg-gray-100 flex items-center justify-center rounded">
-                  <ImageIcon className="w-3 h-3 text-gray-400" />
+                <div className="w-4 h-4 mr-1 flex-shrink-0 bg-gray-100 flex items-center justify-center rounded">
+                  <ImageIcon className="w-2 h-2 text-gray-400" />
                 </div>
               )}
               {item.name}
