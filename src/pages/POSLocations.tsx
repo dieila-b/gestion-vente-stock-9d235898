@@ -26,7 +26,7 @@ export default function POSLocations() {
       
       <Card className="bg-white/10 backdrop-blur-xl border border-white/20">
         <POSLocationsTable
-          locations={locations || []}
+          posLocations={locations || []}
           onEdit={(location) => {
             setSelectedLocation(location);
             setIsAddDialogOpen(true);
