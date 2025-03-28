@@ -1,39 +1,61 @@
 
-import { InvoiceTemplate } from "../InvoiceTemplate";
+import React from 'react';
+import { formatGNF } from '@/lib/currency';
+import { InvoiceHeader } from './InvoiceHeader';
+import { InvoiceItems } from './InvoiceItems';
+import { InvoiceSummary } from './InvoiceSummary';
+import { PaymentInfo } from './PaymentInfo';
+import { PaymentStatus } from './PaymentStatus';
+import { InvoiceActions } from './InvoiceActions';
 
-interface DynamicInvoiceProps {
+interface Item {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  discount?: number;
+  image?: string | null;
+  deliveredQuantity?: number;
+}
+
+interface CompanyInfo {
+  name?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface DynamicInvoiceProps {
   invoiceNumber: string;
-  items: any[];
+  items: Item[];
   subtotal: number;
   discount: number;
   total: number;
   date: string;
-  clientName?: string;
+  clientName: string;
   clientEmail?: string;
+  clientCode?: string;
   clientPhone?: string;
   clientAddress?: string;
-  clientContactName?: string;
-  clientCode?: string;
-  onDownload?: () => void;
+  clientContactName?: string;  // Added contact name
   paymentStatus?: 'paid' | 'partial' | 'pending';
   paidAmount?: number;
   remainingAmount?: number;
   deliveryStatus?: 'delivered' | 'partial' | 'pending' | 'awaiting';
-  onAddPayment?: () => void;
-  companyInfo?: {
-    name: string;
-    address: string;
-    email: string;
-    phone: string;
-  };
-  // Add the missing properties
-  actions?: boolean;
-  onShare?: boolean;
   shipping_cost?: number;
+  companyInfo?: CompanyInfo;
   supplierNumber?: string;
+  onApprove?: () => void;
+  onSendEmail?: () => void;
+  onDownload?: () => void;
+  onPrint?: () => void;
+  onAddPayment?: () => void;
+  onWhatsApp?: () => void;
+  actions?: boolean;
+  code?: string;
 }
 
-export function DynamicInvoice({
+export const DynamicInvoice: React.FC<DynamicInvoiceProps> = ({
   invoiceNumber,
   items,
   subtotal,
@@ -42,42 +64,76 @@ export function DynamicInvoice({
   date,
   clientName,
   clientEmail,
+  clientCode,
   clientPhone,
   clientAddress,
-  clientContactName,
-  clientCode,
+  clientContactName,  // Added contact name
   paymentStatus = 'pending',
   paidAmount = 0,
-  remainingAmount = total,
+  remainingAmount = 0,
   deliveryStatus = 'pending',
-  onShare,
-  actions,
-  shipping_cost,
+  shipping_cost = 0,
+  companyInfo,
   supplierNumber,
-}: DynamicInvoiceProps) {
-  // Use the display name if present, otherwise use company name
-  const displayName = clientContactName || clientName;
+  onApprove,
+  onSendEmail,
+  onDownload,
+  onPrint,
+  onAddPayment,
+  onWhatsApp,
+  actions = false,
+  code,
+}) => {
+  // Only show delivery information when delivery is partial
+  const showDeliveryInfo = deliveryStatus === 'partial';
   
   return (
-    <InvoiceTemplate
-      invoiceNumber={invoiceNumber}
-      date={date}
-      items={items}
-      subtotal={subtotal}
-      discount={discount}
-      total={total}
-      clientName={displayName}
-      clientEmail={clientEmail}
-      clientPhone={clientPhone}
-      clientAddress={clientAddress}
-      clientCode={clientCode}
-      paymentStatus={paymentStatus}
-      paidAmount={paidAmount}
-      remainingAmount={remainingAmount}
-      deliveryStatus={deliveryStatus}
-      onShare={onShare}
-      shipping_cost={shipping_cost}
-      supplierNumber={supplierNumber}
-    />
+    <div className="bg-white text-black border border-black">
+      <InvoiceHeader
+        invoiceNumber={invoiceNumber}
+        date={date}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        clientCode={clientCode}
+        clientPhone={clientPhone}
+        clientAddress={clientAddress}
+        clientContactName={clientContactName}  // Added contact name
+        code={code}
+        companyInfo={companyInfo}
+        supplierNumber={supplierNumber}
+      />
+      <InvoiceItems items={items} showDeliveryInfo={showDeliveryInfo} />
+      <InvoiceSummary
+        subtotal={subtotal}
+        discount={discount}
+        total={total}
+        shipping_cost={shipping_cost}
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-black">
+        <div className="p-6 border-r border-black">
+          <PaymentInfo
+            paymentStatus={paymentStatus}
+            paidAmount={paidAmount}
+            remainingAmount={remainingAmount}
+            deliveryStatus={deliveryStatus}
+          />
+        </div>
+        <div className="p-6">
+          <PaymentStatus
+            status={paymentStatus}
+            deliveryStatus={deliveryStatus}
+          />
+        </div>
+      </div>
+      {actions && (
+        <InvoiceActions
+          onSendEmail={onSendEmail}
+          onDownload={onDownload}
+          onPrint={onPrint}
+          onAddPayment={onAddPayment}
+          onWhatsApp={onWhatsApp}
+        />
+      )}
+    </div>
   );
-}
+};

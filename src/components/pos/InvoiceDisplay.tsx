@@ -71,7 +71,7 @@ export function InvoiceDisplay({
           paidAmount={paidAmount}
           remainingAmount={remainingAmount}
           deliveryStatus={deliveryStatus}
-          onShare={true}
+          actions={true}
         />
       </div>
       
