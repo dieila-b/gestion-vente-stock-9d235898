@@ -49,7 +49,7 @@ export const menuItems = [
         ]
       },
       {
-        label: "Entrepôts",
+        label: "Entrepôts&PDV",
         icon: Warehouse,
         path: "/warehouses"
       },
