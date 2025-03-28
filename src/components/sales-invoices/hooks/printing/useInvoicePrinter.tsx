@@ -105,7 +105,6 @@ export function useInvoicePrinter() {
             <table style="border-collapse: collapse; width: 100%;">
               <thead>
                 <tr style="background-color: #f5f5f5;">
-                  <th style="width: 40px; border: 1px solid black; padding: 8px; text-align: center;"></th>
                   <th style="border: 1px solid black; padding: 8px; text-align: left;">Produit</th>
                   <th style="border: 1px solid black; padding: 8px; text-align: right;">Prix unitaire</th>
                   <th style="border: 1px solid black; padding: 8px; text-align: right;">Remise</th>
@@ -121,16 +120,8 @@ export function useInvoicePrinter() {
                   const netPrice = originalPrice - discount;
                   const totalPrice = netPrice * item.quantity;
                   
-                  let imageHtml = '';
-                  if (item.product?.image) {
-                    imageHtml = `<img src="${item.product.image}" alt="" style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px;">`;
-                  } else {
-                    imageHtml = `<div style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; background-color: #f0f0f0; border-radius: 3px;">📷</div>`;
-                  }
-                  
                   return `
                     <tr>
-                      <td style="border: 1px solid black; padding: 8px; text-align: center;">${imageHtml}</td>
                       <td style="border: 1px solid black; padding: 8px; text-align: left;">${item.product?.name || 'Produit inconnu'}</td>
                       <td style="border: 1px solid black; padding: 8px; text-align: right;">${originalPrice.toLocaleString('fr-GN')} FG</td>
                       <td style="border: 1px solid black; padding: 8px; text-align: right;">${discount > 0 ? `${discount.toLocaleString('fr-GN')} FG` : '-'}</td>
