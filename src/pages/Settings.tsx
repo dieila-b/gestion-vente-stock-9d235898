@@ -1,7 +1,6 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { MapPin, Users, Warehouse, Settings as SettingsIcon, User, Store } from "lucide-react";
+import { MapPin, Users, Warehouse, Settings as SettingsIcon, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -55,13 +54,6 @@ const Settings = () => {
       icon: Users,
       link: "/clients",
       color: "from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30"
-    },
-    {
-      title: "Utilisateurs internes",
-      description: "Gérez les utilisateurs et leurs droits d'accès",
-      icon: User,
-      link: "/internal-users",
-      color: "from-indigo-500/20 to-violet-500/20 hover:from-indigo-500/30 hover:to-violet-500/30"
     }
   ];
 
