@@ -22,4 +22,8 @@ export interface Supplier {
   verified: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+  country: string | null;
+  city: string | null;
+  postal_box: string | null;
+  landline: string | null;
 }

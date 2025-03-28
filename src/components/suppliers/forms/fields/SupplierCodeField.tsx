@@ -6,27 +6,23 @@ import { SupplierFormValues } from "../SupplierFormSchema";
 
 interface SupplierCodeFieldProps {
   form: UseFormReturn<SupplierFormValues>;
+  supplierCode?: string;
 }
 
-export const SupplierCodeField = ({ form }: SupplierCodeFieldProps) => {
+export const SupplierCodeField = ({ form, supplierCode }: SupplierCodeFieldProps) => {
   return (
-    <FormField
-      control={form.control}
-      name="supplier_code"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Code Fournisseur</FormLabel>
-          <FormControl>
-            <Input
-              placeholder="Généré automatiquement"
-              className="glass-effect bg-gray-100"
-              disabled
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <FormItem>
+      <FormLabel>Code Fournisseur</FormLabel>
+      <FormControl>
+        <Input
+          placeholder="Généré automatiquement"
+          className="glass-effect bg-gray-100"
+          disabled
+          value={supplierCode || 'Auto-généré'}
+          readOnly
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
   );
 };
