@@ -50,7 +50,8 @@ export const usePurchaseOrderQueries = (id?: string) => {
             supplier_id: order.supplier_id,
             created_at: order.created_at,
             status: isValidOrderStatus(order.status) ? order.status : 'draft',
-            payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status || 'pending' : 'pending',
+            // Use a default value 'pending' when accessing potentially undefined properties
+            payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? (order.payment_status || 'pending') : 'pending',
             total_amount: order.total_amount || 0,
             items: Array.isArray(order.items) ? order.items.map((item: any) => ({
               id: item.id || '',
@@ -73,7 +74,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
             notes: order.notes || '',
             expected_delivery_date: order.expected_delivery_date || '',
             warehouse_id: order.warehouse_id || '',
-            paid_amount: order.paid_amount || 0,
+            paid_amount: typeof order.paid_amount === 'number' ? order.paid_amount : 0,
             deleted: order.deleted || false
           };
           
@@ -133,7 +134,8 @@ export const usePurchaseOrderQueries = (id?: string) => {
           supplier_id: order.supplier_id,
           created_at: order.created_at,
           status: isValidOrderStatus(order.status) ? order.status : 'draft',
-          payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? order.payment_status || 'pending' : 'pending',
+          // Use a default value 'pending' when accessing potentially undefined properties
+          payment_status: isValidPaymentStatus(order.payment_status || 'pending') ? (order.payment_status || 'pending') : 'pending',
           total_amount: order.total_amount || 0,
           items: Array.isArray(order.items) ? order.items.map((item: any) => ({
             id: item.id || '',
@@ -156,7 +158,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
           notes: order.notes || '',
           expected_delivery_date: order.expected_delivery_date || '',
           warehouse_id: order.warehouse_id || '',
-          paid_amount: order.paid_amount || 0,
+          paid_amount: typeof order.paid_amount === 'number' ? order.paid_amount : 0,
           deleted: order.deleted || false
         };
         
