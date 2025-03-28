@@ -57,13 +57,13 @@ const InternalUsers = () => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
           toast.error("Vous devez être connecté pour accéder à cette page");
           navigate("/auth");
-        } else {
-          setIsAuthorized(true);
+          return;
         }
+        setIsAuthorized(true);
       } catch (error) {
         console.error("Auth check error:", error);
         toast.error("Erreur lors de la vérification de l'authentification");
@@ -78,25 +78,34 @@ const InternalUsers = () => {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ["internal-users"],
     queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session.session) {
+          navigate("/auth");
+          return [];
+        }
+
+        const { data, error } = await supabase
+          .from("internal_users")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching users:", error);
+          toast.error("Erreur lors du chargement des utilisateurs");
+          return [];
+        }
+
+        return data as InternalUser[];
+      } catch (error) {
+        console.error("Query error:", error);
+        toast.error("Une erreur est survenue lors du chargement des données");
         return [];
       }
-
-      const { data, error } = await supabase
-        .from("internal_users")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        toast.error("Erreur lors du chargement des utilisateurs");
-        throw error;
-      }
-
-      return data as InternalUser[];
     },
     enabled: isAuthorized,
+    retry: 1,
   });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -118,6 +127,7 @@ const InternalUsers = () => {
       
       if (!session.session) {
         toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate("/auth");
         return;
       }
 
@@ -142,8 +152,8 @@ const InternalUsers = () => {
       setSelectedUser(null);
       refetch();
     } catch (error) {
-      toast.error("Une erreur est survenue");
-      console.error(error);
+      console.error("Submission error:", error);
+      toast.error("Une erreur est survenue lors de l'opération");
     }
   };
 
@@ -155,6 +165,7 @@ const InternalUsers = () => {
       
       if (!session.session) {
         toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate("/auth");
         return;
       }
 
@@ -167,8 +178,8 @@ const InternalUsers = () => {
       toast.success("Utilisateur supprimé avec succès");
       refetch();
     } catch (error) {
+      console.error("Delete error:", error);
       toast.error("Une erreur est survenue lors de la suppression");
-      console.error(error);
     }
   };
 
@@ -178,6 +189,7 @@ const InternalUsers = () => {
       
       if (!session.session) {
         toast.error("Vous devez être connecté pour effectuer cette action");
+        navigate("/auth");
         return;
       }
 
@@ -190,8 +202,8 @@ const InternalUsers = () => {
       toast.success(`Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`);
       refetch();
     } catch (error) {
+      console.error("Status toggle error:", error);
       toast.error("Une erreur est survenue lors de la modification du statut");
-      console.error(error);
     }
   };
 
@@ -465,3 +477,4 @@ const InternalUsers = () => {
 };
 
 export default InternalUsers;
+
