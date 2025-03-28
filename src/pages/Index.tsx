@@ -1,34 +1,23 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 export default function Index() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Add a small delay to ensure proper navigation
-    const timer = setTimeout(() => {
-      navigate("/dashboard", { replace: true });
-      setIsLoading(false);
-    }, 100);
-
-    return () => clearTimeout(timer);
+    navigate("/dashboard", { replace: true });
   }, [navigate]);
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-muted-foreground">Chargement...</p>
-          </div>
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-muted-foreground">Chargement...</p>
         </div>
-      </DashboardLayout>
-    );
-  }
-
-  return null;
+      </div>
+    </DashboardLayout>
+  );
 }
