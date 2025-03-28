@@ -4,7 +4,8 @@ import {
   Box, BarChart3, FileEdit, CreditCard, Receipt, PiggyBank, 
   ArrowUpCircle, ArrowDownCircle, Wallet, Building2, ClipboardList,
   Truck, FileOutput, PackageX, ArrowRightLeft, Database,
-  Calendar, CalendarRange, BanknoteIcon, PackagePlus, FileCheck
+  Calendar, CalendarRange, BanknoteIcon, PackagePlus, FileCheck,
+  LayoutGrid, Repeat
 } from "lucide-react";
 
 export const menuItems = [
@@ -23,8 +24,8 @@ export const menuItems = [
         path: "/stock-status"
       },
       {
-        label: "Stocks",
-        icon: Box,
+        label: "Stocks par Emplacement",
+        icon: LayoutGrid,
         submenu: [
           {
             label: "Stock Principal",
@@ -35,7 +36,13 @@ export const menuItems = [
             label: "Stock PDV",
             icon: Store,
             path: "/stocks/pos"
-          },
+          }
+        ]
+      },
+      {
+        label: "Mouvements de Stock",
+        icon: Repeat,
+        submenu: [
           {
             label: "Entrées",
             icon: ArrowUpCircle,
