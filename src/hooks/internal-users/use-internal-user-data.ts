@@ -15,9 +15,9 @@ export const useInternalUserData = () => {
         const { data: session } = await supabase.auth.getSession();
         
         if (!session.session) {
-          // Ne pas naviguer automatiquement, juste retourner un tableau vide
-          console.log("Session not found, returning empty array");
-          return [];
+          toast.error("Vous devez être connecté pour accéder à cette page");
+          navigate("/auth");
+          throw new Error("Non authentifié");
         }
         
         console.log("Fetching internal users...");
@@ -57,12 +57,9 @@ export const useInternalUserData = () => {
         return transformedData as InternalUser[];
       } catch (err) {
         console.error("Error in queryFn:", err);
-        // Ne pas relancer l'erreur, retourner un tableau vide à la place
-        return [];
+        throw err;
       }
     },
-    // Ajouter retry: false pour éviter les tentatives répétées en cas d'échec
-    retry: false,
   });
 
   const getRoleBadgeColor = (role: string) => {
@@ -79,7 +76,7 @@ export const useInternalUserData = () => {
   };
 
   return {
-    users: users || [],
+    users,
     isLoading,
     error,
     refetch,
