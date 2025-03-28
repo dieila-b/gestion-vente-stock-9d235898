@@ -29,8 +29,8 @@ export const InternalUsersHeader = ({ onAddClick }: InternalUsersHeaderProps) =>
         </div>
       </div>
 
-      <Button onClick={onAddClick}>
-        <UserPlus className="mr-2 h-4 w-4" />
+      <Button onClick={onAddClick} size="lg" className="gap-2">
+        <UserPlus className="h-5 w-5" />
         Ajouter un utilisateur
       </Button>
     </motion.div>

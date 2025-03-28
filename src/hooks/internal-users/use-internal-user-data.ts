@@ -15,9 +15,9 @@ export const useInternalUserData = () => {
         const { data: session } = await supabase.auth.getSession();
         
         if (!session.session) {
-          toast.error("Vous devez être connecté pour accéder à cette page");
-          navigate("/auth");
-          throw new Error("Non authentifié");
+          // Instead of throwing an error, return an empty array
+          console.log("No active session, returning empty users array");
+          return [];
         }
         
         console.log("Fetching internal users...");
@@ -57,7 +57,7 @@ export const useInternalUserData = () => {
         return transformedData as InternalUser[];
       } catch (err) {
         console.error("Error in queryFn:", err);
-        throw err;
+        return []; // Return empty array on error for better error handling
       }
     },
   });
