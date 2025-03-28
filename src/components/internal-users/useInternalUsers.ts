@@ -1,132 +1,161 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { InternalUser } from "@/types/internal-user";
+import { toast } from "@/hooks/use-toast";
+import { UserFormValues } from "./validation/user-form-schema";
 
 export const useInternalUsers = () => {
+  const [users, setUsers] = useState<InternalUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<InternalUser | null>(null);
-  const navigate = useNavigate();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
-  // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-          toast.error("Vous devez être connecté pour accéder à cette page");
-          navigate("/auth");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setIsAuthorized(false);
+          setIsAuthChecking(false);
           return;
         }
-        setIsAuthorized(true);
+        
+        const { data: userData, error: userError } = await supabase
+          .from('internal_users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (userError || !userData) {
+          console.error("Error checking user role:", userError);
+          setIsAuthorized(false);
+          setIsAuthChecking(false);
+          return;
+        }
+        
+        setIsAuthorized(userData.role === 'admin');
+        
+        if (userData.role === 'admin') {
+          fetchUsers();
+        }
       } catch (error) {
         console.error("Auth check error:", error);
-        toast.error("Erreur lors de la vérification de l'authentification");
+        setIsAuthorized(false);
       } finally {
         setIsAuthChecking(false);
       }
     };
     
     checkAuth();
-  }, [navigate]);
+  }, []);
 
-  const { data: users, isLoading, refetch } = useQuery({
-    queryKey: ["internal-users"],
-    queryFn: async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        
-        if (!session.session) {
-          navigate("/auth");
-          return [];
-        }
-
-        const { data, error } = await supabase
-          .from("internal_users")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching users:", error);
-          toast.error("Erreur lors du chargement des utilisateurs");
-          return [];
-        }
-
-        return data as InternalUser[];
-      } catch (error) {
-        console.error("Query error:", error);
-        toast.error("Une erreur est survenue lors du chargement des données");
-        return [];
-      }
-    },
-    enabled: isAuthorized,
-    retry: 1,
-  });
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const userData = {
-      first_name: formData.get("first_name") as string,
-      last_name: formData.get("last_name") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      role: formData.get("role") as "admin" | "manager" | "employee",
-      address: formData.get("address") as string,
-      is_active: true,
-    };
-
+  const fetchUsers = async () => {
+    setIsLoading(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        toast.error("Vous devez être connecté pour effectuer cette action");
-        navigate("/auth");
-        return;
+      const { data, error } = await supabase
+        .from("internal_users")
+        .select("*")
+        .order("first_name", { ascending: true });
+
+      if (error) {
+        throw error;
       }
 
+      setUsers(data as InternalUser[]);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer la liste des utilisateurs",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (values: UserFormValues): Promise<void> => {
+    try {
       if (selectedUser) {
+        // Update existing user
         const { error } = await supabase
           .from("internal_users")
-          .update(userData)
+          .update({
+            first_name: values.first_name,
+            last_name: values.last_name,
+            email: values.email,
+            phone: values.phone || null,
+            address: values.address || null,
+            role: values.role,
+            is_active: values.is_active || true,
+          })
           .eq("id", selectedUser.id);
 
         if (error) throw error;
-        toast.success("Utilisateur mis à jour avec succès");
       } else {
-        const { error } = await supabase
+        // Create new user
+        const { data: existingUsers, error: checkError } = await supabase
           .from("internal_users")
-          .insert([userData]);
+          .select("id")
+          .eq("email", values.email);
 
-        if (error) throw error;
-        toast.success("Utilisateur ajouté avec succès");
+        if (checkError) throw checkError;
+
+        if (existingUsers && existingUsers.length > 0) {
+          toast({
+            title: "Erreur",
+            description: "Un utilisateur avec cet email existe déjà",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create an auth user
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: values.email,
+          password: "TemporaryPassword123!", // This should be randomly generated and sent to user
+          email_confirm: true,
+        });
+
+        if (authError) throw authError;
+
+        if (!authData.user) {
+          throw new Error("Échec de la création de l'utilisateur");
+        }
+
+        // Now create the internal user record
+        const { error: insertError } = await supabase
+          .from("internal_users")
+          .insert({
+            id: authData.user.id,
+            first_name: values.first_name,
+            last_name: values.last_name,
+            email: values.email,
+            phone: values.phone || null,
+            address: values.address || null,
+            role: values.role,
+            is_active: true,
+          });
+
+        if (insertError) throw insertError;
       }
 
-      setIsAddDialogOpen(false);
-      setSelectedUser(null);
-      refetch();
+      // Refresh the users list
+      fetchUsers();
     } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("Une erreur est survenue lors de l'opération");
+      console.error("Error submitting user:", error);
+      throw error;
     }
   };
 
   const handleDelete = async (user: InternalUser) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return;
-
     try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        toast.error("Vous devez être connecté pour effectuer cette action");
-        navigate("/auth");
+      if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${user.first_name} ${user.last_name}?`)) {
         return;
       }
 
@@ -136,35 +165,46 @@ export const useInternalUsers = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      toast.success("Utilisateur supprimé avec succès");
-      refetch();
+
+      toast({
+        title: "Utilisateur supprimé",
+        description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
+      });
+
+      fetchUsers();
     } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("Une erreur est survenue lors de la suppression");
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'utilisateur",
+        variant: "destructive",
+      });
     }
   };
 
   const toggleUserStatus = async (user: InternalUser) => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        toast.error("Vous devez être connecté pour effectuer cette action");
-        navigate("/auth");
-        return;
-      }
-
+      const newStatus = !user.is_active;
       const { error } = await supabase
         .from("internal_users")
-        .update({ is_active: !user.is_active })
+        .update({ is_active: newStatus })
         .eq("id", user.id);
 
       if (error) throw error;
-      toast.success(`Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`);
-      refetch();
+
+      toast({
+        title: "Statut mis à jour",
+        description: `L'utilisateur est maintenant ${newStatus ? "actif" : "inactif"}`,
+      });
+
+      fetchUsers();
     } catch (error) {
-      console.error("Status toggle error:", error);
-      toast.error("Une erreur est survenue lors de la modification du statut");
+      console.error("Error toggling user status:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le statut de l'utilisateur",
+        variant: "destructive",
+      });
     }
   };
 

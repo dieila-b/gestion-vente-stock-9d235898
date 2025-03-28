@@ -1,7 +1,27 @@
 
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { InternalUser } from "@/types/internal-user";
+import { userFormSchema, UserFormValues } from "./validation/user-form-schema";
+import { toast } from "@/hooks/use-toast";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
 import {
   Select,
   SelectContent,
@@ -9,19 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { InternalUser } from "@/types/internal-user";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface InternalUserFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  onSubmit: (user: UserFormValues) => Promise<void>;
   selectedUser: InternalUser | null;
 }
 
@@ -31,6 +46,43 @@ export const InternalUserForm = ({
   onSubmit,
   selectedUser,
 }: InternalUserFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      first_name: selectedUser?.first_name || "",
+      last_name: selectedUser?.last_name || "",
+      email: selectedUser?.email || "",
+      phone: selectedUser?.phone || "",
+      address: selectedUser?.address || "",
+      role: selectedUser?.role || "employee",
+      is_active: selectedUser?.is_active ?? true,
+    },
+  });
+
+  const handleSubmit = async (values: UserFormValues) => {
+    try {
+      setIsSubmitting(true);
+      await onSubmit(values);
+      form.reset();
+      onOpenChange(false);
+      toast({
+        title: selectedUser ? "Utilisateur mis à jour" : "Utilisateur créé",
+        description: "L'opération a été effectuée avec succès",
+      });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'opération",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -39,85 +91,140 @@ export const InternalUserForm = ({
             {selectedUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="first_name" className="text-sm font-medium">Prénom</label>
-              <Input
-                id="first_name"
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="first_name"
-                required
-                defaultValue={selectedUser?.first_name || ""}
-                placeholder="Jean"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prénom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jean" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="last_name" className="text-sm font-medium">Nom</label>
-              <Input
-                id="last_name"
+              
+              <FormField
+                control={form.control}
                 name="last_name"
-                required
-                defaultValue={selectedUser?.last_name || ""}
-                placeholder="Dupont"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Dupont" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
-            <Input
-              id="email"
+            
+            <FormField
+              control={form.control}
               name="email"
-              type="email"
-              required
-              defaultValue={selectedUser?.email || ""}
-              placeholder="jean.dupont@example.com"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="email" 
+                      placeholder="jean.dupont@example.com" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium">Téléphone</label>
-            <Input
-              id="phone"
+            
+            <FormField
+              control={form.control}
               name="phone"
-              type="tel"
-              defaultValue={selectedUser?.phone || ""}
-              placeholder="+33 6 12 34 56 78"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Téléphone</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="tel" 
+                      placeholder="+33 6 12 34 56 78"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="address" className="text-sm font-medium">Adresse</label>
-            <Input
-              id="address"
+            
+            <FormField
+              control={form.control}
               name="address"
-              defaultValue={selectedUser?.address || ""}
-              placeholder="123 Rue de Paris, 75000 Paris"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adresse</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="123 Rue de Paris, 75000 Paris"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="role" className="text-sm font-medium">Rôle</label>
-            <Select name="role" defaultValue={selectedUser?.role || "employee"}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un rôle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Administrateur</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="employee">Employé</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end gap-4 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Annuler
-            </Button>
-            <Button type="submit">
-              {selectedUser ? "Mettre à jour" : "Ajouter"}
-            </Button>
-          </div>
-        </form>
+            
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rôle</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un rôle" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">Administrateur</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="employee">Employé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end gap-4 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting 
+                  ? "Traitement en cours..." 
+                  : selectedUser 
+                    ? "Mettre à jour" 
+                    : "Ajouter"
+                }
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
