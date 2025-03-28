@@ -21,6 +21,10 @@ import Warehouses from "@/pages/Warehouses";
 import Transfers from "@/pages/Transfers";
 import PreorderInvoices from "@/pages/PreorderInvoices";
 import NewPurchaseOrder from "@/pages/NewPurchaseOrder";
+import InternalUsers from "@/pages/InternalUsers"; 
+import StockLocation from "@/pages/StockLocation"; 
+import POSLocations from "@/pages/POSLocations"; 
+import Index from "@/pages/Index";
 
 // Reports imports
 import DailyReport from "@/pages/reports/DailyReport";
@@ -57,11 +61,12 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Index />} />
         <Route path="/*" element={
           <RequireAuth>
             <DashboardLayout>
               <Routes>
-                <Route index element={<Dashboard />} />
+                <Route path="dashboard" element={<Dashboard />} />
                 <Route path="catalog" element={<Catalog />} />
                 <Route path="pos" element={<POS />} />
                 <Route path="sales" element={<Sales />} />
@@ -108,6 +113,11 @@ function App() {
                 <Route path="cash-registers" element={<CashRegisters />} />
                 <Route path="bank-accounts" element={<BankAccounts />} />
                 <Route path="expenses" element={<Expenses />} />
+                
+                {/* Settings Routes */}
+                <Route path="stock-location" element={<StockLocation />} />
+                <Route path="pos-locations" element={<POSLocations />} />
+                <Route path="internal-users" element={<InternalUsers />} />
               </Routes>
             </DashboardLayout>
           </RequireAuth>
