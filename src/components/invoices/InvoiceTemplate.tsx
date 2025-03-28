@@ -63,6 +63,7 @@ export function InvoiceTemplate({
 
   return (
     <div className="w-full max-w-3xl mx-auto">
+      {/* The InvoiceShareActions component still exists but will return null */}
       {onShare && (
         <div className="mb-4">
           <InvoiceShareActions
