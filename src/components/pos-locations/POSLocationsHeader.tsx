@@ -1,38 +1,24 @@
 
-import { Store, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { PlusCircle } from "lucide-react";
 
 interface POSLocationsHeaderProps {
-  onAddClick: () => void;
+  onAddNew: () => void;
 }
 
-export function POSLocationsHeader({ onAddClick }: POSLocationsHeaderProps) {
+export function POSLocationsHeader({ onAddNew }: POSLocationsHeaderProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="flex items-center justify-between"
-    >
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-primary/10">
-          <Store className="h-8 w-8 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gradient bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 to-amber-500">
-            Dépôts PDV
-          </h1>
-          <p className="text-muted-foreground">
-            Gestion des points de vente
-          </p>
-        </div>
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-2xl font-bold">Points de Vente</h1>
+        <p className="text-muted-foreground">
+          Gérez les emplacements de vos points de vente
+        </p>
       </div>
-
-      <Button onClick={onAddClick}>
-        <Plus className="mr-2 h-4 w-4" />
-        Ajouter un PDV
+      <Button onClick={onAddNew} className="glass-effect">
+        <PlusCircle className="h-4 w-4 mr-2" />
+        Nouveau Point de Vente
       </Button>
-    </motion.div>
+    </div>
   );
 }

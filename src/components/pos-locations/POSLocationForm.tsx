@@ -1,71 +1,83 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { POSLocation } from "@/types/pos-locations";
+import { Switch } from "@/components/ui/switch";
 
 interface POSLocationFormProps {
-  selectedLocation: POSLocation | null;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  location: POSLocation | null;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
 
-export function POSLocationForm({ selectedLocation, onSubmit, onCancel }: POSLocationFormProps) {
+export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="name">Nom</label>
+        <Label htmlFor="name">Nom</Label>
         <Input
           id="name"
           name="name"
+          defaultValue={location?.name || ""}
           required
-          defaultValue={selectedLocation?.name}
         />
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="address">Adresse</label>
+        <Label htmlFor="address">Adresse</Label>
         <Input
           id="address"
           name="address"
+          defaultValue={location?.address || ""}
           required
-          defaultValue={selectedLocation?.address}
         />
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="phone">Téléphone</label>
+        <Label htmlFor="phone">Téléphone</Label>
         <Input
           id="phone"
           name="phone"
-          type="tel"
-          defaultValue={selectedLocation?.phone || ""}
+          defaultValue={location?.phone || ""}
         />
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="email">Email</label>
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           name="email"
           type="email"
-          defaultValue={selectedLocation?.email || ""}
+          defaultValue={location?.email || ""}
         />
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="manager">Responsable</label>
+        <Label htmlFor="manager">Responsable</Label>
         <Input
           id="manager"
           name="manager"
-          defaultValue={selectedLocation?.manager || ""}
+          defaultValue={location?.manager || ""}
+          required
         />
       </div>
-      <div className="flex justify-end gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
+      
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="status"
+          name="status"
+          defaultChecked={location?.is_active !== false}
+        />
+        <Label htmlFor="status">Actif</Label>
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Annuler
         </Button>
         <Button type="submit">
-          {selectedLocation ? "Mettre à jour" : "Ajouter"}
+          {location ? "Mettre à jour" : "Ajouter"}
         </Button>
       </div>
     </form>
