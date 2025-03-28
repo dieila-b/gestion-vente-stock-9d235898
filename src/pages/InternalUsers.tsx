@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -38,6 +37,25 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
+// Define the shape of the data as it comes from Supabase
+interface SupabaseInternalUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  role: "admin" | "manager" | "employee";
+  address: string | null;
+  is_active: boolean;
+  require_password_change?: boolean;
+  two_factor_enabled?: boolean;
+  last_login?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+}
+
+// Define our application's internal user type
 type InternalUser = {
   id: string;
   first_name: string;
@@ -100,18 +118,18 @@ const InternalUsers = () => {
       }
 
       // Transform the data to ensure it matches InternalUser type
-      const transformedData = data.map(user => ({
+      const transformedData = (data as SupabaseInternalUser[]).map(user => ({
         id: user.id,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
         phone: user.phone,
-        role: user.role as "admin" | "manager" | "employee",
+        role: user.role,
         address: user.address,
         is_active: user.is_active,
         // Set default values for potentially missing properties
-        require_password_change: user.require_password_change !== undefined ? user.require_password_change : false,
-        two_factor_enabled: user.two_factor_enabled !== undefined ? user.two_factor_enabled : false,
+        require_password_change: user.require_password_change === true,
+        two_factor_enabled: user.two_factor_enabled === true,
         last_login: user.last_login || null,
         created_at: user.created_at,
         updated_at: user.updated_at,
