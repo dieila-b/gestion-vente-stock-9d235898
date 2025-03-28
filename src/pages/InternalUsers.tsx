@@ -15,21 +15,12 @@ const InternalUsers = () => {
     isAddDialogOpen,
     selectedUser,
     setIsAddDialogOpen,
-    setSelectedUser,
     handleSubmit,
     handleDelete,
     toggleUserStatus,
+    handleAddClick,
+    handleEditClick
   } = useInternalUsers();
-
-  const handleAddClick = () => {
-    setSelectedUser(null);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleEditClick = (user: any) => {
-    setSelectedUser(user);
-    setIsAddDialogOpen(true);
-  };
 
   return (
     <DashboardLayout>
