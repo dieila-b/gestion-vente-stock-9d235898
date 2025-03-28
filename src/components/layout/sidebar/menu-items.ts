@@ -23,7 +23,7 @@ export const menuItems = [
         path: "/stock-status"
       },
       {
-        label: "Stocks",
+        label: "Stocks par Emplacement",
         icon: Box,
         submenu: [
           {
@@ -35,7 +35,13 @@ export const menuItems = [
             label: "Stock PDV",
             icon: Store,
             path: "/stocks/pos"
-          },
+          }
+        ]
+      },
+      {
+        label: "Mouvements de Stock",
+        icon: ArrowRightLeft,
+        submenu: [
           {
             label: "Entrées",
             icon: ArrowUpCircle,
@@ -49,9 +55,20 @@ export const menuItems = [
         ]
       },
       {
-        label: "Entrepôts&PDV",
+        label: "Emplacements",
         icon: Warehouse,
-        path: "/warehouses"
+        submenu: [
+          {
+            label: "Entrepôts",
+            icon: Warehouse,
+            path: "/warehouses"
+          },
+          {
+            label: "Points de Vente",
+            icon: Store,
+            path: "/pos-locations"
+          }
+        ]
       },
       {
         label: "Transferts",
