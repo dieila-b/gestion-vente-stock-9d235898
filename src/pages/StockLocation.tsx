@@ -38,10 +38,7 @@ const StockLocation = () => {
         <GeographicZonesHeader onAddClick={handleAddClick} />
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <span className="hidden" />
-          </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {selectedZone ? "Modifier la zone" : "Nouvelle zone géographique"}
