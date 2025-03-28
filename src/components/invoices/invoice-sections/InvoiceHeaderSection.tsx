@@ -25,14 +25,14 @@ export function InvoiceHeaderSection({
   return (
     <div className="space-y-0 text-black">
       <div className="flex border-b border-black">
-        <div className="w-1/4 p-3 border-r border-black">
+        <div className="w-1/3 p-4 border-r border-black">
           <img 
             src="/lovable-uploads/959478b8-493c-44d8-ae11-c874557f5d54.png" 
             alt="Logo" 
-            className="w-16 h-16 object-contain"
+            className="w-20 h-20 object-contain"
           />
         </div>
-        <div className="w-3/4 p-3">
+        <div className="w-2/3 p-4">
           <h2 className="font-bold mb-1">Information de la société</h2>
           <p><strong>Nom:</strong> Ets Aicha Business Alphaya</p>
           <p><strong>Adresse:</strong> Madina-Gare routière Kankan C/Matam</p>
@@ -41,17 +41,17 @@ export function InvoiceHeaderSection({
         </div>
       </div>
       
-      <div className="bg-white p-2 border-b border-black font-bold text-xl">
+      <div className="bg-white p-4 border-b border-black font-bold text-xl">
         FACTURE
       </div>
       
       <div className="flex border-b border-black">
-        <div className="w-1/2 p-3 border-r border-black">
+        <div className="w-1/2 p-4 border-r border-black">
           <p><strong>DATE:</strong> {date}</p>
           <p><strong>FACTURE N°:</strong> {invoiceNumber}</p>
           {supplierNumber && <p><strong>FOURNISSEUR N°:</strong> {supplierNumber}</p>}
         </div>
-        <div className="w-1/2 p-3">
+        <div className="w-1/2 p-4">
           <p><strong>CLIENT:</strong></p>
           <p><strong>Nom:</strong> {clientName}</p>
           {clientPhone && <p><strong>Téléphone:</strong> {clientPhone}</p>}
