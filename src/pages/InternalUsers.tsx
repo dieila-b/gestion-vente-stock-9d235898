@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useInternalUsers } from "@/hooks/use-internal-users";
+import { useInternalUsers } from "@/hooks/internal-users/use-internal-users";
 import { InternalUsersHeader } from "@/components/internal-users/InternalUsersHeader";
 import { InternalUserForm } from "@/components/internal-users/InternalUserForm";
 import { InternalUsersTable } from "@/components/internal-users/InternalUsersTable";

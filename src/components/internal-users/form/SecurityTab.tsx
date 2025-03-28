@@ -1,9 +1,7 @@
 
 import React from "react";
-import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { KeyRound } from "lucide-react";
 import { InternalUser } from "@/types/internal-user";
 
 interface SecurityTabProps {
@@ -26,48 +24,67 @@ export const SecurityTab = ({
   onResetPassword,
 }: SecurityTabProps) => {
   return (
-    <Card className="p-4">
+    <div className="space-y-6">
       <div className="space-y-4">
+        <h3 className="text-lg font-medium">Paramètres de sécurité</h3>
+        
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <div className="font-medium">Modifier le mot de passe à la première connexion</div>
-            <div className="text-sm text-muted-foreground">
-              L'utilisateur devra changer son mot de passe lors de sa première connexion
-            </div>
+          <div>
+            <label htmlFor="requirePasswordChange" className="text-sm font-medium">
+              Exiger le changement de mot de passe à la prochaine connexion
+            </label>
+            <p className="text-xs text-muted-foreground">
+              L'utilisateur sera obligé de changer son mot de passe lors de sa prochaine connexion
+            </p>
           </div>
-          <Switch
+          <Switch 
+            id="requirePasswordChange"
+            name="requirePasswordChange"
             checked={securitySettings.requirePasswordChange}
             onCheckedChange={(checked) => 
-              setSecuritySettings({...securitySettings, requirePasswordChange: checked})}
+              setSecuritySettings({
+                ...securitySettings,
+                requirePasswordChange: checked,
+              })
+            }
           />
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <div className="font-medium">Authentification à deux facteurs</div>
-            <div className="text-sm text-muted-foreground">
-              Activer l'authentification à deux facteurs pour cet utilisateur
-            </div>
+          <div>
+            <label htmlFor="twoFactorEnabled" className="text-sm font-medium">
+              Authentification à deux facteurs
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Activer l'authentification à deux facteurs pour une sécurité renforcée
+            </p>
           </div>
           <Switch 
+            id="twoFactorEnabled"
+            name="twoFactorEnabled"
             checked={securitySettings.twoFactorEnabled}
             onCheckedChange={(checked) => 
-              setSecuritySettings({...securitySettings, twoFactorEnabled: checked})}
+              setSecuritySettings({
+                ...securitySettings,
+                twoFactorEnabled: checked,
+              })
+            }
           />
         </div>
-
-        {selectedUser && (
-          <Button 
+      </div>
+      
+      {selectedUser && (
+        <div className="pt-4 border-t">
+          <h3 className="text-lg font-medium mb-4">Actions</h3>
+          <Button
             type="button"
             variant="outline"
-            className="w-full mt-4"
             onClick={() => onResetPassword(selectedUser)}
           >
-            <KeyRound className="mr-2 h-4 w-4" />
-            Réinitialiser le mot de passe
+            Envoyer un email de réinitialisation de mot de passe
           </Button>
-        )}
-      </div>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 };
