@@ -16,47 +16,57 @@ export const useInternalUsers = () => {
   });
   const navigate = useNavigate();
 
-  const { data: users, refetch } = useQuery({
+  const { data: users, refetch, isLoading, error } = useQuery({
     queryKey: ["internal-users"],
     queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        toast.error("Vous devez être connecté pour accéder à cette page");
-        navigate("/auth");
-        throw new Error("Non authentifié");
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session.session) {
+          toast.error("Vous devez être connecté pour accéder à cette page");
+          navigate("/auth");
+          throw new Error("Non authentifié");
+        }
+        
+        console.log("Fetching internal users...");
+        const { data, error } = await supabase
+          .from("internal_users")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching internal users:", error);
+          toast.error("Erreur lors du chargement des utilisateurs");
+          throw error;
+        }
+
+        console.log("Internal users data:", data);
+
+        // Transform the data to ensure it matches InternalUser type
+        const transformedData = (data as SupabaseInternalUser[]).map(user => ({
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          address: user.address,
+          is_active: user.is_active,
+          // Set default values for potentially missing properties
+          require_password_change: user.require_password_change === true,
+          two_factor_enabled: user.two_factor_enabled === true,
+          last_login: user.last_login || null,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          user_id: user.user_id,
+          auth_id: user.auth_id
+        }));
+
+        return transformedData as InternalUser[];
+      } catch (err) {
+        console.error("Error in queryFn:", err);
+        throw err;
       }
-
-      const { data, error } = await supabase
-        .from("internal_users")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        toast.error("Erreur lors du chargement des utilisateurs");
-        throw error;
-      }
-
-      // Transform the data to ensure it matches InternalUser type
-      const transformedData = (data as SupabaseInternalUser[]).map(user => ({
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        address: user.address,
-        is_active: user.is_active,
-        // Set default values for potentially missing properties
-        require_password_change: user.require_password_change === true,
-        two_factor_enabled: user.two_factor_enabled === true,
-        last_login: user.last_login || null,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        user_id: user.user_id
-      }));
-
-      return transformedData as InternalUser[];
     },
   });
 
@@ -92,6 +102,8 @@ export const useInternalUsers = () => {
       });
 
       if (authError) {
+        console.error("Auth error:", authError);
+        toast.error(`Erreur d'authentification: ${authError.message}`);
         throw authError;
       }
 
@@ -99,9 +111,18 @@ export const useInternalUsers = () => {
       if (authData.user) {
         const { error } = await supabase
           .from("internal_users")
-          .insert([{ ...userData, auth_id: authData.user.id }]);
+          .insert([{ 
+            ...userData, 
+            auth_id: authData.user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Database error:", error);
+          toast.error(`Erreur de base de données: ${error.message}`);
+          throw error;
+        }
 
         // Send welcome email with instructions for first login
         if (securitySettings.requirePasswordChange) {
@@ -135,6 +156,7 @@ export const useInternalUsers = () => {
       address: formData.get("address") as string,
       require_password_change: securitySettings.requirePasswordChange,
       two_factor_enabled: securitySettings.twoFactorEnabled,
+      updated_at: new Date().toISOString()
     };
 
     try {
@@ -151,12 +173,23 @@ export const useInternalUsers = () => {
         .update(userData)
         .eq("id", selectedUser.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update error:", error);
+        toast.error(`Erreur de mise à jour: ${error.message}`);
+        throw error;
+      }
 
       // If email was changed, update in Auth
-      if (userData.email !== selectedUser.email) {
-        // This would require additional setup with Auth admin APIs
-        console.log("Email change requires Auth admin API update");
+      if (userData.email !== selectedUser.email && selectedUser.auth_id) {
+        const { error: authError } = await supabase.auth.admin.updateUserById(
+          selectedUser.auth_id,
+          { email: userData.email }
+        );
+        
+        if (authError) {
+          console.error("Auth update error:", authError);
+          toast.warning(`L'email a été mis à jour dans la base de données, mais pas dans l'authentification: ${authError.message}`);
+        }
       }
 
       toast.success("Utilisateur mis à jour avec succès");
@@ -185,7 +218,24 @@ export const useInternalUsers = () => {
         .delete()
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Delete error:", error);
+        toast.error(`Erreur de suppression: ${error.message}`);
+        throw error;
+      }
+      
+      // If user has an auth_id, delete from Auth as well
+      if (user.auth_id) {
+        const { error: authError } = await supabase.auth.admin.deleteUser(
+          user.auth_id
+        );
+        
+        if (authError) {
+          console.error("Auth delete error:", authError);
+          toast.warning(`L'utilisateur a été supprimé de la base de données, mais pas de l'authentification: ${authError.message}`);
+        }
+      }
+
       toast.success("Utilisateur supprimé avec succès");
       refetch();
     } catch (error) {
@@ -200,7 +250,12 @@ export const useInternalUsers = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Reset password error:", error);
+        toast.error(`Erreur de réinitialisation: ${error.message}`);
+        throw error;
+      }
+      
       toast.success(`Email de réinitialisation envoyé à ${user.email}`);
     } catch (error) {
       toast.error("Échec de l'envoi de l'email de réinitialisation");
@@ -237,8 +292,8 @@ export const useInternalUsers = () => {
 
   const sendWelcomeEmail = async (email: string) => {
     try {
-      // For demonstration purposes, this would actually be handled by a Supabase Edge Function
-      // or your backend to send a welcome email with password reset instructions
+      // Pour démonstration, ce serait en réalité géré par une fonction Edge de Supabase
+      // ou votre backend pour envoyer un email de bienvenue avec instructions de réinitialisation de mot de passe
       console.log(`Welcome email with password reset instructions would be sent to ${email}`);
       return true;
     } catch (error) {
@@ -262,6 +317,8 @@ export const useInternalUsers = () => {
 
   return {
     users,
+    isLoading,
+    error,
     isAddDialogOpen,
     setIsAddDialogOpen,
     selectedUser,

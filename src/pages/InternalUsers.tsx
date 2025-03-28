@@ -15,6 +15,8 @@ const InternalUsers = () => {
   const navigate = useNavigate();
   const {
     users,
+    isLoading,
+    error,
     isAddDialogOpen,
     setIsAddDialogOpen,
     selectedUser,
@@ -43,6 +45,14 @@ const InternalUsers = () => {
     
     checkAuth();
   }, [navigate]);
+
+  // Log error if any
+  useEffect(() => {
+    if (error) {
+      console.error("Error in internal users page:", error);
+      toast.error("Une erreur est survenue lors du chargement des utilisateurs");
+    }
+  }, [error]);
 
   return (
     <DashboardLayout>
@@ -74,12 +84,16 @@ const InternalUsers = () => {
         </Dialog>
 
         <Card className="p-6">
-          <InternalUsersTable
-            users={users}
-            getRoleBadgeColor={getRoleBadgeColor}
-            onEdit={handleDialogOpen}
-            onDelete={handleDelete}
-          />
+          {isLoading ? (
+            <div className="text-center py-6">Chargement des utilisateurs...</div>
+          ) : (
+            <InternalUsersTable
+              users={users}
+              getRoleBadgeColor={getRoleBadgeColor}
+              onEdit={handleDialogOpen}
+              onDelete={handleDelete}
+            />
+          )}
         </Card>
       </div>
     </DashboardLayout>

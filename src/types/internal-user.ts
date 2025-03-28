@@ -14,6 +14,7 @@ export interface SupabaseInternalUser {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  auth_id?: string;
 }
 
 export type InternalUser = {
@@ -31,4 +32,5 @@ export type InternalUser = {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  auth_id?: string;
 };

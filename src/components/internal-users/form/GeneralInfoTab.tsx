@@ -3,22 +3,16 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail } from "lucide-react";
+import { InternalUser } from "@/types/internal-user";
 
 interface GeneralInfoTabProps {
-  selectedUser: {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    phone?: string | null;
-    address?: string | null;
-    role?: "admin" | "manager" | "employee";
-  } | null;
+  selectedUser: InternalUser | null;
 }
 
 export const GeneralInfoTab = ({ selectedUser }: GeneralInfoTabProps) => {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label htmlFor="first_name">Prénom</label>
           <Input
