@@ -57,9 +57,8 @@ export function useCreatePurchaseOrder() {
       supplier_id: data.supplier_id,
       created_at: data.created_at,
       status: isValidOrderStatus(data.status) ? data.status : 'draft',
-      // Use a default value 'pending' when accessing potentially undefined properties
-      payment_status: isValidPaymentStatus(data.payment_status || 'pending') ? (data.payment_status || 'pending') : 'pending',
-      paid_amount: typeof data.paid_amount === 'number' ? data.paid_amount : 0,
+      payment_status: isValidPaymentStatus(data.payment_status) ? data.payment_status : 'pending',
+      paid_amount: data.paid_amount || 0,
       total_amount: data.total_amount || 0,
       items: [], // Initialize with empty array
       logistics_cost: data.logistics_cost || 0,
