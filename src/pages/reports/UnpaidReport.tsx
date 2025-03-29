@@ -40,9 +40,9 @@ export default function UnpaidReport() {
       case 'created_at':
         return direction * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       case 'client':
-        // Updated to handle possibly undefined client name
-        const aName = a.client?.company_name || a.client?.contact_name || '';
-        const bName = b.client?.company_name || b.client?.contact_name || '';
+        // Updated to prioritize contact_name
+        const aName = a.client?.contact_name || a.client?.company_name || '';
+        const bName = b.client?.contact_name || b.client?.company_name || '';
         return direction * (aName.localeCompare(bName));
       case 'amount':
         return direction * (a.amount - b.amount);

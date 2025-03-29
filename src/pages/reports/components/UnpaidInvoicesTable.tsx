@@ -1,3 +1,4 @@
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowUpDown } from "lucide-react";
 import { formatGNF } from "@/lib/currency";
@@ -8,6 +9,7 @@ interface UnpaidInvoice {
   client?: { 
     id?: string;
     company_name?: string;
+    contact_name?: string;
   };
   client_id: string;
   invoice_number: string;
@@ -30,8 +32,8 @@ interface UnpaidInvoicesTableProps {
 
 export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvoicesTableProps) {
   const getClientDisplayName = (invoice: UnpaidInvoice) => {
-    if (invoice.client?.company_name) {
-      return invoice.client.company_name;
+    if (invoice.client?.contact_name) {
+      return invoice.client.contact_name;
     }
     return "Client particulier";
   };
