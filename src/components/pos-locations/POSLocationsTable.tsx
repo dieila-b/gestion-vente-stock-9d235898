@@ -69,7 +69,8 @@ export function POSLocationsTable({
               </TableRow>
             ) : (
               posLocations.map((location) => {
-                const occupancyRate = (location.occupied / location.capacity) * 100;
+                // Calculate actual occupation rate based on current data
+                const occupancyRate = location.capacity ? (location.occupied / location.capacity) * 100 : 0;
                 let occupancyClass = "text-green-400";
                 
                 if (occupancyRate >= 90) {
@@ -91,7 +92,7 @@ export function POSLocationsTable({
                     <TableCell className="text-gray-300">{location.capacity} unités</TableCell>
                     <TableCell>
                       <div className={occupancyClass}>
-                        {occupancyRate.toFixed(0)}% ({location.occupied}/{location.capacity})
+                        {occupancyRate.toFixed(0)}% ({location.occupied || 0}/{location.capacity})
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-300">{location.manager}</TableCell>
