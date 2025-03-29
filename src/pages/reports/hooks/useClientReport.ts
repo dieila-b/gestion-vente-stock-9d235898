@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { DateRange } from "react-day-picker";
 import { useToast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { Client } from "@/types/client";
 
 type SortField = 'date' | 'order_id' | 'total' | 'paid' | 'remaining' | null;
 type SortDirection = 'asc' | 'desc';
@@ -29,11 +29,11 @@ export function useClientReport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, company_name, contact_name')
+        .select('id, company_name, contact_name, status')
         .order('company_name');
 
       if (error) throw error;
-      return data;
+      return data as Client[];
     }
   });
 
