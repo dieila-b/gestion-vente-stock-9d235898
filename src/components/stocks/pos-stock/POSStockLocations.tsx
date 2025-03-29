@@ -33,22 +33,26 @@ export function POSStockLocations({
   // Reference to the table component
   const tableRef = useRef<HTMLDivElement>(null);
 
-  // Add click event handlers to the table rows after component mounts
+  // Add click event handlers to table rows
   useEffect(() => {
     if (tableRef.current && onSelectLocation) {
-      const rows = tableRef.current.querySelectorAll('.border-b.border-[#333]');
+      // Use a more reliable selector - get all table rows
+      const tableElement = tableRef.current.querySelector('table');
+      if (!tableElement) return;
+      
+      const rows = tableElement.querySelectorAll('tbody tr');
       
       rows.forEach((row, index) => {
-        if (index > 0 && index <= filteredPOSLocations.length) {
+        if (index < filteredPOSLocations.length) {
           // Add cursor pointer style
           row.classList.add('cursor-pointer');
           
           // Add hover style
-          row.classList.add('hover:bg-[rgba(138,133,255,0.1)]');
+          row.classList.add('hover:bg-opacity-10', 'hover:bg-purple-500');
           
           // Add click event
           row.addEventListener('click', () => {
-            handleRowClick(filteredPOSLocations[index - 1]);
+            handleRowClick(filteredPOSLocations[index]);
           });
         }
       });
@@ -57,7 +61,10 @@ export function POSStockLocations({
     // Cleanup event listeners on unmount
     return () => {
       if (tableRef.current) {
-        const rows = tableRef.current.querySelectorAll('.border-b.border-[#333]');
+        const tableElement = tableRef.current.querySelector('table');
+        if (!tableElement) return;
+        
+        const rows = tableElement.querySelectorAll('tbody tr');
         rows.forEach(row => {
           row.removeEventListener('click', () => {});
         });
