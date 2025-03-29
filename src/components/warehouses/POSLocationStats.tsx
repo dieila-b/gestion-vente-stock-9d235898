@@ -16,6 +16,14 @@ export function POSLocationStats({
   // Ensure we have a valid number for the average rate
   const displayRate = isNaN(averagePOSOccupancyRate) ? 0 : Math.round(averagePOSOccupancyRate);
   
+  // Log the stats for debugging
+  console.log("POSLocationStats values:", {
+    totalPOSLocations,
+    totalPOSSurface,
+    averagePOSOccupancyRate,
+    displayRate
+  });
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="p-6 enhanced-glass">

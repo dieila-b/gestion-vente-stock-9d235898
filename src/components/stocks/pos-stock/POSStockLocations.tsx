@@ -18,7 +18,7 @@ export function POSStockLocations({
   onSelectLocation
 }: POSStockLocationsProps) {
   // Get latest occupation data for each location
-  const { data: updatedLocations } = useQuery({
+  const { data: updatedLocations, refetch } = useQuery({
     queryKey: ['pos-locations-with-occupation'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,8 +31,20 @@ export function POSStockLocations({
       return data as POSLocation[];
     },
     // Refresh more frequently to keep occupation data current
-    refetchInterval: 15000 // refresh every 15 seconds
+    refetchInterval: 5000, // refresh every 5 seconds
+    staleTime: 2000 // consider data stale after 2 seconds
   });
+
+  // Automatically refetch on mount and when visible
+  useEffect(() => {
+    refetch();
+    // Set up interval to refetch periodically
+    const intervalId = setInterval(() => {
+      refetch();
+    }, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [refetch]);
 
   // Merge updated occupation data with locations to ensure we have the latest data
   const locationsWithUpdatedOccupation = posLocations.map(location => {

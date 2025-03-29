@@ -6,7 +6,7 @@ export function usePOSLocations() {
   const [selectedPDV, setSelectedPDV] = useState<string>("_all");
 
   // Get POS locations with real-time occupation data
-  const { data: posLocations = [] } = useQuery({
+  const { data: posLocations = [], refetch: refetchPOSLocations } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -20,7 +20,8 @@ export function usePOSLocations() {
       return data;
     },
     // Refresh frequently to keep occupation rates current
-    refetchInterval: 15000 // refresh every 15 seconds
+    refetchInterval: 5000, // refresh every 5 seconds
+    staleTime: 2000 // consider data stale after 2 seconds
   });
 
   // Get active cash register
@@ -43,6 +44,7 @@ export function usePOSLocations() {
     posLocations,
     selectedPDV,
     setSelectedPDV,
-    activeRegister
+    activeRegister,
+    refetchPOSLocations
   };
 }

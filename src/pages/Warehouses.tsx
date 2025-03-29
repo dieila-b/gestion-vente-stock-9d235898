@@ -55,7 +55,8 @@ export default function Warehouses() {
       return data as POSLocation[];
     },
     // Force frequent refreshes to keep occupation rates up to date
-    refetchInterval: 15000 // refresh every 15 seconds
+    refetchInterval: 5000, // refresh every 5 seconds
+    staleTime: 2000 // consider data stale after 2 seconds
   });
 
   // Force a refetch when tab changes to POS

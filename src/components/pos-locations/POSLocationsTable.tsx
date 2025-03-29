@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 interface POSLocationsTableProps {
   posLocations: POSLocation[];
@@ -30,6 +31,15 @@ export function POSLocationsTable({
   onEdit,
   onDelete
 }: POSLocationsTableProps) {
+  // Log all locations including their occupancy data
+  console.log("POSLocationsTable received locations:", posLocations.map(loc => ({
+    id: loc.id,
+    name: loc.name,
+    occupied: loc.occupied,
+    capacity: loc.capacity,
+    occupancyRate: loc.capacity > 0 ? Math.round((loc.occupied / loc.capacity) * 100) : 0
+  })));
+
   return (
     <div className="space-y-6">
       {setSearchQuery && (
@@ -69,8 +79,12 @@ export function POSLocationsTable({
               </TableRow>
             ) : (
               posLocations.map((location) => {
+                // Ensure occupied and capacity are treated as numbers
+                const occupied = typeof location.occupied === 'number' ? location.occupied : 0;
+                const capacity = typeof location.capacity === 'number' ? location.capacity : 0;
+                
                 // Calculate actual occupation rate based on current data
-                const occupancyRate = location.capacity > 0 ? Math.round((location.occupied / location.capacity) * 100) : 0;
+                const occupancyRate = capacity > 0 ? Math.round((occupied / capacity) * 100) : 0;
                 
                 // Set color based on occupancy rate
                 let occupancyClass = "text-green-400";
@@ -79,6 +93,9 @@ export function POSLocationsTable({
                 } else if (occupancyRate >= 70) {
                   occupancyClass = "text-yellow-400";
                 }
+
+                // Log each location's occupation calculation
+                console.log(`Location ${location.name}: occupied=${occupied}, capacity=${capacity}, rate=${occupancyRate}%`);
 
                 return (
                   <TableRow key={location.id} className="border-b border-[#333]">
@@ -90,10 +107,10 @@ export function POSLocationsTable({
                     </TableCell>
                     <TableCell className="text-gray-300">{location.address}</TableCell>
                     <TableCell className="text-gray-300">{location.surface} m²</TableCell>
-                    <TableCell className="text-gray-300">{location.capacity} unités</TableCell>
+                    <TableCell className="text-gray-300">{capacity} unités</TableCell>
                     <TableCell>
                       <div className={occupancyClass}>
-                        {occupancyRate}% ({location.occupied || 0}/{location.capacity})
+                        {occupancyRate}% ({occupied}/{capacity})
                       </div>
                       <div className="w-full bg-gray-700/30 rounded-full h-2 mt-1">
                         <div 
