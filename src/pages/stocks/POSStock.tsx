@@ -19,11 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatGNF } from "@/lib/currency";
 import { cn } from "@/lib/utils";
+import { StockItemsListTable } from "@/components/stocks/StockItemsListTable";
+import { Store } from "lucide-react";
 
 export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [warehouseSearchQuery, setWarehouseSearchQuery] = useState("");
+  const [posSearchQuery, setPosSearchQuery] = useState("");
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
 
   // Récupérer la liste des points de vente
@@ -63,10 +65,11 @@ export default function POSStock() {
     }
   });
 
-  // Filtrer les entrepôts en fonction de la recherche
-  const filteredWarehouses = warehouses.filter(warehouse =>
-    warehouse.name.toLowerCase().includes(warehouseSearchQuery.toLowerCase()) ||
-    warehouse.location.toLowerCase().includes(warehouseSearchQuery.toLowerCase())
+  // Filtrer les PDV en fonction de la recherche
+  const filteredPOSLocations = posLocations.filter(location =>
+    location.name.toLowerCase().includes(posSearchQuery.toLowerCase()) ||
+    location.address.toLowerCase().includes(posSearchQuery.toLowerCase()) ||
+    (location.manager && location.manager.toLowerCase().includes(posSearchQuery.toLowerCase()))
   );
 
   return (
@@ -74,7 +77,7 @@ export default function POSStock() {
       <div className="p-4 md:p-6 lg:p-8 space-y-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gradient-to-r from-blue-500 to-purple-600">Stock PDV</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Stock PDV</h1>
             <p className="text-muted-foreground mt-2">
               Gestion du stock point de vente
             </p>
@@ -95,8 +98,8 @@ export default function POSStock() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input 
                     placeholder="Rechercher..." 
-                    value={warehouseSearchQuery}
-                    onChange={(e) => setWarehouseSearchQuery(e.target.value)}
+                    value={posSearchQuery}
+                    onChange={(e) => setPosSearchQuery(e.target.value)}
                     className="pl-10 glass-effect"
                   />
                 </div>
@@ -121,34 +124,34 @@ export default function POSStock() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredWarehouses.length === 0 ? (
+                  {filteredPOSLocations.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-10">
                         Aucun PDV trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredWarehouses.map((warehouse) => {
-                      const occupancyRate = (warehouse.occupied / warehouse.capacity) * 100;
+                    filteredPOSLocations.map((location) => {
+                      const occupancyRate = (location.occupied / location.capacity) * 100;
                       const isNearCapacity = occupancyRate >= 90;
                       const isOverCapacity = occupancyRate > 100;
 
                       return (
-                        <TableRow key={warehouse.id}>
+                        <TableRow key={location.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
-                              <span className="inline-block">🏢</span>
-                              {warehouse.name}
+                              <Store className="h-4 w-4" />
+                              {location.name}
                             </div>
                           </TableCell>
-                          <TableCell>{warehouse.location}</TableCell>
-                          <TableCell>{warehouse.surface} m²</TableCell>
-                          <TableCell>{warehouse.capacity} unités</TableCell>
+                          <TableCell>{location.address}</TableCell>
+                          <TableCell>{location.surface} m²</TableCell>
+                          <TableCell>{location.capacity} unités</TableCell>
                           <TableCell>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
                                 <span>
-                                  {Math.round(occupancyRate)}% ({warehouse.occupied}/{warehouse.capacity})
+                                  {Math.round(occupancyRate)}% ({location.occupied}/{location.capacity})
                                 </span>
                               </div>
                               <div className="w-full bg-gray-700/30 rounded-full h-2.5">
@@ -168,13 +171,13 @@ export default function POSStock() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{warehouse.manager}</TableCell>
+                          <TableCell>{location.manager}</TableCell>
                           <TableCell>
                             <Badge 
-                              variant={warehouse.status === 'Actif' ? 'default' : 'secondary'}
-                              className={warehouse.status === 'Actif' ? 'bg-purple-600' : ''}
+                              variant={location.status === 'Actif' ? 'default' : 'secondary'}
+                              className={location.status === 'Actif' ? 'bg-purple-600' : ''}
                             >
-                              {warehouse.status}
+                              {location.status}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -190,12 +193,11 @@ export default function POSStock() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gradient">Liste des Articles</h2>
           <div className="flex justify-between items-center">
-            <Select
-              value={selectedWarehouse}
+            <Select 
+              value={selectedWarehouse} 
               onValueChange={setSelectedWarehouse}
-              className="w-[220px]"
             >
-              <SelectTrigger className="glass-effect">
+              <SelectTrigger className="glass-effect w-[220px]">
                 <SelectValue placeholder="Tous les entrepôts" />
               </SelectTrigger>
               <SelectContent>
@@ -218,54 +220,7 @@ export default function POSStock() {
             </div>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Référence</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Article</TableHead>
-                  <TableHead>Entrepôt</TableHead>
-                  <TableHead className="text-right">Quantité</TableHead>
-                  <TableHead className="text-right">Prix unitaire</TableHead>
-                  <TableHead className="text-right">Valeur totale</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      Chargement des données...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      Aucun article trouvé
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.product?.reference}</TableCell>
-                      <TableCell>{item.product?.category}</TableCell>
-                      <TableCell className="font-medium">
-                        {item.product?.name}
-                      </TableCell>
-                      <TableCell>{item.warehouse?.name || "Non assigné"}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">
-                        {formatGNF(item.unit_price)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatGNF(item.total_value)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <StockItemsListTable items={filteredItems} isLoading={isLoading} />
         </div>
       </div>
     </DashboardLayout>
