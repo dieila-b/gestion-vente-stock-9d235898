@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { addDays } from "date-fns";
+import { addDays, subMonths } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -19,8 +18,8 @@ type SortConfig = {
 export default function UnpaidReport() {
   const { toast } = useToast();
   const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 7),
+    from: subMonths(new Date(), 1),
+    to: new Date(),
   });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'created_at', direction: 'desc' });
@@ -40,7 +39,6 @@ export default function UnpaidReport() {
       case 'created_at':
         return direction * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       case 'client':
-        // Updated to prioritize contact_name
         const aName = a.client?.contact_name || a.client?.company_name || '';
         const bName = b.client?.contact_name || b.client?.company_name || '';
         return direction * (aName.localeCompare(bName));
