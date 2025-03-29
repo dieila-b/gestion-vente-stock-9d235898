@@ -21,6 +21,10 @@ interface StockItem {
     id?: string;
     name: string;
   };
+  pos_location?: {
+    id?: string;
+    name: string;
+  };
   quantity: number;
   unit_price: number;
   total_value: number;
@@ -41,7 +45,7 @@ export function StockItemsTable({ items, isLoading, emptyMessage }: StockItemsTa
             <TableHead>Référence</TableHead>
             <TableHead>Catégorie</TableHead>
             <TableHead>Produit</TableHead>
-            <TableHead>Entrepôt</TableHead>
+            <TableHead>PDV</TableHead>
             <TableHead className="text-right">Quantité</TableHead>
             <TableHead className="text-right">Prix Unitaire</TableHead>
             <TableHead className="text-right">Valeur Totale</TableHead>

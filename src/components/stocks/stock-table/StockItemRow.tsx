@@ -16,6 +16,10 @@ interface StockItem {
     id?: string;
     name: string;
   };
+  pos_location?: {
+    id?: string;
+    name: string;
+  };
   quantity: number;
   unit_price: number;
   total_value: number;
@@ -33,7 +37,7 @@ export function StockItemRow({ item }: StockItemRowProps) {
       <TableCell className="font-medium">
         {item.product?.name}
       </TableCell>
-      <TableCell>{item.warehouse?.name || "Non assigné"}</TableCell>
+      <TableCell>{item.pos_location?.name || "Non assigné"}</TableCell>
       <TableCell className="text-right">{item.quantity}</TableCell>
       <TableCell className="text-right">
         {formatGNF(item.unit_price)}

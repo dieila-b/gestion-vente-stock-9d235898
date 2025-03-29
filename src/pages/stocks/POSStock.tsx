@@ -14,7 +14,6 @@ export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
   const [posSearchQuery, setPosSearchQuery] = useState("");
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
 
   // Récupérer la liste des points de vente
   const { data: posLocations = [] } = useQuery({
@@ -35,23 +34,8 @@ export default function POSStock() {
   // Filtrer les articles en fonction de la recherche
   const filteredItems = stockItems.filter(item => 
     (item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (selectedWarehouse === "_all" || item.warehouse?.id === selectedWarehouse)
+    item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
-  // Récupérer la liste des entrepôts
-  const { data: warehouses = [] } = useQuery({
-    queryKey: ['warehouses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
 
   // Handle selecting a location
   const handleSelectLocation = (location: POSLocation) => {
@@ -75,9 +59,9 @@ export default function POSStock() {
           <StockItemsFilter 
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            selectedWarehouse={selectedWarehouse}
-            setSelectedWarehouse={setSelectedWarehouse}
-            warehouses={warehouses}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+            posLocations={posLocations}
           />
 
           <StockItemsTable 

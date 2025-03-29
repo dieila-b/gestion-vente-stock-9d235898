@@ -8,36 +8,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { POSLocation } from "@/types/pos-locations";
 
 interface StockItemsFilterProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
-  selectedWarehouse: string;
-  setSelectedWarehouse: (value: string) => void;
-  warehouses: any[];
+  selectedLocation: string;
+  setSelectedLocation: (value: string) => void;
+  posLocations: POSLocation[];
 }
 
 export function StockItemsFilter({ 
   searchQuery, 
   setSearchQuery, 
-  selectedWarehouse, 
-  setSelectedWarehouse, 
-  warehouses 
+  selectedLocation, 
+  setSelectedLocation, 
+  posLocations 
 }: StockItemsFilterProps) {
   return (
     <div className="flex justify-between items-center">
       <Select 
-        value={selectedWarehouse} 
-        onValueChange={setSelectedWarehouse}
+        value={selectedLocation} 
+        onValueChange={setSelectedLocation}
       >
         <SelectTrigger className="glass-effect w-[220px]">
-          <SelectValue placeholder="Tous les entrepôts" />
+          <SelectValue placeholder="Tous les PDV" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">Tous les entrepôts</SelectItem>
-          {warehouses.map((warehouse) => (
-            <SelectItem key={warehouse.id} value={warehouse.id}>
-              {warehouse.name}
+          <SelectItem value="_all">Tous les PDV</SelectItem>
+          {posLocations.map((location) => (
+            <SelectItem key={location.id} value={location.id}>
+              {location.name}
             </SelectItem>
           ))}
         </SelectContent>
