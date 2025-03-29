@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +40,7 @@ export default function Warehouses() {
     }
   });
 
-  // Fetch POS locations data with the most up-to-date occupation information
+  // Fetch POS locations data with real-time occupation information
   const { data: posLocations = [] } = useQuery<POSLocation[]>({
     queryKey: ['pos-locations-for-tab'],
     queryFn: async () => {
@@ -52,7 +51,9 @@ export default function Warehouses() {
       
       if (error) throw error;
       return data as POSLocation[];
-    }
+    },
+    // Force frequent refreshes to keep occupation rates up to date
+    refetchInterval: 30000 // refresh every 30 seconds
   });
 
   // Filter warehouses based on search query
@@ -79,12 +80,17 @@ export default function Warehouses() {
   // Calculate POS locations stats with proper occupation calculation
   const totalPOSLocations = posLocations.length;
   const totalPOSSurface = posLocations.reduce((sum, location) => sum + (location.surface || 0), 0);
-  const averagePOSOccupancyRate = posLocations.length > 0 
-    ? posLocations.filter(loc => loc.capacity > 0)
-        .reduce((sum, location) => 
-          sum + ((location.occupied / location.capacity) * 100), 0) / 
-      posLocations.filter(loc => loc.capacity > 0).length
+  
+  // Only include locations with valid capacity in the calculation
+  const locationsWithCapacity = posLocations.filter(loc => loc.capacity > 0);
+  const averagePOSOccupancyRate = locationsWithCapacity.length > 0 
+    ? locationsWithCapacity.reduce((sum, location) => 
+        sum + ((location.occupied / location.capacity) * 100), 0) / locationsWithCapacity.length
     : 0;
+
+  console.log("POS Locations:", posLocations);
+  console.log("Locations with capacity:", locationsWithCapacity);
+  console.log("Average POS Occupancy Rate:", averagePOSOccupancyRate);
 
   return (
     <DashboardLayout>

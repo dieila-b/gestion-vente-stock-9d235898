@@ -1,4 +1,3 @@
-
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
 import { POSLocation } from "@/types/pos-locations";
 import { useEffect, useRef } from "react";
@@ -29,7 +28,9 @@ export function POSStockLocations({
       
       if (error) throw error;
       return data as POSLocation[];
-    }
+    },
+    // Refresh more frequently to keep occupation data current
+    refetchInterval: 30000 // refresh every 30 seconds
   });
 
   // Merge updated occupation data with locations

@@ -13,6 +13,9 @@ export function POSLocationStats({
   totalPOSSurface, 
   averagePOSOccupancyRate 
 }: POSLocationStatsProps) {
+  // Ensure we have a valid number for the average rate
+  const displayRate = isNaN(averagePOSOccupancyRate) ? 0 : Math.round(averagePOSOccupancyRate);
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="p-6 enhanced-glass">
@@ -51,7 +54,7 @@ export function POSLocationStats({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Taux Occupation Moyen</p>
-            <h2 className="text-3xl font-bold">{Math.round(averagePOSOccupancyRate)} %</h2>
+            <h2 className="text-3xl font-bold">{displayRate} %</h2>
           </div>
           <div className="p-2 rounded-lg bg-primary/10">
             <svg className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
