@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function usePOSLocations() {
   const [selectedPDV, setSelectedPDV] = useState<string>("_all");
 
-  // Get POS locations
+  // Get POS locations with real-time occupation data
   const { data: posLocations = [] } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
@@ -16,8 +15,12 @@ export function usePOSLocations() {
         .order('name');
       
       if (error) throw error;
+      
+      console.log("Fetched POS locations in hook:", data);
       return data;
-    }
+    },
+    // Refresh frequently to keep occupation rates current
+    refetchInterval: 15000 // refresh every 15 seconds
   });
 
   // Get active cash register

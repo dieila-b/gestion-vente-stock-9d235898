@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -37,11 +37,12 @@ export default function Warehouses() {
       
       if (error) throw error;
       return data as Warehouse[];
-    }
+    },
+    refetchInterval: 30000 // refresh every 30 seconds
   });
 
   // Fetch POS locations data with real-time occupation information
-  const { data: posLocations = [] } = useQuery<POSLocation[]>({
+  const { data: posLocations = [], refetch: refetchPOSLocations } = useQuery<POSLocation[]>({
     queryKey: ['pos-locations-for-tab'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -50,11 +51,19 @@ export default function Warehouses() {
         .order('name');
       
       if (error) throw error;
+      console.log("Fetched POS locations in Warehouses:", data);
       return data as POSLocation[];
     },
     // Force frequent refreshes to keep occupation rates up to date
-    refetchInterval: 30000 // refresh every 30 seconds
+    refetchInterval: 15000 // refresh every 15 seconds
   });
+
+  // Force a refetch when tab changes to POS
+  useEffect(() => {
+    if (activeTab === "pos") {
+      refetchPOSLocations();
+    }
+  }, [activeTab, refetchPOSLocations]);
 
   // Filter warehouses based on search query
   const filteredWarehouses = warehouses.filter(warehouse =>

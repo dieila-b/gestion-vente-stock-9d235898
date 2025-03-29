@@ -27,13 +27,14 @@ export function POSStockLocations({
         .order('name');
       
       if (error) throw error;
+      console.log("Fetched updated POS locations:", data);
       return data as POSLocation[];
     },
     // Refresh more frequently to keep occupation data current
-    refetchInterval: 30000 // refresh every 30 seconds
+    refetchInterval: 15000 // refresh every 15 seconds
   });
 
-  // Merge updated occupation data with locations
+  // Merge updated occupation data with locations to ensure we have the latest data
   const locationsWithUpdatedOccupation = posLocations.map(location => {
     const updatedLocation = updatedLocations?.find(u => u.id === location.id);
     return updatedLocation || location;
