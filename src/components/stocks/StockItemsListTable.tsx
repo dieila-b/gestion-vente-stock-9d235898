@@ -33,12 +33,21 @@ interface StockItemsListTableProps {
 export function StockItemsListTable({ items, isLoading }: StockItemsListTableProps) {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   
-  // Extract warehouses from items
-  const warehouses = Array.from(new Set(
-    items
-      .filter(item => item.warehouse?.id)
-      .map(item => ({ id: item.warehouse?.id, name: item.warehouse?.name }))
-  )).filter(Boolean) as { id?: string, name: string }[];
+  // Extract unique warehouses from items using a Map to deduplicate by ID
+  const warehousesMap = new Map();
+  items
+    .filter(item => item.warehouse?.id)
+    .forEach(item => {
+      if (item.warehouse?.id && !warehousesMap.has(item.warehouse.id)) {
+        warehousesMap.set(item.warehouse.id, { 
+          id: item.warehouse.id, 
+          name: item.warehouse.name 
+        });
+      }
+    });
+  
+  // Convert Map to array
+  const warehouses = Array.from(warehousesMap.values()) as { id?: string, name: string }[];
   
   // Filter items by selected warehouse
   const filteredItems = selectedWarehouse === "_all" 
@@ -48,7 +57,7 @@ export function StockItemsListTable({ items, isLoading }: StockItemsListTablePro
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gradient">Liste des Entrepôts</h3>
+        <h3 className="text-lg font-semibold text-gradient">Liste des Articles</h3>
         <Select
           value={selectedWarehouse}
           onValueChange={setSelectedWarehouse}
