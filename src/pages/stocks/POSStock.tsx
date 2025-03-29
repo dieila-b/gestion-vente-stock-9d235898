@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
 import { supabase } from "@/integrations/supabase/client";
-import { StockItemsListTable } from "@/components/stocks/StockItemsListTable";
+import { StockItemsTable } from "@/components/stocks/stock-table/StockItemsTable";
 import { POSStockHeader } from "@/components/stocks/pos-stock/POSStockHeader";
 import { POSStockLocations } from "@/components/stocks/pos-stock/POSStockLocations";
 import { StockItemsFilter } from "@/components/stocks/pos-stock/StockItemsFilter";
@@ -80,7 +80,11 @@ export default function POSStock() {
             warehouses={warehouses}
           />
 
-          <StockItemsListTable items={filteredItems} isLoading={isLoading} />
+          <StockItemsTable 
+            items={filteredItems} 
+            isLoading={isLoading} 
+            emptyMessage="Aucun article trouvé dans ce PDV"
+          />
         </div>
       </div>
     </DashboardLayout>
