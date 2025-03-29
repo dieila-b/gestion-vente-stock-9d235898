@@ -2,7 +2,6 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { MainStockHeader } from "@/components/stocks/main-stock/MainStockHeader";
-import { StockItemsList } from "@/components/stocks/main-stock/StockItemsList";
 import { useState } from "react";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";

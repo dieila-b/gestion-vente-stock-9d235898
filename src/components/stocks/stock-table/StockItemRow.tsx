@@ -37,7 +37,7 @@ export function StockItemRow({ item }: StockItemRowProps) {
       <TableCell className="font-medium">
         {item.product?.name}
       </TableCell>
-      <TableCell>{item.pos_location?.name || "Non assigné"}</TableCell>
+      <TableCell>{item.warehouse?.name || "Non assigné"}</TableCell>
       <TableCell className="text-right">{item.quantity}</TableCell>
       <TableCell className="text-right">
         {formatGNF(item.unit_price)}
