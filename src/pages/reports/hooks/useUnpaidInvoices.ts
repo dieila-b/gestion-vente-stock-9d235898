@@ -21,7 +21,8 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
           paid_amount,
           remaining_amount,
           payment_status,
-          client:clients(id, company_name, contact_name)
+          client:clients(id, company_name, contact_name),
+          items:order_items(id)
         `)
         .in('payment_status', ['pending', 'partial'])
         .gte('created_at', date.from.toISOString())
@@ -47,7 +48,8 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
         amount: order.final_total,
         paid_amount: order.paid_amount,
         remaining_amount: order.remaining_amount,
-        payment_status: order.payment_status
+        payment_status: order.payment_status,
+        items_count: order.items ? order.items.length : 0
       }));
     }
   });

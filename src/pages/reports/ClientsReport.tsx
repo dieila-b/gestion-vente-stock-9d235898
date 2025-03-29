@@ -75,6 +75,7 @@ export default function ClientsReport() {
           payment_status,
           client:clients(company_name, contact_name),
           items:order_items(
+            id,
             quantity,
             price,
             total,
@@ -321,13 +322,7 @@ export default function ClientsReport() {
                     <TableCell>{new Date(invoice.created_at).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{"FACT-" + invoice.id.slice(0, 8)}</TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        {invoice.items.map((item, index) => (
-                          <div key={index} className="text-sm text-muted-foreground">
-                            {item.quantity}x {item.products?.name || 'Produit inconnu'} ({formatGNF(item.price)})
-                          </div>
-                        ))}
-                      </div>
+                      {invoice.items.length} articles
                     </TableCell>
                     <TableCell className="text-right">{formatGNF(invoice.final_total)}</TableCell>
                     <TableCell className="text-right text-green-500">
