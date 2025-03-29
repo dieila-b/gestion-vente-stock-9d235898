@@ -18,6 +18,7 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           address: values.address || null,
           role: values.role,
           is_active: values.is_active || true,
+          force_password_change: values.force_password_change,
         };
 
         const { error } = await supabase
@@ -31,7 +32,10 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
         if (values.password && values.password.trim() !== "") {
           const { error: passwordError } = await supabase.auth.admin.updateUserById(
             selectedUser.id,
-            { password: values.password }
+            { 
+              password: values.password,
+              user_metadata: { force_password_change: values.force_password_change }
+            }
           );
 
           if (passwordError) throw passwordError;
@@ -69,6 +73,7 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           email: values.email,
           password: values.password,
           email_confirm: true,
+          user_metadata: { force_password_change: values.force_password_change }
         });
 
         if (authError) throw authError;
@@ -89,6 +94,7 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
             address: values.address || null,
             role: values.role,
             is_active: true,
+            force_password_change: values.force_password_change,
           });
 
         if (insertError) throw insertError;
