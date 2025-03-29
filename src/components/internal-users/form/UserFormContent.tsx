@@ -9,7 +9,8 @@ import {
   EmailField, 
   PhoneField, 
   AddressField, 
-  RoleField 
+  RoleField,
+  PasswordFields
 } from "./FormFields";
 import { FormActions } from "./FormActions";
 import { useState } from "react";
@@ -34,10 +35,13 @@ export const UserFormContent = ({
       first_name: selectedUser?.first_name || "",
       last_name: selectedUser?.last_name || "",
       email: selectedUser?.email || "",
+      password: "",
+      confirm_password: "",
       phone: selectedUser?.phone || "",
       address: selectedUser?.address || "",
       role: selectedUser?.role || "employee",
       is_active: selectedUser?.is_active ?? true,
+      id: selectedUser?.id
     },
   });
 
@@ -68,6 +72,7 @@ export const UserFormContent = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <NameFields form={form} />
         <EmailField form={form} />
+        <PasswordFields form={form} />
         <PhoneField form={form} />
         <AddressField form={form} />
         <RoleField form={form} />

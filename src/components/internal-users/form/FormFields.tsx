@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -68,6 +67,50 @@ export const EmailField = ({ form }: FormFieldsProps) => {
         </FormItem>
       )}
     />
+  );
+};
+
+export const PasswordFields = ({ form }: FormFieldsProps) => {
+  const isEditMode = !!form.getValues().id;
+
+  return (
+    <div className="space-y-4">
+      <FormField
+        control={form.control}
+        name="password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{isEditMode ? "Nouveau mot de passe (facultatif)" : "Mot de passe"}</FormLabel>
+            <FormControl>
+              <Input 
+                type="password" 
+                placeholder={isEditMode ? "Laisser vide pour ne pas changer" : "Mot de passe"} 
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      <FormField
+        control={form.control}
+        name="confirm_password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{isEditMode ? "Confirmer le nouveau mot de passe" : "Confirmer le mot de passe"}</FormLabel>
+            <FormControl>
+              <Input 
+                type="password" 
+                placeholder="Confirmer le mot de passe"
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };
 

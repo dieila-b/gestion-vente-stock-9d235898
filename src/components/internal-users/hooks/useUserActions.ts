@@ -10,20 +10,32 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
     try {
       if (selectedUser) {
         // Update existing user
+        const updateData: Partial<InternalUser> = {
+          first_name: values.first_name,
+          last_name: values.last_name,
+          email: values.email,
+          phone: values.phone || null,
+          address: values.address || null,
+          role: values.role,
+          is_active: values.is_active || true,
+        };
+
         const { error } = await supabase
           .from("internal_users")
-          .update({
-            first_name: values.first_name,
-            last_name: values.last_name,
-            email: values.email,
-            phone: values.phone || null,
-            address: values.address || null,
-            role: values.role,
-            is_active: values.is_active || true,
-          })
+          .update(updateData)
           .eq("id", selectedUser.id);
 
         if (error) throw error;
+
+        // If password is provided, update it
+        if (values.password && values.password.trim() !== "") {
+          const { error: passwordError } = await supabase.auth.admin.updateUserById(
+            selectedUser.id,
+            { password: values.password }
+          );
+
+          if (passwordError) throw passwordError;
+        }
       } else {
         // Create new user
         const { data: existingUsers, error: checkError } = await supabase
@@ -42,10 +54,20 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           return;
         }
 
+        // Make sure password is provided for new users
+        if (!values.password || values.password.trim() === "") {
+          toast({
+            title: "Erreur",
+            description: "Le mot de passe est requis pour un nouvel utilisateur",
+            variant: "destructive",
+          });
+          return;
+        }
+
         // Create an auth user
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: values.email,
-          password: "TemporaryPassword123!", // This should be randomly generated and sent to user
+          password: values.password,
           email_confirm: true,
         });
 
