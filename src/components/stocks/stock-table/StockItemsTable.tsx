@@ -2,13 +2,13 @@
 import {
   Table,
   TableBody,
-  TableHead,
   TableHeader,
   TableRow,
+  TableHead,
 } from "@/components/ui/table";
+import { StockItemRow } from "./StockItemRow";
 import { StockItemsTableLoading } from "./StockItemsTableLoading";
 import { StockItemsTableEmpty } from "./StockItemsTableEmpty";
-import { StockItemRow } from "./StockItemRow";
 
 interface StockItem {
   id: string;
@@ -30,38 +30,30 @@ interface StockItemsTableProps {
   items: StockItem[];
   isLoading: boolean;
   emptyMessage?: string;
-  className?: string;
 }
 
-export function StockItemsTable({ 
-  items, 
-  isLoading, 
-  emptyMessage, 
-  className 
-}: StockItemsTableProps) {
+export function StockItemsTable({ items, isLoading, emptyMessage }: StockItemsTableProps) {
   return (
-    <div className={`rounded-md border ${className}`}>
+    <div className="rounded-md border border-white/10 overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-black/40">
           <TableRow>
             <TableHead>Référence</TableHead>
             <TableHead>Catégorie</TableHead>
-            <TableHead>Article</TableHead>
+            <TableHead>Produit</TableHead>
             <TableHead>Entrepôt</TableHead>
             <TableHead className="text-right">Quantité</TableHead>
-            <TableHead className="text-right">Prix unitaire</TableHead>
-            <TableHead className="text-right">Valeur totale</TableHead>
+            <TableHead className="text-right">Prix Unitaire</TableHead>
+            <TableHead className="text-right">Valeur Totale</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="bg-black/20">
           {isLoading ? (
             <StockItemsTableLoading />
           ) : items.length === 0 ? (
             <StockItemsTableEmpty message={emptyMessage} />
           ) : (
-            items.map((item) => (
-              <StockItemRow key={item.id} item={item} />
-            ))
+            items.map((item) => <StockItemRow key={item.id} item={item} />)
           )}
         </TableBody>
       </Table>

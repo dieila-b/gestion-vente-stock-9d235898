@@ -1,5 +1,4 @@
 
-import { Card } from "@/components/ui/card";
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
 import { POSLocation } from "@/types/pos-locations";
 import { POSStockFilter } from "./POSStockFilter";
@@ -25,23 +24,13 @@ export function POSStockLocations({
   );
 
   return (
-    <Card className="enhanced-glass p-6">
-      <div className="space-y-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gradient">
-            Liste des PDV
-          </h2>
-          <POSStockFilter 
-            posSearchQuery={posSearchQuery} 
-            setPosSearchQuery={setPosSearchQuery} 
-          />
-        </div>
-
-        <POSLocationsTable 
-          posLocations={filteredPOSLocations} 
-          onEdit={onSelectLocation}
-        />
-      </div>
-    </Card>
+    <div className="space-y-6">
+      <POSLocationsTable 
+        posLocations={filteredPOSLocations} 
+        searchQuery={posSearchQuery}
+        setSearchQuery={setPosSearchQuery}
+        onEdit={onSelectLocation}
+      />
+    </div>
   );
 }
