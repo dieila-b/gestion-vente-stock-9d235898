@@ -47,7 +47,7 @@ export default function Warehouses() {
 
   // Force a refetch when tab changes to POS
   useEffect(() => {
-    if (activeTab === "pos") {
+    if (activeTab === "pos" && refetchPOSLocations) {
       refetchPOSLocations();
     }
   }, [activeTab, refetchPOSLocations]);

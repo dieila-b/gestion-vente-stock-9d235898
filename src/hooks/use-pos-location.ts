@@ -41,6 +41,10 @@ export function usePOSLocation() {
       phone: formData.get("phone") as string || null,
       email: formData.get("email") as string || null,
       manager: formData.get("manager") as string || "",
+      status: "Actif",  // Set default active status
+      capacity: Number(formData.get("capacity")) || 0,
+      surface: Number(formData.get("surface")) || 0,
+      occupied: selectedLocation?.occupied || 0,
       is_active: true,
     };
 
@@ -72,8 +76,6 @@ export function usePOSLocation() {
   };
 
   const handleDelete = async (location: POSLocation) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce dépôt PDV ?")) return;
-
     try {
       const { error } = await supabase
         .from("pos_locations")
@@ -97,5 +99,6 @@ export function usePOSLocation() {
     setIsAddDialogOpen,
     handleSubmit,
     handleDelete,
+    refetch,  // Export refetch function
   };
 }
