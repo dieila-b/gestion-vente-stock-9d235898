@@ -70,9 +70,10 @@ export function POSLocationsTable({
             ) : (
               posLocations.map((location) => {
                 // Calculate actual occupation rate based on current data
-                const occupancyRate = location.capacity ? (location.occupied / location.capacity) * 100 : 0;
-                let occupancyClass = "text-green-400";
+                const occupancyRate = location.capacity > 0 ? (location.occupied / location.capacity) * 100 : 0;
                 
+                // Set color based on occupancy rate
+                let occupancyClass = "text-green-400";
                 if (occupancyRate >= 90) {
                   occupancyClass = "text-red-400";
                 } else if (occupancyRate >= 70) {
@@ -93,6 +94,21 @@ export function POSLocationsTable({
                     <TableCell>
                       <div className={occupancyClass}>
                         {occupancyRate.toFixed(0)}% ({location.occupied || 0}/{location.capacity})
+                      </div>
+                      <div className="w-full bg-gray-700/30 rounded-full h-2 mt-1">
+                        <div 
+                          className={cn(
+                            "rounded-full h-2 transition-all duration-500",
+                            {
+                              'bg-gradient-to-r from-red-500 to-red-600': occupancyRate >= 90,
+                              'bg-gradient-to-r from-yellow-500 to-orange-500': occupancyRate >= 70 && occupancyRate < 90,
+                              'bg-gradient-to-r from-blue-500 to-purple-500': occupancyRate < 70
+                            }
+                          )}
+                          style={{ 
+                            width: `${Math.min(occupancyRate, 100)}%`
+                          }}
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-300">{location.manager}</TableCell>

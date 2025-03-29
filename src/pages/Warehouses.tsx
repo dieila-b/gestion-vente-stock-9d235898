@@ -41,9 +41,9 @@ export default function Warehouses() {
     }
   });
 
-  // Fetch POS locations data
+  // Fetch POS locations data with the most up-to-date occupation information
   const { data: posLocations = [] } = useQuery<POSLocation[]>({
-    queryKey: ['pos-locations'],
+    queryKey: ['pos-locations-for-tab'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pos_locations')
@@ -76,12 +76,14 @@ export default function Warehouses() {
     ? warehouses.reduce((sum, w) => sum + ((w.occupied / w.capacity) * 100), 0) / warehouses.length
     : 0;
 
-  // Calculate POS locations stats
+  // Calculate POS locations stats with proper occupation calculation
   const totalPOSLocations = posLocations.length;
   const totalPOSSurface = posLocations.reduce((sum, location) => sum + (location.surface || 0), 0);
   const averagePOSOccupancyRate = posLocations.length > 0 
-    ? posLocations.reduce((sum, location) => 
-        sum + ((location.occupied / location.capacity) * 100), 0) / posLocations.length
+    ? posLocations.filter(loc => loc.capacity > 0)
+        .reduce((sum, location) => 
+          sum + ((location.occupied / location.capacity) * 100), 0) / 
+      posLocations.filter(loc => loc.capacity > 0).length
     : 0;
 
   return (
