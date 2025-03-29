@@ -1,6 +1,5 @@
+
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Warehouse, Store } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,55 +8,42 @@ import { POSLocationStats } from "@/components/warehouses/POSLocationStats";
 import { WarehousesHeader } from "@/components/warehouses/WarehousesHeader";
 import { WarehouseList } from "@/components/stocks/warehouses/WarehouseList";
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
-import { POSLocation } from "@/types/pos-locations";
-
-interface Warehouse {
-  id: string;
-  name: string;
-  location: string;
-  surface: number;
-  capacity: number;
-  manager: string;
-  status: string;
-  occupied: number;
-}
+import { useWarehouse } from "@/hooks/use-warehouse";
+import { usePOSLocation } from "@/hooks/use-pos-location";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { POSLocationForm } from "@/components/pos-locations/POSLocationForm";
 
 export default function Warehouses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("warehouses");
 
-  // Fetch warehouses data
-  const { data: warehouses = [] } = useQuery<Warehouse[]>({
-    queryKey: ['warehouses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('id, name, location, surface, capacity, manager, status, occupied')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Warehouse[];
-    },
-    refetchInterval: 30000 // refresh every 30 seconds
-  });
+  // Warehouse management
+  const {
+    warehouses,
+    selectedWarehouse,
+    setSelectedWarehouse,
+    isAddDialogOpen: isWarehouseDialogOpen,
+    setIsAddDialogOpen: setIsWarehouseDialogOpen,
+    handleSubmit: handleWarehouseSubmit,
+    handleDelete: handleWarehouseDelete
+  } = useWarehouse();
 
-  // Fetch POS locations data with real-time occupation information
-  const { data: posLocations = [], refetch: refetchPOSLocations } = useQuery<POSLocation[]>({
-    queryKey: ['pos-locations-for-tab'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pos_locations')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      console.log("Fetched POS locations in Warehouses:", data);
-      return data as POSLocation[];
-    },
-    // Force frequent refreshes to keep occupation rates up to date
-    refetchInterval: 5000, // refresh every 5 seconds
-    staleTime: 2000 // consider data stale after 2 seconds
-  });
+  // POS locations management
+  const {
+    locations: posLocations,
+    selectedLocation,
+    setSelectedLocation,
+    isAddDialogOpen: isPOSDialogOpen,
+    setIsAddDialogOpen: setIsPOSDialogOpen,
+    handleSubmit: handlePOSSubmit,
+    handleDelete: handlePOSDelete,
+    refetch: refetchPOSLocations
+  } = usePOSLocation();
 
   // Force a refetch when tab changes to POS
   useEffect(() => {
@@ -67,45 +53,54 @@ export default function Warehouses() {
   }, [activeTab, refetchPOSLocations]);
 
   // Filter warehouses based on search query
-  const filteredWarehouses = warehouses.filter(warehouse =>
+  const filteredWarehouses = warehouses?.filter(warehouse =>
     warehouse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     warehouse.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     warehouse.manager.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   // Filter POS locations based on search query
-  const filteredPOSLocations = posLocations.filter(location =>
+  const filteredPOSLocations = posLocations?.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     location.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (location.manager && location.manager.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ) || [];
 
   // Calculate warehouse stats
-  const totalWarehouses = warehouses.length;
-  const totalSurface = warehouses.reduce((sum, w) => sum + w.surface, 0);
-  const averageOccupancyRate = warehouses.length > 0 
-    ? warehouses.reduce((sum, w) => sum + ((w.occupied / w.capacity) * 100), 0) / warehouses.length
-    : 0;
+  const totalWarehouses = warehouses?.length || 0;
+  const totalSurface = warehouses?.reduce((sum, w) => sum + w.surface, 0) || 0;
+  const averageOccupancyRate = warehouses?.length ? 
+    warehouses.reduce((sum, w) => sum + ((w.occupied / w.capacity) * 100), 0) / warehouses.length : 0;
 
-  // Calculate POS locations stats with proper occupation calculation
-  const totalPOSLocations = posLocations.length;
-  const totalPOSSurface = posLocations.reduce((sum, location) => sum + (location.surface || 0), 0);
+  // Calculate POS locations stats
+  const totalPOSLocations = posLocations?.length || 0;
+  const totalPOSSurface = posLocations?.reduce((sum, location) => sum + (location.surface || 0), 0) || 0;
   
   // Only include locations with valid capacity in the calculation
-  const locationsWithCapacity = posLocations.filter(loc => loc.capacity > 0);
+  const locationsWithCapacity = posLocations?.filter(loc => loc.capacity > 0) || [];
   const averagePOSOccupancyRate = locationsWithCapacity.length > 0 
     ? locationsWithCapacity.reduce((sum, location) => 
         sum + ((location.occupied / location.capacity) * 100), 0) / locationsWithCapacity.length
     : 0;
 
-  console.log("POS Locations:", posLocations);
-  console.log("Locations with capacity:", locationsWithCapacity);
-  console.log("Average POS Occupancy Rate:", averagePOSOccupancyRate);
+  // Handle add new button click based on active tab
+  const handleAddNewClick = () => {
+    if (activeTab === "warehouses") {
+      setSelectedWarehouse(null);
+      setIsWarehouseDialogOpen(true);
+    } else {
+      setSelectedLocation(null);
+      setIsPOSDialogOpen(true);
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="p-6 space-y-8">
-        <WarehousesHeader />
+        <WarehousesHeader 
+          activeTab={activeTab}
+          onAddNew={handleAddNewClick}
+        />
 
         <Tabs defaultValue="warehouses" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -126,7 +121,22 @@ export default function Warehouses() {
               totalSurface={totalSurface}
               averageOccupancyRate={averageOccupancyRate}
             />
-            <WarehouseList warehouses={filteredWarehouses} />
+            <WarehouseList 
+              warehouses={filteredWarehouses}
+              onAddNew={() => {
+                setSelectedWarehouse(null);
+                setIsWarehouseDialogOpen(true);
+              }}
+              onEdit={(warehouse) => {
+                setSelectedWarehouse(warehouse);
+                setIsWarehouseDialogOpen(true);
+              }}
+              onDelete={handleWarehouseDelete}
+              isAddDialogOpen={isWarehouseDialogOpen}
+              setIsAddDialogOpen={setIsWarehouseDialogOpen}
+              selectedWarehouse={selectedWarehouse}
+              handleSubmit={handleWarehouseSubmit}
+            />
           </TabsContent>
 
           {/* POS Locations Tab Content */}
@@ -140,9 +150,30 @@ export default function Warehouses() {
               posLocations={filteredPOSLocations} 
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              onEdit={(location) => {
+                setSelectedLocation(location);
+                setIsPOSDialogOpen(true);
+              }}
+              onDelete={handlePOSDelete}
             />
           </TabsContent>
         </Tabs>
+
+        {/* Dialog for POS location form */}
+        <Dialog open={isPOSDialogOpen} onOpenChange={setIsPOSDialogOpen}>
+          <DialogContent className="sm:max-w-md glass-panel">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                {selectedLocation ? "Modifier le point de vente" : "Ajouter un nouveau point de vente"}
+              </DialogTitle>
+            </DialogHeader>
+            <POSLocationForm
+              location={selectedLocation}
+              onSubmit={handlePOSSubmit}
+              onCancel={() => setIsPOSDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

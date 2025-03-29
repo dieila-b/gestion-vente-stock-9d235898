@@ -1,34 +1,47 @@
 
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { WarehouseTable } from "./WarehouseTable";
 import { useState } from "react";
-
-interface Warehouse {
-  id: string;
-  name: string;
-  location: string;
-  surface: number;
-  capacity: number;
-  manager: string;
-  status: string;
-  occupied: number;
-}
+import { Warehouse } from "@/hooks/use-warehouse";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { WarehouseForm } from "./WarehouseForm";
 
 interface WarehouseListProps {
   warehouses: Warehouse[];
+  onAddNew: () => void;
+  onEdit: (warehouse: Warehouse) => void;
+  onDelete: (warehouse: Warehouse) => Promise<void>;
+  isAddDialogOpen: boolean;
+  setIsAddDialogOpen: (open: boolean) => void;
+  selectedWarehouse: Warehouse | null;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-export function WarehouseList({ warehouses }: WarehouseListProps) {
+export function WarehouseList({ 
+  warehouses, 
+  onAddNew,
+  onEdit,
+  onDelete,
+  isAddDialogOpen,
+  setIsAddDialogOpen,
+  selectedWarehouse,
+  handleSubmit
+}: WarehouseListProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredWarehouses = warehouses.filter(warehouse =>
+  const filteredWarehouses = warehouses?.filter(warehouse =>
     warehouse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     warehouse.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     warehouse.manager.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   return (
     <Card className="enhanced-glass p-6">
@@ -49,11 +62,34 @@ export function WarehouseList({ warehouses }: WarehouseListProps) {
               <Filter className="mr-2 h-4 w-4" />
               Filtrer
             </Button>
+            <Button onClick={onAddNew} className="glass-effect">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Ajouter
+            </Button>
           </div>
         </div>
 
-        <WarehouseTable warehouses={filteredWarehouses} />
+        <WarehouseTable 
+          warehouses={filteredWarehouses} 
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-md glass-panel">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {selectedWarehouse ? "Modifier l'entrepôt" : "Ajouter un nouvel entrepôt"}
+            </DialogTitle>
+          </DialogHeader>
+          <WarehouseForm
+            warehouse={selectedWarehouse}
+            onSubmit={handleSubmit}
+            onCancel={() => setIsAddDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

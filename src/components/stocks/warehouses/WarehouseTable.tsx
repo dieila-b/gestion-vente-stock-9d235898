@@ -1,7 +1,8 @@
 
-import { Building2 } from "lucide-react";
+import { Building2, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,6 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useState } from "react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 interface Warehouse {
   id: string;
@@ -24,9 +36,27 @@ interface Warehouse {
 
 interface WarehouseTableProps {
   warehouses: Warehouse[];
+  onEdit?: (warehouse: Warehouse) => void;
+  onDelete?: (warehouse: Warehouse) => Promise<void>;
 }
 
-export function WarehouseTable({ warehouses }: WarehouseTableProps) {
+export function WarehouseTable({ warehouses, onEdit, onDelete }: WarehouseTableProps) {
+  const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleDeleteClick = (warehouse: Warehouse) => {
+    setWarehouseToDelete(warehouse);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (warehouseToDelete && onDelete) {
+      await onDelete(warehouseToDelete);
+      setIsDeleteDialogOpen(false);
+      setWarehouseToDelete(null);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -39,12 +69,13 @@ export function WarehouseTable({ warehouses }: WarehouseTableProps) {
             <TableHead>Occupation</TableHead>
             <TableHead>Responsable</TableHead>
             <TableHead>Statut</TableHead>
+            {(onEdit || onDelete) && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {warehouses.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-10">
+              <TableCell colSpan={(onEdit || onDelete) ? 8 : 7} className="text-center py-10">
                 Aucun entrepôt trouvé
               </TableCell>
             </TableRow>
@@ -97,12 +128,56 @@ export function WarehouseTable({ warehouses }: WarehouseTableProps) {
                       {warehouse.status}
                     </Badge>
                   </TableCell>
+                  {(onEdit || onDelete) && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(warehouse)}
+                            className="hover:bg-purple-500/10"
+                          >
+                            <Edit className="h-4 w-4 text-gray-300" />
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(warehouse)}
+                            className="hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4 text-gray-300" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })
           )}
         </TableBody>
       </Table>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="glass-panel">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer l'entrepôt "{warehouseToDelete?.name}" ? 
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
