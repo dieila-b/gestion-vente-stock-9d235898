@@ -77,7 +77,7 @@ export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvo
                 <TableCell>{new Date(invoice.created_at).toLocaleDateString('fr-FR')}</TableCell>
                 <TableCell>{getClientDisplayName(invoice)}</TableCell>
                 <TableCell>{invoice.invoice_number}</TableCell>
-                <TableCell>{invoice.items_count || 0} articles</TableCell>
+                <TableCell>{invoice.items_count || 0}</TableCell>
                 <TableCell className="text-right">{formatGNF(invoice.amount)}</TableCell>
                 <TableCell className="text-right text-green-500">
                   {formatGNF(invoice.paid_amount)}
