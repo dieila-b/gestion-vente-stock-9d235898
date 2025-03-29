@@ -84,15 +84,17 @@ export default function MainStock() {
         </Card>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gradient">Liste des Articles</h2>
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="Rechercher un article..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 glass-effect w-80"
-            />
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gradient">Liste des Articles</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input 
+                placeholder="Rechercher un article..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 glass-effect w-80"
+              />
+            </div>
           </div>
 
           <StockItemsListTable items={filteredItems} isLoading={isLoading} />

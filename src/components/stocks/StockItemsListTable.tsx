@@ -56,8 +56,7 @@ export function StockItemsListTable({ items, isLoading }: StockItemsListTablePro
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gradient">Liste des Articles</h3>
+      <div className="flex justify-end items-center mb-4">
         <Select
           value={selectedWarehouse}
           onValueChange={setSelectedWarehouse}
