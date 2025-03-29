@@ -1,5 +1,5 @@
 
-import { Search } from "lucide-react";
+import { Search, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { POSLocation } from "@/types/pos-locations";
@@ -15,6 +15,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface POSLocationsTableProps {
   posLocations: POSLocation[];
@@ -31,6 +34,9 @@ export function POSLocationsTable({
   onEdit,
   onDelete
 }: POSLocationsTableProps) {
+  const [locationToDelete, setLocationToDelete] = useState<POSLocation | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   // Log all locations including their occupancy data
   console.log("POSLocationsTable received locations:", posLocations.map(loc => ({
     id: loc.id,
@@ -39,6 +45,19 @@ export function POSLocationsTable({
     capacity: loc.capacity,
     occupancyRate: loc.capacity > 0 ? Math.round((loc.occupied / loc.capacity) * 100) : 0
   })));
+
+  const handleDeleteClick = (location: POSLocation) => {
+    setLocationToDelete(location);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (locationToDelete && onDelete) {
+      await onDelete(locationToDelete);
+      setIsDeleteDialogOpen(false);
+      setLocationToDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -68,12 +87,15 @@ export function POSLocationsTable({
               <TableHead className="text-gray-300">Occupation</TableHead>
               <TableHead className="text-gray-300">Responsable</TableHead>
               <TableHead className="text-gray-300">Statut</TableHead>
+              {(onEdit || onDelete) && (
+                <TableHead className="text-gray-300 text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody className="bg-black/20">
             {posLocations.length === 0 ? (
               <TableRow className="border-b border-[#333]">
-                <TableCell colSpan={7} className="text-center py-10 text-gray-400">
+                <TableCell colSpan={onEdit || onDelete ? 8 : 7} className="text-center py-10 text-gray-400">
                   Aucun PDV trouvé
                 </TableCell>
               </TableRow>
@@ -136,6 +158,32 @@ export function POSLocationsTable({
                         {location.status === 'Actif' ? 'Actif' : location.status}
                       </Badge>
                     </TableCell>
+                    {(onEdit || onDelete) && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onEdit(location)}
+                              className="hover:bg-purple-500/10"
+                            >
+                              <Edit className="h-4 w-4 text-gray-300" />
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(location)}
+                              className="hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-300" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -143,6 +191,24 @@ export function POSLocationsTable({
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="glass-panel">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer le PDV "{locationToDelete?.name}" ? 
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
