@@ -1,15 +1,12 @@
 
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { POSLocation } from "@/types/pos-locations";
 import {
   Table,
   TableBody,
 } from "@/components/ui/table";
 
-// Import the new components
+// Import the components
 import { POSLocationRow } from "./table/POSLocationRow";
 import { POSLocationsEmptyState } from "./table/POSLocationsEmptyState";
 import { POSLocationSearchBar } from "./table/POSLocationSearchBar";
@@ -64,17 +61,15 @@ export function POSLocationsTable({
 
       <div className="rounded-md border border-[#333] overflow-hidden">
         <Table>
-          <POSLocationsTableHeader hasActions={!!(onEdit || onDelete)} />
+          <POSLocationsTableHeader hasActions={false} />
           <TableBody className="bg-black/20">
             {posLocations.length === 0 ? (
-              <POSLocationsEmptyState colSpan={onEdit || onDelete ? 8 : 7} />
+              <POSLocationsEmptyState colSpan={7} />
             ) : (
               posLocations.map((location) => (
                 <POSLocationRow 
                   key={location.id} 
                   location={location} 
-                  onEdit={onEdit} 
-                  onDelete={handleDeleteClick} 
                 />
               ))
             )}
@@ -82,12 +77,14 @@ export function POSLocationsTable({
         </Table>
       </div>
 
-      <POSLocationDeleteDialog 
-        isOpen={isDeleteDialogOpen}
-        setIsOpen={setIsDeleteDialogOpen}
-        locationToDelete={locationToDelete}
-        onConfirmDelete={confirmDelete}
-      />
+      {onDelete && (
+        <POSLocationDeleteDialog 
+          isOpen={isDeleteDialogOpen}
+          setIsOpen={setIsDeleteDialogOpen}
+          locationToDelete={locationToDelete}
+          onConfirmDelete={confirmDelete}
+        />
+      )}
     </div>
   );
 }

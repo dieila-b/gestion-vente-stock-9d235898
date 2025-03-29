@@ -16,9 +16,6 @@ export function POSLocationsTableHeader({ hasActions }: POSLocationsTableHeaderP
         <TableHead className="text-gray-300">Occupation</TableHead>
         <TableHead className="text-gray-300">Responsable</TableHead>
         <TableHead className="text-gray-300">Statut</TableHead>
-        {hasActions && (
-          <TableHead className="text-gray-300 text-right">Actions</TableHead>
-        )}
       </TableRow>
     </TableHeader>
   );

@@ -1,8 +1,7 @@
 
-import { Edit, Trash2, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { POSLocation } from "@/types/pos-locations";
 
@@ -70,32 +69,6 @@ export function POSLocationRow({ location, onEdit, onDelete }: POSLocationRowPro
           {location.status === 'Actif' ? 'Actif' : location.status}
         </Badge>
       </TableCell>
-      {(onEdit || onDelete) && (
-        <TableCell className="text-right">
-          <div className="flex justify-end gap-2">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(location)}
-                className="hover:bg-purple-500/10"
-              >
-                <Edit className="h-4 w-4 text-gray-300" />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(location)}
-                className="hover:bg-red-500/10"
-              >
-                <Trash2 className="h-4 w-4 text-gray-300" />
-              </Button>
-            )}
-          </div>
-        </TableCell>
-      )}
     </TableRow>
   );
 }
