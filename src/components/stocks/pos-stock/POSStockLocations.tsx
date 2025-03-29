@@ -1,3 +1,4 @@
+
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
 import { POSLocation } from "@/types/pos-locations";
 import { useEffect, useRef } from "react";
@@ -113,6 +114,7 @@ export function POSStockLocations({
         posLocations={filteredPOSLocations} 
         searchQuery={posSearchQuery}
         setSearchQuery={setPosSearchQuery}
+        // Removed the onDelete prop to hide delete buttons
       />
       
       {onSelectLocation && (
