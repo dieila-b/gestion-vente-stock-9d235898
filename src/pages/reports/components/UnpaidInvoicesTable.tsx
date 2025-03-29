@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowUpDown } from "lucide-react";
 import { formatGNF } from "@/lib/currency";
@@ -6,7 +5,11 @@ import { formatGNF } from "@/lib/currency";
 interface UnpaidInvoice {
   id: string;
   created_at: string;
-  client?: { company_name?: string };
+  client?: { 
+    id?: string;
+    company_name?: string;
+  };
+  client_id: string;
   invoice_number: string;
   amount: number;
   paid_amount: number;
@@ -26,6 +29,13 @@ interface UnpaidInvoicesTableProps {
 }
 
 export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvoicesTableProps) {
+  const getClientDisplayName = (invoice: UnpaidInvoice) => {
+    if (invoice.client?.company_name) {
+      return invoice.client.company_name;
+    }
+    return "Client particulier";
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">Détail des factures</h2>
@@ -61,7 +71,7 @@ export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvo
             {invoices.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell>{new Date(invoice.created_at).toLocaleDateString('fr-FR')}</TableCell>
-                <TableCell>{invoice.client?.company_name || "Client particulier"}</TableCell>
+                <TableCell>{getClientDisplayName(invoice)}</TableCell>
                 <TableCell>{invoice.invoice_number}</TableCell>
                 <TableCell className="text-right">{formatGNF(invoice.amount)}</TableCell>
                 <TableCell className="text-right text-green-500">

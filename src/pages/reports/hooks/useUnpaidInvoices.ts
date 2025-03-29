@@ -21,7 +21,7 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
           paid_amount,
           remaining_amount,
           payment_status,
-          client:clients(id, company_name)
+          client:clients(id, company_name, contact_name)
         `)
         .in('payment_status', ['pending', 'partial'])
         .gte('created_at', date.from.toISOString())

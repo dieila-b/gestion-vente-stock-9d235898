@@ -40,7 +40,10 @@ export default function UnpaidReport() {
       case 'created_at':
         return direction * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       case 'client':
-        return direction * ((a.client?.company_name || '').localeCompare(b.client?.company_name || ''));
+        // Updated to handle possibly undefined client name
+        const aName = a.client?.company_name || a.client?.contact_name || '';
+        const bName = b.client?.company_name || b.client?.contact_name || '';
+        return direction * (aName.localeCompare(bName));
       case 'amount':
         return direction * (a.amount - b.amount);
       case 'remaining_amount':
