@@ -21,7 +21,7 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
           paid_amount,
           remaining_amount,
           payment_status,
-          client:clients(company_name)
+          client:clients(id, company_name)
         `)
         .in('payment_status', ['pending', 'partial'])
         .gte('created_at', date.from.toISOString())
@@ -34,6 +34,8 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log("Unpaid invoices data:", data);
       
       // Transform data to match expected structure in UnpaidInvoicesTable
       return data.map(order => ({
