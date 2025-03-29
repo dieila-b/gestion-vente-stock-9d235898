@@ -58,20 +58,25 @@ export function POSLocationsTable({
               <TableHead className="text-gray-300">Occupation</TableHead>
               <TableHead className="text-gray-300">Responsable</TableHead>
               <TableHead className="text-gray-300">Statut</TableHead>
-              {(onEdit || onDelete) && <TableHead className="text-right text-gray-300">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody className="bg-black/20">
             {posLocations.length === 0 ? (
               <TableRow className="border-b border-[#333]">
-                <TableCell colSpan={onEdit || onDelete ? 8 : 7} className="text-center py-10 text-gray-400">
+                <TableCell colSpan={7} className="text-center py-10 text-gray-400">
                   Aucun PDV trouvé
                 </TableCell>
               </TableRow>
             ) : (
               posLocations.map((location) => {
                 const occupancyRate = (location.occupied / location.capacity) * 100;
-                const occupancyText = `${occupancyRate.toFixed(0)}% (${location.occupied}/${location.capacity})`;
+                let occupancyClass = "text-green-400";
+                
+                if (occupancyRate >= 90) {
+                  occupancyClass = "text-red-400";
+                } else if (occupancyRate >= 70) {
+                  occupancyClass = "text-yellow-400";
+                }
 
                 return (
                   <TableRow key={location.id} className="border-b border-[#333]">
@@ -85,8 +90,8 @@ export function POSLocationsTable({
                     <TableCell className="text-gray-300">{location.surface} m²</TableCell>
                     <TableCell className="text-gray-300">{location.capacity} unités</TableCell>
                     <TableCell>
-                      <div className="text-gray-300">
-                        {occupancyText}
+                      <div className={occupancyClass}>
+                        {occupancyRate.toFixed(0)}% ({location.occupied}/{location.capacity})
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-300">{location.manager}</TableCell>
@@ -97,16 +102,6 @@ export function POSLocationsTable({
                         {location.status === 'Actif' ? 'Actif' : location.status}
                       </Badge>
                     </TableCell>
-                    {onEdit && (
-                      <TableCell className="text-right">
-                        <button
-                          onClick={() => onEdit(location)}
-                          className="text-[#8A85FF] hover:text-[#7A75EF] text-sm font-medium"
-                        >
-                          Modifier
-                        </button>
-                      </TableCell>
-                    )}
                   </TableRow>
                 );
               })
