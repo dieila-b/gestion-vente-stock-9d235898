@@ -29,9 +29,10 @@ interface StockItem {
 interface StockItemsTableProps {
   items: StockItem[];
   isLoading: boolean;
+  emptyMessage?: string;
 }
 
-export function StockItemsTable({ items, isLoading }: StockItemsTableProps) {
+export function StockItemsTable({ items, isLoading, emptyMessage }: StockItemsTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -50,7 +51,7 @@ export function StockItemsTable({ items, isLoading }: StockItemsTableProps) {
           {isLoading ? (
             <StockItemsTableLoading />
           ) : items.length === 0 ? (
-            <StockItemsTableEmpty />
+            <StockItemsTableEmpty message={emptyMessage} />
           ) : (
             items.map((item) => (
               <StockItemRow key={item.id} item={item} />
