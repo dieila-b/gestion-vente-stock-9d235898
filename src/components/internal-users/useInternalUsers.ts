@@ -25,7 +25,12 @@ export const useInternalUsers = () => {
   useEffect(() => {
     if (isAuthorized && !isLoading) {
       console.log("Fetching users because authorized");
-      fetchUsers();
+      // Call fetchUsers and ignore the returned array to match the expected void type
+      fetchUsers().then(() => {
+        console.log("Users fetched successfully");
+      }).catch(error => {
+        console.error("Error fetching users:", error);
+      });
     }
     // Do not include fetchUsers in dependency array to prevent infinite loops
   }, [isAuthorized, isLoading]); 

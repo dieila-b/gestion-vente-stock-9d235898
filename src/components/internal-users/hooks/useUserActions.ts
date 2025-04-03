@@ -10,7 +10,7 @@ import {
 } from "./user-actions";
 
 export const useUserActions = (
-  fetchUsers: () => Promise<void>,
+  fetchUsers: () => Promise<InternalUser[] | void>,
   addUser: (user: InternalUser) => void,
   updateUserInList: (user: InternalUser) => void
 ) => {
