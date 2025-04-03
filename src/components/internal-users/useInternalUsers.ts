@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "./validation/user-form-schema";
 import { useAuth } from "./hooks/useAuth";
@@ -21,13 +21,13 @@ export const useInternalUsers = () => {
   const userActions = useUserActions(fetchUsers, addUser, updateUserInList);
   const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = userActions;
 
-  // Charger les utilisateurs quand autorisé, une seule fois
+  // Charger les utilisateurs quand autorisé
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isLoading) {
       console.log("Chargement des utilisateurs car autorisé");
       fetchUsers();
     }
-  }, [isAuthorized]); // Supprimé fetchUsers des dépendances pour éviter les boucles infinies
+  }, [isAuthorized, fetchUsers]);
 
   // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
