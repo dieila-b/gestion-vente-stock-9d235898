@@ -55,24 +55,23 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
-          const { data, error } = await supabase
+          const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email')
-            .eq('email', session.user.email)
-            .single();
+            .eq('email', session.user.email);
             
-          console.log("Vérification internal_users dans RequireAuth:", data, error);
+          console.log("Vérification internal_users dans RequireAuth:", internalUsers, internalError);
             
-          if (error) {
-            console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
+          if (internalError) {
+            console.error("Erreur lors de la vérification de l'utilisateur interne:", internalError);
             setIsInternalUser(false);
             toast.error("Erreur lors de la vérification de votre accès");
-          } else if (!data) {
+          } else if (!internalUsers || internalUsers.length === 0) {
             console.log("Utilisateur non trouvé dans la table internal_users");
             setIsInternalUser(false);
             toast.error("Vous n'avez pas accès à cette application");
           } else {
-            console.log("Utilisateur interne trouvé:", data.email);
+            console.log("Utilisateur interne trouvé:", internalUsers[0].email);
             setIsInternalUser(true);
           }
         } catch (err) {

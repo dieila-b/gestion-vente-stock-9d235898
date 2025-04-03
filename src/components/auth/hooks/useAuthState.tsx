@@ -38,20 +38,23 @@ export function useAuthState() {
           
           // Vérifier si l'utilisateur existe dans la table internal_users
           try {
-            const { data: internalUser, error: internalError } = await supabase
+            const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email')
-              .eq('email', data.session.user.email)
-              .single();
+              .eq('email', data.session.user.email);
             
-            console.log("Recherche utilisateur interne:", internalUser, internalError);
+            console.log("Recherche utilisateur interne:", internalUsers, internalError);
             
-            if (internalError || !internalUser) {
-              console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+            if (internalError) {
+              console.error("Erreur lors de la requête internal_users:", internalError);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+            } else if (!internalUsers || internalUsers.length === 0) {
+              console.log("Utilisateur non trouvé dans la table internal_users");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
             } else {
-              console.log("Utilisateur interne validé:", internalUser.email);
+              console.log("Utilisateur interne validé:", internalUsers[0].email);
               setIsAuthenticated(true);
             }
           } catch (err) {
@@ -80,21 +83,25 @@ export function useAuthState() {
         if (event === 'SIGNED_IN' && session) {
           try {
             // Vérifier si l'utilisateur est un utilisateur interne
-            const { data: internalUser, error: internalError } = await supabase
+            const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email')
-              .eq('email', session.user.email)
-              .single();
+              .eq('email', session.user.email);
             
-            console.log("Vérification internal_users après signin:", internalUser, internalError);
+            console.log("Vérification internal_users après signin:", internalUsers, internalError);
             
-            if (internalError || !internalUser) {
+            if (internalError) {
+              console.error("Erreur lors de la requête internal_users:", internalError);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              toast.error("Erreur lors de la vérification de vos droits d'accès");
+            } else if (!internalUsers || internalUsers.length === 0) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               toast.error("Vous n'avez pas accès à cette application");
             } else {
-              console.log("Utilisateur interne validé après événement auth:", internalUser.email);
+              console.log("Utilisateur interne validé après événement auth:", internalUsers[0].email);
               setIsAuthenticated(true);
             }
           } catch (error) {

@@ -41,24 +41,30 @@ export function useAuthActions(
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
-          const { data: internalUser, error: internalError } = await supabase
+          const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email')
-            .eq('email', data.user.email)
-            .single();
+            .eq('email', data.user.email);
             
-          console.log("Vérification internal_users après login:", internalUser, internalError);
+          console.log("Vérification internal_users après login:", internalUsers, internalError);
             
-          if (internalError || !internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+          if (internalError) {
+            console.error("Erreur lors de la requête internal_users:", internalError.message);
+            toast.error("Erreur lors de la vérification de vos droits d'accès.");
+            await supabase.auth.signOut();
+            setIsSubmitting(false);
+            return { success: false, error: "Erreur de vérification utilisateur" };
+          }
+          
+          if (!internalUsers || internalUsers.length === 0) {
+            console.error("Utilisateur non trouvé dans internal_users");
             toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
-            // Déconnexion de l'utilisateur
             await supabase.auth.signOut();
             setIsSubmitting(false);
             return { success: false, error: "Utilisateur non autorisé" };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUser.email);
+          console.log("Utilisateur interne vérifié:", internalUsers[0].email);
           setIsAuthenticated(true);
           setIsSubmitting(false);
           return { success: true };
