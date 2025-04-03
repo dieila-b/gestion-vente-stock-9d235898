@@ -13,6 +13,15 @@ export const deleteUser = async (user: InternalUser): Promise<{ success: boolean
     if (process.env.NODE_ENV === 'development') {
       console.log(`Mode développement: Simulation de suppression de l'utilisateur ${user.id}`);
       
+      // Supprimer de localStorage
+      const savedUsers = localStorage.getItem("dev_internal_users");
+      if (savedUsers) {
+        const parsedUsers = JSON.parse(savedUsers);
+        const filteredUsers = parsedUsers.filter((u: InternalUser) => u.id !== user.id);
+        localStorage.setItem("dev_internal_users", JSON.stringify(filteredUsers));
+        console.log("Utilisateur supprimé du localStorage:", user.id);
+      }
+      
       toast({
         title: "Utilisateur supprimé",
         description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
