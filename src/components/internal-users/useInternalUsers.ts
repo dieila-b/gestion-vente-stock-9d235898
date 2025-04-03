@@ -25,15 +25,9 @@ export const useInternalUsers = () => {
   useEffect(() => {
     if (isAuthorized && !isLoading) {
       console.log("Fetching users because authorized");
-      // Call fetchUsers and ignore the returned array to match the expected void type
-      fetchUsers().then(() => {
-        console.log("Users fetched successfully");
-      }).catch(error => {
-        console.error("Error fetching users:", error);
-      });
+      fetchUsers();
     }
-    // Do not include fetchUsers in dependency array to prevent infinite loops
-  }, [isAuthorized, isLoading]); 
+  }, [isAuthorized, isLoading]); // Remove fetchUsers from dependencies
 
   // Form submission handler - memoized to prevent recreation
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {

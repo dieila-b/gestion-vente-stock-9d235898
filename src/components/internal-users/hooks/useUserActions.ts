@@ -1,4 +1,3 @@
-
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "../validation/user-form-schema";
 import { toast } from "@/hooks/use-toast";
@@ -10,7 +9,7 @@ import {
 } from "./user-actions";
 
 export const useUserActions = (
-  fetchUsers: () => Promise<InternalUser[] | void>,
+  fetchUsers: () => Promise<void>,
   addUser: (user: InternalUser) => void,
   updateUserInList: (user: InternalUser) => void
 ) => {
@@ -18,7 +17,6 @@ export const useUserActions = (
   const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
     try {
       if (selectedUser) {
-        // Update existing user with appropriate casting to match expected types
         const updatedUser = await updateUser({
           first_name: values.first_name,
           last_name: values.last_name,
@@ -32,7 +30,6 @@ export const useUserActions = (
 
         if (updatedUser) {
           console.log("User updated successfully:", updatedUser);
-          // Update the user locally
           updateUserInList(updatedUser);
           toast({
             title: "Succès",
@@ -40,7 +37,6 @@ export const useUserActions = (
           });
         }
       } else {
-        // Create new user with appropriate casting to match expected types
         if (!values.password) {
           toast({
             title: "Erreur",
@@ -63,7 +59,6 @@ export const useUserActions = (
 
         if (newUser) {
           console.log("New user created:", newUser);
-          // Add the new user to local state
           addUser(newUser);
           toast({
             title: "Succès",
@@ -105,7 +100,6 @@ export const useUserActions = (
     try {
       const success = await toggleUserStatus(user);
       if (success) {
-        // Instead of refetching, update the user locally
         const updatedUser = { ...user, is_active: !user.is_active };
         updateUserInList(updatedUser);
         

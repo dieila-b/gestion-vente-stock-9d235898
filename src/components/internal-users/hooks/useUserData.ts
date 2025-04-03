@@ -15,7 +15,7 @@ export const useUserData = () => {
     if (hasFetchedRef.current && users.length > 0) {
       console.log("Skipping fetch - already have data");
       setIsLoading(false);
-      return users;
+      return;
     }
 
     console.log("Starting to fetch users...");
@@ -64,7 +64,7 @@ export const useUserData = () => {
         setUsers(mockUsers);
         hasFetchedRef.current = true;
         setIsLoading(false);
-        return mockUsers;
+        return;
       }
 
       // In production, use Supabase
@@ -82,7 +82,6 @@ export const useUserData = () => {
       setUsers(fetchedUsers);
       hasFetchedRef.current = true;
       setIsLoading(false);
-      return fetchedUsers;
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
@@ -91,9 +90,8 @@ export const useUserData = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      return [] as InternalUser[];
     }
-  }, [users.length]); // Only depend on users.length to avoid recreating the function on every render
+  }, []); // Remove dependency on users.length to avoid re-creating the function
 
   // Method to add a user to the local list
   const addUser = useCallback((user: InternalUser) => {
