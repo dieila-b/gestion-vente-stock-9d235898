@@ -25,7 +25,7 @@ export const useUserForm = ({ onSubmit, selectedUser }: UseUserFormProps) => {
       address: selectedUser?.address || "",
       role: selectedUser?.role || "employee",
       is_active: selectedUser?.is_active ?? true,
-      status: "actif", // Valeur par défaut pour le nouveau champ
+      status: selectedUser?.status || "actif",
       id: selectedUser?.id
     },
   });

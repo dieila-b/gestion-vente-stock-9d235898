@@ -75,7 +75,12 @@ export const useUserData = () => {
       }
 
       console.log("Données utilisateurs récupérées:", data);
-      const fetchedUsers = data as InternalUser[];
+      // Convert the data to InternalUser type, ensuring the status field is present
+      const fetchedUsers = data.map((user: any) => ({
+        ...user,
+        status: user.status || "actif" // Default to 'actif' if status is missing
+      })) as InternalUser[];
+      
       setUsers(fetchedUsers);
       hasFetchedRef.current = true;
       setIsLoading(false);

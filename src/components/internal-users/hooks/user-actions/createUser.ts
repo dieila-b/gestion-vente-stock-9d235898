@@ -101,7 +101,14 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         description: `${data.first_name} ${data.last_name} a été créé avec succès`,
       });
 
-      return insertedUser as InternalUser;
+      // Add the status field if it's missing in the response
+      const typedUser = insertedUser as any;
+      const finalUser: InternalUser = {
+        ...typedUser,
+        status: typedUser.status || data.status
+      };
+      
+      return finalUser;
     }
   } catch (error) {
     console.error("Error creating user:", error);
