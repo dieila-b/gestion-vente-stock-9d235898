@@ -6,6 +6,11 @@ import { Loader2 } from "lucide-react";
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
 
+  // En mode développement, afficher directement le contenu sans vérification
+  if (process.env.NODE_ENV === 'development') {
+    return <>{children}</>;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

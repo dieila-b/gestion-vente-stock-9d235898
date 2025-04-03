@@ -14,7 +14,7 @@ export const useAuth = () => {
       try {
         // Pour le développement - considérer automatiquement autorisé
         if (process.env.NODE_ENV === 'development') {
-          console.log("Mode développement: Utilisateur considéré comme autorisé");
+          console.log("Mode développement: Authentification désactivée - Utilisateur automatiquement autorisé");
           setIsAuthorized(true);
           setIsAuthChecking(false);
           return;

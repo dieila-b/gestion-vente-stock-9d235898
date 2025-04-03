@@ -23,9 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       
       try {
-        // Pour le développement, considérer l'utilisateur comme connecté
+        // Pour le développement, considérer l'utilisateur comme connecté automatiquement
         if (process.env.NODE_ENV === 'development') {
-          console.log("Mode développement: Utilisateur considéré comme authentifié");
+          console.log("Mode développement: Authentification désactivée - Utilisateur automatiquement authentifié");
           setIsAuthenticated(true);
           setUserEmail("dev@example.com");
           setLoading(false);
@@ -95,9 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Simulation de connexion");
+        console.log("Mode développement: Authentification désactivée - Simulation de connexion automatique");
         setIsAuthenticated(true);
-        setUserEmail(email);
+        setUserEmail(email || "dev@example.com");
         return;
       }
       
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Simulation de déconnexion");
+        console.log("Mode développement: Authentification désactivée - Simulation de déconnexion");
         setIsAuthenticated(false);
         setUserEmail(null);
         return;

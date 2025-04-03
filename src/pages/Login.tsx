@@ -22,10 +22,10 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Si en mode développement, simuler la connexion
+      // Si en mode développement, connexion automatique sans vérification
       if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Simulation de connexion");
-        await login(email);
+        console.log("Mode développement: Authentification désactivée - Connexion automatique");
+        await login(email || "dev@example.com");
         navigate("/dashboard");
         return;
       }
