@@ -4,11 +4,6 @@ import { useAuth } from "./AuthProvider";
 import { Loader2 } from "lucide-react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  // En mode développement, afficher directement le contenu sans vérification
-  if (process.env.NODE_ENV === 'development') {
-    return <>{children}</>;
-  }
-
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {

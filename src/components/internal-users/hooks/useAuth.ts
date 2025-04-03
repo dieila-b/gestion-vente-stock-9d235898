@@ -4,22 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth as useGlobalAuth } from "@/components/auth/AuthProvider";
 
 export const useAuth = () => {
-  const [isAuthChecking, setIsAuthChecking] = useState(false); // Initialisé à false en mode développement
-  const [isAuthorized, setIsAuthorized] = useState(true); // Initialisé à true en mode développement
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const { isAuthenticated } = useGlobalAuth();
 
   useEffect(() => {
-    // En mode développement, considérer automatiquement autorisé sans aucune vérification
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Mode développement: Authentification désactivée - Utilisateur automatiquement autorisé");
-      setIsAuthorized(true);
-      setIsAuthChecking(false);
-      return;
-    }
-
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
+        // Pour le développement - considérer automatiquement autorisé
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Mode développement: Utilisateur considéré comme autorisé");
+          setIsAuthorized(true);
+          setIsAuthChecking(false);
+          return;
+        }
+
         // Obtenir la session courante
         const { data: { session } } = await supabase.auth.getSession();
         

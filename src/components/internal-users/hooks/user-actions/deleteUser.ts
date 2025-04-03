@@ -3,31 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
 
-export const deleteUser = async (user: InternalUser): Promise<{ success: boolean, id: string }> => {
+export const deleteUser = async (user: InternalUser): Promise<boolean> => {
   try {
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${user.first_name} ${user.last_name}?`)) {
-      return { success: false, id: user.id };
-    }
-
-    // En mode développement, simuler la suppression sans appel à Supabase
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Mode développement: Simulation de suppression de l'utilisateur ${user.id}`);
-      
-      // Supprimer de localStorage
-      const savedUsers = localStorage.getItem("dev_internal_users");
-      if (savedUsers) {
-        const parsedUsers = JSON.parse(savedUsers);
-        const filteredUsers = parsedUsers.filter((u: InternalUser) => u.id !== user.id);
-        localStorage.setItem("dev_internal_users", JSON.stringify(filteredUsers));
-        console.log("Utilisateur supprimé du localStorage:", user.id);
-      }
-      
-      toast({
-        title: "Utilisateur supprimé",
-        description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
-      });
-      
-      return { success: true, id: user.id };
+      return false;
     }
 
     const { error } = await supabase
@@ -42,7 +21,7 @@ export const deleteUser = async (user: InternalUser): Promise<{ success: boolean
       description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
     });
 
-    return { success: true, id: user.id };
+    return true;
   } catch (error) {
     console.error("Error deleting user:", error);
     toast({
@@ -50,6 +29,6 @@ export const deleteUser = async (user: InternalUser): Promise<{ success: boolean
       description: "Impossible de supprimer l'utilisateur",
       variant: "destructive",
     });
-    return { success: false, id: user.id };
+    return false;
   }
 };
