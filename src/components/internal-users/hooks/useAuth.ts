@@ -12,17 +12,17 @@ export const useAuth = () => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // For development purposes, if using the global auth context and no real Supabase auth,
-        // we'll consider the user authorized to make it easier to test
-        if (isAuthenticated && !session) {
+        // For development purposes only - override auth check
+        // This ensures we can test the UI without Supabase auth
+        if (process.env.NODE_ENV === 'development') {
           console.log("Development mode: User considered authorized");
           setIsAuthorized(true);
           setIsAuthChecking(false);
           return;
         }
+
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           console.log("No session found, user not authorized");

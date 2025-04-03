@@ -1,40 +1,29 @@
 
-import * as z from "zod";
+import { z } from "zod";
 
 export const userFormSchema = z.object({
   id: z.string().optional(),
-  first_name: z.string().min(1, { message: "Le prénom est requis" }),
-  last_name: z.string().min(1, { message: "Le nom est requis" }),
-  email: z.string().email({ message: "Format d'email invalide" }),
-  password: z.string()
-    .refine(
-      (password) => {
-        // Skip validation if password field is empty and we're in edit mode
-        if (!password) return true;
-        
-        const hasUpperCase = /[A-Z]/.test(password);
-        const hasLowerCase = /[a-z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
-        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
-        
-        return password.length >= 8 && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
-      },
-      {
-        message: "Le mot de passe doit contenir au moins 8 caractères dont une majuscule, une minuscule, un chiffre et un caractère spécial"
-      }
-    )
-    .optional()
-    .or(z.literal("")),
-  confirm_password: z.string().optional().or(z.literal("")),
-  phone: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  role: z.enum(["admin", "manager", "employee"], {
-    required_error: "Le rôle est requis",
-  }),
-  is_active: z.boolean().optional().default(true),
-  // Removed force_password_change field as it doesn't exist in database
+  first_name: z.string().min(1, "Le prénom est requis"),
+  last_name: z.string().min(1, "Le nom est requis"),
+  email: z.string().email("Email invalide"),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").optional(),
+  confirm_password: z.string().optional(),
+  role: z.enum(["admin", "manager", "employee"]),
+  is_active: z.boolean().default(true),
 }).refine((data) => {
-  if (data.password && data.confirm_password && data.password !== data.confirm_password) {
+  // Si pas de password et pas d'id (nouveau user), alors erreur
+  if (!data.id && !data.password) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Le mot de passe est obligatoire pour les nouveaux utilisateurs",
+  path: ["password"],
+}).refine((data) => {
+  // Si password est renseigné, confirm_password doit correspondre
+  if (data.password && data.password !== data.confirm_password) {
     return false;
   }
   return true;

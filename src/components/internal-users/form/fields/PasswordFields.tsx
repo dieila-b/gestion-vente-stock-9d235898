@@ -1,59 +1,60 @@
 
-import { 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage,
-  FormDescription
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { UseFormReturn } from "react-hook-form";
+import { UserFormValues } from "../../validation/user-form-schema";
 
-export const PasswordFields = ({ form }: { form: any }) => {
-  const isEditMode = form.getValues().id ? true : false;
+interface PasswordFieldsProps {
+  form: UseFormReturn<UserFormValues>;
+}
+
+export const PasswordFields = ({ form }: PasswordFieldsProps) => {
+  const isEditMode = !!form.getValues().id;
   
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{isEditMode ? "Nouveau mot de passe" : "Mot de passe"}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder={isEditMode ? "Laisser vide pour ne pas changer" : "Mot de passe"} 
-                  {...field} 
-                />
-              </FormControl>
-              <FormDescription className="text-xs">
-                8 caractères min. avec majuscules, minuscules, chiffres et caractères spéciaux
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <>
+      <FormField
+        control={form.control}
+        name="password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Mot de passe
+              {!isEditMode && <span className="text-red-500">*</span>}
+              {isEditMode && <span className="text-muted-foreground text-sm"> (laisser vide pour ne pas modifier)</span>}
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                placeholder={isEditMode ? "••••••••" : "Mot de passe"}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name="confirm_password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirmer le mot de passe</FormLabel>
-              <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="Confirmer le mot de passe" 
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-    </div>
+      <FormField
+        control={form.control}
+        name="confirm_password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Confirmer le mot de passe
+              {!isEditMode && <span className="text-red-500">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                placeholder={isEditMode ? "••••••••" : "Confirmer le mot de passe"}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
   );
 };
