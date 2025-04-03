@@ -1,19 +1,27 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/hooks/useAuth";
 import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loading } = useAuth();
+  const { isAuthenticated, login, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,22 +29,33 @@ export default function Login() {
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
       console.log("Mode développement: Connexion directe");
-      login("dev@example.com", "password");
-      navigate("/dashboard");
+      const result = await login("dev@example.com", "password");
+      console.log("Résultat login en mode dev:", result);
+      
+      if (result.success) {
+        toast.success("Connexion réussie (mode développement)");
+        navigate("/dashboard");
+      } else {
+        console.error("Échec de la connexion en mode dev:", result.error);
+        toast.error(result.error || "Erreur lors de la connexion");
+      }
       return;
     }
     
     // En production, vérifier les identifiants avec Supabase
     setIsSubmitting(true);
+    
     try {
       console.log("Tentative de connexion avec email:", email);
       
       if (!email || !password) {
+        console.error("Formulaire incomplet - Email ou mot de passe manquant");
         toast.error("Veuillez saisir votre email et votre mot de passe");
         setIsSubmitting(false);
         return;
       }
       
+      console.log("Appel de la fonction login avec les identifiants fournis");
       const result = await login(email, password);
       console.log("Résultat login:", result);
       
@@ -49,7 +68,7 @@ export default function Login() {
         toast.error(result.error || "Identifiants incorrects");
       }
     } catch (error) {
-      console.error("Erreur lors de la tentative de connexion:", error);
+      console.error("Exception lors de la tentative de connexion:", error);
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
       setIsSubmitting(false);
@@ -81,6 +100,8 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isSubmitting || loading}
+                  aria-label="Email"
                 />
               </div>
               <div>
@@ -90,6 +111,8 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isSubmitting || loading}
+                  aria-label="Mot de passe"
                 />
               </div>
             </>
