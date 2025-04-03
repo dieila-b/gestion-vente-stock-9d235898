@@ -17,19 +17,20 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // En mode développement, rediriger automatiquement vers le dashboard
+  if (process.env.NODE_ENV === 'development') {
+    // Utiliser setTimeout pour permettre au composant de se monter avant la redirection
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 0);
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Si en mode développement, connexion automatique sans vérification
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Authentification désactivée - Connexion automatique");
-        await login(email || "dev@example.com");
-        navigate("/dashboard");
-        return;
-      }
-
       // Authentification réelle avec Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,

@@ -13,25 +13,25 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Default to true in dev mode
+  const [loading, setLoading] = useState(false); // Default to false in dev mode
+  const [userEmail, setUserEmail] = useState<string | null>("dev@example.com"); // Default email in dev mode
 
   // Vérifier l'état d'authentification au chargement
   useEffect(() => {
+    // En mode développement, ne pas vérifier l'authentification
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Mode développement: Authentification complètement désactivée");
+      setIsAuthenticated(true);
+      setUserEmail("dev@example.com");
+      setLoading(false);
+      return;
+    }
+
     const checkAuth = async () => {
       setLoading(true);
       
       try {
-        // Pour le développement, considérer l'utilisateur comme connecté automatiquement
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Mode développement: Authentification désactivée - Utilisateur automatiquement authentifié");
-          setIsAuthenticated(true);
-          setUserEmail("dev@example.com");
-          setLoading(false);
-          return;
-        }
-
         // Vérification de la session Supabase
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -91,16 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string) => {
+    // En mode développement, ne rien faire de spécial
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Mode développement: Authentification désactivée - Connexion automatique");
+      setIsAuthenticated(true);
+      setUserEmail(email || "dev@example.com");
+      return;
+    }
+    
     setLoading(true);
     
-    try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Authentification désactivée - Simulation de connexion automatique");
-        setIsAuthenticated(true);
-        setUserEmail(email || "dev@example.com");
-        return;
-      }
-      
+    try {      
       // L'authentification est gérée par la page de login
       setIsAuthenticated(true);
       setUserEmail(email);
@@ -113,16 +114,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const logout = async () => {
+    // En mode développement, ne rien faire de spécial
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Mode développement: Authentification désactivée - Simulation de déconnexion");
+      setIsAuthenticated(false);
+      setUserEmail(null);
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Authentification désactivée - Simulation de déconnexion");
-        setIsAuthenticated(false);
-        setUserEmail(null);
-        return;
-      }
-      
       await supabase.auth.signOut();
       setIsAuthenticated(false);
       setUserEmail(null);
