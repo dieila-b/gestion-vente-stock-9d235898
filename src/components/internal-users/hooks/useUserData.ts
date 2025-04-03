@@ -11,22 +11,22 @@ export const useUserData = () => {
 
   // Memoized fetch function to prevent recreation on each render
   const fetchUsers = useCallback(async () => {
-    // Prevent duplicate fetches if we already have data
+    // Ne pas charger à nouveau si on a déjà les données
     if (hasFetchedRef.current && users.length > 0) {
-      console.log("Skipping fetch - already have data");
+      console.log("Données déjà chargées, pas besoin de refetch");
       setIsLoading(false);
       return;
     }
 
-    console.log("Starting to fetch users...");
+    console.log("Chargement des utilisateurs...");
     setIsLoading(true);
     
     try {
-      // In development mode, simulate user data
+      // En mode développement, simuler des données
       if (process.env.NODE_ENV === 'development') {
-        console.log("Development mode: Simulating user data");
+        console.log("Mode développement: Simulation de données utilisateurs");
         
-        // Create mock data for development
+        // Données simulées pour le développement
         const mockUsers: InternalUser[] = [
           {
             id: "dev-1",
@@ -60,14 +60,15 @@ export const useUserData = () => {
           }
         ];
         
-        // Update state with mock data
+        // Mise à jour des données avec les données simulées
         setUsers(mockUsers);
         hasFetchedRef.current = true;
         setIsLoading(false);
+        console.log("Utilisateurs simulés chargés:", mockUsers);
         return;
       }
 
-      // In production, use Supabase
+      // En production, utiliser Supabase
       const { data, error } = await supabase
         .from("internal_users")
         .select("*")
@@ -77,13 +78,13 @@ export const useUserData = () => {
         throw error;
       }
 
-      console.log("Fetched users data:", data);
+      console.log("Données utilisateurs récupérées:", data);
       const fetchedUsers = data as InternalUser[];
       setUsers(fetchedUsers);
       hasFetchedRef.current = true;
       setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Erreur lors du chargement des utilisateurs:", error);
       toast({
         title: "Erreur",
         description: "Impossible de récupérer la liste des utilisateurs",
@@ -91,17 +92,17 @@ export const useUserData = () => {
       });
       setIsLoading(false);
     }
-  }, []); // Remove dependency on users.length to avoid re-creating the function
+  }, []); // Pas de dépendance pour éviter les recréations inutiles de la fonction
 
-  // Method to add a user to the local list
+  // Méthode pour ajouter un utilisateur à la liste locale
   const addUser = useCallback((user: InternalUser) => {
-    console.log("Adding user to local list:", user);
+    console.log("Ajout d'un utilisateur à la liste:", user);
     setUsers(prevUsers => [...prevUsers, user]);
   }, []);
 
-  // Method to update a user in the local list
+  // Méthode pour mettre à jour un utilisateur dans la liste locale
   const updateUserInList = useCallback((updatedUser: InternalUser) => {
-    console.log("Updating user in local list:", updatedUser);
+    console.log("Mise à jour d'un utilisateur dans la liste:", updatedUser);
     setUsers(prevUsers => 
       prevUsers.map(user => 
         user.id === updatedUser.id ? updatedUser : user

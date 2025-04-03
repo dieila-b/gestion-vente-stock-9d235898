@@ -1,3 +1,4 @@
+
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "../validation/user-form-schema";
 import { toast } from "@/hooks/use-toast";
@@ -29,7 +30,7 @@ export const useUserActions = (
         }, selectedUser);
 
         if (updatedUser) {
-          console.log("User updated successfully:", updatedUser);
+          console.log("Utilisateur mis à jour avec succès:", updatedUser);
           updateUserInList(updatedUser);
           toast({
             title: "Succès",
@@ -58,7 +59,7 @@ export const useUserActions = (
         });
 
         if (newUser) {
-          console.log("New user created:", newUser);
+          console.log("Nouvel utilisateur créé:", newUser);
           addUser(newUser);
           toast({
             title: "Succès",
@@ -67,7 +68,7 @@ export const useUserActions = (
         }
       }
     } catch (error: any) {
-      console.error("Error submitting user:", error);
+      console.error("Erreur lors de la soumission de l'utilisateur:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors de l'opération",
@@ -87,7 +88,7 @@ export const useUserActions = (
         });
       }
     } catch (error: any) {
-      console.error("Error deleting user:", error);
+      console.error("Erreur lors de la suppression de l'utilisateur:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors de la suppression",
@@ -109,7 +110,7 @@ export const useUserActions = (
         });
       }
     } catch (error: any) {
-      console.error("Error toggling user status:", error);
+      console.error("Erreur lors du changement de statut de l'utilisateur:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors du changement de statut",

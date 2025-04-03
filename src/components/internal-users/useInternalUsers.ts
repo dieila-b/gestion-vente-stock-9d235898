@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback } from "react";
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "./validation/user-form-schema";
 import { useAuth } from "./hooks/useAuth";
@@ -8,41 +8,41 @@ import { useUserFormState } from "./hooks/useUserForm";
 import { useUserActions } from "./hooks/useUserActions";
 
 export const useInternalUsers = () => {
-  // Get authentication status
+  // Récupération du statut d'authentification
   const { isAuthChecking, isAuthorized } = useAuth();
   
-  // Get user data and actions
+  // Récupération des données utilisateur et des actions
   const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
   
-  // Dialog state management
+  // Gestion de l'état du dialogue
   const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserFormState();
   
-  // User actions (submit, delete, toggle status)
+  // Actions utilisateur (soumettre, supprimer, basculer le statut)
   const userActions = useUserActions(fetchUsers, addUser, updateUserInList);
   const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = userActions;
 
-  // Load users when authorized, but only once
+  // Charger les utilisateurs quand autorisé, mais une seule fois
   useEffect(() => {
-    if (isAuthorized && !isLoading) {
-      console.log("Fetching users because authorized");
+    if (isAuthorized) {
+      console.log("Chargement des utilisateurs car autorisé");
       fetchUsers();
     }
-  }, [isAuthorized, isLoading]); // Remove fetchUsers from dependencies
+  }, [isAuthorized, fetchUsers]);
 
-  // Form submission handler - memoized to prevent recreation
+  // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
     await submitUserAction(values, selectedUser);
-    // Close dialog after submission
+    // Fermer le dialogue après la soumission
     setIsAddDialogOpen(false);
   }, [submitUserAction, selectedUser, setIsAddDialogOpen]);
 
-  // Add user handler - memoized to prevent recreation
+  // Gestionnaire d'ajout d'utilisateur - mémorisé pour éviter les récréations
   const handleAddClick = useCallback(() => {
     setSelectedUser(null);
     setIsAddDialogOpen(true);
   }, [setSelectedUser, setIsAddDialogOpen]);
 
-  // Edit user handler - memoized to prevent recreation
+  // Gestionnaire de modification d'utilisateur - mémorisé pour éviter les récréations
   const handleEditClick = useCallback((user: InternalUser) => {
     setSelectedUser(user);
     setIsAddDialogOpen(true);
