@@ -11,7 +11,6 @@ interface UpdateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
-  force_password_change: boolean;
   password?: string;
 }
 
@@ -27,7 +26,6 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
         address: data.address || null,
         role: data.role,
         is_active: data.is_active,
-        force_password_change: data.force_password_change,
         // Only include password if provided
         ...(data.password ? { password: data.password } : {})
       })
