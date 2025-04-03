@@ -33,6 +33,18 @@ export function useAuthActions(
       if (error) {
         console.error("Erreur d'authentification:", error.message);
         setIsSubmitting(false);
+        
+        // Message d'erreur plus précis selon le type d'erreur
+        if (error.message.includes("Invalid login credentials")) {
+          return { success: false, error: "Identifiants incorrects. Vérifiez votre email et mot de passe." };
+        } else if (error.message.includes("Email not confirmed")) {
+          return { success: false, error: "Compte non vérifié. Veuillez vérifier votre email." };
+        } else if (error.message.includes("Invalid email")) {
+          return { success: false, error: "Email invalide. Veuillez vérifier votre adresse email." };
+        } else if (error.message.includes("Invalid password")) {
+          return { success: false, error: "Mot de passe incorrect. Veuillez réessayer." };
+        }
+        
         return { success: false, error: error.message };
       }
 
