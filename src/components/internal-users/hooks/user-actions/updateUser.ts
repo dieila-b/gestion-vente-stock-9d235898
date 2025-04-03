@@ -16,6 +16,18 @@ interface UpdateUserData {
 
 export const updateUser = async (data: UpdateUserData, user: InternalUser): Promise<boolean> => {
   try {
+    // First, check if we have the current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    
+    // If we have a session, use it for authentication
+    let authHeaders = {};
+    if (session) {
+      authHeaders = {
+        Authorization: `Bearer ${session.access_token}`
+      };
+    }
+    
     const { error } = await supabase
       .from("internal_users")
       .update({

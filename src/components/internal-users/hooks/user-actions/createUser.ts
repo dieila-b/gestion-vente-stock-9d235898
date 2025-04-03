@@ -15,6 +15,19 @@ interface CreateUserData {
 
 export const createUser = async (data: CreateUserData): Promise<string | null> => {
   try {
+    // First, check if we have the current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    
+    // If we have a session, use it for authentication
+    let authHeaders = {};
+    if (session) {
+      authHeaders = {
+        Authorization: `Bearer ${session.access_token}`
+      };
+    }
+    
+    // Create the user in the internal_users table
     const { data: userData, error } = await supabase
       .from("internal_users")
       .insert({

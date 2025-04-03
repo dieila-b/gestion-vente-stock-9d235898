@@ -12,35 +12,44 @@ export const useAuth = () => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        // For development purposes, allow access if authenticated
-        if (isAuthenticated) {
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // For development purposes, if using the global auth context and no real Supabase auth,
+        // we'll consider the user authorized to make it easier to test
+        if (isAuthenticated && !session) {
+          console.log("Development mode: User considered authorized");
           setIsAuthorized(true);
           setIsAuthChecking(false);
           return;
         }
         
-        const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session) {
+          console.log("No session found, user not authorized");
           setIsAuthorized(false);
           setIsAuthChecking(false);
           return;
         }
         
+        // Check if the user has admin role by querying the internal_users table
         const { data: userData, error: userError } = await supabase
           .from('internal_users')
           .select('role')
           .eq('id', session.user.id)
           .single();
         
-        if (userError || !userData) {
+        if (userError) {
           console.error("Error checking user role:", userError);
           setIsAuthorized(false);
-          setIsAuthChecking(false);
-          return;
+        } else if (userData) {
+          // Only allow admin users to access the internal users page
+          const isAdmin = userData.role === 'admin';
+          console.log(`User role: ${userData.role}, isAdmin: ${isAdmin}`);
+          setIsAuthorized(isAdmin);
+        } else {
+          console.log("No user data found");
+          setIsAuthorized(false);
         }
-        
-        setIsAuthorized(userData.role === 'admin');
       } catch (error) {
         console.error("Auth check error:", error);
         setIsAuthorized(false);
