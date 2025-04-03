@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/hooks/useAuth";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -14,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
@@ -37,6 +39,7 @@ export default function Login() {
         navigate("/dashboard");
       } else {
         console.error("Échec de la connexion en mode dev:", result.error);
+        setError(result.error || "Erreur lors de la connexion");
         toast.error(result.error || "Erreur lors de la connexion");
       }
       return;
@@ -50,6 +53,7 @@ export default function Login() {
       
       if (!email || !password) {
         console.error("Formulaire incomplet - Email ou mot de passe manquant");
+        setError("Veuillez saisir votre email et votre mot de passe");
         toast.error("Veuillez saisir votre email et votre mot de passe");
         setIsSubmitting(false);
         return;
@@ -65,10 +69,12 @@ export default function Login() {
         navigate("/dashboard");
       } else {
         console.error("Échec de la connexion:", result.error);
+        setError(result.error || "Identifiants incorrects");
         toast.error(result.error || "Identifiants incorrects");
       }
     } catch (error) {
       console.error("Exception lors de la tentative de connexion:", error);
+      setError("Une erreur est survenue. Veuillez réessayer plus tard.");
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
       setIsSubmitting(false);
@@ -89,6 +95,13 @@ export default function Login() {
               : "Accès réservé aux utilisateurs internes"}
           </p>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {process.env.NODE_ENV !== 'development' && (

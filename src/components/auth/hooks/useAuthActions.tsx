@@ -33,6 +33,11 @@ export function useAuthActions(
       if (error) {
         console.error("Erreur d'authentification:", error.message);
         setIsSubmitting(false);
+        
+        // Message d'erreur plus précis selon le type d'erreur
+        if (error.message.includes("Invalid login credentials")) {
+          return { success: false, error: "Identifiants incorrects. Vérifiez votre email et mot de passe." };
+        }
         return { success: false, error: error.message };
       }
 
@@ -61,7 +66,7 @@ export function useAuthActions(
             toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
             await supabase.auth.signOut();
             setIsSubmitting(false);
-            return { success: false, error: "Utilisateur non autorisé" };
+            return { success: false, error: "Votre compte n'a pas les autorisations nécessaires pour accéder à l'application." };
           }
           
           console.log("Utilisateur interne vérifié:", internalUsers[0].email);

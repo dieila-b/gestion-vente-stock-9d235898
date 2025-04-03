@@ -59,6 +59,7 @@ export function useAuthState() {
             }
           } catch (err) {
             console.error("Erreur lors de la vérification internal_users:", err);
+            await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         } else {
