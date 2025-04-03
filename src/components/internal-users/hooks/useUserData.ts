@@ -9,23 +9,24 @@ export const useUserData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedRef = useRef(false);
 
+  // Memoized fetch function to prevent recreation on each render
   const fetchUsers = useCallback(async () => {
-    // Only fetch if we haven't already or if we don't have data yet
+    // Prevent duplicate fetches if we already have data
     if (hasFetchedRef.current && users.length > 0) {
       console.log("Skipping fetch - already have data");
       setIsLoading(false);
-      return;
+      return users;
     }
 
+    console.log("Starting to fetch users...");
     setIsLoading(true);
+    
     try {
-      // In development mode, we can simulate user data
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      
-      if (isDevelopment) {
+      // In development mode, simulate user data
+      if (process.env.NODE_ENV === 'development') {
         console.log("Development mode: Simulating user data");
         
-        // Simulate some users if none are already present
+        // Create mock data for development
         const mockUsers: InternalUser[] = [
           {
             id: "dev-1",
@@ -59,13 +60,14 @@ export const useUserData = () => {
           }
         ];
         
+        // Update state with mock data
         setUsers(mockUsers);
         hasFetchedRef.current = true;
         setIsLoading(false);
-        return;
+        return mockUsers;
       }
 
-      // In production, make the normal Supabase call
+      // In production, use Supabase
       const { data, error } = await supabase
         .from("internal_users")
         .select("*")
@@ -76,8 +78,11 @@ export const useUserData = () => {
       }
 
       console.log("Fetched users data:", data);
-      setUsers(data as InternalUser[]);
+      const fetchedUsers = data as InternalUser[];
+      setUsers(fetchedUsers);
       hasFetchedRef.current = true;
+      setIsLoading(false);
+      return fetchedUsers;
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
@@ -85,10 +90,10 @@ export const useUserData = () => {
         description: "Impossible de récupérer la liste des utilisateurs",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
+      return [] as InternalUser[];
     }
-  }, [users.length]);
+  }, [users.length]); // Only depend on users.length to avoid recreating the function on every render
 
   // Method to add a user to the local list
   const addUser = useCallback((user: InternalUser) => {
