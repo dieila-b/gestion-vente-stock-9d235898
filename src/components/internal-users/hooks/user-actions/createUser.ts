@@ -73,24 +73,29 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
         }
       }
 
-      // Création utilisateur via une fonction Supabase 
-      // qui aura les droits de service_role
-      const { data: funcData, error: funcError } = await supabase
-        .rpc('create_internal_user', {
-          p_first_name: data.first_name,
-          p_last_name: data.last_name,
-          p_email: data.email,
-          p_phone: data.phone || null,
-          p_address: data.address || null,
-          p_role: data.role,
-          p_is_active: data.is_active
-        });
+      // Comme nous ne pouvons pas appeler la fonction RPC 'create_internal_user' directement à cause des limitations de typage,
+      // on utilise une approche alternative avec l'API REST de Supabase
+      
+      // 1. D'abord insérer l'utilisateur dans la table internal_users
+      const { data: insertedUser, error: insertError } = await supabase
+        .from("internal_users")
+        .insert({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          address: data.address || null,
+          role: data.role,
+          is_active: data.is_active
+        })
+        .select("id")
+        .single();
 
-      if (funcError) {
-        console.error("Erreur fonction Supabase:", funcError);
+      if (insertError) {
+        console.error("Erreur lors de l'insertion de l'utilisateur:", insertError);
         toast({
           title: "Erreur",
-          description: "Impossible de créer l'utilisateur: " + funcError.message,
+          description: "Impossible de créer l'utilisateur: " + insertError.message,
           variant: "destructive",
         });
         return null;
@@ -101,7 +106,7 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
         description: `${data.first_name} ${data.last_name} a été créé avec succès`,
       });
 
-      return funcData || null;
+      return insertedUser?.id || null;
     }
   } catch (error) {
     console.error("Erreur lors de la création de l'utilisateur:", error);

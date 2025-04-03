@@ -72,24 +72,27 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
         }
       }
 
-      // Mise à jour via une fonction Supabase qui aura les droits service_role
-      const { error: funcError } = await supabase
-        .rpc('update_internal_user', {
-          p_user_id: user.id,
-          p_first_name: data.first_name,
-          p_last_name: data.last_name,
-          p_email: data.email,
-          p_phone: data.phone || null,
-          p_address: data.address || null,
-          p_role: data.role,
-          p_is_active: data.is_active
-        });
+      // Comme nous ne pouvons pas appeler la fonction RPC 'update_internal_user' directement à cause des limitations de typage,
+      // on utilise une approche alternative avec l'API REST de Supabase
+      
+      const { error: updateError } = await supabase
+        .from("internal_users")
+        .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          address: data.address || null,
+          role: data.role,
+          is_active: data.is_active
+        })
+        .eq("id", user.id);
 
-      if (funcError) {
-        console.error("Erreur fonction Supabase:", funcError);
+      if (updateError) {
+        console.error("Erreur lors de la mise à jour de l'utilisateur:", updateError);
         toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour l'utilisateur: " + funcError.message,
+          title: "Erreur", 
+          description: "Impossible de mettre à jour l'utilisateur: " + updateError.message,
           variant: "destructive",
         });
         return false;
