@@ -16,6 +16,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       
       // En mode développement, on considère toujours l'utilisateur comme interne
       if (process.env.NODE_ENV === 'development') {
+        console.log("Mode développement: Utilisateur considéré comme autorisé");
         setIsInternalUser(true);
         setLoading(false);
         return;
@@ -23,7 +24,14 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
       // En production, on vérifie si l'utilisateur est un utilisateur interne
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Erreur lors de la récupération de la session:", sessionError);
+          setIsInternalUser(false);
+          setLoading(false);
+          return;
+        }
         
         if (!session) {
           console.log("Pas de session active trouvée");
@@ -32,7 +40,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           return;
         }
         
-        console.log("Session active trouvée pour l'utilisateur:", session.user.id);
+        console.log("Session active trouvée pour l'utilisateur:", session.user.email);
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         const { data, error } = await supabase

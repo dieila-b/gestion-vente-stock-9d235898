@@ -26,9 +26,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        console.log("Vérification de la session Supabase...");
         // En production, vérifier la session Supabase
-        const { data } = await supabase.auth.getSession();
-        setIsAuthenticated(!!data.session);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erreur lors de la vérification de session:", error);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+        
+        if (data.session) {
+          console.log("Session active trouvée pour:", data.session.user.email);
+          setIsAuthenticated(true);
+        } else {
+          console.log("Aucune session active trouvée");
+          setIsAuthenticated(false);
+        }
       } catch (error) {
         console.error("Erreur lors de la vérification de session:", error);
         setIsAuthenticated(false);
@@ -42,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // S'abonner aux changements d'authentification
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Événement d'authentification:", event, session?.user?.email);
         setIsAuthenticated(!!session);
       }
     );
@@ -54,10 +70,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = () => {
+    console.log("Fonction login appelée");
     setIsAuthenticated(true);
   };
   
   const logout = async () => {
+    console.log("Déconnexion en cours...");
     setLoading(true);
     // En mode développement, juste mettre à jour l'état
     if (process.env.NODE_ENV === 'development') {

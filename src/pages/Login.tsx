@@ -29,6 +29,7 @@ export default function Login() {
     // En production, vérifier les identifiants avec Supabase
     setIsSubmitting(true);
     try {
+      console.log("Tentative de connexion avec:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
@@ -37,11 +38,29 @@ export default function Login() {
       if (error) {
         console.error("Erreur d'authentification:", error.message);
         toast.error("Identifiants incorrects. Veuillez réessayer.");
+        setIsSubmitting(false);
         return;
       }
 
       if (data.user) {
-        console.log("Utilisateur connecté:", data.user);
+        console.log("Utilisateur connecté:", data.user.email);
+        // Vérifier si l'utilisateur existe dans la table internal_users
+        const { data: internalUser, error: internalError } = await supabase
+          .from('internal_users')
+          .select('id, email')
+          .eq('email', data.user.email)
+          .single();
+          
+        if (internalError || !internalUser) {
+          console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+          toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
+          // Déconnexion de l'utilisateur
+          await supabase.auth.signOut();
+          setIsSubmitting(false);
+          return;
+        }
+        
+        console.log("Utilisateur interne trouvé:", internalUser);
         login();
         navigate("/dashboard");
       }
@@ -92,7 +111,11 @@ export default function Login() {
             </>
           )}
           
-          <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={loading || isSubmitting}
+          >
             {loading || isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
