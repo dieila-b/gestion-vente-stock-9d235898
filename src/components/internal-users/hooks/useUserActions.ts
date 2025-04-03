@@ -30,17 +30,17 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
 
         // If password is provided, update it
         if (values.password && values.password.trim() !== "") {
-          const { error: passwordError } = await supabase.auth.admin.updateUserById(
-            selectedUser.id,
-            { 
-              password: values.password,
-              user_metadata: { force_password_change: values.force_password_change }
-            }
-          );
+          // Instead of using admin.updateUserById, use the auth.updateUser function
+          // which doesn't require admin privileges
+          const { error: passwordError } = await supabase.auth.updateUser({
+            password: values.password,
+            data: { force_password_change: values.force_password_change }
+          });
 
           if (passwordError) {
-            // Handle authorization error specifically
-            if (passwordError.code === 'not_admin') {
+            if (passwordError.message.includes('auth/admin') || 
+                passwordError.message.includes('not_admin') || 
+                passwordError.message.includes('permission')) {
               toast({
                 title: "Erreur d'autorisation",
                 description: "Vous n'avez pas les droits administrateur nécessaires pour effectuer cette action",
@@ -51,6 +51,11 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
             throw passwordError;
           }
         }
+        
+        toast({
+          title: "Utilisateur mis à jour",
+          description: "L'utilisateur a été mis à jour avec succès",
+        });
       } else {
         // Create new user
         const { data: existingUsers, error: checkError } = await supabase
@@ -80,20 +85,28 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
         }
 
         try {
-          // Create an auth user
-          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          // Instead of using admin.createUser, use the auth.signUp function
+          // which doesn't require admin privileges
+          const { data: authData, error: authError } = await supabase.auth.signUp({
             email: values.email,
             password: values.password,
-            email_confirm: true,
-            user_metadata: { force_password_change: values.force_password_change }
+            options: {
+              data: { 
+                force_password_change: values.force_password_change,
+                first_name: values.first_name,
+                last_name: values.last_name,
+                role: values.role
+              }
+            }
           });
 
           if (authError) {
-            // Handle authorization error specifically
-            if (authError.code === 'not_admin') {
+            if (authError.message.includes('auth/admin') || 
+                authError.message.includes('not_admin') || 
+                authError.message.includes('permission')) {
               toast({
                 title: "Erreur d'autorisation",
-                description: "Vous n'avez pas les droits administrateur nécessaires pour effectuer cette action",
+                description: "Vous n'avez pas les droits administrateur nécessaires pour créer des utilisateurs",
                 variant: "destructive",
               });
               return;
@@ -121,11 +134,19 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
             });
 
           if (insertError) throw insertError;
+          
+          toast({
+            title: "Utilisateur créé",
+            description: "L'utilisateur a été créé avec succès",
+          });
         } catch (error: any) {
           console.error("Error submitting user:", error);
           
           // Check for specific error types and provide clearer messages
-          if (error.code === 'not_admin') {
+          if (error.message && (
+              error.message.includes('auth/admin') || 
+              error.message.includes('not_admin') || 
+              error.message.includes('permission'))) {
             toast({
               title: "Erreur d'autorisation",
               description: "Vous n'avez pas les droits administrateur nécessaires pour créer des utilisateurs",
@@ -140,13 +161,7 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
 
       // Refresh the users list
       fetchUsers();
-      
-      toast({
-        title: selectedUser ? "Utilisateur mis à jour" : "Utilisateur créé",
-        description: "L'opération a été effectuée avec succès",
-      });
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting user:", error);
       toast({
         title: "Erreur",

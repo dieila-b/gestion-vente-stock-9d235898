@@ -14,7 +14,6 @@ import {
 } from "./FormFields";
 import { FormActions } from "./FormActions";
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
 
 interface UserFormContentProps {
   onSubmit: (user: UserFormValues) => Promise<void>;
@@ -52,11 +51,9 @@ export const UserFormContent = ({
       await onSubmit(values);
       form.reset();
       onCancel();
-      // Note: Toast de succès déplacé dans useUserActions pour éviter d'afficher un message de succès
-      // alors qu'une erreur d'autorisation s'est produite
     } catch (error) {
       console.error("Error submitting form:", error);
-      // Note: L'erreur est déjà gérée dans useUserActions
+      // Error is already handled in useUserActions
     } finally {
       setIsSubmitting(false);
     }
