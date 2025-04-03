@@ -20,13 +20,14 @@ export const useInternalUsers = () => {
   // Load users when authorized, but only once
   useEffect(() => {
     if (isAuthorized && !isLoading) {
+      console.log("Fetching users because authorized");
       fetchUsers();
     }
-  }, [isAuthorized]); // Remove fetchUsers from dependencies to prevent loop
+  }, [isAuthorized, fetchUsers]);  // Include fetchUsers to ensure it's always the latest version
 
   const handleSubmit = async (values: UserFormValues): Promise<void> => {
     await submitUserAction(values, selectedUser);
-    // Fermer la boîte de dialogue après la soumission
+    // Close dialog after submission
     setIsAddDialogOpen(false);
   };
 

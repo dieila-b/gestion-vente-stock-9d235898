@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { InternalUser } from "@/types/internal-user";
-import { UserFormValues } from "../validation/user-form-schema";
 
 export const useUserForm = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

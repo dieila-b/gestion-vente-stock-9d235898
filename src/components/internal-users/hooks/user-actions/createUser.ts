@@ -16,18 +16,18 @@ interface CreateUserData {
 
 export const createUser = async (data: CreateUserData): Promise<InternalUser | null> => {
   try {
-    // En mode développement, simuler le succès de l'opération sans faire d'appel à Supabase
-    // puisque nous n'avons pas les droits RLS nécessaires
+    // In development mode, simulate success without making a Supabase call
+    // since we don't have the necessary RLS permissions
     const isDevelopment = process.env.NODE_ENV === 'development';
     
     if (isDevelopment) {
-      console.log("Mode développement: Simulation de création d'utilisateur");
+      console.log("Development mode: Simulating user creation");
       
-      // Dans un vrai environnement de développement, nous utiliserions le service_role
-      // mais pour cette démonstration, nous simulons simplement le succès
+      // In a real development environment, we would use the service_role
+      // but for this demo, we're simply simulating success
       const mockId = "dev-" + Math.random().toString(36).substring(2, 15);
       
-      // Créer un objet utilisateur simulé
+      // Create a simulated user object
       const mockUser: InternalUser = {
         id: mockId,
         first_name: data.first_name,
@@ -40,13 +40,14 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       };
       
       toast({
-        title: "Utilisateur créé (simulation)",
+        title: "Utilisateur créé",
         description: `${data.first_name} ${data.last_name} a été créé avec succès (ID: ${mockId})`,
       });
 
+      console.log("Created mock user:", mockUser);
       return mockUser;
     } else {
-      // En production, on vérifie les permissions de l'utilisateur
+      // In production, check the user's permissions
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
@@ -66,8 +67,8 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         }
       }
 
-      // En production, un appel direct à la base de données avec un client service_role serait utilisé
-      // Mais pour cette démonstration, nous restons avec l'approche client
+      // In production, a direct database call with a service_role client would be used
+      // But for this demo, we'll stick with the client approach
       const { data: insertedUser, error: insertError } = await supabase
         .from("internal_users")
         .insert({
@@ -83,7 +84,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         .single();
 
       if (insertError) {
-        console.error("Erreur lors de l'insertion de l'utilisateur:", insertError);
+        console.error("Error inserting user:", insertError);
         toast({
           title: "Erreur",
           description: "Impossible de créer l'utilisateur: " + insertError.message,
@@ -100,7 +101,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return insertedUser as InternalUser;
     }
   } catch (error) {
-    console.error("Erreur lors de la création de l'utilisateur:", error);
+    console.error("Error creating user:", error);
     toast({
       title: "Erreur",
       description: "Impossible de créer l'utilisateur",

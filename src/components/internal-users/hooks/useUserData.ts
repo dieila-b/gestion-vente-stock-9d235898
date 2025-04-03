@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
@@ -9,22 +9,23 @@ export const useUserData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedRef = useRef(false);
 
-  const fetchUsers = async () => {
-    // If we've already fetched in dev mode and have mock data, don't fetch again
+  const fetchUsers = useCallback(async () => {
+    // Avoid re-fetching if we've already fetched data in development mode
     if (process.env.NODE_ENV === 'development' && users.length > 0 && hasFetchedRef.current) {
+      console.log("Skipping fetch - already have data in dev mode");
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      // En mode développement, nous pouvons simuler des données utilisateurs
+      // In development mode, we can simulate user data
       const isDevelopment = process.env.NODE_ENV === 'development';
       
       if (isDevelopment && !hasFetchedRef.current) {
-        console.log("Mode développement: Simulation de données utilisateurs");
+        console.log("Development mode: Simulating user data");
         
-        // Simuler quelques utilisateurs si aucun n'est déjà présent
+        // Simulate some users if none are already present
         const mockUsers: InternalUser[] = [
           {
             id: "dev-1",
@@ -64,7 +65,7 @@ export const useUserData = () => {
         return;
       }
 
-      // En production ou si des utilisateurs sont déjà chargés, faire l'appel Supabase normal
+      // In production or if users are already loaded, make the normal Supabase call
       const { data, error } = await supabase
         .from("internal_users")
         .select("*")
@@ -93,23 +94,23 @@ export const useUserData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [users.length]);
 
-  // Méthode pour ajouter un utilisateur à la liste locale
-  const addUser = (user: InternalUser) => {
-    console.log("Ajout d'un utilisateur à la liste locale:", user);
+  // Method to add a user to the local list
+  const addUser = useCallback((user: InternalUser) => {
+    console.log("Adding user to local list:", user);
     setUsers(prevUsers => [...prevUsers, user]);
-  };
+  }, []);
 
-  // Méthode pour mettre à jour un utilisateur dans la liste locale
-  const updateUserInList = (updatedUser: InternalUser) => {
-    console.log("Mise à jour d'un utilisateur dans la liste locale:", updatedUser);
+  // Method to update a user in the local list
+  const updateUserInList = useCallback((updatedUser: InternalUser) => {
+    console.log("Updating user in local list:", updatedUser);
     setUsers(prevUsers => 
       prevUsers.map(user => 
         user.id === updatedUser.id ? updatedUser : user
       )
     );
-  };
+  }, []);
 
   return {
     users,

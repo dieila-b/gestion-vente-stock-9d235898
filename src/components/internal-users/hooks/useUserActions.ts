@@ -31,8 +31,8 @@ export const useUserActions = (
         }, selectedUser);
 
         if (updatedUser) {
-          console.log("Utilisateur mis à jour avec succès:", updatedUser);
-          // Mettre à jour localement l'utilisateur
+          console.log("User updated successfully:", updatedUser);
+          // Update the user locally
           updateUserInList(updatedUser);
           toast({
             title: "Succès",
@@ -62,7 +62,8 @@ export const useUserActions = (
         });
 
         if (newUser) {
-          console.log("Nouvel utilisateur créé:", newUser);
+          console.log("New user created:", newUser);
+          // Add the new user to local state
           addUser(newUser);
           toast({
             title: "Succès",
@@ -104,7 +105,10 @@ export const useUserActions = (
     try {
       const success = await toggleUserStatus(user);
       if (success) {
-        await fetchUsers();
+        // Instead of refetching, update the user locally
+        const updatedUser = { ...user, is_active: !user.is_active };
+        updateUserInList(updatedUser);
+        
         toast({
           title: "Succès",
           description: `Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`,
