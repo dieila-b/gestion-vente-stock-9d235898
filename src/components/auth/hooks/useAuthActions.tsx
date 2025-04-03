@@ -33,18 +33,6 @@ export function useAuthActions(
       if (error) {
         console.error("Erreur d'authentification:", error.message);
         setIsSubmitting(false);
-        
-        // Message d'erreur plus précis selon le type d'erreur
-        if (error.message.includes("Invalid login credentials")) {
-          return { success: false, error: "Identifiants incorrects. Vérifiez votre email et mot de passe." };
-        } else if (error.message.includes("Email not confirmed")) {
-          return { success: false, error: "Compte non vérifié. Veuillez vérifier votre email." };
-        } else if (error.message.includes("Invalid email")) {
-          return { success: false, error: "Email invalide. Veuillez vérifier votre adresse email." };
-        } else if (error.message.includes("Invalid password")) {
-          return { success: false, error: "Mot de passe incorrect. Veuillez réessayer." };
-        }
-        
         return { success: false, error: error.message };
       }
 
@@ -61,24 +49,8 @@ export function useAuthActions(
             
           console.log("Vérification internal_users après login:", internalUser, internalError);
             
-          if (internalError) {
-            console.error("Erreur lors de la recherche dans internal_users:", internalError.message);
-            
-            // Si l'erreur est "No rows found", c'est un utilisateur non autorisé
-            if (internalError.message.includes("No rows found")) {
-              await supabase.auth.signOut();
-              setIsSubmitting(false);
-              return { success: false, error: "Cet utilisateur n'est pas autorisé à accéder à l'application." };
-            }
-            
-            // Autre type d'erreur de base de données
-            await supabase.auth.signOut();
-            setIsSubmitting(false);
-            return { success: false, error: "Erreur lors de la vérification des droits d'accès." };
-          }
-          
-          if (!internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users");
+          if (internalError || !internalUser) {
+            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
             toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
             // Déconnexion de l'utilisateur
             await supabase.auth.signOut();

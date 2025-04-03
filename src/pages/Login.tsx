@@ -14,7 +14,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -26,7 +25,6 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
     
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
@@ -39,7 +37,6 @@ export default function Login() {
         navigate("/dashboard");
       } else {
         console.error("Échec de la connexion en mode dev:", result.error);
-        setErrorMsg(result.error || "Erreur lors de la connexion");
         toast.error(result.error || "Erreur lors de la connexion");
       }
       return;
@@ -53,7 +50,6 @@ export default function Login() {
       
       if (!email || !password) {
         console.error("Formulaire incomplet - Email ou mot de passe manquant");
-        setErrorMsg("Veuillez saisir votre email et votre mot de passe");
         toast.error("Veuillez saisir votre email et votre mot de passe");
         setIsSubmitting(false);
         return;
@@ -69,12 +65,10 @@ export default function Login() {
         navigate("/dashboard");
       } else {
         console.error("Échec de la connexion:", result.error);
-        setErrorMsg(result.error || "Identifiants incorrects");
         toast.error(result.error || "Identifiants incorrects");
       }
     } catch (error) {
       console.error("Exception lors de la tentative de connexion:", error);
-      setErrorMsg("Une erreur est survenue. Veuillez réessayer plus tard.");
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
       setIsSubmitting(false);
@@ -95,12 +89,6 @@ export default function Login() {
               : "Accès réservé aux utilisateurs internes"}
           </p>
         </div>
-        
-        {errorMsg && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm">
-            {errorMsg}
-          </div>
-        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {process.env.NODE_ENV !== 'development' && (
