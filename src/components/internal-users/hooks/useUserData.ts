@@ -10,9 +10,9 @@ export const useUserData = () => {
   const hasFetchedRef = useRef(false);
 
   const fetchUsers = useCallback(async () => {
-    // Avoid re-fetching if we've already fetched data in development mode
-    if (process.env.NODE_ENV === 'development' && users.length > 0 && hasFetchedRef.current) {
-      console.log("Skipping fetch - already have data in dev mode");
+    // Only fetch if we haven't already or if we don't have data yet
+    if (hasFetchedRef.current && users.length > 0) {
+      console.log("Skipping fetch - already have data");
       setIsLoading(false);
       return;
     }
@@ -22,7 +22,7 @@ export const useUserData = () => {
       // In development mode, we can simulate user data
       const isDevelopment = process.env.NODE_ENV === 'development';
       
-      if (isDevelopment && !hasFetchedRef.current) {
+      if (isDevelopment) {
         console.log("Development mode: Simulating user data");
         
         // Simulate some users if none are already present
@@ -65,7 +65,7 @@ export const useUserData = () => {
         return;
       }
 
-      // In production or if users are already loaded, make the normal Supabase call
+      // In production, make the normal Supabase call
       const { data, error } = await supabase
         .from("internal_users")
         .select("*")
@@ -75,13 +75,7 @@ export const useUserData = () => {
         throw error;
       }
 
-      // Si nous sommes en développement et qu'il n'y a pas de données,
-      // gardons nos données simulées
-      if (isDevelopment && (!data || data.length === 0) && users.length > 0) {
-        setIsLoading(false);
-        return;
-      }
-
+      console.log("Fetched users data:", data);
       setUsers(data as InternalUser[]);
       hasFetchedRef.current = true;
     } catch (error) {

@@ -1,16 +1,16 @@
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "./validation/user-form-schema";
 import { useAuth } from "./hooks/useAuth";
 import { useUserData } from "./hooks/useUserData";
-import { useUserForm } from "./hooks/useUserForm";
+import { useUserFormState } from "./hooks/useUserForm";
 import { useUserActions } from "./hooks/useUserActions";
 
 export const useInternalUsers = () => {
   const { isAuthChecking, isAuthorized } = useAuth();
   const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
-  const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserForm();
+  const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserFormState();
   const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = useUserActions(
     fetchUsers,
     addUser,
@@ -23,7 +23,8 @@ export const useInternalUsers = () => {
       console.log("Fetching users because authorized");
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers]);  // Include fetchUsers to ensure it's always the latest version
+    // Removed fetchUsers from dependency array to prevent infinite loops
+  }, [isAuthorized, isLoading]); 
 
   const handleSubmit = async (values: UserFormValues): Promise<void> => {
     await submitUserAction(values, selectedUser);
@@ -31,15 +32,15 @@ export const useInternalUsers = () => {
     setIsAddDialogOpen(false);
   };
 
-  const handleAddClick = () => {
+  const handleAddClick = useCallback(() => {
     setSelectedUser(null);
     setIsAddDialogOpen(true);
-  };
+  }, [setSelectedUser, setIsAddDialogOpen]);
 
-  const handleEditClick = (user: InternalUser) => {
+  const handleEditClick = useCallback((user: InternalUser) => {
     setSelectedUser(user);
     setIsAddDialogOpen(true);
-  };
+  }, [setSelectedUser, setIsAddDialogOpen]);
 
   return {
     users,
