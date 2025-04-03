@@ -25,7 +25,7 @@ export const useUserForm = ({ onSubmit, selectedUser }: UseUserFormProps) => {
       address: selectedUser?.address || "",
       role: selectedUser?.role || "employee",
       is_active: selectedUser?.is_active ?? true,
-      force_password_change: selectedUser?.force_password_change ?? true,
+      // Removed force_password_change field as it doesn't exist in the database
       id: selectedUser?.id
     },
   });

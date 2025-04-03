@@ -11,7 +11,6 @@ interface CreateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
-  force_password_change: boolean;
 }
 
 export const createUser = async (data: CreateUserData): Promise<string | null> => {
@@ -26,8 +25,8 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active,
-        force_password_change: data.force_password_change
+        is_active: data.is_active
+        // Removed force_password_change field as it doesn't exist in the database
       })
       .select("id")
       .single();

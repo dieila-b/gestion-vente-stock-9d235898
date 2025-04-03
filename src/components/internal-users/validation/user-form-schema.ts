@@ -32,7 +32,7 @@ export const userFormSchema = z.object({
     required_error: "Le rôle est requis",
   }),
   is_active: z.boolean().optional().default(true),
-  force_password_change: z.boolean().optional().default(true),
+  // Removed force_password_change field as it doesn't exist in database
 }).refine((data) => {
   if (data.password && data.confirm_password && data.password !== data.confirm_password) {
     return false;

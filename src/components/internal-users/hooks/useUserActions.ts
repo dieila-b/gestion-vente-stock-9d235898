@@ -25,7 +25,6 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           address: values.address || "",
           role: values.role,
           is_active: values.is_active !== undefined ? values.is_active : true,
-          force_password_change: values.force_password_change !== undefined ? values.force_password_change : true,
           password: values.password
         }, selectedUser);
       } else {
@@ -47,8 +46,8 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           phone: values.phone || "",
           address: values.address || "",
           role: values.role,
-          is_active: values.is_active !== undefined ? values.is_active : true,
-          force_password_change: values.force_password_change !== undefined ? values.force_password_change : true
+          is_active: values.is_active !== undefined ? values.is_active : true
+          // Removed force_password_change since it doesn't exist in the database
         });
         success = !!userId;
       }
