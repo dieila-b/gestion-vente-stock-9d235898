@@ -1,7 +1,18 @@
 
-export { NameFields } from './NameFields';
-export { EmailField } from './EmailField';
-export { PasswordFields } from './PasswordFields';
-export { PhoneField } from './PhoneField';
-export { AddressField } from './AddressField';
-export { RoleField } from './RoleField';
+import { NameFields } from "./NameFields";
+import { EmailField } from "./EmailField";
+import { PasswordFields } from "./PasswordFields";
+import { PhoneField } from "./PhoneField";
+import { AddressField } from "./AddressField";
+import { RoleField } from "./RoleField";
+import { StatusField } from "./StatusField";
+
+export {
+  NameFields,
+  EmailField,
+  PasswordFields,
+  PhoneField,
+  AddressField,
+  RoleField,
+  StatusField
+};

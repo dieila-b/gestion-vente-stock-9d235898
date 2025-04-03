@@ -21,13 +21,13 @@ export const useInternalUsers = () => {
   const userActions = useUserActions(fetchUsers, addUser, updateUserInList);
   const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = userActions;
 
-  // Charger les utilisateurs quand autorisé, mais une seule fois
+  // Charger les utilisateurs quand autorisé, une seule fois
   useEffect(() => {
     if (isAuthorized) {
       console.log("Chargement des utilisateurs car autorisé");
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers]);
+  }, [isAuthorized]); // Supprimé fetchUsers des dépendances pour éviter les boucles infinies
 
   // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {

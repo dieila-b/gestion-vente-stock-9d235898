@@ -11,13 +11,6 @@ export const useUserData = () => {
 
   // Memoized fetch function to prevent recreation on each render
   const fetchUsers = useCallback(async () => {
-    // Ne pas charger à nouveau si on a déjà les données
-    if (hasFetchedRef.current && users.length > 0) {
-      console.log("Données déjà chargées, pas besoin de refetch");
-      setIsLoading(false);
-      return;
-    }
-
     console.log("Chargement des utilisateurs...");
     setIsLoading(true);
     
@@ -92,7 +85,7 @@ export const useUserData = () => {
       });
       setIsLoading(false);
     }
-  }, []); // Pas de dépendance pour éviter les recréations inutiles de la fonction
+  }, []); 
 
   // Méthode pour ajouter un utilisateur à la liste locale
   const addUser = useCallback((user: InternalUser) => {

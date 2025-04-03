@@ -5,7 +5,8 @@ import {
   PasswordFields,
   PhoneField,
   AddressField,
-  RoleField
+  RoleField,
+  StatusField
 } from "./fields";
 
 export {
@@ -14,5 +15,6 @@ export {
   PasswordFields,
   PhoneField,
   AddressField,
-  RoleField
+  RoleField,
+  StatusField
 };

@@ -12,6 +12,7 @@ export const userFormSchema = z.object({
   confirm_password: z.string().optional(),
   role: z.enum(["admin", "manager", "employee"]),
   is_active: z.boolean().default(true),
+  status: z.enum(["actif", "inactif", "en attente"]).default("actif"),
 }).refine((data) => {
   // Si pas de password et pas d'id (nouveau user), alors erreur
   if (!data.id && !data.password) {
