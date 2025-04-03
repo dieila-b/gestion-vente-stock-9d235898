@@ -40,23 +40,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
+        console.log("Résultat getSession:", data);
+        
         if (data.session) {
           console.log("Session active trouvée pour:", data.session.user.email);
           
           // Vérifier si l'utilisateur existe dans la table internal_users
-          const { data: internalUser, error: internalError } = await supabase
-            .from('internal_users')
-            .select('id, email')
-            .eq('email', data.session.user.email)
-            .single();
-          
-          if (internalError || !internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
-            await supabase.auth.signOut();
+          try {
+            const { data: internalUser, error: internalError } = await supabase
+              .from('internal_users')
+              .select('id, email')
+              .eq('email', data.session.user.email)
+              .single();
+            
+            console.log("Recherche utilisateur interne:", internalUser, internalError);
+            
+            if (internalError || !internalUser) {
+              console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+            } else {
+              console.log("Utilisateur interne validé:", internalUser.email);
+              setIsAuthenticated(true);
+            }
+          } catch (err) {
+            console.error("Erreur lors de la vérification internal_users:", err);
             setIsAuthenticated(false);
-          } else {
-            console.log("Utilisateur interne validé:", internalUser.email);
-            setIsAuthenticated(true);
           }
         } else {
           console.log("Aucune session active trouvée");
@@ -86,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .eq('email', session.user.email)
               .single();
             
+            console.log("Vérification internal_users après signin:", internalUser, internalError);
+            
             if (internalError || !internalUser) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
@@ -113,6 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log("Fonction login appelée avec:", email);
+    
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
       console.log("Mode développement: Connexion automatique pour:", email);
@@ -121,15 +134,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("Tentative de connexion avec:", email);
+      console.log("Tentative de connexion avec Supabase pour:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log("Résultat signInWithPassword:", data, error);
+
       if (error) {
         console.error("Erreur d'authentification:", error.message);
-        toast.error("Identifiants incorrects. Veuillez réessayer.");
         return { success: false, error: error.message };
       }
 
@@ -137,29 +151,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Utilisateur connecté avec succès:", data.user.email);
         
         // Vérifier si l'utilisateur existe dans la table internal_users
-        const { data: internalUser, error: internalError } = await supabase
-          .from('internal_users')
-          .select('id, email')
-          .eq('email', data.user.email)
-          .single();
+        try {
+          const { data: internalUser, error: internalError } = await supabase
+            .from('internal_users')
+            .select('id, email')
+            .eq('email', data.user.email)
+            .single();
+            
+          console.log("Vérification internal_users après login:", internalUser, internalError);
+            
+          if (internalError || !internalUser) {
+            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+            toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
+            // Déconnexion de l'utilisateur
+            await supabase.auth.signOut();
+            return { success: false, error: "Utilisateur non autorisé" };
+          }
           
-        if (internalError || !internalUser) {
-          console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
-          toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
-          // Déconnexion de l'utilisateur
+          console.log("Utilisateur interne vérifié:", internalUser.email);
+          setIsAuthenticated(true);
+          return { success: true };
+        } catch (err) {
+          console.error("Erreur lors de la vérification internal_users:", err);
           await supabase.auth.signOut();
-          return { success: false, error: "Utilisateur non autorisé" };
+          return { success: false, error: "Erreur de vérification utilisateur" };
         }
-        
-        console.log("Utilisateur interne vérifié:", internalUser.email);
-        setIsAuthenticated(true);
-        return { success: true };
       }
       
       return { success: false, error: "Erreur inconnue lors de la connexion" };
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
-      toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
       return { success: false, error: "Erreur technique" };
     }
   };
@@ -171,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (process.env.NODE_ENV === 'development') {
       setIsAuthenticated(false);
       setLoading(false);
+      toast.success("Vous êtes déconnecté");
       return;
     }
 

@@ -38,6 +38,7 @@ export default function Login() {
       }
       
       const result = await login(email, password);
+      console.log("Résultat login:", result);
       
       if (result.success) {
         console.log("Connexion réussie, redirection vers le dashboard");
