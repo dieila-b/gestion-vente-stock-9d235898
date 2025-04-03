@@ -12,7 +12,8 @@ import {
 export const useUserActions = (
   fetchUsers: () => Promise<void>,
   addUser: (user: InternalUser) => void,
-  updateUserInList: (user: InternalUser) => void
+  updateUserInList: (user: InternalUser) => void,
+  removeUserFromList: (userId: string) => void
 ) => {
   
   const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
@@ -81,9 +82,10 @@ export const useUserActions = (
 
   const handleDelete = async (user: InternalUser) => {
     try {
-      const success = await deleteUser(user);
+      const { success, id } = await deleteUser(user);
       if (success) {
-        await fetchUsers();
+        // Mettre à jour la liste locale directement sans recharger tous les utilisateurs
+        removeUserFromList(id);
         toast({
           title: "Succès",
           description: "Utilisateur supprimé avec succès",

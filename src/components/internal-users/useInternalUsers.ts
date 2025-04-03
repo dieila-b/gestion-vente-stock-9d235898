@@ -12,13 +12,13 @@ export const useInternalUsers = () => {
   const { isAuthChecking, isAuthorized } = useAuth();
   
   // Récupération des données utilisateur et des actions
-  const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
+  const { users, isLoading, fetchUsers, addUser, updateUserInList, removeUserFromList } = useUserData();
   
   // Gestion de l'état du dialogue
   const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserFormState();
   
   // Actions utilisateur (soumettre, supprimer, basculer le statut)
-  const userActions = useUserActions(fetchUsers, addUser, updateUserInList);
+  const userActions = useUserActions(fetchUsers, addUser, updateUserInList, removeUserFromList);
   const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = userActions;
 
   // Charger les utilisateurs quand autorisé, une seule fois
@@ -27,7 +27,7 @@ export const useInternalUsers = () => {
       console.log("Chargement des utilisateurs car autorisé");
       fetchUsers();
     }
-  }, [isAuthorized]); // Supprimé fetchUsers des dépendances pour éviter les boucles infinies
+  }, [isAuthorized, fetchUsers]); // Added fetchUsers to dependencies
 
   // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {

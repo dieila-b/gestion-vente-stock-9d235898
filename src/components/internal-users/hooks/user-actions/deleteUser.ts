@@ -3,10 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
 
-export const deleteUser = async (user: InternalUser): Promise<boolean> => {
+export const deleteUser = async (user: InternalUser): Promise<{ success: boolean, id: string }> => {
   try {
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${user.first_name} ${user.last_name}?`)) {
-      return false;
+      return { success: false, id: user.id };
+    }
+
+    // En mode développement, simuler la suppression sans appel à Supabase
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Mode développement: Simulation de suppression de l'utilisateur ${user.id}`);
+      
+      toast({
+        title: "Utilisateur supprimé",
+        description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
+      });
+      
+      return { success: true, id: user.id };
     }
 
     const { error } = await supabase
@@ -21,7 +33,7 @@ export const deleteUser = async (user: InternalUser): Promise<boolean> => {
       description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
     });
 
-    return true;
+    return { success: true, id: user.id };
   } catch (error) {
     console.error("Error deleting user:", error);
     toast({
@@ -29,6 +41,6 @@ export const deleteUser = async (user: InternalUser): Promise<boolean> => {
       description: "Impossible de supprimer l'utilisateur",
       variant: "destructive",
     });
-    return false;
+    return { success: false, id: user.id };
   }
 };
