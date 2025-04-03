@@ -38,7 +38,18 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
             }
           );
 
-          if (passwordError) throw passwordError;
+          if (passwordError) {
+            // Handle authorization error specifically
+            if (passwordError.code === 'not_admin') {
+              toast({
+                title: "Erreur d'autorisation",
+                description: "Vous n'avez pas les droits administrateur nécessaires pour effectuer cette action",
+                variant: "destructive",
+              });
+              return;
+            }
+            throw passwordError;
+          }
         }
       } else {
         // Create new user
@@ -68,42 +79,80 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           return;
         }
 
-        // Create an auth user
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: values.email,
-          password: values.password,
-          email_confirm: true,
-          user_metadata: { force_password_change: values.force_password_change }
-        });
-
-        if (authError) throw authError;
-
-        if (!authData.user) {
-          throw new Error("Échec de la création de l'utilisateur");
-        }
-
-        // Now create the internal user record
-        const { error: insertError } = await supabase
-          .from("internal_users")
-          .insert({
-            id: authData.user.id,
-            first_name: values.first_name,
-            last_name: values.last_name,
+        try {
+          // Create an auth user
+          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
             email: values.email,
-            phone: values.phone || null,
-            address: values.address || null,
-            role: values.role,
-            is_active: true,
-            force_password_change: values.force_password_change,
+            password: values.password,
+            email_confirm: true,
+            user_metadata: { force_password_change: values.force_password_change }
           });
 
-        if (insertError) throw insertError;
+          if (authError) {
+            // Handle authorization error specifically
+            if (authError.code === 'not_admin') {
+              toast({
+                title: "Erreur d'autorisation",
+                description: "Vous n'avez pas les droits administrateur nécessaires pour effectuer cette action",
+                variant: "destructive",
+              });
+              return;
+            }
+            throw authError;
+          }
+
+          if (!authData.user) {
+            throw new Error("Échec de la création de l'utilisateur");
+          }
+
+          // Now create the internal user record
+          const { error: insertError } = await supabase
+            .from("internal_users")
+            .insert({
+              id: authData.user.id,
+              first_name: values.first_name,
+              last_name: values.last_name,
+              email: values.email,
+              phone: values.phone || null,
+              address: values.address || null,
+              role: values.role,
+              is_active: true,
+              force_password_change: values.force_password_change,
+            });
+
+          if (insertError) throw insertError;
+        } catch (error: any) {
+          console.error("Error submitting user:", error);
+          
+          // Check for specific error types and provide clearer messages
+          if (error.code === 'not_admin') {
+            toast({
+              title: "Erreur d'autorisation",
+              description: "Vous n'avez pas les droits administrateur nécessaires pour créer des utilisateurs",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          throw error;
+        }
       }
 
       // Refresh the users list
       fetchUsers();
+      
+      toast({
+        title: selectedUser ? "Utilisateur mis à jour" : "Utilisateur créé",
+        description: "L'opération a été effectuée avec succès",
+      });
+      
     } catch (error) {
       console.error("Error submitting user:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'opération",
+        variant: "destructive",
+      });
       throw error;
     }
   };

@@ -41,6 +41,7 @@ export const UserFormContent = ({
       address: selectedUser?.address || "",
       role: selectedUser?.role || "employee",
       is_active: selectedUser?.is_active ?? true,
+      force_password_change: selectedUser?.force_password_change ?? true,
       id: selectedUser?.id
     },
   });
@@ -51,17 +52,11 @@ export const UserFormContent = ({
       await onSubmit(values);
       form.reset();
       onCancel();
-      toast({
-        title: selectedUser ? "Utilisateur mis à jour" : "Utilisateur créé",
-        description: "L'opération a été effectuée avec succès",
-      });
+      // Note: Toast de succès déplacé dans useUserActions pour éviter d'afficher un message de succès
+      // alors qu'une erreur d'autorisation s'est produite
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'opération",
-        variant: "destructive",
-      });
+      // Note: L'erreur est déjà gérée dans useUserActions
     } finally {
       setIsSubmitting(false);
     }
