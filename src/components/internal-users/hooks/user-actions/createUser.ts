@@ -12,7 +12,7 @@ interface CreateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
-  status?: string; // Nouveau champ optionnel
+  status: "actif" | "inactif" | "en attente";
 }
 
 export const createUser = async (data: CreateUserData): Promise<InternalUser | null> => {
@@ -37,7 +37,8 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active
+        is_active: data.is_active,
+        status: data.status || "actif"
       };
       
       toast({
@@ -80,7 +81,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
           address: data.address || null,
           role: data.role,
           is_active: data.is_active,
-          status: data.status || "actif" // Ajout du champ status
+          status: data.status
         })
         .select("*")
         .single();

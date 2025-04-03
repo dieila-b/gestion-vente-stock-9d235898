@@ -29,7 +29,8 @@ export const useUserData = () => {
             phone: "+33123456789",
             address: "123 Rue Principale, Paris",
             role: "admin",
-            is_active: true
+            is_active: true,
+            status: "actif"
           },
           {
             id: "dev-2",
@@ -39,7 +40,8 @@ export const useUserData = () => {
             phone: "+33987654321",
             address: "456 Avenue République, Lyon",
             role: "manager",
-            is_active: true
+            is_active: true,
+            status: "actif"
           },
           {
             id: "dev-3",
@@ -49,7 +51,8 @@ export const useUserData = () => {
             phone: "+33567891234",
             address: "789 Boulevard Liberté, Marseille",
             role: "employee",
-            is_active: false
+            is_active: false,
+            status: "inactif"
           }
         ];
         
