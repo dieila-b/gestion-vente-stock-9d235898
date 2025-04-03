@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
@@ -7,14 +7,21 @@ import { toast } from "@/hooks/use-toast";
 export const useUserData = () => {
   const [users, setUsers] = useState<InternalUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
 
   const fetchUsers = async () => {
+    // If we've already fetched in dev mode and have mock data, don't fetch again
+    if (process.env.NODE_ENV === 'development' && users.length > 0 && hasFetchedRef.current) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       // En mode développement, nous pouvons simuler des données utilisateurs
       const isDevelopment = process.env.NODE_ENV === 'development';
       
-      if (isDevelopment && users.length === 0) {
+      if (isDevelopment && !hasFetchedRef.current) {
         console.log("Mode développement: Simulation de données utilisateurs");
         
         // Simuler quelques utilisateurs si aucun n'est déjà présent
@@ -52,6 +59,7 @@ export const useUserData = () => {
         ];
         
         setUsers(mockUsers);
+        hasFetchedRef.current = true;
         setIsLoading(false);
         return;
       }
@@ -74,6 +82,7 @@ export const useUserData = () => {
       }
 
       setUsers(data as InternalUser[]);
+      hasFetchedRef.current = true;
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({

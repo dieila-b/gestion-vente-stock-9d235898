@@ -17,12 +17,12 @@ export const useInternalUsers = () => {
     updateUserInList
   );
 
-  // Load users when authorized
+  // Load users when authorized, but only once
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isLoading) {
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers]);
+  }, [isAuthorized]); // Remove fetchUsers from dependencies to prevent loop
 
   const handleSubmit = async (values: UserFormValues): Promise<void> => {
     await submitUserAction(values, selectedUser);

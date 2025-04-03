@@ -30,9 +30,14 @@ export const useUserActions = (
           password: values.password
         }, selectedUser);
 
-        if (updatedUser && updateUserInList) {
+        if (updatedUser) {
+          console.log("Utilisateur mis à jour avec succès:", updatedUser);
           // Mettre à jour localement l'utilisateur
           updateUserInList(updatedUser);
+          toast({
+            title: "Succès",
+            description: "Utilisateur mis à jour avec succès",
+          });
         }
       } else {
         // Create new user with appropriate casting to match expected types
@@ -56,32 +61,62 @@ export const useUserActions = (
           is_active: values.is_active !== undefined ? values.is_active : true
         });
 
-        if (newUser && addUser) {
-          console.log("Ajout d'un nouvel utilisateur à la liste:", newUser);
+        if (newUser) {
+          console.log("Nouvel utilisateur créé:", newUser);
           addUser(newUser);
+          toast({
+            title: "Succès",
+            description: "Nouvel utilisateur créé avec succès",
+          });
         }
       }
     } catch (error: any) {
       console.error("Error submitting user:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur s'est produite lors de l'opération",
+        description: error.message || "Une erreur s'est produite lors de l'opération",
         variant: "destructive",
       });
     }
   };
 
   const handleDelete = async (user: InternalUser) => {
-    const success = await deleteUser(user);
-    if (success) {
-      await fetchUsers();
+    try {
+      const success = await deleteUser(user);
+      if (success) {
+        await fetchUsers();
+        toast({
+          title: "Succès",
+          description: "Utilisateur supprimé avec succès",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur s'est produite lors de la suppression",
+        variant: "destructive",
+      });
     }
   };
 
   const handleToggleStatus = async (user: InternalUser) => {
-    const success = await toggleUserStatus(user);
-    if (success) {
-      await fetchUsers();
+    try {
+      const success = await toggleUserStatus(user);
+      if (success) {
+        await fetchUsers();
+        toast({
+          title: "Succès",
+          description: `Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error toggling user status:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur s'est produite lors du changement de statut",
+        variant: "destructive",
+      });
     }
   };
 
