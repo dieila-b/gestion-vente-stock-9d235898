@@ -44,19 +44,6 @@ export const InternalUserTable = ({
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "actif":
-        return "bg-green-100 text-green-800";
-      case "inactif":
-        return "bg-red-100 text-red-800";
-      case "en attente":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -93,7 +80,6 @@ export const InternalUserTable = ({
               <TableHead>Téléphone</TableHead>
               <TableHead>Adresse</TableHead>
               <TableHead>Rôle</TableHead>
-              <TableHead>Actif</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -123,11 +109,6 @@ export const InternalUserTable = ({
                     onClick={() => onToggleStatus(user)}
                   >
                     {user.is_active ? "Actif" : "Inactif"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusBadgeColor(user.status)}>
-                    {user.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
