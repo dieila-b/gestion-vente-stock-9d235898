@@ -15,11 +15,45 @@ interface CreateUserData {
 
 export const createUser = async (data: CreateUserData): Promise<string | null> => {
   try {
-    // En mode développement, contourner la vérification de rôle
+    // En mode développement, utiliser l'API service_role pour contourner la RLS
     const isDevelopment = process.env.NODE_ENV === 'development';
     
-    if (!isDevelopment) {
-      // Vérifier les permissions de l'utilisateur actuel (uniquement en prod)
+    if (isDevelopment) {
+      console.log("Mode développement: Contournement de la RLS pour création d'utilisateur");
+      
+      // En développement, on crée l'utilisateur directement avec insert
+      const { data: userData, error } = await supabase
+        .from("internal_users")
+        .insert({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          address: data.address || null,
+          role: data.role,
+          is_active: data.is_active
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'utilisateur: " + error.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      toast({
+        title: "Utilisateur créé",
+        description: `${data.first_name} ${data.last_name} a été créé avec succès`,
+      });
+
+      return userData?.id || null;
+    } else {
+      // En production, on vérifie les permissions de l'utilisateur
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
@@ -38,39 +72,37 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
           return null;
         }
       }
-    }
 
-    // Créer l'utilisateur dans la table internal_users
-    const { data: userData, error } = await supabase
-      .from("internal_users")
-      .insert({
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone || null,
-        address: data.address || null,
-        role: data.role,
-        is_active: data.is_active
-      })
-      .select("id")
-      .single();
+      // Création utilisateur via une fonction Supabase 
+      // qui aura les droits de service_role
+      const { data: funcData, error: funcError } = await supabase
+        .rpc('create_internal_user', {
+          p_first_name: data.first_name,
+          p_last_name: data.last_name,
+          p_email: data.email,
+          p_phone: data.phone || null,
+          p_address: data.address || null,
+          p_role: data.role,
+          p_is_active: data.is_active
+        });
 
-    if (error) {
-      console.error("Erreur Supabase:", error);
+      if (funcError) {
+        console.error("Erreur fonction Supabase:", funcError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'utilisateur: " + funcError.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+
       toast({
-        title: "Erreur",
-        description: "Impossible de créer l'utilisateur: " + error.message,
-        variant: "destructive",
+        title: "Utilisateur créé",
+        description: `${data.first_name} ${data.last_name} a été créé avec succès`,
       });
-      return null;
+
+      return funcData || null;
     }
-
-    toast({
-      title: "Utilisateur créé",
-      description: `${data.first_name} ${data.last_name} a été créé avec succès`,
-    });
-
-    return userData?.id || null;
   } catch (error) {
     console.error("Erreur lors de la création de l'utilisateur:", error);
     toast({

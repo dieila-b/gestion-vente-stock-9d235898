@@ -16,11 +16,43 @@ interface UpdateUserData {
 
 export const updateUser = async (data: UpdateUserData, user: InternalUser): Promise<boolean> => {
   try {
-    // En mode développement, contourner la vérification de rôle
+    // En mode développement, utiliser directement la mise à jour sans vérification de rôle
     const isDevelopment = process.env.NODE_ENV === 'development';
     
-    if (!isDevelopment) {
-      // Vérifier les permissions de l'utilisateur actuel (uniquement en prod)
+    if (isDevelopment) {
+      console.log("Mode développement: Contournement de la RLS pour mise à jour d'utilisateur");
+      
+      const { error } = await supabase
+        .from("internal_users")
+        .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          address: data.address || null,
+          role: data.role,
+          is_active: data.is_active
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour l'utilisateur: " + error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Utilisateur mis à jour",
+        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
+      });
+
+      return true;
+    } else {
+      // En production, on vérifie les permissions
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       if (currentUser) {
@@ -39,37 +71,37 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
           return false;
         }
       }
-    }
 
-    const { error } = await supabase
-      .from("internal_users")
-      .update({
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone || null,
-        address: data.address || null,
-        role: data.role,
-        is_active: data.is_active
-      })
-      .eq("id", user.id);
+      // Mise à jour via une fonction Supabase qui aura les droits service_role
+      const { error: funcError } = await supabase
+        .rpc('update_internal_user', {
+          p_user_id: user.id,
+          p_first_name: data.first_name,
+          p_last_name: data.last_name,
+          p_email: data.email,
+          p_phone: data.phone || null,
+          p_address: data.address || null,
+          p_role: data.role,
+          p_is_active: data.is_active
+        });
 
-    if (error) {
-      console.error("Erreur Supabase:", error);
+      if (funcError) {
+        console.error("Erreur fonction Supabase:", funcError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour l'utilisateur: " + funcError.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour l'utilisateur: " + error.message,
-        variant: "destructive",
+        title: "Utilisateur mis à jour",
+        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
       });
-      return false;
+
+      return true;
     }
-
-    toast({
-      title: "Utilisateur mis à jour",
-      description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
-    });
-
-    return true;
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
     toast({
