@@ -26,22 +26,29 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log("Pas de session active trouvée");
           setIsInternalUser(false);
           setLoading(false);
           return;
         }
         
+        console.log("Session active trouvée pour l'utilisateur:", session.user.id);
+        
         // Vérifier si l'utilisateur existe dans la table internal_users
         const { data, error } = await supabase
           .from('internal_users')
-          .select('id')
-          .eq('id', session.user.id)
+          .select('id, email')
+          .eq('email', session.user.email)
           .single();
           
-        if (error || !data) {
-          console.error("Erreur ou utilisateur non trouvé:", error);
+        if (error) {
+          console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
+          setIsInternalUser(false);
+        } else if (!data) {
+          console.log("Utilisateur non trouvé dans la table internal_users");
           setIsInternalUser(false);
         } else {
+          console.log("Utilisateur interne trouvé:", data);
           setIsInternalUser(true);
         }
       } catch (error) {

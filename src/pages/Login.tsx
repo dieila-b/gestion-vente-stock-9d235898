@@ -6,14 +6,17 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Loader2, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // En développement, simplement connecter l'utilisateur
@@ -23,10 +26,31 @@ export default function Login() {
       return;
     }
     
-    // En production, il faudrait implémenter la vérification des identifiants
-    // avec Supabase, mais pour l'instant on simule une connexion
-    login();
-    navigate("/dashboard");
+    // En production, vérifier les identifiants avec Supabase
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        console.error("Erreur d'authentification:", error.message);
+        toast.error("Identifiants incorrects. Veuillez réessayer.");
+        return;
+      }
+
+      if (data.user) {
+        console.log("Utilisateur connecté:", data.user);
+        login();
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion:", error);
+      toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -53,6 +77,7 @@ export default function Login() {
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
               <div>
@@ -61,16 +86,17 @@ export default function Login() {
                   placeholder="Mot de passe"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </div>
             </>
           )}
           
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
+          <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
+            {loading || isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connexion...
+                {isSubmitting ? "Vérification..." : "Connexion..."}
               </>
             ) : (
               process.env.NODE_ENV === 'development' ? "Entrer (Mode Dev)" : "Se connecter"
