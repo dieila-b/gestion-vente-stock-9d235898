@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Loader2, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -21,7 +20,8 @@ export default function Login() {
     
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
-      login();
+      console.log("Mode développement: Connexion directe");
+      login("dev@example.com", "password");
       navigate("/dashboard");
       return;
     }
@@ -29,43 +29,26 @@ export default function Login() {
     // En production, vérifier les identifiants avec Supabase
     setIsSubmitting(true);
     try {
-      console.log("Tentative de connexion avec:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (error) {
-        console.error("Erreur d'authentification:", error.message);
-        toast.error("Identifiants incorrects. Veuillez réessayer.");
+      console.log("Tentative de connexion avec email:", email);
+      
+      if (!email || !password) {
+        toast.error("Veuillez saisir votre email et votre mot de passe");
         setIsSubmitting(false);
         return;
       }
-
-      if (data.user) {
-        console.log("Utilisateur connecté:", data.user.email);
-        // Vérifier si l'utilisateur existe dans la table internal_users
-        const { data: internalUser, error: internalError } = await supabase
-          .from('internal_users')
-          .select('id, email')
-          .eq('email', data.user.email)
-          .single();
-          
-        if (internalError || !internalUser) {
-          console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
-          toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
-          // Déconnexion de l'utilisateur
-          await supabase.auth.signOut();
-          setIsSubmitting(false);
-          return;
-        }
-        
-        console.log("Utilisateur interne trouvé:", internalUser);
-        login();
+      
+      const result = await login(email, password);
+      
+      if (result.success) {
+        console.log("Connexion réussie, redirection vers le dashboard");
+        toast.success("Connexion réussie");
         navigate("/dashboard");
+      } else {
+        console.error("Échec de la connexion:", result.error);
+        toast.error(result.error || "Identifiants incorrects");
       }
     } catch (error) {
-      console.error("Erreur lors de la connexion:", error);
+      console.error("Erreur lors de la tentative de connexion:", error);
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
       setIsSubmitting(false);
