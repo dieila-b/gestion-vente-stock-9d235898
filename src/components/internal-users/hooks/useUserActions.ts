@@ -16,11 +16,40 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
       let success = false;
       
       if (selectedUser) {
-        // Update existing user
-        success = await updateUser(values, selectedUser);
+        // Update existing user with appropriate casting to match expected types
+        success = await updateUser({
+          first_name: values.first_name,
+          last_name: values.last_name,
+          email: values.email,
+          phone: values.phone || "",
+          address: values.address || "",
+          role: values.role,
+          is_active: values.is_active !== undefined ? values.is_active : true,
+          force_password_change: values.force_password_change !== undefined ? values.force_password_change : true,
+          password: values.password
+        }, selectedUser);
       } else {
-        // Create new user
-        const userId = await createUser(values);
+        // Create new user with appropriate casting to match expected types
+        if (!values.password) {
+          toast({
+            title: "Erreur",
+            description: "Le mot de passe est requis pour créer un nouvel utilisateur",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const userId = await createUser({
+          first_name: values.first_name,
+          last_name: values.last_name,
+          email: values.email,
+          password: values.password,
+          phone: values.phone || "",
+          address: values.address || "",
+          role: values.role,
+          is_active: values.is_active !== undefined ? values.is_active : true,
+          force_password_change: values.force_password_change !== undefined ? values.force_password_change : true
+        });
         success = !!userId;
       }
 
