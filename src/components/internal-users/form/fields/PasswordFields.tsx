@@ -8,7 +8,6 @@ import {
   FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export const PasswordFields = ({ form }: { form: any }) => {
   const isEditMode = form.getValues().id ? true : false;
@@ -55,29 +54,6 @@ export const PasswordFields = ({ form }: { form: any }) => {
           )}
         />
       </div>
-
-      <FormField
-        control={form.control}
-        name="force_password_change"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-            <FormControl>
-              <Checkbox
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel>
-                Obliger l'utilisateur à changer son mot de passe à la première connexion
-              </FormLabel>
-              <FormDescription>
-                L'utilisateur devra définir un nouveau mot de passe lors de sa première connexion
-              </FormDescription>
-            </div>
-          </FormItem>
-        )}
-      />
     </div>
   );
 };

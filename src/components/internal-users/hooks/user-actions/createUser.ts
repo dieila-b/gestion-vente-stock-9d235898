@@ -21,12 +21,11 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
-        password: data.password,
+        // Removed password field as it doesn't exist in the database schema
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
         is_active: data.is_active
-        // Removed force_password_change field as it doesn't exist in the database
       })
       .select("id")
       .single();

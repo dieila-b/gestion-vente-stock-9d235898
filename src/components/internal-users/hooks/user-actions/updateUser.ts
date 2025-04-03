@@ -25,9 +25,8 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active,
-        // Only include password if provided
-        ...(data.password ? { password: data.password } : {})
+        is_active: data.is_active
+        // Removed password field as it doesn't exist in the database schema
       })
       .eq("id", user.id);
 
