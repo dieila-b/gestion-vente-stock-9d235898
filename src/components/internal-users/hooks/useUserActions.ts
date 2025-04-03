@@ -11,15 +11,15 @@ import {
 
 export const useUserActions = (
   fetchUsers: () => Promise<void>,
-  addUser?: (user: InternalUser) => void,
-  updateUserInList?: (user: InternalUser) => void
+  addUser: (user: InternalUser) => void,
+  updateUserInList: (user: InternalUser) => void
 ) => {
   
   const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
     try {
       if (selectedUser) {
         // Update existing user with appropriate casting to match expected types
-        const success = await updateUser({
+        const updatedUser = await updateUser({
           first_name: values.first_name,
           last_name: values.last_name,
           email: values.email,
@@ -30,18 +30,9 @@ export const useUserActions = (
           password: values.password
         }, selectedUser);
 
-        if (success && updateUserInList) {
-          // Mise à jour locale de l'utilisateur
-          updateUserInList({
-            ...selectedUser,
-            first_name: values.first_name,
-            last_name: values.last_name,
-            email: values.email,
-            phone: values.phone || null,
-            address: values.address || null,
-            role: values.role,
-            is_active: values.is_active !== undefined ? values.is_active : true
-          });
+        if (updatedUser && updateUserInList) {
+          // Mettre à jour localement l'utilisateur
+          updateUserInList(updatedUser);
         }
       } else {
         // Create new user with appropriate casting to match expected types
@@ -66,7 +57,7 @@ export const useUserActions = (
         });
 
         if (newUser && addUser) {
-          // Ajout local de l'utilisateur
+          console.log("Ajout d'un nouvel utilisateur à la liste:", newUser);
           addUser(newUser);
         }
       }

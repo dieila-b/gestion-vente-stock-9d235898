@@ -86,13 +86,15 @@ export const useUserData = () => {
     }
   };
 
-  // Nouvelle méthode pour ajouter un utilisateur à la liste locale
+  // Méthode pour ajouter un utilisateur à la liste locale
   const addUser = (user: InternalUser) => {
+    console.log("Ajout d'un utilisateur à la liste locale:", user);
     setUsers(prevUsers => [...prevUsers, user]);
   };
 
-  // Nouvelle méthode pour mettre à jour un utilisateur dans la liste locale
+  // Méthode pour mettre à jour un utilisateur dans la liste locale
   const updateUserInList = (updatedUser: InternalUser) => {
+    console.log("Mise à jour d'un utilisateur dans la liste locale:", updatedUser);
     setUsers(prevUsers => 
       prevUsers.map(user => 
         user.id === updatedUser.id ? updatedUser : user

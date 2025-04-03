@@ -22,10 +22,12 @@ export const useInternalUsers = () => {
     if (isAuthorized) {
       fetchUsers();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, fetchUsers]);
 
   const handleSubmit = async (values: UserFormValues): Promise<void> => {
-    return submitUserAction(values, selectedUser);
+    await submitUserAction(values, selectedUser);
+    // Fermer la boîte de dialogue après la soumission
+    setIsAddDialogOpen(false);
   };
 
   const handleAddClick = () => {

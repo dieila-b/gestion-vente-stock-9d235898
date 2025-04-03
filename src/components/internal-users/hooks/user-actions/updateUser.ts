@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
+import { InternalUser } from "@/types/internal-user";
 
 interface UpdateUserData {
   first_name: string;
@@ -14,31 +14,41 @@ interface UpdateUserData {
   password?: string;
 }
 
-export const updateUser = async (data: UpdateUserData, user: InternalUser): Promise<boolean> => {
+export const updateUser = async (data: UpdateUserData, existingUser: InternalUser): Promise<InternalUser | null> => {
   try {
     // En mode développement, simuler le succès de l'opération sans faire d'appel à Supabase
-    // puisque nous n'avons pas les droits RLS nécessaires
     const isDevelopment = process.env.NODE_ENV === 'development';
     
     if (isDevelopment) {
       console.log("Mode développement: Simulation de mise à jour d'utilisateur");
       
-      // Simulation de succès
+      // Mise à jour simulée
+      const updatedUser: InternalUser = {
+        ...existingUser,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.address || null,
+        role: data.role,
+        is_active: data.is_active
+      };
+      
       toast({
         title: "Utilisateur mis à jour (simulation)",
-        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès (mode développement)`,
+        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
       });
-
-      return true;
-    } else {
-      // En production, on vérifie les permissions
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (currentUser) {
+      return updatedUser;
+    } else {
+      // En production, vérifier les permissions
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
         const { data: userData, error: roleCheckError } = await supabase
           .from("internal_users")
           .select("role")
-          .eq("id", currentUser.id)
+          .eq("id", user.id)
           .single();
           
         if (roleCheckError || !userData || !['admin', 'manager'].includes(userData.role)) {
@@ -47,41 +57,51 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
             description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
             variant: "destructive",
           });
-          return false;
+          return null;
         }
       }
 
-      // En production, un appel direct à la base de données avec un client service_role serait utilisé
-      // Mais pour cette démonstration, nous restons avec l'approche client
-      const { error: updateError } = await supabase
+      // Préparation des données de mise à jour
+      const updateData: any = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.address || null,
+        role: data.role,
+        is_active: data.is_active
+      };
+      
+      // Si un nouveau mot de passe est fourni, simuler son traitement
+      // Dans un vrai système, cela serait géré différemment via Auth
+      if (data.password) {
+        console.log("Mise à jour du mot de passe simulée.");
+      }
+
+      // Mise à jour de l'utilisateur en base de données
+      const { data: updatedUserData, error: updateError } = await supabase
         .from("internal_users")
-        .update({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          phone: data.phone || null,
-          address: data.address || null,
-          role: data.role,
-          is_active: data.is_active
-        })
-        .eq("id", user.id);
+        .update(updateData)
+        .eq("id", existingUser.id)
+        .select("*")
+        .single();
 
       if (updateError) {
         console.error("Erreur lors de la mise à jour de l'utilisateur:", updateError);
         toast({
-          title: "Erreur", 
+          title: "Erreur",
           description: "Impossible de mettre à jour l'utilisateur: " + updateError.message,
           variant: "destructive",
         });
-        return false;
+        return null;
       }
 
       toast({
         title: "Utilisateur mis à jour",
         description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
       });
-
-      return true;
+      
+      return updatedUserData as InternalUser;
     }
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
@@ -90,6 +110,6 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
       description: "Impossible de mettre à jour l'utilisateur",
       variant: "destructive",
     });
-    return false;
+    return null;
   }
 };
