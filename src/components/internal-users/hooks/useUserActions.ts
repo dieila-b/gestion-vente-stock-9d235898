@@ -9,15 +9,17 @@ import {
   toggleUserStatus 
 } from "./user-actions";
 
-export const useUserActions = (fetchUsers: () => Promise<void>) => {
+export const useUserActions = (
+  fetchUsers: () => Promise<void>,
+  addUser?: (user: InternalUser) => void,
+  updateUserInList?: (user: InternalUser) => void
+) => {
   
   const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
     try {
-      let success = false;
-      
       if (selectedUser) {
         // Update existing user with appropriate casting to match expected types
-        success = await updateUser({
+        const success = await updateUser({
           first_name: values.first_name,
           last_name: values.last_name,
           email: values.email,
@@ -27,6 +29,20 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           is_active: values.is_active !== undefined ? values.is_active : true,
           password: values.password
         }, selectedUser);
+
+        if (success && updateUserInList) {
+          // Mise à jour locale de l'utilisateur
+          updateUserInList({
+            ...selectedUser,
+            first_name: values.first_name,
+            last_name: values.last_name,
+            email: values.email,
+            phone: values.phone || null,
+            address: values.address || null,
+            role: values.role,
+            is_active: values.is_active !== undefined ? values.is_active : true
+          });
+        }
       } else {
         // Create new user with appropriate casting to match expected types
         if (!values.password) {
@@ -38,7 +54,7 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           return;
         }
         
-        const userId = await createUser({
+        const newUser = await createUser({
           first_name: values.first_name,
           last_name: values.last_name,
           email: values.email,
@@ -47,14 +63,12 @@ export const useUserActions = (fetchUsers: () => Promise<void>) => {
           address: values.address || "",
           role: values.role,
           is_active: values.is_active !== undefined ? values.is_active : true
-          // Removed force_password_change since it doesn't exist in the database
         });
-        success = !!userId;
-      }
 
-      // Only refresh the users list if operation was successful
-      if (success) {
-        await fetchUsers();
+        if (newUser && addUser) {
+          // Ajout local de l'utilisateur
+          addUser(newUser);
+        }
       }
     } catch (error: any) {
       console.error("Error submitting user:", error);

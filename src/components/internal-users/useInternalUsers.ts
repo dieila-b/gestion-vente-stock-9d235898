@@ -9,9 +9,13 @@ import { useUserActions } from "./hooks/useUserActions";
 
 export const useInternalUsers = () => {
   const { isAuthChecking, isAuthorized } = useAuth();
-  const { users, isLoading, fetchUsers } = useUserData();
+  const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
   const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserForm();
-  const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = useUserActions(fetchUsers);
+  const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = useUserActions(
+    fetchUsers,
+    addUser,
+    updateUserInList
+  );
 
   // Load users when authorized
   useEffect(() => {

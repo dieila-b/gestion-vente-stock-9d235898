@@ -86,9 +86,25 @@ export const useUserData = () => {
     }
   };
 
+  // Nouvelle méthode pour ajouter un utilisateur à la liste locale
+  const addUser = (user: InternalUser) => {
+    setUsers(prevUsers => [...prevUsers, user]);
+  };
+
+  // Nouvelle méthode pour mettre à jour un utilisateur dans la liste locale
+  const updateUserInList = (updatedUser: InternalUser) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      )
+    );
+  };
+
   return {
     users,
     isLoading,
-    fetchUsers
+    fetchUsers,
+    addUser,
+    updateUserInList
   };
 };

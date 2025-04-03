@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { InternalUser } from "@/types/internal-user";
 
 interface CreateUserData {
   first_name: string;
@@ -13,7 +14,7 @@ interface CreateUserData {
   is_active: boolean;
 }
 
-export const createUser = async (data: CreateUserData): Promise<string | null> => {
+export const createUser = async (data: CreateUserData): Promise<InternalUser | null> => {
   try {
     // En mode développement, simuler le succès de l'opération sans faire d'appel à Supabase
     // puisque nous n'avons pas les droits RLS nécessaires
@@ -26,12 +27,24 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
       // mais pour cette démonstration, nous simulons simplement le succès
       const mockId = "dev-" + Math.random().toString(36).substring(2, 15);
       
+      // Créer un objet utilisateur simulé
+      const mockUser: InternalUser = {
+        id: mockId,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.address || null,
+        role: data.role,
+        is_active: data.is_active
+      };
+      
       toast({
         title: "Utilisateur créé (simulation)",
         description: `${data.first_name} ${data.last_name} a été créé avec succès (ID: ${mockId})`,
       });
 
-      return mockId;
+      return mockUser;
     } else {
       // En production, on vérifie les permissions de l'utilisateur
       const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +79,7 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
           role: data.role,
           is_active: data.is_active
         })
-        .select("id")
+        .select("*")
         .single();
 
       if (insertError) {
@@ -84,7 +97,7 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
         description: `${data.first_name} ${data.last_name} a été créé avec succès`,
       });
 
-      return insertedUser?.id || null;
+      return insertedUser as InternalUser;
     }
   } catch (error) {
     console.error("Erreur lors de la création de l'utilisateur:", error);
