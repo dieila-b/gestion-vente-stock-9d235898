@@ -15,14 +15,38 @@ interface CreateUserData {
 
 export const createUser = async (data: CreateUserData): Promise<string | null> => {
   try {
-    // Create the user in the internal_users table
+    // En mode développement, contourner la vérification de rôle
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (!isDevelopment) {
+      // Vérifier les permissions de l'utilisateur actuel (uniquement en prod)
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: userData, error: roleCheckError } = await supabase
+          .from("internal_users")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+          
+        if (roleCheckError || !userData || !['admin', 'manager'].includes(userData.role)) {
+          toast({
+            title: "Permissions insuffisantes",
+            description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+            variant: "destructive",
+          });
+          return null;
+        }
+      }
+    }
+
+    // Créer l'utilisateur dans la table internal_users
     const { data: userData, error } = await supabase
       .from("internal_users")
       .insert({
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
-        // Removed password field as it doesn't exist in the database schema
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
@@ -32,15 +56,12 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
       .single();
 
     if (error) {
-      if (error.code === "42501") {
-        toast({
-          title: "Permissions insuffisantes",
-          description: "Vous n'avez pas les droits d'administrateur nécessaires pour effectuer cette action.",
-          variant: "destructive",
-        });
-      } else {
-        throw error;
-      }
+      console.error("Erreur Supabase:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer l'utilisateur: " + error.message,
+        variant: "destructive",
+      });
       return null;
     }
 
@@ -51,7 +72,7 @@ export const createUser = async (data: CreateUserData): Promise<string | null> =
 
     return userData?.id || null;
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Erreur lors de la création de l'utilisateur:", error);
     toast({
       title: "Erreur",
       description: "Impossible de créer l'utilisateur",

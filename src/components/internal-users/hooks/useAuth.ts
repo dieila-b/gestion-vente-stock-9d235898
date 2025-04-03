@@ -12,26 +12,25 @@ export const useAuth = () => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        // For development purposes only - override auth check
-        // This ensures we can test the UI without Supabase auth
+        // Pour le développement - considérer automatiquement autorisé
         if (process.env.NODE_ENV === 'development') {
-          console.log("Development mode: User considered authorized");
+          console.log("Mode développement: Utilisateur considéré comme autorisé");
           setIsAuthorized(true);
           setIsAuthChecking(false);
           return;
         }
 
-        // Get the current session
+        // Obtenir la session courante
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log("No session found, user not authorized");
+          console.log("Pas de session trouvée, utilisateur non autorisé");
           setIsAuthorized(false);
           setIsAuthChecking(false);
           return;
         }
         
-        // Check if the user has admin role by querying the internal_users table
+        // Vérifier si l'utilisateur a un rôle d'admin ou de manager
         const { data: userData, error: userError } = await supabase
           .from('internal_users')
           .select('role')
@@ -39,19 +38,19 @@ export const useAuth = () => {
           .single();
         
         if (userError) {
-          console.error("Error checking user role:", userError);
+          console.error("Erreur lors de la vérification du rôle:", userError);
           setIsAuthorized(false);
         } else if (userData) {
-          // Only allow admin users to access the internal users page
-          const isAdmin = userData.role === 'admin';
-          console.log(`User role: ${userData.role}, isAdmin: ${isAdmin}`);
-          setIsAuthorized(isAdmin);
+          // Permettre aux admins ET aux managers d'accéder à la page
+          const hasPermission = ['admin', 'manager'].includes(userData.role);
+          console.log(`Rôle utilisateur: ${userData.role}, a la permission: ${hasPermission}`);
+          setIsAuthorized(hasPermission);
         } else {
-          console.log("No user data found");
+          console.log("Aucune donnée utilisateur trouvée");
           setIsAuthorized(false);
         }
       } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("Erreur de vérification d'authentification:", error);
         setIsAuthorized(false);
       } finally {
         setIsAuthChecking(false);

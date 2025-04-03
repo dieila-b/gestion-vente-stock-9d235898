@@ -16,6 +16,31 @@ interface UpdateUserData {
 
 export const updateUser = async (data: UpdateUserData, user: InternalUser): Promise<boolean> => {
   try {
+    // En mode développement, contourner la vérification de rôle
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (!isDevelopment) {
+      // Vérifier les permissions de l'utilisateur actuel (uniquement en prod)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (currentUser) {
+        const { data: userData, error: roleCheckError } = await supabase
+          .from("internal_users")
+          .select("role")
+          .eq("id", currentUser.id)
+          .single();
+          
+        if (roleCheckError || !userData || !['admin', 'manager'].includes(userData.role)) {
+          toast({
+            title: "Permissions insuffisantes",
+            description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from("internal_users")
       .update({
@@ -26,20 +51,16 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
         address: data.address || null,
         role: data.role,
         is_active: data.is_active
-        // Removed password field as it doesn't exist in the database schema
       })
       .eq("id", user.id);
 
     if (error) {
-      if (error.code === "42501") {
-        toast({
-          title: "Permissions insuffisantes",
-          description: "Vous n'avez pas les droits d'administrateur nécessaires pour effectuer cette action.",
-          variant: "destructive",
-        });
-      } else {
-        throw error;
-      }
+      console.error("Erreur Supabase:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour l'utilisateur: " + error.message,
+        variant: "destructive",
+      });
       return false;
     }
 
@@ -50,7 +71,7 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
 
     return true;
   } catch (error) {
-    console.error("Error updating user:", error);
+    console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
     toast({
       title: "Erreur",
       description: "Impossible de mettre à jour l'utilisateur",
