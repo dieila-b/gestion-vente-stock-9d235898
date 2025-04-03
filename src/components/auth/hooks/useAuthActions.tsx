@@ -61,8 +61,24 @@ export function useAuthActions(
             
           console.log("Vérification internal_users après login:", internalUser, internalError);
             
-          if (internalError || !internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+          if (internalError) {
+            console.error("Erreur lors de la recherche dans internal_users:", internalError.message);
+            
+            // Si l'erreur est "No rows found", c'est un utilisateur non autorisé
+            if (internalError.message.includes("No rows found")) {
+              await supabase.auth.signOut();
+              setIsSubmitting(false);
+              return { success: false, error: "Cet utilisateur n'est pas autorisé à accéder à l'application." };
+            }
+            
+            // Autre type d'erreur de base de données
+            await supabase.auth.signOut();
+            setIsSubmitting(false);
+            return { success: false, error: "Erreur lors de la vérification des droits d'accès." };
+          }
+          
+          if (!internalUser) {
+            console.error("Utilisateur non trouvé dans internal_users");
             toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
             // Déconnexion de l'utilisateur
             await supabase.auth.signOut();
