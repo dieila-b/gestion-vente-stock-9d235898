@@ -1,56 +1,52 @@
 
-import { useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { InternalUser } from "@/types/internal-user";
-import { useUserData } from "./hooks/useUserData";
-import { useUserActions } from "./hooks/useUserActions";
-import { useAuth } from "@/components/auth/hooks/useAuth";
 import { UserFormValues } from "./validation/user-form-schema";
-import { toast } from "sonner";
+import { useAuth } from "./hooks/useAuth";
+import { useUserData } from "./hooks/useUserData";
+import { useUserFormState } from "./hooks/useUserForm";
+import { useUserActions } from "./hooks/useUserActions";
 
 export const useInternalUsers = () => {
-  const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
-  const { handleSubmit: userActionsSubmit, handleDelete: userActionsDelete, toggleUserStatus } = useUserActions(
-    fetchUsers,
-    addUser,
-    updateUserInList
-  );
-  const { isAuthenticated, loading: isAuthChecking } = useAuth();
-  const isAuthorized = isAuthenticated;
+  // Récupération du statut d'authentification
+  const { isAuthChecking, isAuthorized } = useAuth();
   
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<InternalUser | null>(null);
+  // Récupération des données utilisateur et des actions
+  const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
+  
+  // Gestion de l'état du dialogue
+  const { isAddDialogOpen, selectedUser, setIsAddDialogOpen, setSelectedUser } = useUserFormState();
+  
+  // Actions utilisateur (soumettre, supprimer, basculer le statut)
+  const userActions = useUserActions(fetchUsers, addUser, updateUserInList);
+  const { handleSubmit: submitUserAction, handleDelete, toggleUserStatus } = userActions;
 
-  const handleAddClick = () => {
+  // Charger les utilisateurs quand autorisé
+  useEffect(() => {
+    if (isAuthorized && !isLoading) {
+      console.log("Chargement des utilisateurs car autorisé");
+      fetchUsers();
+    }
+  }, [isAuthorized, fetchUsers]);
+
+  // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
+  const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
+    await submitUserAction(values, selectedUser);
+    // Fermer le dialogue après la soumission
+    setIsAddDialogOpen(false);
+  }, [submitUserAction, selectedUser, setIsAddDialogOpen]);
+
+  // Gestionnaire d'ajout d'utilisateur - mémorisé pour éviter les récréations
+  const handleAddClick = useCallback(() => {
     setSelectedUser(null);
     setIsAddDialogOpen(true);
-  };
+  }, [setSelectedUser, setIsAddDialogOpen]);
 
-  const handleEditClick = (user: InternalUser) => {
+  // Gestionnaire de modification d'utilisateur - mémorisé pour éviter les récréations
+  const handleEditClick = useCallback((user: InternalUser) => {
     setSelectedUser(user);
     setIsAddDialogOpen(true);
-  };
-
-  const handleSubmit = async (data: UserFormValues) => {
-    try {
-      await userActionsSubmit(data, selectedUser);
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error("Erreur lors de la soumission du formulaire:", error);
-      toast.error("Erreur lors de l'enregistrement de l'utilisateur");
-    }
-  };
-
-  const handleDelete = async (user: InternalUser) => {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.first_name} ${user.last_name}?`)) {
-      try {
-        await userActionsDelete(user);
-        toast.success("Utilisateur supprimé avec succès");
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        toast.error("Erreur lors de la suppression de l'utilisateur");
-      }
-    }
-  };
+  }, [setSelectedUser, setIsAddDialogOpen]);
 
   return {
     users,
@@ -60,6 +56,7 @@ export const useInternalUsers = () => {
     isAddDialogOpen,
     selectedUser,
     setIsAddDialogOpen,
+    setSelectedUser,
     handleSubmit,
     handleDelete,
     toggleUserStatus,

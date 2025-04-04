@@ -27,7 +27,9 @@ const InternalUsers = () => {
       <AuthorizationCheck
         isAuthChecking={isAuthChecking}
         isAuthorized={isAuthorized}
-      >
+      />
+
+      {isAuthorized && (
         <div className="p-8 space-y-8">
           <InternalUserHeader onAddClick={handleAddClick} />
 
@@ -47,7 +49,7 @@ const InternalUsers = () => {
             selectedUser={selectedUser}
           />
         </div>
-      </AuthorizationCheck>
+      )}
     </DashboardLayout>
   );
 };
