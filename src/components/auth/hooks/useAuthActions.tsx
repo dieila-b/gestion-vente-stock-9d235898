@@ -49,7 +49,8 @@ export function useAuthActions(
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, role, is_active')
-            .eq('email', data.user.email);
+            .eq('email', data.user.email)
+            .single();
             
           console.log("Vérification internal_users après login:", internalUsers, internalError);
             
@@ -61,7 +62,7 @@ export function useAuthActions(
             return { success: false, error: "Erreur de vérification utilisateur" };
           }
           
-          if (!internalUsers || internalUsers.length === 0) {
+          if (!internalUsers) {
             console.error("Utilisateur non trouvé dans internal_users");
             toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
             await supabase.auth.signOut();
@@ -69,20 +70,18 @@ export function useAuthActions(
             return { success: false, error: "Votre compte n'a pas les autorisations nécessaires pour accéder à l'application." };
           }
           
-          const internalUser = internalUsers[0];
-          
-          if (!internalUser.is_active) {
-            console.error("Compte utilisateur désactivé:", internalUser.email);
+          if (!internalUsers.is_active) {
+            console.error("Compte utilisateur désactivé:", internalUsers.email);
             toast.error("Votre compte a été désactivé. Contactez l'administrateur.");
             await supabase.auth.signOut();
             setIsSubmitting(false);
             return { success: false, error: "Votre compte a été désactivé." };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUser.email, "Rôle:", internalUser.role, "Actif:", internalUser.is_active);
+          console.log("Utilisateur interne vérifié:", internalUsers.email, "Rôle:", internalUsers.role, "Actif:", internalUsers.is_active);
           
           // Stocker le rôle de l'utilisateur dans le localStorage pour un accès facile
-          localStorage.setItem('userRole', internalUser.role);
+          localStorage.setItem('userRole', internalUsers.role);
           
           setIsAuthenticated(true);
           setIsSubmitting(false);
@@ -101,8 +100,6 @@ export function useAuthActions(
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);
       return { success: false, error: "Erreur technique lors de la connexion" };
-    } finally {
-      setIsSubmitting(false);
     }
   };
   

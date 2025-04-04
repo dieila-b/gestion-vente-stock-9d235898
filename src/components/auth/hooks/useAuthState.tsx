@@ -43,8 +43,9 @@ export function useAuthState() {
           try {
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email, role')
-              .eq('email', data.session.user.email);
+              .select('id, email, role, is_active')
+              .eq('email', data.session.user.email)
+              .single();
             
             console.log("Recherche utilisateur interne:", internalUsers, internalError);
             
@@ -54,17 +55,24 @@ export function useAuthState() {
               setIsAuthenticated(false);
               setUserRole(null);
               localStorage.removeItem('userRole');
-            } else if (!internalUsers || internalUsers.length === 0) {
+            } else if (!internalUsers) {
               console.log("Utilisateur non trouvé dans la table internal_users");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               setUserRole(null);
               localStorage.removeItem('userRole');
+            } else if (!internalUsers.is_active) {
+              console.log("Utilisateur désactivé:", internalUsers.email);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
+              toast.error("Votre compte a été désactivé");
             } else {
-              console.log("Utilisateur interne validé:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
+              console.log("Utilisateur interne validé:", internalUsers.email, "Rôle:", internalUsers.role);
               setIsAuthenticated(true);
-              setUserRole(internalUsers[0].role);
-              localStorage.setItem('userRole', internalUsers[0].role);
+              setUserRole(internalUsers.role);
+              localStorage.setItem('userRole', internalUsers.role);
             }
           } catch (err) {
             console.error("Erreur lors de la vérification internal_users:", err);
@@ -101,8 +109,9 @@ export function useAuthState() {
             // Vérifier si l'utilisateur est un utilisateur interne
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email, role')
-              .eq('email', session.user.email);
+              .select('id, email, role, is_active')
+              .eq('email', session.user.email)
+              .single();
             
             console.log("Vérification internal_users après signin:", internalUsers, internalError);
             
@@ -113,18 +122,25 @@ export function useAuthState() {
               setUserRole(null);
               localStorage.removeItem('userRole');
               toast.error("Erreur lors de la vérification de vos droits d'accès");
-            } else if (!internalUsers || internalUsers.length === 0) {
+            } else if (!internalUsers) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               setUserRole(null);
               localStorage.removeItem('userRole');
               toast.error("Vous n'avez pas accès à cette application");
+            } else if (!internalUsers.is_active) {
+              console.error("Utilisateur désactivé lors du changement d'état:", internalUsers.email);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
+              toast.error("Votre compte a été désactivé");
             } else {
-              console.log("Utilisateur interne validé après événement auth:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
+              console.log("Utilisateur interne validé après événement auth:", internalUsers.email, "Rôle:", internalUsers.role);
               setIsAuthenticated(true);
-              setUserRole(internalUsers[0].role);
-              localStorage.setItem('userRole', internalUsers[0].role);
+              setUserRole(internalUsers.role);
+              localStorage.setItem('userRole', internalUsers.role);
             }
           } catch (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);

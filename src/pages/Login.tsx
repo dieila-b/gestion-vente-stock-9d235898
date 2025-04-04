@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, login, loading } = useAuth();
+  const { isAuthenticated, login, loading, isSubmitting: authSubmitting } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +82,8 @@ export default function Login() {
     }
   };
 
+  const submitting = isSubmitting || authSubmitting || loading;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6">
@@ -114,7 +116,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isSubmitting || loading}
+                  disabled={submitting}
                   aria-label="Email"
                 />
               </div>
@@ -125,7 +127,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isSubmitting || loading}
+                  disabled={submitting}
                   aria-label="Mot de passe"
                 />
               </div>
@@ -135,9 +137,9 @@ export default function Login() {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || isSubmitting}
+            disabled={submitting}
           >
-            {loading || isSubmitting ? (
+            {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {isSubmitting ? "Vérification..." : "Connexion..."}
