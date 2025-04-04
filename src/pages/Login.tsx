@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/hooks/useAuth";
 import { Loader2, User, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,20 +16,43 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
-  // Use useEffect for redirection to avoid rendering issues
   useEffect(() => {
-    if (isAuthenticated && !loading) {
+    if (isAuthenticated) {
       console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
       navigate("/dashboard");
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    // Validation des champs
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Mode développement: Connexion directe");
+      setIsSubmitting(true);
+      try {
+        const result = await login("dev@example.com", "password");
+        if (result.success) {
+          toast.success("Connexion réussie (mode développement)");
+          navigate("/dashboard");
+        } else {
+          console.error("Échec de la connexion en mode dev:", result.error);
+          setError(result.error || "Erreur lors de la connexion");
+          toast.error(result.error || "Erreur lors de la connexion");
+        }
+      } catch (error) {
+        console.error("Exception en mode développement:", error);
+        toast.error("Erreur lors de la connexion");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+    
     if (!email || !password) {
       setError("Veuillez saisir votre email et votre mot de passe");
       toast.error("Veuillez saisir votre email et votre mot de passe");
@@ -60,21 +84,38 @@ export default function Login() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast.error("Veuillez saisir votre adresse email");
+      return;
+    }
+    
+    setResetSubmitting(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) {
+        console.error("Erreur lors de la réinitialisation du mot de passe:", error);
+        toast.error("Erreur lors de l'envoi du mail de réinitialisation");
+      } else {
+        toast.success("Email de réinitialisation envoyé");
+        setForgotPasswordOpen(false);
+        setResetEmail("");
+      }
+    } catch (error) {
+      console.error("Exception lors de la réinitialisation du mot de passe:", error);
+      toast.error("Erreur lors de l'envoi du mail de réinitialisation");
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
   const submitting = isSubmitting || authSubmitting || loading;
-
-  // Si encore en chargement, ne pas afficher le formulaire tout de suite
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Si déjà authentifié, ne pas afficher le formulaire du tout
-  if (isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -85,7 +126,9 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Connexion</h1>
           <p className="text-muted-foreground text-sm">
-            Accès réservé aux utilisateurs internes
+            {process.env.NODE_ENV === 'development' 
+              ? "Mode développement: Connexion automatique" 
+              : "Accès réservé aux utilisateurs internes"}
           </p>
         </div>
         
@@ -97,28 +140,32 @@ export default function Login() {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={submitting}
-              aria-label="Email"
-            />
-          </div>
-          <div>
-            <Input
-              type="password"
-              placeholder="Mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={submitting}
-              aria-label="Mot de passe"
-            />
-          </div>
+          {process.env.NODE_ENV !== 'development' && (
+            <>
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={submitting}
+                  aria-label="Email"
+                />
+              </div>
+              <div>
+                <Input
+                  type="password"
+                  placeholder="Mot de passe"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={submitting}
+                  aria-label="Mot de passe"
+                />
+              </div>
+            </>
+          )}
           
           <Button 
             type="submit" 
@@ -131,11 +178,64 @@ export default function Login() {
                 {isSubmitting ? "Vérification..." : "Connexion..."}
               </>
             ) : (
-              "Se connecter"
+              process.env.NODE_ENV === 'development' ? "Entrer (Mode Dev)" : "Se connecter"
             )}
           </Button>
+          
+          {process.env.NODE_ENV !== 'development' && (
+            <div className="text-center mt-4">
+              <Button 
+                type="button" 
+                variant="link" 
+                className="text-sm text-primary"
+                onClick={() => setForgotPasswordOpen(true)}
+              >
+                Mot de passe oublié ?
+              </Button>
+            </div>
+          )}
         </form>
       </Card>
+      
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Réinitialisation du mot de passe</DialogTitle>
+            <DialogDescription>
+              Entrez votre adresse email pour recevoir un lien de réinitialisation.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleResetPassword} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="Votre adresse email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                disabled={resetSubmitting}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)} disabled={resetSubmitting}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={resetSubmitting}>
+                {resetSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  "Envoyer le lien"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

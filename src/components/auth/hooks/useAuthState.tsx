@@ -12,8 +12,18 @@ export function useAuthState() {
     // Vérifier la session Supabase au chargement
     const checkSession = async () => {
       try {
+        // En développement, on est automatiquement authentifié
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Mode développement: Authentification automatique activée");
+          setIsAuthenticated(true);
+          setUserRole('admin'); // En développement, on est admin par défaut
+          localStorage.setItem('userRole', 'admin');
+          setLoading(false);
+          return;
+        }
+
         console.log("Vérification de la session Supabase...");
-        // Vérifier la session Supabase
+        // En production, vérifier la session Supabase
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
