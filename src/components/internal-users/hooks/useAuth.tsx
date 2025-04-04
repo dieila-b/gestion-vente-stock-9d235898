@@ -28,28 +28,36 @@ export const useAuth = () => {
         if (userRole && ['admin', 'manager'].includes(userRole)) {
           console.log("Utilisateur autorisé basé sur le rôle:", userRole);
           setIsAuthorized(true);
-        } else {
-          console.log("Utilisateur non autorisé. Rôle:", userRole);
-          setIsAuthorized(false);
+          setIsAuthChecking(false);
+          return;
+        } 
+        
+        console.log("Vérification supplémentaire du rôle en base de données");
+        // Double vérification dans la base de données
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          console.log("Session trouvée, vérification du rôle pour:", session.user.email);
+          const { data: userData, error: userError } = await supabase
+            .from('internal_users')
+            .select('role')
+            .eq('email', session.user.email)
+            .single();
           
-          // Double vérification dans la base de données si nécessaire
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session) {
-            const { data: userData, error: userError } = await supabase
-              .from('internal_users')
-              .select('role')
-              .eq('email', session.user.email)
-              .single();
-            
-            if (userError) {
-              console.error("Erreur lors de la vérification du rôle:", userError);
-            } else if (userData && ['admin', 'manager'].includes(userData.role)) {
-              console.log("Rôle vérifié dans la base de données:", userData.role);
-              setIsAuthorized(true);
-              localStorage.setItem('userRole', userData.role);
-            }
+          if (userError) {
+            console.error("Erreur lors de la vérification du rôle:", userError);
+            setIsAuthorized(false);
+          } else if (userData && ['admin', 'manager'].includes(userData.role)) {
+            console.log("Rôle vérifié dans la base de données:", userData.role);
+            setIsAuthorized(true);
+            localStorage.setItem('userRole', userData.role);
+          } else {
+            console.log("Utilisateur non autorisé ou rôle non valide:", userData);
+            setIsAuthorized(false);
           }
+        } else {
+          console.log("Aucune session active trouvée");
+          setIsAuthorized(false);
         }
       } catch (error) {
         console.error("Erreur de vérification d'authentification:", error);
@@ -59,7 +67,12 @@ export const useAuth = () => {
       }
     };
     
-    checkAuth();
+    if (isAuthenticated) {
+      checkAuth();
+    } else {
+      setIsAuthChecking(false);
+      setIsAuthorized(false);
+    }
   }, [isAuthenticated]);
 
   return {

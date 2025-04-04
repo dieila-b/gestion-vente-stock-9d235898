@@ -18,6 +18,7 @@ export function useAuthActions(
       console.log("Mode développement: Connexion automatique pour:", email);
       setIsAuthenticated(true);
       setIsSubmitting(false);
+      localStorage.setItem('userRole', 'admin'); // Assigner un rôle admin en développement
       return { success: true };
     }
 
@@ -28,7 +29,7 @@ export function useAuthActions(
         password,
       });
 
-      console.log("Résultat signInWithPassword:", data, error);
+      console.log("Résultat signInWithPassword:", data ? "Succès" : "Échec", error);
 
       if (error) {
         console.error("Erreur d'authentification:", error.message);
@@ -90,7 +91,7 @@ export function useAuthActions(
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);
-      return { success: false, error: "Erreur technique" };
+      return { success: false, error: "Erreur technique lors de la connexion" };
     }
   };
   

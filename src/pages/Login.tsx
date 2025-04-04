@@ -28,42 +28,41 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     
-    // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
       console.log("Mode développement: Connexion directe");
       setIsSubmitting(true);
-      const result = await login("dev@example.com", "password");
-      setIsSubmitting(false);
-      console.log("Résultat login en mode dev:", result);
-      
-      if (result.success) {
-        toast.success("Connexion réussie (mode développement)");
-        navigate("/dashboard");
-      } else {
-        console.error("Échec de la connexion en mode dev:", result.error);
-        setError(result.error || "Erreur lors de la connexion");
-        toast.error(result.error || "Erreur lors de la connexion");
+      try {
+        const result = await login("dev@example.com", "password");
+        if (result.success) {
+          toast.success("Connexion réussie (mode développement)");
+          navigate("/dashboard");
+        } else {
+          console.error("Échec de la connexion en mode dev:", result.error);
+          setError(result.error || "Erreur lors de la connexion");
+          toast.error(result.error || "Erreur lors de la connexion");
+        }
+      } catch (error) {
+        console.error("Exception en mode développement:", error);
+        toast.error("Erreur lors de la connexion");
+      } finally {
+        setIsSubmitting(false);
       }
       return;
     }
     
-    // En production, vérifier les identifiants avec Supabase
+    // Validation des champs en production
+    if (!email || !password) {
+      setError("Veuillez saisir votre email et votre mot de passe");
+      toast.error("Veuillez saisir votre email et votre mot de passe");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       console.log("Tentative de connexion avec email:", email);
-      
-      if (!email || !password) {
-        console.error("Formulaire incomplet - Email ou mot de passe manquant");
-        setError("Veuillez saisir votre email et votre mot de passe");
-        toast.error("Veuillez saisir votre email et votre mot de passe");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log("Appel de la fonction login avec les identifiants fournis");
       const result = await login(email, password);
-      console.log("Résultat login:", result);
+      console.log("Résultat login:", result.success ? "Succès" : "Échec", result.error);
       
       if (result.success) {
         console.log("Connexion réussie, redirection vers le dashboard");
