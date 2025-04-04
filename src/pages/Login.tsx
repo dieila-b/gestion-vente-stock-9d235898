@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/hooks/useAuth";
 import { Loader2, User, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,8 +16,10 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
@@ -50,7 +53,6 @@ export default function Login() {
       return;
     }
     
-    // Validation des champs en production
     if (!email || !password) {
       setError("Veuillez saisir votre email et votre mot de passe");
       toast.error("Veuillez saisir votre email et votre mot de passe");
@@ -79,6 +81,37 @@ export default function Login() {
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast.error("Veuillez saisir votre adresse email");
+      return;
+    }
+    
+    setResetSubmitting(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) {
+        console.error("Erreur lors de la réinitialisation du mot de passe:", error);
+        toast.error("Erreur lors de l'envoi du mail de réinitialisation");
+      } else {
+        toast.success("Email de réinitialisation envoyé");
+        setForgotPasswordOpen(false);
+        setResetEmail("");
+      }
+    } catch (error) {
+      console.error("Exception lors de la réinitialisation du mot de passe:", error);
+      toast.error("Erreur lors de l'envoi du mail de réinitialisation");
+    } finally {
+      setResetSubmitting(false);
     }
   };
 
@@ -148,8 +181,61 @@ export default function Login() {
               process.env.NODE_ENV === 'development' ? "Entrer (Mode Dev)" : "Se connecter"
             )}
           </Button>
+          
+          {process.env.NODE_ENV !== 'development' && (
+            <div className="text-center mt-4">
+              <Button 
+                type="button" 
+                variant="link" 
+                className="text-sm text-primary"
+                onClick={() => setForgotPasswordOpen(true)}
+              >
+                Mot de passe oublié ?
+              </Button>
+            </div>
+          )}
         </form>
       </Card>
+      
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Réinitialisation du mot de passe</DialogTitle>
+            <DialogDescription>
+              Entrez votre adresse email pour recevoir un lien de réinitialisation.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleResetPassword} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="Votre adresse email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                disabled={resetSubmitting}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)} disabled={resetSubmitting}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={resetSubmitting}>
+                {resetSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  "Envoyer le lien"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
