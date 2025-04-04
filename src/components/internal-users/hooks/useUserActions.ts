@@ -26,7 +26,6 @@ export const useUserActions = (
           address: values.address || "",
           role: values.role,
           is_active: values.is_active !== undefined ? values.is_active : true,
-          status: values.status as "actif" | "inactif" | "en attente",
           password: values.password
         }, selectedUser);
 
@@ -56,8 +55,7 @@ export const useUserActions = (
           phone: values.phone || "",
           address: values.address || "",
           role: values.role,
-          is_active: values.is_active !== undefined ? values.is_active : true,
-          status: values.status as "actif" | "inactif" | "en attente"
+          is_active: values.is_active !== undefined ? values.is_active : true
         });
 
         if (newUser) {

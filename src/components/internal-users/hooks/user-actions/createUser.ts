@@ -12,7 +12,6 @@ interface CreateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
-  status: "actif" | "inactif" | "en attente";
 }
 
 export const createUser = async (data: CreateUserData): Promise<InternalUser | null> => {
@@ -47,8 +46,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active,
-        status: data.status
+        is_active: data.is_active
       })
       .select("*")
       .single();
@@ -67,15 +65,8 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       title: "Utilisateur créé",
       description: `${data.first_name} ${data.last_name} a été créé avec succès`,
     });
-
-    // Add the status field if it's missing in the response
-    const typedUser = insertedUser as any;
-    const finalUser: InternalUser = {
-      ...typedUser,
-      status: typedUser.status || data.status
-    };
     
-    return finalUser;
+    return insertedUser as InternalUser;
   } catch (error) {
     console.error("Error creating user:", error);
     toast({
