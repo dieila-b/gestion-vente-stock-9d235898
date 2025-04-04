@@ -58,6 +58,21 @@ export const updateUser = async (data: UpdateUserData, existingUser: InternalUse
       // Cette partie nécessiterait des droits admin ou une fonction serveur
     }
 
+    // En mode développement, simuler une mise à jour réussie
+    if (isDevelopmentMode) {
+      const mockUpdatedUser: InternalUser = {
+        ...existingUser,
+        ...updateData
+      };
+      
+      toast({
+        title: "Utilisateur mis à jour (mode développeur)",
+        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
+      });
+      
+      return mockUpdatedUser;
+    }
+
     // Mise à jour de l'utilisateur en base de données
     const { data: updatedUserData, error: updateError } = await supabase
       .from("internal_users")
@@ -69,28 +84,13 @@ export const updateUser = async (data: UpdateUserData, existingUser: InternalUse
     if (updateError) {
       console.error("Erreur lors de la mise à jour de l'utilisateur:", updateError);
       
-      // En mode développement, on simule une mise à jour réussie
-      if (isDevelopmentMode) {
-        const mockUpdatedUser: InternalUser = {
-          ...existingUser,
-          ...updateData
-        };
-        
-        toast({
-          title: "Utilisateur mis à jour (mode développeur)",
-          description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
-        });
-        
-        return mockUpdatedUser;
-      } else {
-        // En production, afficher l'erreur normalement
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour l'utilisateur: " + updateError.message,
-          variant: "destructive",
-        });
-        return null;
-      }
+      // En production, afficher l'erreur normalement
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour l'utilisateur: " + updateError.message,
+        variant: "destructive",
+      });
+      return null;
     }
 
     toast({

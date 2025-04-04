@@ -41,7 +41,29 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       }
     }
 
-    // Insertion de l'utilisateur dans la base de données
+    // En mode développement, simuler une insertion réussie sans toucher à Supabase
+    if (isDevelopmentMode) {
+      // Simuler une insertion réussie pour le développement
+      const mockUser: InternalUser = {
+        id: `dev-${Date.now()}`,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.address || null,
+        role: data.role,
+        is_active: data.is_active
+      };
+      
+      toast({
+        title: "Utilisateur créé (mode développeur)",
+        description: `${data.first_name} ${data.last_name} a été créé avec succès`,
+      });
+      
+      return mockUser;
+    }
+
+    // En production, insertion réelle de l'utilisateur dans la base de données
     const { data: insertedUser, error: insertError } = await supabase
       .from("internal_users")
       .insert({
@@ -59,43 +81,20 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     if (insertError) {
       console.error("Error inserting user:", insertError);
       
-      // En mode développement, on ignore les erreurs RLS
-      if (isDevelopmentMode) {
-        // Simuler une insertion réussie pour le développement
-        const mockUser: InternalUser = {
-          id: `dev-${Date.now()}`,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          phone: data.phone || null,
-          address: data.address || null,
-          role: data.role,
-          is_active: data.is_active
-        };
-        
+      if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
         toast({
-          title: "Utilisateur créé (mode développeur)",
-          description: `${data.first_name} ${data.last_name} a été créé avec succès`,
+          title: "Erreur d'autorisation",
+          description: "Vous n'avez pas les droits nécessaires pour créer un utilisateur. Contactez l'administrateur.",
+          variant: "destructive",
         });
-        
-        return mockUser;
       } else {
-        // En production, afficher l'erreur normalement
-        if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
-          toast({
-            title: "Erreur d'autorisation",
-            description: "Vous n'avez pas les droits nécessaires pour créer un utilisateur. Contactez l'administrateur.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Erreur",
-            description: "Impossible de créer l'utilisateur: " + insertError.message,
-            variant: "destructive",
-          });
-        }
-        return null;
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'utilisateur: " + insertError.message,
+          variant: "destructive",
+        });
       }
+      return null;
     }
 
     toast({
