@@ -101,6 +101,8 @@ export function useAuthActions(
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);
       return { success: false, error: "Erreur technique lors de la connexion" };
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
