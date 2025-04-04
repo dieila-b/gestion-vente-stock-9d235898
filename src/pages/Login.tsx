@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,14 +96,19 @@ export default function Login() {
     setResetSubmitting(true);
     
     try {
+      // Modification importante: utiliser la bonne URL de redirection
+      const redirectUrl = window.location.origin + '/reset-password';
+      console.log("URL de redirection pour réinitialisation:", redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: window.location.origin + '/reset-password',
+        redirectTo: redirectUrl,
       });
       
       if (error) {
         console.error("Erreur lors de la réinitialisation du mot de passe:", error);
         toast.error("Erreur lors de l'envoi du mail de réinitialisation");
       } else {
+        console.log("Email de réinitialisation envoyé à:", resetEmail);
         toast.success("Email de réinitialisation envoyé");
         setForgotPasswordOpen(false);
         setResetEmail("");

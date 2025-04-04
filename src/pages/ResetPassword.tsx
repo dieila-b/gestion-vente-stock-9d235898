@@ -18,9 +18,14 @@ export default function ResetPassword() {
   useEffect(() => {
     // Vérifier si on a un hash dans l'URL qui indique une redirection de réinitialisation de mot de passe
     const hash = window.location.hash;
+    
     if (!hash || !hash.includes("type=recovery")) {
       console.log("Pas de hash de récupération dans l'URL, redirection vers login");
+      console.log("Hash actuel:", hash);
       navigate("/login");
+    } else {
+      console.log("Hash de récupération trouvé dans l'URL", hash);
+      // Le token est géré automatiquement par Supabase
     }
   }, [navigate]);
 
@@ -50,6 +55,7 @@ export default function ResetPassword() {
     setIsSubmitting(true);
 
     try {
+      console.log("Tentative de mise à jour du mot de passe");
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -59,6 +65,7 @@ export default function ResetPassword() {
         setError(updateError.message);
         toast.error("Erreur lors de la réinitialisation du mot de passe");
       } else {
+        console.log("Mot de passe réinitialisé avec succès");
         toast.success("Mot de passe réinitialisé avec succès");
         
         // Rediriger vers la page de connexion après un court délai
