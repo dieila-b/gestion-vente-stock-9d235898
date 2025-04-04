@@ -5,35 +5,7 @@ import { InternalUser } from "@/types/internal-user";
 
 export const deleteUser = async (user: InternalUser): Promise<boolean> => {
   try {
-    // En mode développement, simuler la suppression
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Development mode: Simulating user deletion");
-      
-      // Récupérer les utilisateurs stockés
-      const storageKey = "internal_users_dev_data";
-      const storedData = localStorage.getItem(storageKey);
-      
-      if (storedData) {
-        try {
-          const storedUsers = JSON.parse(storedData);
-          // Filtrer l'utilisateur à supprimer
-          const updatedUsers = storedUsers.filter((u: InternalUser) => u.id !== user.id);
-          // Mettre à jour le localStorage
-          localStorage.setItem(storageKey, JSON.stringify(updatedUsers));
-        } catch (error) {
-          console.error("Erreur lors de la manipulation des données localStorage:", error);
-        }
-      }
-      
-      toast({
-        title: "Utilisateur supprimé",
-        description: `${user.first_name} ${user.last_name} a été supprimé avec succès`,
-      });
-      
-      return true;
-    }
-    
-    // En production, vérifier les autorisations
+    // Vérifier les autorisations
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     
     if (currentUser) {
@@ -53,7 +25,7 @@ export const deleteUser = async (user: InternalUser): Promise<boolean> => {
       }
     }
 
-    // En production, effectuer la suppression réelle
+    // Effectuer la suppression réelle
     const { error: deleteError } = await supabase
       .from("internal_users")
       .delete()
