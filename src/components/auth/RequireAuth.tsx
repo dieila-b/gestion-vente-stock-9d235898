@@ -4,9 +4,10 @@ import { useAuth } from "./AuthProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [isInternalUser, setIsInternalUser] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,12 +25,22 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
       // En production, on vérifie si l'utilisateur est un utilisateur interne
       try {
+        if (!isAuthenticated) {
+          console.log("Utilisateur non authentifié");
+          setIsInternalUser(false);
+          setLoading(false);
+          return;
+        }
+        
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log("Session dans RequireAuth:", session, sessionError);
         
         if (sessionError) {
           console.error("Erreur lors de la récupération de la session:", sessionError);
           setIsInternalUser(false);
           setLoading(false);
+          toast.error("Erreur lors de la vérification de votre session");
           return;
         }
         
@@ -43,38 +54,48 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         console.log("Session active trouvée pour l'utilisateur:", session.user.email);
         
         // Vérifier si l'utilisateur existe dans la table internal_users
-        const { data, error } = await supabase
-          .from('internal_users')
-          .select('id, email')
-          .eq('email', session.user.email)
-          .single();
-          
-        if (error) {
-          console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
+        try {
+          const { data, error } = await supabase
+            .from('internal_users')
+            .select('id, email')
+            .eq('email', session.user.email)
+            .single();
+            
+          console.log("Vérification internal_users dans RequireAuth:", data, error);
+            
+          if (error) {
+            console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
+            setIsInternalUser(false);
+            toast.error("Erreur lors de la vérification de votre accès");
+          } else if (!data) {
+            console.log("Utilisateur non trouvé dans la table internal_users");
+            setIsInternalUser(false);
+            toast.error("Vous n'avez pas accès à cette application");
+          } else {
+            console.log("Utilisateur interne trouvé:", data.email);
+            setIsInternalUser(true);
+          }
+        } catch (err) {
+          console.error("Exception lors de la vérification internal_users:", err);
           setIsInternalUser(false);
-        } else if (!data) {
-          console.log("Utilisateur non trouvé dans la table internal_users");
-          setIsInternalUser(false);
-        } else {
-          console.log("Utilisateur interne trouvé:", data);
-          setIsInternalUser(true);
+          toast.error("Erreur lors de la vérification de votre accès");
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
         setIsInternalUser(false);
+        toast.error("Erreur lors de la vérification de votre accès");
       } finally {
         setLoading(false);
       }
     }
     
-    if (isAuthenticated) {
+    // Vérifier si l'utilisateur est interne seulement si authentifié ou si l'état d'auth a changé
+    if (!authLoading) {
       checkInternalUser();
-    } else {
-      setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -86,10 +107,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   if (!isAuthenticated) {
+    console.log("Redirection vers /login car non authentifié");
     return <Navigate to="/login" replace />;
   }
 
   if (process.env.NODE_ENV !== 'development' && !isInternalUser) {
+    console.log("Redirection vers /unauthorized car utilisateur non interne");
     return <Navigate to="/unauthorized" replace />;
   }
 
