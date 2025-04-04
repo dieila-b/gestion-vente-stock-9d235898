@@ -96,20 +96,25 @@ export default function Login() {
     setResetSubmitting(true);
     
     try {
-      // Modification importante: utiliser la bonne URL de redirection
-      const redirectUrl = window.location.origin + '/reset-password';
-      console.log("URL de redirection pour réinitialisation:", redirectUrl);
+      // Construire une URL de redirection absolue pour s'assurer que Supabase l'utilise correctement
+      const baseUrl = window.location.origin;
+      const redirectUrl = `${baseUrl}/reset-password`;
       
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      console.log("Envoi d'email de réinitialisation à:", resetEmail);
+      console.log("URL de redirection utilisée:", redirectUrl);
+      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: redirectUrl,
       });
       
+      console.log("Réponse de resetPasswordForEmail:", data ? "Succès" : "Échec", error || "Pas d'erreur");
+      
       if (error) {
-        console.error("Erreur lors de la réinitialisation du mot de passe:", error);
+        console.error("Erreur détaillée lors de la réinitialisation:", error);
         toast.error("Erreur lors de l'envoi du mail de réinitialisation");
       } else {
-        console.log("Email de réinitialisation envoyé à:", resetEmail);
         toast.success("Email de réinitialisation envoyé");
+        console.log("Email de réinitialisation envoyé avec succès à:", resetEmail);
         setForgotPasswordOpen(false);
         setResetEmail("");
       }
