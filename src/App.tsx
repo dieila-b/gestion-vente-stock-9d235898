@@ -8,6 +8,7 @@ import Unauthorized from "./pages/Unauthorized";
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import InternalUsers from "./pages/InternalUsers";
+import Orders from "./pages/Orders";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/internal-users" element={<RequireAuth><InternalUsers /></RequireAuth>} />
+          <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
