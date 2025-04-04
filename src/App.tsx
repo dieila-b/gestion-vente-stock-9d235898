@@ -9,6 +9,7 @@ import ResetPassword from './pages/ResetPassword';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import InternalUsers from "./pages/InternalUsers";
 import Orders from "./pages/Orders";
+import Index from "./pages/Index";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/internal-users" element={<RequireAuth><InternalUsers /></RequireAuth>} />
           <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/" element={<Index />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>
