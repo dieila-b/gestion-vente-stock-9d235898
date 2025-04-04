@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
+import { toast } from "sonner";
 
 export const useAuth = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -11,11 +12,19 @@ export const useAuth = () => {
   useEffect(() => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
+      
       try {
         // En mode développement - automatiquement autorisé
         if (process.env.NODE_ENV === 'development') {
           console.log("Mode développement: Utilisateur considéré comme autorisé");
           setIsAuthorized(true);
+          setIsAuthChecking(false);
+          return;
+        }
+
+        if (!isAuthenticated) {
+          console.log("Utilisateur non authentifié");
+          setIsAuthorized(false);
           setIsAuthChecking(false);
           return;
         }
@@ -45,6 +54,7 @@ export const useAuth = () => {
           
           if (userError) {
             console.error("Erreur lors de la vérification du rôle:", userError);
+            toast.error("Erreur lors de la vérification des autorisations");
             setIsAuthorized(false);
           } else if (userData && ['admin', 'manager'].includes(userData.role) && userData.is_active) {
             console.log("Rôle vérifié dans la base de données:", userData.role, "Actif:", userData.is_active);
@@ -52,6 +62,7 @@ export const useAuth = () => {
             localStorage.setItem('userRole', userData.role);
           } else {
             console.log("Utilisateur non autorisé ou rôle non valide:", userData);
+            toast.error("Vous n'avez pas les autorisations nécessaires");
             setIsAuthorized(false);
           }
         } else {
@@ -60,18 +71,14 @@ export const useAuth = () => {
         }
       } catch (error) {
         console.error("Erreur de vérification d'authentification:", error);
+        toast.error("Erreur lors de la vérification des autorisations");
         setIsAuthorized(false);
       } finally {
         setIsAuthChecking(false);
       }
     };
     
-    if (isAuthenticated) {
-      checkAuth();
-    } else {
-      setIsAuthChecking(false);
-      setIsAuthorized(false);
-    }
+    checkAuth();
   }, [isAuthenticated]);
 
   return {

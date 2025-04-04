@@ -4,9 +4,14 @@ import { Loader2 } from "lucide-react";
 interface AuthorizationCheckProps {
   isAuthChecking: boolean;
   isAuthorized: boolean;
+  children?: React.ReactNode;
 }
 
-export function AuthorizationCheck({ isAuthChecking, isAuthorized }: AuthorizationCheckProps) {
+export function AuthorizationCheck({ 
+  isAuthChecking, 
+  isAuthorized, 
+  children 
+}: AuthorizationCheckProps) {
   if (isAuthChecking) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -34,5 +39,5 @@ export function AuthorizationCheck({ isAuthChecking, isAuthorized }: Authorizati
     );
   }
 
-  return null;
+  return <>{children}</>;
 }
