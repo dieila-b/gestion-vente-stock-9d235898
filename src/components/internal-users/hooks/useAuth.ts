@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth as useGlobalAuth } from "@/components/auth/AuthProvider";
+import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
 
 export const useAuth = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -20,34 +20,36 @@ export const useAuth = () => {
           return;
         }
 
-        // Obtenir la session courante
-        const { data: { session } } = await supabase.auth.getSession();
+        // Récupérer le rôle de l'utilisateur du localStorage
+        const userRole = localStorage.getItem('userRole');
+        console.log("Rôle utilisateur depuis localStorage:", userRole);
         
-        if (!session) {
-          console.log("Pas de session trouvée, utilisateur non autorisé");
-          setIsAuthorized(false);
-          setIsAuthChecking(false);
-          return;
-        }
-        
-        // Vérifier si l'utilisateur a un rôle d'admin ou de manager
-        const { data: userData, error: userError } = await supabase
-          .from('internal_users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (userError) {
-          console.error("Erreur lors de la vérification du rôle:", userError);
-          setIsAuthorized(false);
-        } else if (userData) {
-          // Permettre aux admins ET aux managers d'accéder à la page
-          const hasPermission = ['admin', 'manager'].includes(userData.role);
-          console.log(`Rôle utilisateur: ${userData.role}, a la permission: ${hasPermission}`);
-          setIsAuthorized(hasPermission);
+        // Vérifier les autorisations basées sur le rôle
+        if (userRole && ['admin', 'manager'].includes(userRole)) {
+          console.log("Utilisateur autorisé basé sur le rôle:", userRole);
+          setIsAuthorized(true);
         } else {
-          console.log("Aucune donnée utilisateur trouvée");
+          console.log("Utilisateur non autorisé. Rôle:", userRole);
           setIsAuthorized(false);
+          
+          // Double vérification dans la base de données si nécessaire
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session) {
+            const { data: userData, error: userError } = await supabase
+              .from('internal_users')
+              .select('role')
+              .eq('email', session.user.email)
+              .single();
+            
+            if (userError) {
+              console.error("Erreur lors de la vérification du rôle:", userError);
+            } else if (userData && ['admin', 'manager'].includes(userData.role)) {
+              console.log("Rôle vérifié dans la base de données:", userData.role);
+              setIsAuthorized(true);
+              localStorage.setItem('userRole', userData.role);
+            }
+          }
         }
       } catch (error) {
         console.error("Erreur de vérification d'authentification:", error);

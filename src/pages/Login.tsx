@@ -31,7 +31,9 @@ export default function Login() {
     // En développement, simplement connecter l'utilisateur
     if (process.env.NODE_ENV === 'development') {
       console.log("Mode développement: Connexion directe");
+      setIsSubmitting(true);
       const result = await login("dev@example.com", "password");
+      setIsSubmitting(false);
       console.log("Résultat login en mode dev:", result);
       
       if (result.success) {

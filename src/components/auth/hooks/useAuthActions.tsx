@@ -48,7 +48,7 @@ export function useAuthActions(
         try {
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
-            .select('id, email')
+            .select('id, email, role')
             .eq('email', data.user.email);
             
           console.log("Vérification internal_users après login:", internalUsers, internalError);
@@ -69,7 +69,11 @@ export function useAuthActions(
             return { success: false, error: "Votre compte n'a pas les autorisations nécessaires pour accéder à l'application." };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUsers[0].email);
+          console.log("Utilisateur interne vérifié:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
+          
+          // Stocker le rôle de l'utilisateur dans le localStorage pour un accès facile
+          localStorage.setItem('userRole', internalUsers[0].role);
+          
           setIsAuthenticated(true);
           setIsSubmitting(false);
           return { success: true };
@@ -93,6 +97,10 @@ export function useAuthActions(
   const logout = async () => {
     console.log("Déconnexion en cours...");
     setLoading(true);
+    
+    // Nettoyer les données utilisateur stockées
+    localStorage.removeItem('userRole');
+    
     // En mode développement, juste mettre à jour l'état
     if (process.env.NODE_ENV === 'development') {
       setIsAuthenticated(false);

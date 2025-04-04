@@ -32,6 +32,16 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           return;
         }
         
+        // Vérifier d'abord dans le localStorage
+        const userRole = localStorage.getItem('userRole');
+        if (userRole) {
+          console.log("Rôle trouvé dans localStorage:", userRole);
+          setIsInternalUser(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Sinon, vérifier via Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         console.log("Session dans RequireAuth:", session, sessionError);
@@ -57,7 +67,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         try {
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
-            .select('id, email')
+            .select('id, email, role')
             .eq('email', session.user.email);
             
           console.log("Vérification internal_users dans RequireAuth:", internalUsers, internalError);
@@ -71,8 +81,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
             setIsInternalUser(false);
             toast.error("Vous n'avez pas accès à cette application");
           } else {
-            console.log("Utilisateur interne trouvé:", internalUsers[0].email);
+            console.log("Utilisateur interne trouvé:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
             setIsInternalUser(true);
+            // Stocker le rôle dans localStorage pour les futures vérifications
+            localStorage.setItem('userRole', internalUsers[0].role);
           }
         } catch (err) {
           console.error("Exception lors de la vérification internal_users:", err);

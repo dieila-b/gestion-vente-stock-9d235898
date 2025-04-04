@@ -6,6 +6,7 @@ import { toast } from "sonner";
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     // Vérifier la session Supabase au chargement
@@ -15,6 +16,8 @@ export function useAuthState() {
         if (process.env.NODE_ENV === 'development') {
           console.log("Mode développement: Authentification automatique activée");
           setIsAuthenticated(true);
+          setUserRole('admin'); // En développement, on est admin par défaut
+          localStorage.setItem('userRole', 'admin');
           setLoading(false);
           return;
         }
@@ -40,7 +43,7 @@ export function useAuthState() {
           try {
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email')
+              .select('id, email, role')
               .eq('email', data.session.user.email);
             
             console.log("Recherche utilisateur interne:", internalUsers, internalError);
@@ -49,26 +52,38 @@ export function useAuthState() {
               console.error("Erreur lors de la requête internal_users:", internalError);
               await supabase.auth.signOut();
               setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
             } else if (!internalUsers || internalUsers.length === 0) {
               console.log("Utilisateur non trouvé dans la table internal_users");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
             } else {
-              console.log("Utilisateur interne validé:", internalUsers[0].email);
+              console.log("Utilisateur interne validé:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
               setIsAuthenticated(true);
+              setUserRole(internalUsers[0].role);
+              localStorage.setItem('userRole', internalUsers[0].role);
             }
           } catch (err) {
             console.error("Erreur lors de la vérification internal_users:", err);
             await supabase.auth.signOut();
             setIsAuthenticated(false);
+            setUserRole(null);
+            localStorage.removeItem('userRole');
           }
         } else {
           console.log("Aucune session active trouvée");
           setIsAuthenticated(false);
+          setUserRole(null);
+          localStorage.removeItem('userRole');
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de session:", error);
         setIsAuthenticated(false);
+        setUserRole(null);
+        localStorage.removeItem('userRole');
       } finally {
         setLoading(false);
       }
@@ -86,7 +101,7 @@ export function useAuthState() {
             // Vérifier si l'utilisateur est un utilisateur interne
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email')
+              .select('id, email, role')
               .eq('email', session.user.email);
             
             console.log("Vérification internal_users après signin:", internalUsers, internalError);
@@ -95,22 +110,32 @@ export function useAuthState() {
               console.error("Erreur lors de la requête internal_users:", internalError);
               await supabase.auth.signOut();
               setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
               toast.error("Erreur lors de la vérification de vos droits d'accès");
             } else if (!internalUsers || internalUsers.length === 0) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
+              setUserRole(null);
+              localStorage.removeItem('userRole');
               toast.error("Vous n'avez pas accès à cette application");
             } else {
-              console.log("Utilisateur interne validé après événement auth:", internalUsers[0].email);
+              console.log("Utilisateur interne validé après événement auth:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
               setIsAuthenticated(true);
+              setUserRole(internalUsers[0].role);
+              localStorage.setItem('userRole', internalUsers[0].role);
             }
           } catch (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
             setIsAuthenticated(false);
+            setUserRole(null);
+            localStorage.removeItem('userRole');
           }
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
+          setUserRole(null);
+          localStorage.removeItem('userRole');
         }
       }
     );
@@ -122,5 +147,5 @@ export function useAuthState() {
     };
   }, []);
 
-  return { isAuthenticated, setIsAuthenticated, loading, setLoading };
+  return { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole };
 }
