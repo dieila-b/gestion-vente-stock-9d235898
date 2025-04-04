@@ -7,6 +7,7 @@ export type AuthContextType = {
   login: (email: string, password: string) => Promise<{success: boolean, error?: string}>;
   logout: () => Promise<void>;
   isSubmitting?: boolean;
+  userRole?: string | null;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);

@@ -5,19 +5,19 @@ import { useAuthActions } from "./hooks/useAuthActions";
 import { AuthContext } from "./context/AuthContext";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, setIsAuthenticated, loading, setLoading } = useAuthState();
+  const { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole } = useAuthState();
   const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading);
 
   // Log initial auth state
   useEffect(() => {
-    console.log("État d'authentification initial:", { isAuthenticated, loading });
-  }, [isAuthenticated, loading]);
+    console.log("État d'authentification initial:", { isAuthenticated, loading, userRole });
+  }, [isAuthenticated, loading, userRole]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, isSubmitting }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, isSubmitting, userRole }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export { useAuth } from "./hooks/useAuth";
+// Ne pas exporter useAuth ici pour éviter des dépendances circulaires

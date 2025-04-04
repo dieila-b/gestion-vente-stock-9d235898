@@ -3,7 +3,7 @@ import { useState } from "react";
 import { InternalUser } from "@/types/internal-user";
 import { useUserData } from "./hooks/useUserData";
 import { useUserActions } from "./hooks/useUserActions";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "@/components/auth/hooks/useAuth";
 import { UserFormValues } from "./validation/user-form-schema";
 import { toast } from "sonner";
 
@@ -14,7 +14,8 @@ export const useInternalUsers = () => {
     addUser,
     updateUserInList
   );
-  const { isAuthChecking, isAuthorized } = useAuth();
+  const { isAuthenticated, loading: isAuthChecking } = useAuth();
+  const isAuthorized = isAuthenticated;
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<InternalUser | null>(null);

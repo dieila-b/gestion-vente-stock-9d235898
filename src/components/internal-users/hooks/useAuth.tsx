@@ -1,88 +1,79 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAuth = () => {
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const { isAuthenticated, loading } = useGlobalAuth();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const { isAuthenticated } = useGlobalAuth();
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setIsAuthChecking(true);
-      
+    const checkAdminAccess = async () => {
+      // En développement, autorisation automatique
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Mode développement: Autorisation automatique pour la gestion des utilisateurs");
+        setIsAuthorized(true);
+        setIsAuthChecking(false);
+        return;
+      }
+
+      if (!isAuthenticated || loading) {
+        setIsAuthorized(false);
+        setIsAuthChecking(loading);
+        return;
+      }
+
       try {
-        // En mode développement - automatiquement autorisé
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Mode développement: Utilisateur considéré comme autorisé");
+        // Vérifier le rôle dans localStorage en premier
+        const userRole = localStorage.getItem('userRole');
+        
+        if (userRole === 'admin') {
+          console.log("Accès autorisé: rôle admin trouvé dans localStorage");
           setIsAuthorized(true);
           setIsAuthChecking(false);
           return;
         }
-
-        if (!isAuthenticated) {
-          console.log("Utilisateur non authentifié");
+        
+        // Vérifier dans Supabase si le rôle n'est pas admin en localStorage
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("Accès refusé: pas de session active");
           setIsAuthorized(false);
           setIsAuthChecking(false);
           return;
         }
-
-        // Vérifier d'abord le rôle dans localStorage
-        const userRole = localStorage.getItem('userRole');
-        console.log("Rôle utilisateur depuis localStorage:", userRole);
         
-        if (userRole && ['admin', 'manager'].includes(userRole)) {
-          console.log("Utilisateur autorisé basé sur le rôle:", userRole);
-          setIsAuthorized(true);
-          setIsAuthChecking(false);
-          return;
-        } 
-        
-        console.log("Vérification supplémentaire du rôle en base de données");
-        // Vérification dans la base de données
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          console.log("Session trouvée, vérification du rôle pour:", session.user.email);
-          const { data: userData, error: userError } = await supabase
-            .from('internal_users')
-            .select('role, is_active')
-            .eq('email', session.user.email)
-            .single();
+        const { data: user, error } = await supabase
+          .from('internal_users')
+          .select('role')
+          .eq('email', session.user.email)
+          .eq('is_active', true)
+          .single();
           
-          if (userError) {
-            console.error("Erreur lors de la vérification du rôle:", userError);
-            toast.error("Erreur lors de la vérification des autorisations");
-            setIsAuthorized(false);
-          } else if (userData && ['admin', 'manager'].includes(userData.role) && userData.is_active) {
-            console.log("Rôle vérifié dans la base de données:", userData.role, "Actif:", userData.is_active);
-            setIsAuthorized(true);
-            localStorage.setItem('userRole', userData.role);
-          } else {
-            console.log("Utilisateur non autorisé ou rôle non valide:", userData);
-            toast.error("Vous n'avez pas les autorisations nécessaires");
-            setIsAuthorized(false);
-          }
+        if (error || !user) {
+          console.log("Accès refusé: utilisateur non trouvé ou inactif");
+          setIsAuthorized(false);
+        } else if (user.role === 'admin') {
+          console.log("Accès autorisé: rôle admin confirmé dans la base de données");
+          setIsAuthorized(true);
+          // Mettre à jour localStorage pour éviter de refaire la requête
+          localStorage.setItem('userRole', 'admin');
         } else {
-          console.log("Aucune session active trouvée");
+          console.log("Accès refusé: l'utilisateur n'est pas admin");
           setIsAuthorized(false);
         }
       } catch (error) {
-        console.error("Erreur de vérification d'authentification:", error);
-        toast.error("Erreur lors de la vérification des autorisations");
+        console.error("Erreur lors de la vérification des autorisations:", error);
         setIsAuthorized(false);
       } finally {
         setIsAuthChecking(false);
       }
     };
     
-    checkAuth();
-  }, [isAuthenticated]);
+    checkAdminAccess();
+  }, [isAuthenticated, loading]);
 
-  return {
-    isAuthChecking,
-    isAuthorized
-  };
+  return { isAuthorized, isAuthChecking };
 };
