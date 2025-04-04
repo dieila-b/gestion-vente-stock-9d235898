@@ -4,7 +4,6 @@ import { useAuth } from "./AuthProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading: authLoading } = useAuth();

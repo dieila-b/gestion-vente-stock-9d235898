@@ -6,7 +6,7 @@ import { AuthContext } from "./context/AuthContext";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, setIsAuthenticated, loading, setLoading } = useAuthState();
-  const { login, logout } = useAuthActions(setIsAuthenticated, setLoading);
+  const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading);
 
   // Log initial auth state
   useEffect(() => {
@@ -14,7 +14,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, loading]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, isSubmitting }}>
       {children}
     </AuthContext.Provider>
   );

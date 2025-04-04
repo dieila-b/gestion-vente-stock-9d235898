@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -82,7 +81,6 @@ export function useAuthState() {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
-              toast.error("Vous n'avez pas accès à cette application");
             } else {
               console.log("Utilisateur interne validé après événement auth:", internalUser.email);
               setIsAuthenticated(true);

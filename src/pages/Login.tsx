@@ -28,20 +28,16 @@ export default function Login() {
     e.preventDefault();
     setErrorMsg("");
     
+    if (!email || !password) {
+      setErrorMsg("Veuillez saisir votre email et votre mot de passe");
+      toast.error("Veuillez saisir votre email et votre mot de passe");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       console.log("Tentative de connexion avec email:", email);
-      
-      if (!email || !password) {
-        console.error("Formulaire incomplet - Email ou mot de passe manquant");
-        setErrorMsg("Veuillez saisir votre email et votre mot de passe");
-        toast.error("Veuillez saisir votre email et votre mot de passe");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log("Appel de la fonction login avec les identifiants fournis");
       const result = await login(email, password);
       console.log("Résultat login:", result);
       
