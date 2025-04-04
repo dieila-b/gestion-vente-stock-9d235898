@@ -23,7 +23,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         return;
       }
 
-      // En production, on vérifie si l'utilisateur est un utilisateur interne
+      // En production, on vérifie si l'utilisateur est un utilisateur interne et actif
       try {
         if (!isAuthenticated) {
           console.log("Utilisateur non authentifié");
@@ -63,10 +63,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         
         console.log("Session active trouvée pour l'utilisateur:", session.user.email);
         
-        // Vérifier si l'utilisateur existe dans la table internal_users
+        // Vérifier si l'utilisateur existe et est actif dans la table internal_users
         const { data: internalUsers, error: internalError } = await supabase
           .from('internal_users')
-          .select('id, email, role')
+          .select('id, email, role, is_active')
           .eq('email', session.user.email);
           
         console.log("Vérification internal_users dans RequireAuth:", 
@@ -81,8 +81,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           console.log("Utilisateur non trouvé dans la table internal_users");
           setIsInternalUser(false);
           toast.error("Vous n'avez pas accès à cette application");
+        } else if (!internalUsers[0].is_active) {
+          console.log("Utilisateur interne désactivé:", internalUsers[0].email);
+          setIsInternalUser(false);
+          toast.error("Votre compte a été désactivé");
         } else {
-          console.log("Utilisateur interne trouvé:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
+          console.log("Utilisateur interne trouvé:", internalUsers[0].email, "Rôle:", internalUsers[0].role, "Actif:", internalUsers[0].is_active);
           setIsInternalUser(true);
           // Stocker le rôle dans localStorage pour les futures vérifications
           localStorage.setItem('userRole', internalUsers[0].role);

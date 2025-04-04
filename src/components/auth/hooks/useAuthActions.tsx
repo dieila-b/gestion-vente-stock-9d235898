@@ -35,7 +35,6 @@ export function useAuthActions(
         console.error("Erreur d'authentification:", error.message);
         setIsSubmitting(false);
         
-        // Message d'erreur plus précis selon le type d'erreur
         if (error.message.includes("Invalid login credentials")) {
           return { success: false, error: "Identifiants incorrects. Vérifiez votre email et mot de passe." };
         }
@@ -45,11 +44,11 @@ export function useAuthActions(
       if (data.user) {
         console.log("Utilisateur connecté avec succès:", data.user.email);
         
-        // Vérifier si l'utilisateur existe dans la table internal_users
+        // Vérifier si l'utilisateur est un utilisateur interne et est actif
         try {
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
-            .select('id, email, role')
+            .select('id, email, role, is_active')
             .eq('email', data.user.email);
             
           console.log("Vérification internal_users après login:", internalUsers, internalError);
@@ -70,10 +69,20 @@ export function useAuthActions(
             return { success: false, error: "Votre compte n'a pas les autorisations nécessaires pour accéder à l'application." };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUsers[0].email, "Rôle:", internalUsers[0].role);
+          const internalUser = internalUsers[0];
+          
+          if (!internalUser.is_active) {
+            console.error("Compte utilisateur désactivé:", internalUser.email);
+            toast.error("Votre compte a été désactivé. Contactez l'administrateur.");
+            await supabase.auth.signOut();
+            setIsSubmitting(false);
+            return { success: false, error: "Votre compte a été désactivé." };
+          }
+          
+          console.log("Utilisateur interne vérifié:", internalUser.email, "Rôle:", internalUser.role, "Actif:", internalUser.is_active);
           
           // Stocker le rôle de l'utilisateur dans le localStorage pour un accès facile
-          localStorage.setItem('userRole', internalUsers[0].role);
+          localStorage.setItem('userRole', internalUser.role);
           
           setIsAuthenticated(true);
           setIsSubmitting(false);
