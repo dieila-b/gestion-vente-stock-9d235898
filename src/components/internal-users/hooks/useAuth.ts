@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth as useGlobalAuth } from "@/components/auth/AuthProvider";
+import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
 
 export const useAuth = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -12,14 +12,6 @@ export const useAuth = () => {
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
-        // Pour le développement - considérer automatiquement autorisé
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Mode développement: Utilisateur considéré comme autorisé");
-          setIsAuthorized(true);
-          setIsAuthChecking(false);
-          return;
-        }
-
         // Obtenir la session courante
         const { data: { session } } = await supabase.auth.getSession();
         
