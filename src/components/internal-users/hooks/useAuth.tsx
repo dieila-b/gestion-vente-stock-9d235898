@@ -10,14 +10,6 @@ export const useAuth = () => {
 
   useEffect(() => {
     const checkAdminAccess = async () => {
-      // En développement, autorisation automatique
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Autorisation automatique pour la gestion des utilisateurs");
-        setIsAuthorized(true);
-        setIsAuthChecking(false);
-        return;
-      }
-
       if (!isAuthenticated || loading) {
         setIsAuthorized(false);
         setIsAuthChecking(loading);

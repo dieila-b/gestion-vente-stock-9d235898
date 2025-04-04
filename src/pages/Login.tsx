@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -17,40 +17,17 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
-      navigate("/dashboard");
-    }
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated) {
+    console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Mode développement: Connexion directe");
-      setIsSubmitting(true);
-      try {
-        const result = await login("dev@example.com", "password");
-        if (result.success) {
-          toast.success("Connexion réussie (mode développement)");
-          navigate("/dashboard");
-        } else {
-          console.error("Échec de la connexion en mode dev:", result.error);
-          setError(result.error || "Erreur lors de la connexion");
-          toast.error(result.error || "Erreur lors de la connexion");
-        }
-      } catch (error) {
-        console.error("Exception en mode développement:", error);
-        toast.error("Erreur lors de la connexion");
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-    
-    // Validation des champs en production
+    // Validation des champs
     if (!email || !password) {
       setError("Veuillez saisir votre email et votre mot de passe");
       toast.error("Veuillez saisir votre email et votre mot de passe");
@@ -93,9 +70,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Connexion</h1>
           <p className="text-muted-foreground text-sm">
-            {process.env.NODE_ENV === 'development' 
-              ? "Mode développement: Connexion automatique" 
-              : "Accès réservé aux utilisateurs internes"}
+            Accès réservé aux utilisateurs internes
           </p>
         </div>
         
@@ -107,32 +82,28 @@ export default function Login() {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {process.env.NODE_ENV !== 'development' && (
-            <>
-              <div>
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={submitting}
-                  aria-label="Email"
-                />
-              </div>
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Mot de passe"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={submitting}
-                  aria-label="Mot de passe"
-                />
-              </div>
-            </>
-          )}
+          <div>
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={submitting}
+              aria-label="Email"
+            />
+          </div>
+          <div>
+            <Input
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={submitting}
+              aria-label="Mot de passe"
+            />
+          </div>
           
           <Button 
             type="submit" 
@@ -145,7 +116,7 @@ export default function Login() {
                 {isSubmitting ? "Vérification..." : "Connexion..."}
               </>
             ) : (
-              process.env.NODE_ENV === 'development' ? "Entrer (Mode Dev)" : "Se connecter"
+              "Se connecter"
             )}
           </Button>
         </form>
