@@ -16,7 +16,6 @@ export function useAuthState() {
         
         if (error) {
           console.error("Erreur lors de la vérification de session:", error);
-          toast.error("Erreur lors de la vérification de session");
           setIsAuthenticated(false);
           setLoading(false);
           return;

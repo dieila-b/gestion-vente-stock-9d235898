@@ -59,7 +59,7 @@ export function useAuthActions(
             // Déconnexion de l'utilisateur
             await supabase.auth.signOut();
             setIsSubmitting(false);
-            return { success: false, error: "Utilisateur non autorisé" };
+            return { success: false, error: "Vous n'êtes pas autorisé à accéder à cette application" };
           }
           
           console.log("Utilisateur interne vérifié:", internalUser.email);
