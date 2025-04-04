@@ -11,7 +11,6 @@ interface UpdateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
-  status: "actif" | "inactif" | "en attente";
   password?: string;
 }
 
@@ -45,8 +44,7 @@ export const updateUser = async (data: UpdateUserData, existingUser: InternalUse
       phone: data.phone || null,
       address: data.address || null,
       role: data.role,
-      is_active: data.is_active,
-      status: data.status
+      is_active: data.is_active
     };
     
     // Si un nouveau mot de passe est fourni, traiter via Auth API
@@ -78,14 +76,7 @@ export const updateUser = async (data: UpdateUserData, existingUser: InternalUse
       description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
     });
     
-    // Add the status field if it's missing in the response
-    const typedUserData = updatedUserData as any;
-    const finalUserData: InternalUser = {
-      ...typedUserData,
-      status: typedUserData.status || data.status
-    };
-    
-    return finalUserData;
+    return updatedUserData as InternalUser;
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
     toast({
