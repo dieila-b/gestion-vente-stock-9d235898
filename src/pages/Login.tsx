@@ -10,11 +10,11 @@ import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, login, loading } = useAuth();
+  const { isAuthenticated, login, loading, isSubmitting } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function Login() {
       return;
     }
     
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
     
     try {
       console.log("Tentative de connexion avec email:", email);
@@ -55,7 +55,7 @@ export default function Login() {
       setErrorMsg("Une erreur est survenue. Veuillez réessayer plus tard.");
       toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
 
@@ -86,7 +86,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isSubmitting || loading}
+              disabled={localIsSubmitting || loading || isSubmitting}
               aria-label="Email"
             />
           </div>
@@ -97,7 +97,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isSubmitting || loading}
+              disabled={localIsSubmitting || loading || isSubmitting}
               aria-label="Mot de passe"
             />
           </div>
@@ -105,12 +105,12 @@ export default function Login() {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || isSubmitting}
+            disabled={loading || localIsSubmitting || isSubmitting}
           >
-            {loading || isSubmitting ? (
+            {loading || localIsSubmitting || isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isSubmitting ? "Vérification..." : "Connexion..."}
+                {localIsSubmitting || isSubmitting ? "Vérification..." : "Connexion..."}
               </>
             ) : (
               "Se connecter"
