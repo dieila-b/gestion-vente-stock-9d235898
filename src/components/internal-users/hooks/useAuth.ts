@@ -4,11 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
 
 export const useAuth = () => {
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthChecking, setIsAuthChecking] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const { isAuthenticated } = useGlobalAuth();
+  const { isAuthenticated, isDevelopmentMode } = useGlobalAuth();
 
   useEffect(() => {
+    // In development mode, set authorized to true immediately
+    if (isDevelopmentMode) {
+      console.log("Mode développeur: Autorisation accordée automatiquement");
+      setIsAuthorized(true);
+      setIsAuthChecking(false);
+      return;
+    }
+
     const checkAuth = async () => {
       setIsAuthChecking(true);
       try {
@@ -49,11 +57,14 @@ export const useAuth = () => {
       }
     };
     
-    checkAuth();
-  }, [isAuthenticated]);
+    // Only run auth check if not in development mode and user is authenticated
+    if (!isDevelopmentMode && isAuthenticated) {
+      checkAuth();
+    }
+  }, [isAuthenticated, isDevelopmentMode]);
 
   return {
-    isAuthChecking,
-    isAuthorized
+    isAuthChecking: isDevelopmentMode ? false : isAuthChecking,
+    isAuthorized: isDevelopmentMode ? true : isAuthorized
   };
 };

@@ -3,10 +3,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useAuthState() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(import.meta.env.DEV ? true : false);
+  const [loading, setLoading] = useState(!import.meta.env.DEV);
+  const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
+    // Skip authentication check in development mode
+    if (isDevelopmentMode) {
+      console.log("Development mode: Authentication bypass enabled");
+      setIsAuthenticated(true);
+      setLoading(false);
+      return;
+    }
+
     // Vérifier la session Supabase au chargement
     const checkSession = async () => {
       try {
@@ -100,7 +109,7 @@ export function useAuthState() {
         authListener.subscription.unsubscribe();
       }
     };
-  }, []);
+  }, [isDevelopmentMode]);
 
-  return { isAuthenticated, setIsAuthenticated, loading, setLoading };
+  return { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode };
 }

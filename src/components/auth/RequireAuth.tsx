@@ -6,11 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, isDevelopmentMode } = useAuth();
   const [isInternalUser, setIsInternalUser] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isDevelopmentMode);
 
   useEffect(() => {
+    // In development mode, bypass authentication
+    if (isDevelopmentMode) {
+      console.log("Mode développeur: Vérification d'utilisateur interne désactivée");
+      setIsInternalUser(true);
+      setLoading(false);
+      return;
+    }
+
     async function checkInternalUser() {
       setLoading(true);
       
@@ -78,7 +86,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     if (!authLoading) {
       checkInternalUser();
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, isDevelopmentMode]);
 
   if (authLoading || loading) {
     return (
@@ -89,6 +97,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         </div>
       </div>
     );
+  }
+
+  // In development mode, bypass authentication checks
+  if (isDevelopmentMode) {
+    return <>{children}</>;
   }
 
   if (!isAuthenticated) {
