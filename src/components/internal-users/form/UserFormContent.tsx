@@ -1,7 +1,7 @@
 
+import { FormContent } from "./FormContent";
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "../validation/user-form-schema";
-import { FormContent } from "./FormContent";
 
 interface UserFormContentProps {
   onSubmit: (user: UserFormValues) => Promise<void>;
