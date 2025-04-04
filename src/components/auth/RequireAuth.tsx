@@ -15,15 +15,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     async function checkInternalUser() {
       setLoading(true);
       
-      // En mode développement, on considère toujours l'utilisateur comme interne
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Mode développement: Utilisateur considéré comme autorisé");
-        setIsInternalUser(true);
-        setLoading(false);
-        return;
-      }
-
-      // En production, on vérifie si l'utilisateur est un utilisateur interne
       try {
         if (!isAuthenticated) {
           console.log("Utilisateur non authentifié");
@@ -111,7 +102,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/login" replace />;
   }
 
-  if (process.env.NODE_ENV !== 'development' && !isInternalUser) {
+  if (!isInternalUser) {
     console.log("Redirection vers /unauthorized car utilisateur non interne");
     return <Navigate to="/unauthorized" replace />;
   }

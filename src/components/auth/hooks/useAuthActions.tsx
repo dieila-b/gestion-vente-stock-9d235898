@@ -13,14 +13,6 @@ export function useAuthActions(
     console.log("Fonction login appelée avec:", email);
     setIsSubmitting(true);
     
-    // En développement, simplement connecter l'utilisateur
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Mode développement: Connexion automatique pour:", email);
-      setIsAuthenticated(true);
-      setIsSubmitting(false);
-      return { success: true };
-    }
-
     try {
       console.log("Tentative de connexion avec Supabase pour:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -94,15 +86,7 @@ export function useAuthActions(
   const logout = async () => {
     console.log("Déconnexion en cours...");
     setLoading(true);
-    // En mode développement, juste mettre à jour l'état
-    if (process.env.NODE_ENV === 'development') {
-      setIsAuthenticated(false);
-      setLoading(false);
-      toast.success("Vous êtes déconnecté");
-      return;
-    }
-
-    // En production, se déconnecter de Supabase
+    
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {

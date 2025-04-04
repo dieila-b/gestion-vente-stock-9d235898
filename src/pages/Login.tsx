@@ -28,24 +28,6 @@ export default function Login() {
     e.preventDefault();
     setErrorMsg("");
     
-    // En développement, simplement connecter l'utilisateur
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Mode développement: Connexion directe");
-      const result = await login("dev@example.com", "password");
-      console.log("Résultat login en mode dev:", result);
-      
-      if (result.success) {
-        toast.success("Connexion réussie (mode développement)");
-        navigate("/dashboard");
-      } else {
-        console.error("Échec de la connexion en mode dev:", result.error);
-        setErrorMsg(result.error || "Erreur lors de la connexion");
-        toast.error(result.error || "Erreur lors de la connexion");
-      }
-      return;
-    }
-    
-    // En production, vérifier les identifiants avec Supabase
     setIsSubmitting(true);
     
     try {
@@ -90,9 +72,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Connexion</h1>
           <p className="text-muted-foreground text-sm">
-            {process.env.NODE_ENV === 'development' 
-              ? "Mode développement: Connexion automatique" 
-              : "Accès réservé aux utilisateurs internes"}
+            Accès réservé aux utilisateurs internes
           </p>
         </div>
         
@@ -103,32 +83,28 @@ export default function Login() {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {process.env.NODE_ENV !== 'development' && (
-            <>
-              <div>
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isSubmitting || loading}
-                  aria-label="Email"
-                />
-              </div>
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Mot de passe"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isSubmitting || loading}
-                  aria-label="Mot de passe"
-                />
-              </div>
-            </>
-          )}
+          <div>
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isSubmitting || loading}
+              aria-label="Email"
+            />
+          </div>
+          <div>
+            <Input
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isSubmitting || loading}
+              aria-label="Mot de passe"
+            />
+          </div>
           
           <Button 
             type="submit" 
@@ -141,7 +117,7 @@ export default function Login() {
                 {isSubmitting ? "Vérification..." : "Connexion..."}
               </>
             ) : (
-              process.env.NODE_ENV === 'development' ? "Entrer (Mode Dev)" : "Se connecter"
+              "Se connecter"
             )}
           </Button>
         </form>
