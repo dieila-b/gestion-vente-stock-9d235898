@@ -5,8 +5,8 @@ import { useAuthActions } from "./hooks/useAuthActions";
 import { AuthContext } from "./context/AuthContext";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole } = useAuthState();
-  const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading);
+  const { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole, setUserRole } = useAuthState();
+  const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading, setUserRole);
 
   // Log initial auth state
   useEffect(() => {

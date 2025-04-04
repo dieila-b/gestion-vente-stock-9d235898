@@ -5,7 +5,8 @@ import { toast } from "sonner";
 
 export function useAuthActions(
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setUserRole: React.Dispatch<React.SetStateAction<string | null>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -17,8 +18,9 @@ export function useAuthActions(
     if (process.env.NODE_ENV === 'development') {
       console.log("Mode développement: Connexion automatique pour:", email);
       setIsAuthenticated(true);
+      setUserRole('admin'); // Assigner un rôle admin en développement
+      localStorage.setItem('userRole', 'admin');
       setIsSubmitting(false);
-      localStorage.setItem('userRole', 'admin'); // Assigner un rôle admin en développement
       return { success: true };
     }
 
@@ -82,6 +84,7 @@ export function useAuthActions(
           
           // Stocker le rôle de l'utilisateur dans le localStorage pour un accès facile
           localStorage.setItem('userRole', internalUsers.role);
+          setUserRole(internalUsers.role);
           
           setIsAuthenticated(true);
           setIsSubmitting(false);
@@ -113,6 +116,7 @@ export function useAuthActions(
     // En mode développement, juste mettre à jour l'état
     if (process.env.NODE_ENV === 'development') {
       setIsAuthenticated(false);
+      setUserRole(null);
       setLoading(false);
       toast.success("Vous êtes déconnecté");
       return;
@@ -126,6 +130,7 @@ export function useAuthActions(
         toast.error("Erreur lors de la déconnexion");
       } else {
         setIsAuthenticated(false);
+        setUserRole(null);
         toast.success("Vous êtes déconnecté");
       }
     } catch (error) {

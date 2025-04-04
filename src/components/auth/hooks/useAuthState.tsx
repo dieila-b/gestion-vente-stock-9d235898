@@ -30,6 +30,7 @@ export function useAuthState() {
           console.error("Erreur lors de la vérification de session:", error);
           toast.error("Erreur lors de la vérification de session");
           setIsAuthenticated(false);
+          setUserRole(null);
           setLoading(false);
           return;
         }
@@ -163,5 +164,5 @@ export function useAuthState() {
     };
   }, []);
 
-  return { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole };
+  return { isAuthenticated, setIsAuthenticated, loading, setLoading, userRole, setUserRole };
 }

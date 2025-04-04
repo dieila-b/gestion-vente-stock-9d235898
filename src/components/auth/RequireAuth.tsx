@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, userRole } = useAuth();
   const [isInternalUser, setIsInternalUser] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,10 +32,18 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           return;
         }
         
-        // Vérifier d'abord dans le localStorage
-        const userRole = localStorage.getItem('userRole');
-        if (userRole && ['admin', 'manager'].includes(userRole)) {
-          console.log("Rôle valide trouvé dans localStorage:", userRole);
+        // Vérifier d'abord si le rôle est déjà stocké dans le userRole de l'état d'authentification
+        if (userRole && ['admin', 'manager', 'employee'].includes(userRole)) {
+          console.log("Rôle valide trouvé dans l'état d'authentification:", userRole);
+          setIsInternalUser(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Vérifier ensuite dans le localStorage
+        const storedUserRole = localStorage.getItem('userRole');
+        if (storedUserRole && ['admin', 'manager', 'employee'].includes(storedUserRole)) {
+          console.log("Rôle valide trouvé dans localStorage:", storedUserRole);
           setIsInternalUser(true);
           setLoading(false);
           return;
@@ -96,7 +104,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     if (!authLoading) {
       checkInternalUser();
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, userRole]);
 
   if (authLoading || loading) {
     return (
