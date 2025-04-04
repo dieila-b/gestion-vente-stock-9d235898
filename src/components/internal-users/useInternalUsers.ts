@@ -9,7 +9,11 @@ import { toast } from "sonner";
 
 export const useInternalUsers = () => {
   const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
-  const { createUser, updateUser, deleteUser, toggleUserStatus } = useUserActions();
+  const { handleSubmit: userActionsSubmit, handleDelete: userActionsDelete, toggleUserStatus } = useUserActions(
+    fetchUsers,
+    addUser,
+    updateUserInList
+  );
   const { isAuthChecking, isAuthorized } = useAuth();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -27,20 +31,7 @@ export const useInternalUsers = () => {
 
   const handleSubmit = async (data: UserFormValues) => {
     try {
-      if (selectedUser) {
-        // Mise à jour d'un utilisateur existant
-        console.log("Mise à jour de l'utilisateur:", data);
-        const updatedUser = await updateUser(selectedUser.id, data);
-        updateUserInList(updatedUser);
-        toast.success("Utilisateur mis à jour avec succès");
-      } else {
-        // Création d'un nouvel utilisateur
-        console.log("Création d'un nouvel utilisateur:", data);
-        const newUser = await createUser(data);
-        addUser(newUser);
-        toast.success("Utilisateur créé avec succès");
-      }
-      
+      await userActionsSubmit(data, selectedUser);
       setIsAddDialogOpen(false);
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
@@ -51,8 +42,7 @@ export const useInternalUsers = () => {
   const handleDelete = async (user: InternalUser) => {
     if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.first_name} ${user.last_name}?`)) {
       try {
-        await deleteUser(user.id);
-        fetchUsers(); // Actualiser la liste
+        await userActionsDelete(user);
         toast.success("Utilisateur supprimé avec succès");
       } catch (error) {
         console.error("Erreur lors de la suppression:", error);
