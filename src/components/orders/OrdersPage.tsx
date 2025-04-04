@@ -1,148 +1,167 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { Order } from "./Order";
-import { OrdersHeader } from "./OrdersHeader";
-import { OrdersTable } from "./OrdersTable";
-import { OrderDialog } from "./OrderDialog";
+import { AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PaymentDialog } from "@/components/pos/PaymentDialog";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { OrderCard } from "./OrderCard";
 
 export function OrdersPage() {
-  const [orders, setOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState("pending");
 
-  useEffect(() => {
-    // Simulate fetching orders
-    setTimeout(() => {
-      setOrders([
-        {
-          id: "1",
-          order_number: "ORD-001",
-          client_name: "ABC Corporation",
-          order_date: "2023-04-01",
-          total_amount: 4500000,
-          status: "pending",
-          items: [
-            { id: "i1", name: "Laptop Dell XPS", quantity: 2, price: 1500000 },
-            { id: "i2", name: "Écran Samsung 27\"", quantity: 3, price: 500000 }
-          ]
-        },
-        {
-          id: "2",
-          order_number: "ORD-002",
-          client_name: "Tech Solutions",
-          order_date: "2023-04-05",
-          total_amount: 2750000,
-          status: "completed",
-          items: [
-            { id: "i3", name: "Imprimante HP LaserJet", quantity: 1, price: 750000 },
-            { id: "i4", name: "MacBook Pro", quantity: 1, price: 2000000 }
-          ]
-        },
-        {
-          id: "3",
-          order_number: "ORD-003",
-          client_name: "Global Traders",
-          order_date: "2023-04-10",
-          total_amount: 3650000,
-          status: "in-progress",
-          items: [
-            { id: "i5", name: "Router Cisco", quantity: 2, price: 1200000 },
-            { id: "i6", name: "Switch Netgear", quantity: 5, price: 250000 }
-          ]
-        }
-      ]);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleAddOrder = () => {
-    setEditingOrder(null);
-    setShowDialog(true);
-  };
-
-  const handleEditOrder = (order) => {
-    setEditingOrder(order);
-    setShowDialog(true);
-  };
-
-  const handleViewOrder = (order) => {
-    // Handle order view
-    console.log("Viewing order:", order);
-  };
-
-  const handleCloseDialog = () => {
-    setShowDialog(false);
-    setEditingOrder(null);
-  };
-
-  const handleSaveOrder = (orderData) => {
-    if (editingOrder) {
-      // Update existing order
-      setOrders(
-        orders.map((order) =>
-          order.id === editingOrder.id ? { ...order, ...orderData } : order
-        )
-      );
-    } else {
-      // Add new order
-      const newOrder = {
-        id: Date.now().toString(),
-        ...orderData,
-        order_number: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-        order_date: new Date().toISOString().split('T')[0]
-      };
-      setOrders([...orders, newOrder]);
+  const { data: preorders = [], refetch: refetchPreorders } = useQuery({
+    queryKey: ['preorders', activeTab],
+    enabled: true,
+    queryFn: async () => {
+      // Filtrer par statut basé sur l'onglet actif
+      let query = supabase
+        .from('preorders')
+        .select(`
+          *,
+          client:clients(id, company_name, contact_name, phone, email),
+          items:preorder_items(
+            id, 
+            product_id, 
+            quantity, 
+            unit_price, 
+            total_price,
+            status,
+            product:catalog(id, name, stock, category)
+          )
+        `)
+        
+      if (activeTab !== "all") {
+        query = query.eq('status', activeTab);
+      }
+        
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     }
-    setShowDialog(false);
-  };
+  });
 
-  // Filter orders based on active tab
-  const filteredOrders = activeTab === "all" 
-    ? orders 
-    : orders.filter(order => order.status === activeTab);
+  const handlePaymentSubmit = async (amount: number, paymentMethod: string, notes?: string, delivered?: boolean) => {
+    setIsUpdating(true);
+    try {
+      // Calculer le nouveau montant payé et restant
+      const newPaidAmount = selectedOrder.paid_amount + amount;
+      const newRemainingAmount = selectedOrder.total_amount - newPaidAmount;
+      
+      // Déterminer le nouveau statut
+      let newStatus = selectedOrder.status;
+      if (delivered) {
+        newStatus = 'delivered';
+      } else if (newRemainingAmount <= 0) {
+        newStatus = 'paid';
+      } else if (newPaidAmount > 0 && newRemainingAmount > 0) {
+        newStatus = 'partial';
+      }
+
+      // Mettre à jour la précommande
+      const { error: preorderError } = await supabase
+        .from('preorders')
+        .update({
+          paid_amount: newPaidAmount,
+          remaining_amount: newRemainingAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedOrder.id);
+
+      if (preorderError) throw preorderError;
+
+      // Enregistrer le paiement
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          client_id: selectedOrder.client.id,
+          amount: amount,
+          payment_method: paymentMethod,
+          notes: `Versement précommande #${selectedOrder.id} ${notes ? '- ' + notes : ''}`
+        });
+
+      if (paymentError) throw paymentError;
+
+      toast.success("Paiement enregistré avec succès");
+      refetchPreorders();
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast.error("Erreur lors du traitement du paiement");
+    } finally {
+      setIsUpdating(false);
+      setShowPaymentDialog(false);
+    }
+  };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Commandes</h1>
-        <Button onClick={handleAddOrder}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nouvelle commande
-        </Button>
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">Gestion des Précommandes</h1>
+        <p className="text-muted-foreground">
+          Suivez et gérez les précommandes clients
+        </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">Toutes</TabsTrigger>
+      <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
           <TabsTrigger value="pending">En attente</TabsTrigger>
-          <TabsTrigger value="in-progress">En cours</TabsTrigger>
-          <TabsTrigger value="completed">Terminées</TabsTrigger>
-          <TabsTrigger value="canceled">Annulées</TabsTrigger>
+          <TabsTrigger value="partial">Paiement partiel</TabsTrigger>
+          <TabsTrigger value="paid">Payée</TabsTrigger>
+          <TabsTrigger value="delivered">Livrée</TabsTrigger>
+          <TabsTrigger value="canceled">Annulée</TabsTrigger>
+          <TabsTrigger value="all">Toutes</TabsTrigger>
         </TabsList>
 
-        <Card className="p-6">
-          <OrdersHeader />
-          <OrdersTable
-            orders={filteredOrders}
-            isLoading={isLoading}
-            onEdit={handleEditOrder}
-            onView={handleViewOrder}
-          />
-        </Card>
+        <TabsContent value={activeTab} className="space-y-4">
+          {preorders.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-8">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-medium mb-2">Aucune précommande</h3>
+                <p className="text-center text-muted-foreground">
+                  Il n'y a pas de précommande avec ce statut actuellement.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            preorders.map((order: any) => (
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                isUpdating={isUpdating}
+                setIsUpdating={setIsUpdating} 
+                refetchPreorders={refetchPreorders}
+                setSelectedOrder={setSelectedOrder}
+                setShowPaymentDialog={setShowPaymentDialog}
+              />
+            ))
+          )}
+        </TabsContent>
       </Tabs>
 
-      <OrderDialog
-        open={showDialog}
-        onClose={handleCloseDialog}
-        onSave={handleSaveOrder}
-        order={editingOrder}
-      />
+      {showPaymentDialog && selectedOrder && (
+        <PaymentDialog
+          isOpen={showPaymentDialog}
+          onClose={() => setShowPaymentDialog(false)}
+          totalAmount={selectedOrder.remaining_amount}
+          onSubmitPayment={handlePaymentSubmit}
+          items={selectedOrder.items.map((item: any) => ({
+            id: item.id,
+            name: item.product?.name || `Produit #${item.product_id}`,
+            quantity: item.quantity
+          }))}
+        />
+      )}
     </div>
   );
 }
+
+// Import the missing CardContent component
+import { CardContent } from "@/components/ui/card";

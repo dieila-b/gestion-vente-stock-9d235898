@@ -14,15 +14,11 @@ import { SidebarFooter } from "./sidebar/SidebarFooter";
 
 export function Sidebar() {
   return (
-    <SidebarComponent className="fixed left-0 top-0 h-screen border-r border-purple-900/30 flex-shrink-0 bg-[#1A1F2C]/95 backdrop-blur supports-[backdrop-filter]:bg-[#1A1F2C]/60">
+    <SidebarComponent className="fixed left-0 top-0 h-screen border-r border-muted/20 flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarContent className="flex h-full flex-col">
         <div className="p-6">
           <Link to="/" className="block">
-            <h1 className="text-2xl font-bold">
-              <span className="text-purple-400">Ets AICHA</span><br/>
-              <span className="text-purple-400">BUSINESS</span><br/>
-              <span className="text-purple-400">ALPHAYA</span>
-            </h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">Ets AICHA BUSINESS ALPHAYA</h1>
           </Link>
         </div>
         

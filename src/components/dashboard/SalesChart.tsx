@@ -1,8 +1,8 @@
 
 import { Card } from "@/components/ui/card";
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -10,61 +10,182 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { subDays, subMonths, subYears, format, parseISO, startOfDay } from "date-fns";
+import { fr } from "date-fns/locale";
+import { formatGNF } from "@/lib/currency";
 
-const data = [
-  { name: "Jan", value: 140.0 },
-  { name: "Feb", value: 115.0 },
-  { name: "Mar", value: 95.0 },
-  { name: "Apr", value: 78.0 },
-  { name: "May", value: 63.0 },
-  { name: "Jun", value: 82.0 },
-  { name: "Jul", value: 97.0 },
-];
+type PeriodOption = "1m" | "3m" | "6m" | "1y";
+
+const periods: Record<PeriodOption, { label: string; getDates: () => { start: Date; end: Date } }> = {
+  "1m": {
+    label: "1 mois",
+    getDates: () => ({
+      start: startOfDay(subMonths(new Date(), 1)),
+      end: new Date()
+    })
+  },
+  "3m": {
+    label: "3 mois",
+    getDates: () => ({
+      start: startOfDay(subMonths(new Date(), 3)),
+      end: new Date()
+    })
+  },
+  "6m": {
+    label: "6 mois",
+    getDates: () => ({
+      start: startOfDay(subMonths(new Date(), 6)),
+      end: new Date()
+    })
+  },
+  "1y": {
+    label: "1 an",
+    getDates: () => ({
+      start: startOfDay(subYears(new Date(), 1)),
+      end: new Date()
+    })
+  }
+};
 
 export function SalesChart() {
+  const [period, setPeriod] = useState<PeriodOption>("1m");
+
+  const { data: salesData, isLoading } = useQuery({
+    queryKey: ['sales-evolution', period],
+    queryFn: async () => {
+      const { start, end } = periods[period].getDates();
+      
+      // Récupérer les ventes de la période
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('created_at, final_total')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .order('created_at');
+
+      if (error) {
+        console.error('Error fetching sales data:', error);
+        throw error;
+      }
+
+      // Agréger les ventes par jour
+      const dailySales = orders?.reduce((acc, order) => {
+        const date = format(parseISO(order.created_at), 'yyyy-MM-dd');
+        acc[date] = (acc[date] || 0) + (order.final_total || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Créer un tableau de données pour le graphique
+      const chartData = Object.entries(dailySales || {}).map(([date, total]) => ({
+        date: format(parseISO(date), 'dd MMM', { locale: fr }),
+        sales: total
+      }));
+
+      return chartData;
+    }
+  });
+
+  const handleDownloadCSV = () => {
+    if (!salesData) return;
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Date,Ventes\n"
+      + salesData.map(row => `${row.date},${row.sales}`).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ventes-${period}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <Card className="p-6 bg-gradient-to-br from-gray-900/50 to-gray-800/30">
-      <h2 className="text-lg font-semibold mb-4 text-purple-400">Évolution des Ventes</h2>
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <defs>
-              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#9b87f5" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#9b87f5" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
-            <XAxis 
-              dataKey="name" 
-              stroke="hsl(var(--muted-foreground))" 
-              fontSize={12}
-            />
-            <YAxis 
-              stroke="hsl(var(--muted-foreground))" 
-              fontSize={12}
-              width={40}
-              unit="M"
-              tickFormatter={(value) => `${value}`} 
-            />
-            <ChartTooltip />
-            <Area
-              type="monotone"
-              dataKey="value"
-              name="Ventes"
-              stroke="#9b87f5"
-              strokeWidth={2}
-              fillOpacity={1}
-              fill="url(#colorValue)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+    <Card className="enhanced-glass p-6 chart-container animate-scale-in">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gradient">Évolution des Ventes</h2>
+        <div className="flex gap-2">
+          <div className="flex rounded-md overflow-hidden">
+            {(Object.keys(periods) as PeriodOption[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  period === p
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary hover:bg-secondary/80"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleDownloadCSV}
+            className="ml-2"
+            disabled={!salesData?.length}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div className="flex mt-4 space-x-2">
-        <button className="px-3 py-1 bg-purple-500/80 rounded-md text-xs font-medium">1m</button>
-        <button className="px-3 py-1 bg-gray-700/50 rounded-md text-xs font-medium">3m</button>
-        <button className="px-3 py-1 bg-gray-700/50 rounded-md text-xs font-medium">6m</button>
-        <button className="px-3 py-1 bg-gray-700/50 rounded-md text-xs font-medium">1y</button>
+      
+      <div className="h-[300px] w-full chart-3d">
+        {isLoading ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : !salesData?.length ? (
+          <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+            Aucune donnée pour la période sélectionnée
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+              <XAxis
+                dataKey="date"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickMargin={8}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+              />
+              <ChartTooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="bg-background/95 border border-border p-2 rounded-lg shadow-lg">
+                      <p className="text-sm font-medium">{payload[0].payload.date}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Ventes: {formatGNF(payload[0].value as number)}
+                      </p>
+                    </div>
+                  );
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="sales"
+                name="Ventes"
+                strokeWidth={2}
+                dot={{ strokeWidth: 2, r: 4, className: "fill-primary animate-pulse" }}
+                className="stroke-primary"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </Card>
   );
