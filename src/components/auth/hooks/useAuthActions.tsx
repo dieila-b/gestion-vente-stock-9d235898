@@ -55,7 +55,7 @@ export function useAuthActions(
             
           if (internalError || !internalUser) {
             console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
-            toast.error("Vous n'êtes pas autorisé à accéder à cette application.");
+            toast.error("Vous n'êtes pas autorisé à accéder à cette application");
             // Déconnexion de l'utilisateur
             await supabase.auth.signOut();
             setIsSubmitting(false);

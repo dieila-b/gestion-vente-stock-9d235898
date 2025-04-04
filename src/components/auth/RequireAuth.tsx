@@ -31,7 +31,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           console.error("Erreur lors de la récupération de la session:", sessionError);
           setIsInternalUser(false);
           setLoading(false);
-          toast.error("Erreur lors de la vérification de votre session");
           return;
         }
         
@@ -57,11 +56,9 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           if (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
             setIsInternalUser(false);
-            toast.error("Erreur lors de la vérification de votre accès");
           } else if (!data) {
             console.log("Utilisateur non trouvé dans la table internal_users");
             setIsInternalUser(false);
-            toast.error("Vous n'avez pas accès à cette application");
           } else {
             console.log("Utilisateur interne trouvé:", data.email);
             setIsInternalUser(true);
@@ -69,12 +66,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         } catch (err) {
           console.error("Exception lors de la vérification internal_users:", err);
           setIsInternalUser(false);
-          toast.error("Erreur lors de la vérification de votre accès");
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
         setIsInternalUser(false);
-        toast.error("Erreur lors de la vérification de votre accès");
       } finally {
         setLoading(false);
       }
