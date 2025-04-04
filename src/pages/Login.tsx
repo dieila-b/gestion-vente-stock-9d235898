@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -16,12 +16,13 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
-    navigate("/dashboard");
-    return null;
-  }
+  // Use useEffect for redirection to avoid rendering issues
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +61,20 @@ export default function Login() {
   };
 
   const submitting = isSubmitting || authSubmitting || loading;
+
+  // Si encore en chargement, ne pas afficher le formulaire tout de suite
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Si déjà authentifié, ne pas afficher le formulaire du tout
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
