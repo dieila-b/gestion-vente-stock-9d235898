@@ -71,18 +71,29 @@ export const useUserData = () => {
       if (data && data.length > 0) {
         // Données de Supabase disponibles
         console.log("Données utilisateurs récupérées de Supabase:", data);
-        // Assurer que tous les utilisateurs ont la propriété photo_url
-        fetchedUsers = data.map(user => ({
-          id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          phone: user.phone,
-          address: user.address,
-          role: user.role as "admin" | "manager" | "employee",
-          is_active: user.is_active,
-          photo_url: (user.photo_url as string | null)
-        }));
+        // Map the data to ensure all required properties are present
+        fetchedUsers = data.map(user => {
+          // Create the user object with the required InternalUser properties
+          const internalUser: InternalUser = {
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            phone: user.phone || null,
+            address: user.address || null,
+            role: user.role as "admin" | "manager" | "employee",
+            is_active: user.is_active,
+            // Handle the case where photo_url might not exist in the database
+            photo_url: null
+          };
+          
+          // Safely add photo_url if it exists in the user object
+          if ('photo_url' in user) {
+            internalUser.photo_url = user.photo_url as string | null;
+          }
+          
+          return internalUser;
+        });
       }
       
       setUsers(fetchedUsers);
