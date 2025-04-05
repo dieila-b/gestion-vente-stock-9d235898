@@ -17,12 +17,15 @@ export function useAuthActions(
       console.log("Development mode: Automatic login success");
       
       try {
-        // Récupérer les utilisateurs stockés localement ou créer des utilisateurs par défaut
-        let demoUsers = [];
-        const storedUsers = localStorage.getItem('internalUsers');
+        // Normaliser l'email pour la recherche
+        const normalizedEmail = email.toLowerCase().trim();
         
-        if (storedUsers) {
-          demoUsers = JSON.parse(storedUsers);
+        // Récupérer ou créer les utilisateurs de test
+        const internalUsers = localStorage.getItem('internalUsers');
+        let demoUsers = [];
+        
+        if (internalUsers) {
+          demoUsers = JSON.parse(internalUsers);
           console.log("Utilisateurs récupérés du localStorage:", demoUsers);
         } else {
           // Créer des utilisateurs de démonstration par défaut
@@ -54,26 +57,30 @@ export function useAuthActions(
           console.log("Données utilisateurs de démonstration créées et stockées dans localStorage");
         }
         
-        // En mode développement, vérifier si l'email correspond à un utilisateur
-        // Si oui, connecter automatiquement, sinon afficher une erreur comme en production
-        const userExists = demoUsers.some(user => user.email.toLowerCase() === email.toLowerCase());
+        // En mode développement, connecter l'utilisateur si l'email correspond ou
+        // autoriser n'importe quel utilisateur si on veut
+        const userExists = demoUsers.some((user: any) => 
+          user.email && user.email.toLowerCase().trim() === normalizedEmail
+        );
         
-        if (!userExists) {
+        // Une option: autoriser tous les emails en mode dev pour faciliter les tests
+        if (true) { // Changez à userExists pour être plus strict
+          console.log("Connexion automatique réussie en mode développement");
+          setIsAuthenticated(true);
+          toast.success("Connexion réussie en mode développement");
+          return { success: true };
+        } else {
           console.log("Email non trouvé dans les utilisateurs de démonstration:", email);
           return { 
             success: false, 
-            error: "Cet email n'est pas associé à un compte utilisateur interne" 
+            error: "Cet email n'est pas associé à un compte utilisateur interne en mode développement" 
           };
         }
-        
-        console.log("Utilisateur trouvé dans les données de démonstration, connexion automatique");
-        setIsAuthenticated(true);
-        toast.success("Connexion automatique en mode développement");
-        return { success: true };
       } catch (err) {
-        console.error("Erreur lors du stockage ou de la vérification des données démo:", err);
-        // Même en cas d'erreur en mode développement, on considère que la connexion a réussi
+        console.error("Erreur lors de la vérification des données démo:", err);
+        // Autoriser quand même la connexion en mode développement
         setIsAuthenticated(true);
+        toast.success("Connexion automatique en mode développement (malgré une erreur)");
         return { success: true };
       }
     }

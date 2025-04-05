@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { InternalUser } from "@/types/internal-user";
 
 // Clé pour stocker les utilisateurs dans le localStorage en mode développement
-const DEV_USERS_STORAGE_KEY = "dev_internal_users";
+const DEV_USERS_STORAGE_KEY = "internalUsers";
 
 export const toggleUserStatus = async (user: InternalUser): Promise<boolean> => {
   try {

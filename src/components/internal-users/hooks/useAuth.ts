@@ -11,6 +11,40 @@ export const useAuth = () => {
     // En mode développement, autoriser automatiquement
     if (isDevelopmentMode) {
       console.log("Mode développement: Autorisation automatique pour l'accès aux utilisateurs internes");
+      // Assurer que nous avons des utilisateurs de démonstration dans localStorage
+      try {
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (!storedUsers) {
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+        }
+      } catch (err) {
+        console.error("Erreur lors de la création des données démo:", err);
+      }
+      
       setIsAuthorized(true);
       setIsAuthChecking(false);
       return;

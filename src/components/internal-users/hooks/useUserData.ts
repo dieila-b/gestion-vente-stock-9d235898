@@ -5,7 +5,7 @@ import { InternalUser } from "@/types/internal-user";
 import { toast } from "@/hooks/use-toast";
 
 // Clé pour stocker les utilisateurs dans le localStorage en mode développement
-const DEV_USERS_STORAGE_KEY = "dev_internal_users";
+const DEV_USERS_STORAGE_KEY = "internalUsers";
 
 export const useUserData = () => {
   const [users, setUsers] = useState<InternalUser[]>([]);
@@ -19,6 +19,50 @@ export const useUserData = () => {
     setIsLoading(true);
     
     try {
+      if (isDevelopmentMode) {
+        console.log("Mode développement: Récupération des utilisateurs depuis localStorage");
+        const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
+        
+        if (storedUsers) {
+          const parsedUsers = JSON.parse(storedUsers) as InternalUser[];
+          console.log("Données utilisateurs récupérées du localStorage:", parsedUsers);
+          setUsers(parsedUsers);
+        } else {
+          console.log("Aucun utilisateur trouvé dans localStorage, création d'utilisateurs par défaut");
+          // Créer des utilisateurs par défaut
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
+          setUsers(defaultUsers);
+        }
+        
+        hasFetchedRef.current = true;
+        setIsLoading(false);
+        return;
+      }
+
       // Utiliser Supabase pour récupérer les données
       const { data, error } = await supabase
         .from("internal_users")
@@ -39,13 +83,6 @@ export const useUserData = () => {
           ...user,
           photo_url: 'photo_url' in user ? user.photo_url : null
         })) as InternalUser[];
-      } else if (isDevelopmentMode) {
-        // En mode développement, récupérer depuis localStorage si disponible
-        const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
-        if (storedUsers) {
-          fetchedUsers = JSON.parse(storedUsers) as InternalUser[];
-          console.log("Données utilisateurs récupérées du localStorage:", fetchedUsers);
-        }
       }
       
       setUsers(fetchedUsers);

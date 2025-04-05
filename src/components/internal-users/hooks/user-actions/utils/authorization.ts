@@ -16,7 +16,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
           
           // Simuler une vérification des rôles en utilisant le premier utilisateur qui a un rôle requis
           const users = JSON.parse(storedUsers);
-          const eligibleUser = users.find(user => requiredRoles.includes(user.role));
+          const eligibleUser = users.find((user: any) => requiredRoles.includes(user.role));
           
           if (eligibleUser) {
             console.log("Utilisateur avec rôle approprié trouvé dans les données de démonstration:", eligibleUser.role);
@@ -25,6 +25,33 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
           }
         } else {
           console.log("Aucune donnée utilisateur trouvée dans localStorage");
+          // Si aucun utilisateur n'existe, créons-en par défaut
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          console.log("Données utilisateurs par défaut créées pour le mode développement");
         }
       } catch (err) {
         console.error("Erreur lors de la récupération des données localStorage:", err);
