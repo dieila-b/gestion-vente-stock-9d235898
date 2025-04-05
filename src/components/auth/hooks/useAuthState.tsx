@@ -18,6 +18,7 @@ export function useAuthState() {
     // Production mode - check actual authentication status
     const checkAuthStatus = async () => {
       try {
+        console.log("Checking authentication status...");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -25,8 +26,9 @@ export function useAuthState() {
           setIsAuthenticated(false);
         } else {
           // Check if session exists and is valid
-          setIsAuthenticated(!!data.session);
-          console.log("Auth session check:", !!data.session ? "User is authenticated" : "No active session");
+          const hasValidSession = !!data.session;
+          setIsAuthenticated(hasValidSession);
+          console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
         }
       } catch (error) {
         console.error("Auth state check error:", error);
@@ -39,7 +41,7 @@ export function useAuthState() {
     // Setup auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, session);
         setIsAuthenticated(!!session);
         setLoading(false);
       }

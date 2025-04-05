@@ -11,6 +11,8 @@ export function useAuthActions(
   const isDevelopmentMode = import.meta.env.DEV;
 
   const login = async (email: string, password: string) => {
+    console.log("Login attempt with email:", email);
+    
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic login success");
       setIsAuthenticated(true);
@@ -28,6 +30,8 @@ export function useAuthActions(
         .eq("email", email.toLowerCase().trim())
         .single();
       
+      console.log("Internal user check:", internalUser, internalUserError);
+      
       if (internalUserError || !internalUser) {
         console.error("User not found in internal_users table:", internalUserError || "No user found");
         return { 
@@ -40,9 +44,11 @@ export function useAuthActions(
 
       // Actually sign in with Supabase auth
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password
       });
+
+      console.log("Auth result:", data, error);
 
       if (error) {
         console.error("Authentication error:", error);

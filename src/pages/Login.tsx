@@ -14,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
   
   // In development mode, immediately redirect to dashboard
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError("");
+    
     if (!email || !password) {
       toast.error("Veuillez saisir votre email et mot de passe");
       return;
@@ -40,15 +43,21 @@ export default function Login() {
 
     try {
       setIsSubmitting(true);
+      console.log("Attempting login with:", email);
+      
       const result = await login(email, password);
+      console.log("Login result:", result);
+      
       if (result.success) {
         toast.success("Connexion réussie");
         navigate("/dashboard", { replace: true });
       } else {
+        setLoginError(result.error || "Échec de la connexion");
         toast.error(result.error || "Échec de la connexion");
       }
     } catch (error) {
       console.error("Login error:", error);
+      setLoginError("Une erreur est survenue lors de la connexion");
       toast.error("Une erreur est survenue lors de la connexion");
     } finally {
       setIsSubmitting(false);
@@ -103,6 +112,11 @@ export default function Login() {
                 required
               />
             </div>
+            {loginError && (
+              <div className="text-sm font-medium text-destructive">
+                {loginError}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button 
