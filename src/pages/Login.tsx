@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,41 +35,29 @@ export default function Login() {
     }
   };
 
-  // Rediriger automatiquement vers le dashboard en mode développement ou si déjà authentifié
+  // Rediriger immédiatement vers le dashboard en mode développement
   useEffect(() => {
     if (isDevelopmentMode) {
       console.log("Mode développeur: Redirection automatique vers le dashboard");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
       return;
     }
     
+    // Vérifier l'authentification uniquement en production
     if (isAuthenticated) {
       console.log("Utilisateur déjà authentifié, redirection vers le dashboard");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, navigate, isDevelopmentMode]);
 
-  // En mode développement, afficher un message clair et rediriger
+  // En mode développement, afficher un chargement simple avant redirection
   if (isDevelopmentMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md p-6">
-          <div className="mb-6 text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <User className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold mb-2">Mode Développeur</h1>
-            <p className="text-muted-foreground text-sm mb-4">
-              L'authentification est complètement désactivée en mode développement
-            </p>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/dashboard")}
-            >
-              Aller au tableau de bord
-            </Button>
-          </div>
-        </Card>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg font-medium">Mode développeur, redirection...</p>
+        </div>
       </div>
     );
   }

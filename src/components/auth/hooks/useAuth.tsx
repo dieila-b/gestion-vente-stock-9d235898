@@ -7,5 +7,15 @@ export const useAuth = () => {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+  
+  // En mode développement, toujours considérer comme authentifié
+  if (context.isDevelopmentMode) {
+    return {
+      ...context,
+      isAuthenticated: true,
+      loading: false,
+    };
+  }
+  
   return context;
 };

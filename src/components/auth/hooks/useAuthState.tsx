@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
