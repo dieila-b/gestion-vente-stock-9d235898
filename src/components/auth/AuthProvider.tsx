@@ -10,25 +10,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log("État d'authentification initial:", { 
-      isAuthenticated: isDevelopmentMode ? true : isAuthenticated, 
-      loading: isDevelopmentMode ? false : loading, 
-      isDevelopmentMode 
-    });
-    
-    if (isDevelopmentMode) {
-      console.log("Mode développeur: Authentification désactivée");
-    }
-  }, [isAuthenticated, loading, isDevelopmentMode]);
+    console.log("Authentification désactivée: Tous les utilisateurs sont authentifiés automatiquement");
+  }, []);
 
-  // Force isAuthenticated to true in development mode
+  // Force authentication to be true always
   const contextValue = {
-    isAuthenticated: isDevelopmentMode ? true : isAuthenticated,
-    loading: isDevelopmentMode ? false : loading,
+    isAuthenticated: true,
+    loading: false,
     login,
     logout,
-    isSubmitting: isDevelopmentMode ? false : isSubmitting,
-    isDevelopmentMode
+    isSubmitting: false,
+    isDevelopmentMode: true
   };
 
   return (
