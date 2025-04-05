@@ -90,6 +90,7 @@ export function useAuthActions(
   const logout = async () => {
     if (isDevelopmentMode) {
       console.log("Development mode: Simulated logout");
+      setIsAuthenticated(false);
       toast.success("You are logged out");
       return;
     }
