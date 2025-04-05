@@ -15,10 +15,12 @@ export const UserFormContent = ({
   selectedUser 
 }: UserFormContentProps) => {
   return (
-    <FormContent
-      onSubmit={onSubmit}
-      onCancel={onCancel}
-      selectedUser={selectedUser}
-    />
+    <div className="max-h-[70vh] overflow-y-auto pr-1">
+      <FormContent
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        selectedUser={selectedUser}
+      />
+    </div>
   );
 };
