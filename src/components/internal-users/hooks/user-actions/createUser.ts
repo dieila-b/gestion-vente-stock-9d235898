@@ -72,19 +72,24 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     console.log("Création d'un nouvel utilisateur en production:", data.email);
     
     // Vérifier si l'utilisateur existe déjà dans Auth
-    const { data: existingUser, error: getUserError } = await supabase.auth.admin.getUserByEmail(data.email);
+    // Utiliser la méthode listUsers au lieu de getUserByEmail pour trouver l'utilisateur par email
+    const { data: usersList, error: listError } = await supabase.auth.admin.listUsers();
     
-    if (getUserError && !getUserError.message.includes("User not found")) {
-      console.error("Erreur lors de la vérification de l'utilisateur existant:", getUserError);
+    if (listError) {
+      console.error("Erreur lors de la vérification des utilisateurs existants:", listError);
       toast({
         title: "Erreur",
-        description: "Impossible de vérifier si l'utilisateur existe déjà: " + getUserError.message,
+        description: "Impossible de vérifier si l'utilisateur existe déjà: " + listError.message,
         variant: "destructive",
       });
       return null;
     }
     
-    if (existingUser?.user) {
+    // Rechercher l'utilisateur par email dans la liste
+    const normalizedEmail = data.email.toLowerCase().trim();
+    const existingUser = usersList.users.find(u => u.email?.toLowerCase() === normalizedEmail);
+    
+    if (existingUser) {
       console.error("L'utilisateur existe déjà dans Auth:", data.email);
       toast({
         title: "Erreur",
@@ -97,7 +102,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     // En mode production, créer d'abord l'utilisateur dans Auth
     console.log("Création du compte Auth pour:", data.email);
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       email_confirm: true,
       user_metadata: { 
@@ -137,7 +142,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         id: authData.user.id,  // Utiliser l'ID du compte Auth
         first_name: data.first_name,
         last_name: data.last_name,
-        email: data.email.toLowerCase().trim(),  // Normaliser l'email
+        email: normalizedEmail,  // Normaliser l'email
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
