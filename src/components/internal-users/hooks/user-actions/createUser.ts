@@ -106,9 +106,16 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
 
     // Ensure photo_url is present
     const user: InternalUser = {
-      ...insertedUser,
-      photo_url: insertedUser.photo_url || null
-    } as InternalUser;
+      id: insertedUser.id,
+      first_name: insertedUser.first_name,
+      last_name: insertedUser.last_name,
+      email: insertedUser.email,
+      phone: insertedUser.phone,
+      address: insertedUser.address,
+      role: insertedUser.role,
+      is_active: insertedUser.is_active,
+      photo_url: 'photo_url' in insertedUser ? insertedUser.photo_url : null
+    };
 
     toast({
       title: "Utilisateur créé",

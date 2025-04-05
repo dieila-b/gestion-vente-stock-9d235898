@@ -81,9 +81,16 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
 
     // Ensure photo_url is present
     const updatedUser: InternalUser = {
-      ...updatedUserData,
-      photo_url: updatedUserData.photo_url || null
-    } as InternalUser;
+      id: updatedUserData.id,
+      first_name: updatedUserData.first_name,
+      last_name: updatedUserData.last_name,
+      email: updatedUserData.email,
+      phone: updatedUserData.phone,
+      address: updatedUserData.address,
+      role: updatedUserData.role,
+      is_active: updatedUserData.is_active,
+      photo_url: 'photo_url' in updatedUserData ? updatedUserData.photo_url : null
+    };
 
     toast({
       title: "Utilisateur mis à jour",

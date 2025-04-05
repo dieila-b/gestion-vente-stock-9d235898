@@ -37,7 +37,7 @@ export const useUserData = () => {
         // Assurer que tous les utilisateurs ont la propriété photo_url
         fetchedUsers = data.map(user => ({
           ...user,
-          photo_url: user.photo_url || null
+          photo_url: 'photo_url' in user ? user.photo_url : null
         })) as InternalUser[];
       } else if (isDevelopmentMode) {
         // En mode développement, récupérer depuis localStorage si disponible
