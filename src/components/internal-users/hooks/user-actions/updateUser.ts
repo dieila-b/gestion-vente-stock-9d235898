@@ -62,7 +62,7 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
       photo_url: data.photo_url !== undefined ? data.photo_url : user.photo_url
     };
 
-    const { data: updatedUser, error: updateError } = await supabase
+    const { data: updatedUserData, error: updateError } = await supabase
       .from("internal_users")
       .update(updateData)
       .eq("id", user.id)
@@ -79,12 +79,18 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
       return null;
     }
 
+    // Ensure photo_url is present
+    const updatedUser: InternalUser = {
+      ...updatedUserData,
+      photo_url: updatedUserData.photo_url || null
+    } as InternalUser;
+
     toast({
       title: "Utilisateur mis à jour",
       description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
     });
     
-    return updatedUser as InternalUser;
+    return updatedUser;
   } catch (error) {
     console.error("Error updating user:", error);
     toast({

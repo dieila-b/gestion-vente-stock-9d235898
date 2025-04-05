@@ -34,7 +34,11 @@ export const useUserData = () => {
       if (data && data.length > 0) {
         // Données de Supabase disponibles
         console.log("Données utilisateurs récupérées de Supabase:", data);
-        fetchedUsers = data as InternalUser[];
+        // Assurer que tous les utilisateurs ont la propriété photo_url
+        fetchedUsers = data.map(user => ({
+          ...user,
+          photo_url: user.photo_url || null
+        })) as InternalUser[];
       } else if (isDevelopmentMode) {
         // En mode développement, récupérer depuis localStorage si disponible
         const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);

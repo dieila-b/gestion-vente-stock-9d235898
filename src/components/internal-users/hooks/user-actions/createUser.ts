@@ -104,12 +104,18 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
 
+    // Ensure photo_url is present
+    const user: InternalUser = {
+      ...insertedUser,
+      photo_url: insertedUser.photo_url || null
+    } as InternalUser;
+
     toast({
       title: "Utilisateur créé",
       description: `${data.first_name} ${data.last_name} a été créé avec succès`,
     });
     
-    return insertedUser as InternalUser;
+    return user;
   } catch (error) {
     console.error("Error creating user:", error);
     toast({
