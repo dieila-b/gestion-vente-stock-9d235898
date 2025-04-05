@@ -28,7 +28,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         const { data: userData, error: roleCheckError } = await supabase
           .from("internal_users")
           .select("role")
-          .eq("id", user.id)
+          .eq('id', user.id)
           .single();
           
         if (roleCheckError || !userData || !['admin', 'manager'].includes(userData.role)) {
@@ -69,7 +69,33 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return mockUser;
     }
 
+    console.log("Création d'un nouvel utilisateur en production:", data.email);
+    
+    // Vérifier si l'utilisateur existe déjà dans Auth
+    const { data: existingUser, error: getUserError } = await supabase.auth.admin.getUserByEmail(data.email);
+    
+    if (getUserError && !getUserError.message.includes("User not found")) {
+      console.error("Erreur lors de la vérification de l'utilisateur existant:", getUserError);
+      toast({
+        title: "Erreur",
+        description: "Impossible de vérifier si l'utilisateur existe déjà: " + getUserError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    if (existingUser?.user) {
+      console.error("L'utilisateur existe déjà dans Auth:", data.email);
+      toast({
+        title: "Erreur",
+        description: "Un utilisateur avec cet email existe déjà",
+        variant: "destructive",
+      });
+      return null;
+    }
+
     // En mode production, créer d'abord l'utilisateur dans Auth
+    console.log("Création du compte Auth pour:", data.email);
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -101,16 +127,17 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
     
-    console.log("Utilisateur Auth créé:", authData.user);
+    console.log("Utilisateur Auth créé avec succès:", authData.user.id);
 
     // Ensuite, insertion dans la table internal_users
+    console.log("Insertion dans la table internal_users:", authData.user.id);
     const { data: insertedUser, error: insertError } = await supabase
       .from("internal_users")
       .insert({
         id: authData.user.id,  // Utiliser l'ID du compte Auth
         first_name: data.first_name,
         last_name: data.last_name,
-        email: data.email,
+        email: data.email.toLowerCase().trim(),  // Normaliser l'email
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
@@ -127,6 +154,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       // Essayer de supprimer le compte Auth en cas d'échec
       try {
         await supabase.auth.admin.deleteUser(authData.user.id);
+        console.log("Compte Auth supprimé après échec d'insertion");
       } catch (deleteError) {
         console.error("Erreur lors de la suppression du compte Auth après échec:", deleteError);
       }
@@ -160,6 +188,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       photo_url: 'photo_url' in insertedUser ? (insertedUser.photo_url as string | null) : null
     };
 
+    console.log("Utilisateur créé avec succès dans internal_users:", user.email);
     toast({
       title: "Utilisateur créé",
       description: `${data.first_name} ${data.last_name} a été créé avec succès`,

@@ -16,7 +16,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
 
-  // Rediriger automatiquement vers le dashboard en mode développement
+  // Rediriger automatiquement vers le dashboard en mode développement ou si déjà authentifié
   useEffect(() => {
     if (isDevelopmentMode) {
       console.log("Mode développeur: Redirection automatique vers le dashboard");
@@ -51,7 +51,7 @@ export default function Login() {
     
     try {
       console.log("Tentative de connexion avec email:", email);
-      const result = await login(email, password);
+      const result = await login(email.trim().toLowerCase(), password);
       console.log("Résultat login:", result);
       
       if (result.success) {
@@ -126,6 +126,8 @@ export default function Login() {
               required
               disabled={localIsSubmitting || loading || isSubmitting}
               aria-label="Email"
+              autoComplete="email"
+              className="bg-card-foreground/5"
             />
           </div>
           <div>
@@ -137,6 +139,8 @@ export default function Login() {
               required
               disabled={localIsSubmitting || loading || isSubmitting}
               aria-label="Mot de passe"
+              autoComplete="current-password"
+              className="bg-card-foreground/5"
             />
           </div>
           

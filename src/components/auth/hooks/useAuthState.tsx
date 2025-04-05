@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -54,6 +55,7 @@ export function useAuthState() {
             
             if (!internalUser) {
               console.error("Utilisateur non trouvé dans internal_users");
+              toast.error("Votre compte n'est pas autorisé à accéder à cette application");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               setLoading(false);
@@ -63,6 +65,7 @@ export function useAuthState() {
             // Vérifier si le compte est actif
             if (!internalUser.is_active) {
               console.error("Compte utilisateur désactivé");
+              toast.error("Votre compte est désactivé. Contactez un administrateur.");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               setLoading(false);
@@ -73,6 +76,8 @@ export function useAuthState() {
             setIsAuthenticated(true);
           } catch (err) {
             console.error("Erreur lors de la vérification internal_users:", err);
+            toast.error("Erreur de vérification de votre compte. Veuillez vous reconnecter.");
+            await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         } else {
@@ -109,6 +114,7 @@ export function useAuthState() {
             
             if (internalError) {
               console.error("Erreur lors de la recherche utilisateur:", internalError.message);
+              toast.error("Erreur de vérification de votre compte");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               return;
@@ -116,6 +122,7 @@ export function useAuthState() {
             
             if (!internalUser) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
+              toast.error("Votre compte n'est pas autorisé à accéder à cette application");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               return;
@@ -124,6 +131,7 @@ export function useAuthState() {
             // Vérifier si le compte est actif
             if (!internalUser.is_active) {
               console.error("Compte utilisateur désactivé");
+              toast.error("Votre compte est désactivé. Contactez un administrateur.");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
               return;
@@ -131,12 +139,16 @@ export function useAuthState() {
             
             console.log("Utilisateur interne validé après événement auth:", internalUser.email, "Rôle:", internalUser.role);
             setIsAuthenticated(true);
+            toast.success("Connexion réussie");
           } catch (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
+            toast.error("Erreur de vérification. Veuillez vous reconnecter.");
+            await supabase.auth.signOut();
             setIsAuthenticated(false);
           }
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
+          console.log("Utilisateur déconnecté");
         }
       }
     );

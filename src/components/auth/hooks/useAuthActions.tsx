@@ -52,6 +52,7 @@ export function useAuthActions(
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
+          console.log("Vérification de l'utilisateur dans internal_users:", data.user.email);
           const { data: internalUser, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, role, is_active')
@@ -85,9 +86,10 @@ export function useAuthActions(
             return { success: false, error: "Votre compte est désactivé. Contactez un administrateur." };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUser.email, "Rôle:", internalUser.role);
+          console.log("Utilisateur interne vérifié et actif:", internalUser.email, "Rôle:", internalUser.role);
           setIsAuthenticated(true);
           setIsSubmitting(false);
+          toast.success("Connexion réussie");
           return { success: true };
         } catch (err) {
           console.error("Erreur lors de la vérification internal_users:", err);
@@ -102,7 +104,7 @@ export function useAuthActions(
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);
-      return { success: false, error: "Erreur technique" };
+      return { success: false, error: "Erreur technique lors de la tentative de connexion" };
     }
   };
   
