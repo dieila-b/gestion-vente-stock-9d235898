@@ -3,20 +3,20 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useAuthState() {
-  const [isAuthenticated, setIsAuthenticated] = useState(import.meta.env.DEV ? true : false);
-  const [loading, setLoading] = useState(!import.meta.env.DEV);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    // Skip authentication check in development mode
+    // En mode développement, considérer l'utilisateur comme authentifié automatiquement
     if (isDevelopmentMode) {
-      console.log("Development mode: Authentication bypass enabled");
+      console.log("Mode développeur: Authentification complètement désactivée");
       setIsAuthenticated(true);
       setLoading(false);
       return;
     }
 
-    // Vérifier la session Supabase au chargement
+    // En production, vérifier la session Supabase au chargement
     const checkSession = async () => {
       try {
         console.log("Vérification de la session Supabase...");
@@ -68,9 +68,11 @@ export function useAuthState() {
       }
     };
 
+    // Vérification de session uniquement en production
+    setLoading(true);
     checkSession();
 
-    // S'abonner aux changements d'authentification
+    // S'abonner aux changements d'authentification uniquement en production
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Événement d'authentification:", event, session?.user?.email);
@@ -105,7 +107,7 @@ export function useAuthState() {
     );
 
     return () => {
-      if (authListener && authListener.subscription) {
+      if (authListener && authListener.subscription && !isDevelopmentMode) {
         authListener.subscription.unsubscribe();
       }
     };

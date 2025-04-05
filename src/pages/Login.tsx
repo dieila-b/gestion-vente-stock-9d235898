@@ -16,10 +16,10 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
 
-  // Redirect if already authenticated or in development mode
+  // Rediriger automatiquement vers le dashboard en mode développement
   useEffect(() => {
     if (isDevelopmentMode) {
-      console.log("Mode développeur: Redirection vers le dashboard");
+      console.log("Mode développeur: Redirection automatique vers le dashboard");
       navigate("/dashboard");
       return;
     }
@@ -32,6 +32,13 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // En mode développement, ne rien faire - la redirection est automatique
+    if (isDevelopmentMode) {
+      navigate("/dashboard");
+      return;
+    }
+    
     setErrorMsg("");
     
     if (!email || !password) {
@@ -65,7 +72,7 @@ export default function Login() {
     }
   };
 
-  // Show development mode notice
+  // En mode développement, afficher un message clair et rediriger
   if (isDevelopmentMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -76,7 +83,7 @@ export default function Login() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Mode Développeur</h1>
             <p className="text-muted-foreground text-sm mb-4">
-              L'authentification est désactivée en mode développement
+              L'authentification est complètement désactivée en mode développement
             </p>
             <Button 
               className="w-full" 

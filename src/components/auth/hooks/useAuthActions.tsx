@@ -8,8 +8,15 @@ export function useAuthActions(
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDevelopmentMode = import.meta.env.DEV;
 
   const login = async (email: string, password: string) => {
+    // En mode développement, simuler une connexion réussie instantanée
+    if (isDevelopmentMode) {
+      console.log("Mode développeur: Connexion automatique");
+      return { success: true };
+    }
+    
     console.log("Fonction login appelée avec:", email);
     setIsSubmitting(true);
     
@@ -84,6 +91,13 @@ export function useAuthActions(
   };
   
   const logout = async () => {
+    // En mode développement, simuler une déconnexion instantanée
+    if (isDevelopmentMode) {
+      console.log("Mode développeur: Déconnexion simulée");
+      toast.success("Vous êtes déconnecté");
+      return;
+    }
+    
     console.log("Déconnexion en cours...");
     setLoading(true);
     

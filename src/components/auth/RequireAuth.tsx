@@ -8,12 +8,12 @@ import { Loader2 } from "lucide-react";
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading: authLoading, isDevelopmentMode } = useAuth();
   const [isInternalUser, setIsInternalUser] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(!isDevelopmentMode);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // In development mode, bypass authentication
+    // En mode développement, toujours considérer l'utilisateur comme un utilisateur interne autorisé
     if (isDevelopmentMode) {
-      console.log("Mode développeur: Vérification d'utilisateur interne désactivée");
+      console.log("Mode développeur: Bypass complet d'authentification");
       setIsInternalUser(true);
       setLoading(false);
       return;
@@ -82,13 +82,14 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       }
     }
     
-    // Vérifier si l'utilisateur est interne seulement si authentifié ou si l'état d'auth a changé
-    if (!authLoading) {
+    // Vérifier si l'utilisateur est interne seulement en production
+    if (!authLoading && !isDevelopmentMode) {
       checkInternalUser();
     }
   }, [isAuthenticated, authLoading, isDevelopmentMode]);
 
-  if (authLoading || loading) {
+  // Afficher l'indicateur de chargement uniquement en production
+  if (!isDevelopmentMode && (authLoading || loading)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -99,11 +100,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // In development mode, bypass authentication checks
+  // En mode développement, donner accès complet sans vérification
   if (isDevelopmentMode) {
     return <>{children}</>;
   }
 
+  // En production, continuer les vérifications normales
   if (!isAuthenticated) {
     console.log("Redirection vers /login car non authentifié");
     return <Navigate to="/login" replace />;

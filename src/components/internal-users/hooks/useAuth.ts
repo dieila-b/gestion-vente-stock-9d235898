@@ -9,9 +9,9 @@ export const useAuth = () => {
   const { isAuthenticated, isDevelopmentMode } = useGlobalAuth();
 
   useEffect(() => {
-    // In development mode, set authorized to true immediately
+    // En mode développement, donner toutes les autorisations immédiatement
     if (isDevelopmentMode) {
-      console.log("Mode développeur: Autorisation accordée automatiquement");
+      console.log("Mode développeur: Autorisation complète accordée automatiquement");
       setIsAuthorized(true);
       setIsAuthChecking(false);
       return;
@@ -57,7 +57,7 @@ export const useAuth = () => {
       }
     };
     
-    // Only run auth check if not in development mode and user is authenticated
+    // N'exécuter la vérification d'authentification qu'en production
     if (!isDevelopmentMode && isAuthenticated) {
       checkAuth();
     }
