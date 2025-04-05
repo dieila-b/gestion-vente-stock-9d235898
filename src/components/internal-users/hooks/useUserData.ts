@@ -30,7 +30,7 @@ export const useUserData = () => {
         } else {
           console.log("Aucun utilisateur trouvé dans localStorage, création d'utilisateurs par défaut");
           // Créer des utilisateurs par défaut
-          const defaultUsers = [
+          const defaultUsers: InternalUser[] = [
             {
               id: "dev-1743844624581",
               first_name: "Dieila",
@@ -73,7 +73,7 @@ export const useUserData = () => {
         throw error;
       }
 
-      let fetchedUsers = [];
+      let fetchedUsers: InternalUser[] = [];
       
       if (data && data.length > 0) {
         // Données de Supabase disponibles
@@ -81,6 +81,14 @@ export const useUserData = () => {
         // Assurer que tous les utilisateurs ont la propriété photo_url
         fetchedUsers = data.map(user => ({
           ...user,
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          address: user.address,
+          role: user.role as "admin" | "manager" | "employee",
+          is_active: user.is_active,
           photo_url: 'photo_url' in user ? user.photo_url : null
         })) as InternalUser[];
       }
