@@ -1,121 +1,119 @@
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { InternalUser } from "@/types/internal-user";
-import { toast } from "@/hooks/use-toast";
+import { useState, useCallback, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { InternalUser } from '@/types/internal-user';
+import { fetchUsersFromSupabase } from './supabaseUsers';
 import { 
   getUsersFromLocalStorage, 
   saveUsersToLocalStorage, 
-  createDefaultUsers 
-} from "./localStorage";
-import { fetchUsersFromSupabase } from "./supabaseUsers";
+  createDefaultUsers,
+  DEV_USERS_STORAGE_KEY
+} from './localStorage';
 
 export const useUserData = () => {
   const [users, setUsers] = useState<InternalUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const hasFetchedRef = useRef(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const isDevelopmentMode = import.meta.env.DEV;
 
-  // Fonction pour charger les utilisateurs depuis Supabase ou localStorage en mode dev
+  // Initialisation - charger les utilisateurs au démarrage
+  useEffect(() => {
+    // Pré-initialiser les utilisateurs en mode développement
+    if (isDevelopmentMode) {
+      try {
+        const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
+        if (!storedUsers) {
+          console.log("Aucun utilisateur trouvé dans localStorage, création des utilisateurs par défaut");
+          const defaultUsers = createDefaultUsers();
+          console.log("Utilisateurs par défaut créés:", defaultUsers);
+        } else {
+          console.log("Utilisateurs existants trouvés dans localStorage");
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation des utilisateurs:", error);
+      }
+    }
+  }, [isDevelopmentMode]);
+
   const fetchUsers = useCallback(async () => {
-    console.log("Chargement des utilisateurs...");
+    console.log("Récupération des utilisateurs...");
     setIsLoading(true);
     
     try {
+      // En mode développement, utiliser localStorage
       if (isDevelopmentMode) {
-        console.log("Mode développement: Récupération des utilisateurs depuis localStorage");
-        const storedUsers = getUsersFromLocalStorage();
+        console.log("Mode développement: récupération des utilisateurs depuis localStorage");
+        const localUsers = getUsersFromLocalStorage();
         
-        if (storedUsers) {
-          console.log("Données utilisateurs récupérées du localStorage:", storedUsers);
-          setUsers(storedUsers);
-        } else {
-          console.log("Aucun utilisateur trouvé dans localStorage, création d'utilisateurs par défaut");
+        if (!localUsers || localUsers.length === 0) {
+          console.log("Aucun utilisateur trouvé dans localStorage, création des utilisateurs par défaut");
           const defaultUsers = createDefaultUsers();
           setUsers(defaultUsers);
+          console.log("Utilisateurs par défaut définis:", defaultUsers);
+        } else {
+          console.log("Utilisateurs récupérés depuis localStorage:", localUsers);
+          setUsers(localUsers);
         }
+      } 
+      // En mode production, utiliser Supabase
+      else {
+        console.log("Mode production: récupération des utilisateurs depuis Supabase");
+        const supabaseUsers = await fetchUsersFromSupabase();
         
-        hasFetchedRef.current = true;
-        setIsLoading(false);
-        return;
-      }
-
-      // Utiliser Supabase pour récupérer les données
-      const fetchedUsers = await fetchUsersFromSupabase();
-      
-      if (fetchedUsers !== null) {
-        console.log("Données utilisateurs récupérées de Supabase:", fetchedUsers);
-        setUsers(fetchedUsers);
-      }
-      
-      hasFetchedRef.current = true;
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Erreur lors du chargement des utilisateurs:", error);
-      
-      // En mode développement, essayer de récupérer depuis localStorage en cas d'erreur
-      if (isDevelopmentMode) {
-        const storedUsers = getUsersFromLocalStorage();
-        if (storedUsers) {
-          setUsers(storedUsers);
-          console.log("Récupération des utilisateurs depuis localStorage après erreur:", storedUsers);
+        if (supabaseUsers) {
+          console.log("Utilisateurs récupérés depuis Supabase:", supabaseUsers);
+          setUsers(supabaseUsers);
+        } else {
+          console.error("Erreur lors de la récupération des utilisateurs depuis Supabase");
+          toast({
+            title: "Erreur",
+            description: "Impossible de récupérer les utilisateurs",
+            variant: "destructive",
+          });
+          setUsers([]);
         }
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Impossible de récupérer la liste des utilisateurs",
-          variant: "destructive",
-        });
       }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des utilisateurs:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les utilisateurs",
+        variant: "destructive",
+      });
+      setUsers([]);
+    } finally {
       setIsLoading(false);
     }
   }, [isDevelopmentMode]);
 
-  // Méthode pour ajouter un utilisateur à la liste locale
   const addUser = useCallback((user: InternalUser) => {
-    console.log("Ajout d'un utilisateur à la liste:", user);
     setUsers(prevUsers => {
       const updatedUsers = [...prevUsers, user];
       
-      // En mode développement, stocker dans localStorage
+      // En mode développement, sauvegarder dans localStorage
       if (isDevelopmentMode) {
+        console.log("Mode développement: sauvegarde du nouvel utilisateur dans localStorage:", user);
         saveUsersToLocalStorage(updatedUsers);
-        console.log("Utilisateurs mis à jour dans localStorage après ajout");
       }
       
       return updatedUsers;
     });
   }, [isDevelopmentMode]);
 
-  // Méthode pour mettre à jour un utilisateur dans la liste locale
   const updateUserInList = useCallback((updatedUser: InternalUser) => {
-    console.log("Mise à jour d'un utilisateur dans la liste:", updatedUser);
     setUsers(prevUsers => {
       const updatedUsers = prevUsers.map(user => 
         user.id === updatedUser.id ? updatedUser : user
       );
       
-      // En mode développement, stocker dans localStorage
+      // En mode développement, sauvegarder dans localStorage
       if (isDevelopmentMode) {
+        console.log("Mode développement: mise à jour de l'utilisateur dans localStorage:", updatedUser);
         saveUsersToLocalStorage(updatedUsers);
-        console.log("Utilisateurs mis à jour dans localStorage après mise à jour");
       }
       
       return updatedUsers;
     });
   }, [isDevelopmentMode]);
 
-  // Charger les utilisateurs au montage du composant
-  useEffect(() => {
-    if (!hasFetchedRef.current) {
-      fetchUsers();
-    }
-  }, [fetchUsers]);
-
-  return {
-    users,
-    isLoading,
-    fetchUsers,
-    addUser,
-    updateUserInList
-  };
+  return { users, isLoading, fetchUsers, addUser, updateUserInList };
 };

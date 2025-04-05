@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,14 +14,88 @@ export function useAuthActions(
     console.log("Login attempt with email:", email);
     
     if (isDevelopmentMode) {
-      console.log("Development mode: Automatic login success");
+      console.log("Development mode: Checking if email exists in demo users");
       
-      // En mode développement, authentification automatique sans vérification
-      console.log("Connexion automatique réussie en mode développement pour:", email);
-      setIsAuthenticated(true);
-      toast.success("Connexion réussie en mode développement");
-      
-      return { success: true };
+      try {
+        // En mode développement, vérifier si l'email existe dans les données de démonstration
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (storedUsers) {
+          const users = JSON.parse(storedUsers);
+          const normalizedEmail = email.toLowerCase().trim();
+          
+          // Rechercher l'utilisateur par email
+          const foundUser = users.find((user: any) => 
+            user.email && user.email.toLowerCase().trim() === normalizedEmail
+          );
+          
+          if (foundUser) {
+            console.log("User found in development data:", foundUser);
+            setIsAuthenticated(true);
+            toast.success("Connexion réussie en mode développement");
+            return { success: true };
+          } else {
+            console.log("User not found in development data for email:", normalizedEmail);
+            return { 
+              success: false, 
+              error: "Cet email n'est pas associé à un compte utilisateur interne" 
+            };
+          }
+        } else {
+          // Créer des utilisateurs par défaut si aucun n'existe
+          console.log("No users found in localStorage, creating default ones");
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          
+          // Vérifier si l'email saisi correspond à l'un des utilisateurs par défaut
+          const normalizedEmail = email.toLowerCase().trim();
+          const foundUser = defaultUsers.find(user => 
+            user.email.toLowerCase().trim() === normalizedEmail
+          );
+          
+          if (foundUser) {
+            console.log("User found in newly created default users:", foundUser);
+            setIsAuthenticated(true);
+            toast.success("Connexion réussie en mode développement");
+            return { success: true };
+          } else {
+            console.log("User not found in default users for email:", normalizedEmail);
+            return { 
+              success: false, 
+              error: "Cet email n'est pas associé à un compte utilisateur interne" 
+            };
+          }
+        }
+      } catch (err) {
+        console.error("Error checking development users:", err);
+        return { 
+          success: false, 
+          error: "Une erreur est survenue lors de la vérification des données de développement" 
+        };
+      }
     }
 
     try {
