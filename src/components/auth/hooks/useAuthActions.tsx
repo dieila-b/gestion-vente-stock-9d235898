@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,20 +15,12 @@ export function useAuthActions(
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic login success");
       
-      try {
-        // Always log the user in regardless of email in development mode
-        console.log("Connexion automatique réussie en mode développement pour:", email);
-        setIsAuthenticated(true);
-        toast.success("Connexion réussie en mode développement");
-        
-        return { success: true };
-      } catch (err) {
-        console.error("Erreur lors de la vérification des données démo:", err);
-        // Autoriser quand même la connexion en mode développement
-        setIsAuthenticated(true);
-        toast.success("Connexion automatique en mode développement (malgré une erreur)");
-        return { success: true };
-      }
+      // En mode développement, authentification automatique sans vérification
+      console.log("Connexion automatique réussie en mode développement pour:", email);
+      setIsAuthenticated(true);
+      toast.success("Connexion réussie en mode développement");
+      
+      return { success: true };
     }
 
     try {

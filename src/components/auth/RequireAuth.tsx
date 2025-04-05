@@ -17,13 +17,9 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       currentPath: location.pathname
     });
     
-    // In development mode, always allow access and redirect from login page to dashboard
+    // In development mode, always allow access
     if (isDevelopmentMode) {
       console.log("Development mode: authentication bypass enabled");
-      if (location.pathname === "/login") {
-        console.log("Development mode: Redirecting from login to dashboard");
-        navigate("/dashboard", { replace: true });
-      }
       return;
     }
     
@@ -42,7 +38,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }, [navigate, isAuthenticated, loading, isDevelopmentMode, location.pathname]);
 
   // Always grant access in development mode
-  // In production, only grant access if authenticated or still loading
+  if (isDevelopmentMode) {
+    return <>{children}</>;
+  }
+
+  // In production mode, only grant access if authenticated or still loading
   if (!isDevelopmentMode && !isAuthenticated && !loading) {
     return null;
   }
