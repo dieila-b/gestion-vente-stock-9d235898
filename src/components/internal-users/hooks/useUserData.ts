@@ -38,7 +38,7 @@ export const useUserData = () => {
               email: "wosyrab@gmail.com",
               phone: "623268781",
               address: "Matam",
-              role: "admin",
+              role: "admin" as "admin" | "manager" | "employee",
               is_active: true,
               photo_url: null
             },
@@ -49,7 +49,7 @@ export const useUserData = () => {
               email: "wosyrab@yahoo.fr",
               phone: "623268781",
               address: "Madina",
-              role: "manager",
+              role: "manager" as "admin" | "manager" | "employee",
               is_active: true,
               photo_url: null
             }

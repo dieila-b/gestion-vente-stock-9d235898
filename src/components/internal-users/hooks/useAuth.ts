@@ -45,6 +45,7 @@ export const useAuth = () => {
         console.error("Erreur lors de la création des données démo:", err);
       }
       
+      // Always authorize in development mode regardless of email
       setIsAuthorized(true);
       setIsAuthChecking(false);
       return;
