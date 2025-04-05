@@ -27,10 +27,15 @@ export default function Login() {
       const result = await login(email, password);
       if (result && !result.success) {
         setErrorMsg(result.error || "Une erreur est survenue lors de la connexion");
+        toast.error(result.error || "Échec de la connexion");
+      } else if (result && result.success) {
+        // Redirection explicite en cas de succès
+        navigate("/dashboard", { replace: true });
       }
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       setErrorMsg("Une erreur inattendue est survenue");
+      toast.error("Erreur de connexion");
     } finally {
       setLocalIsSubmitting(false);
     }

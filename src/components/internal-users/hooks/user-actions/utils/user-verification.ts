@@ -46,7 +46,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     }
     
     if (authData && Array.isArray(authData.users)) {
-      // Explicitly type the users array to avoid 'never' type issues
+      // Vérifier si un utilisateur avec cet email existe dans auth.users
       const existingUser = authData.users.find((user: SupabaseUser) => 
         user && user.email && user.email.toLowerCase().trim() === normalizedEmail
       );
