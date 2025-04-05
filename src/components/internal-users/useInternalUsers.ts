@@ -3,7 +3,7 @@ import { useEffect, useCallback, useState } from "react";
 import { InternalUser } from "@/types/internal-user";
 import { UserFormValues } from "./validation/user-form-schema";
 import { useAuth } from "./hooks/useAuth";
-import { useUserData } from "./hooks/useUserData";
+import { useUserData } from "./hooks/userData";
 import { useUserFormState } from "./hooks/useUserForm";
 import { useUserActions } from "./hooks/useUserActions";
 
