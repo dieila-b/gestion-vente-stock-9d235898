@@ -7,7 +7,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   // Redirect if on login page
   useEffect(() => {
-    console.log("Authentication disabled: Full access automatically granted");
+    console.log("RequireAuth: Authentication bypass enabled - granting all access");
     
     // If on login page, redirect to dashboard
     if (window.location.pathname === "/login") {

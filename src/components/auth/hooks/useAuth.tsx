@@ -8,7 +8,9 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Always return as authenticated
+  console.log("Auth hook: Authentication is disabled - returning authenticated status");
+  
+  // Always return as authenticated with clear status
   return {
     ...context,
     isAuthenticated: true,
