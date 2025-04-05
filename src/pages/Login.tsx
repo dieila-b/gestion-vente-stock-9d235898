@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,49 +30,6 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate, isDevelopmentMode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // En mode développement, ne rien faire - la redirection est automatique
-    if (isDevelopmentMode) {
-      navigate("/dashboard");
-      return;
-    }
-    
-    setErrorMsg("");
-    
-    if (!email || !password) {
-      setErrorMsg("Veuillez saisir votre email et votre mot de passe");
-      toast.error("Veuillez saisir votre email et votre mot de passe");
-      return;
-    }
-    
-    setLocalIsSubmitting(true);
-    
-    try {
-      const normalizedEmail = email.trim().toLowerCase();
-      console.log("Tentative de connexion avec email:", normalizedEmail);
-      const result = await login(normalizedEmail, password);
-      console.log("Résultat login:", result.success ? "Succès" : "Échec", result.error || "");
-      
-      if (result.success) {
-        console.log("Connexion réussie, redirection vers le dashboard");
-        toast.success("Connexion réussie");
-        navigate("/dashboard");
-      } else {
-        console.error("Échec de la connexion:", result.error);
-        setErrorMsg(result.error || "Identifiants incorrects");
-        toast.error(result.error || "Identifiants incorrects");
-      }
-    } catch (error) {
-      console.error("Exception lors de la tentative de connexion:", error);
-      setErrorMsg("Une erreur est survenue. Veuillez réessayer plus tard.");
-      toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
-    } finally {
-      setLocalIsSubmitting(false);
-    }
-  };
-
   // En mode développement, afficher un message clair et rediriger
   if (isDevelopmentMode) {
     return (
@@ -99,6 +55,7 @@ export default function Login() {
     );
   }
 
+  // En production, afficher la page de connexion normale
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth as useGlobalAuth } from "@/components/auth/hooks/useAuth";
