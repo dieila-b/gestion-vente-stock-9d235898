@@ -89,7 +89,7 @@ export const updateUser = async (data: UpdateUserData, user: InternalUser): Prom
       address: updatedUserData.address,
       role: updatedUserData.role,
       is_active: updatedUserData.is_active,
-      photo_url: 'photo_url' in updatedUserData ? updatedUserData.photo_url : null
+      photo_url: 'photo_url' in updatedUserData ? (updatedUserData.photo_url as string | null) : null
     };
 
     toast({

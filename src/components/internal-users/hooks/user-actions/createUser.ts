@@ -114,7 +114,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       address: insertedUser.address,
       role: insertedUser.role,
       is_active: insertedUser.is_active,
-      photo_url: 'photo_url' in insertedUser ? insertedUser.photo_url : null
+      photo_url: 'photo_url' in insertedUser ? (insertedUser.photo_url as string | null) : null
     };
 
     toast({
