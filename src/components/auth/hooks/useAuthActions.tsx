@@ -76,7 +76,7 @@ export function useAuthActions(
         const { data: internalUser, error: internalError } = await supabase
           .from('internal_users')
           .select('id, email, role, is_active')
-          .ilike('email', normalizedUserEmail)
+          .eq('email', normalizedUserEmail)
           .maybeSingle();
           
         console.log("Vérification internal_users après login:", internalUser, internalError);

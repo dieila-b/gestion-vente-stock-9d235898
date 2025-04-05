@@ -13,7 +13,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('internal_users')
       .select('email')
-      .ilike('email', normalizedEmail)
+      .eq('email', normalizedEmail)
       .maybeSingle();
     
     if (error) {
