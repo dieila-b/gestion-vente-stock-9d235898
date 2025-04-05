@@ -38,20 +38,39 @@ export function useAuthState() {
           try {
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email')
+              .select('id, email, role, is_active')
               .eq('email', data.session.user.email)
               .single();
             
             console.log("Recherche utilisateur interne:", internalUser, internalError);
             
-            if (internalError || !internalUser) {
-              console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+            if (internalError) {
+              console.error("Erreur lors de la recherche utilisateur:", internalError.message);
               await supabase.auth.signOut();
               setIsAuthenticated(false);
-            } else {
-              console.log("Utilisateur interne validé:", internalUser.email);
-              setIsAuthenticated(true);
+              setLoading(false);
+              return;
             }
+            
+            if (!internalUser) {
+              console.error("Utilisateur non trouvé dans internal_users");
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              setLoading(false);
+              return;
+            }
+            
+            // Vérifier si le compte est actif
+            if (!internalUser.is_active) {
+              console.error("Compte utilisateur désactivé");
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              setLoading(false);
+              return;
+            }
+            
+            console.log("Utilisateur interne validé:", internalUser.email, "Rôle:", internalUser.role);
+            setIsAuthenticated(true);
           } catch (err) {
             console.error("Erreur lors de la vérification internal_users:", err);
             setIsAuthenticated(false);
@@ -82,20 +101,36 @@ export function useAuthState() {
             // Vérifier si l'utilisateur est un utilisateur interne
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, email')
+              .select('id, email, role, is_active')
               .eq('email', session.user.email)
               .single();
             
             console.log("Vérification internal_users après signin:", internalUser, internalError);
             
-            if (internalError || !internalUser) {
+            if (internalError) {
+              console.error("Erreur lors de la recherche utilisateur:", internalError.message);
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              return;
+            }
+            
+            if (!internalUser) {
               console.error("Utilisateur non trouvé dans internal_users lors du changement d'état");
               await supabase.auth.signOut();
               setIsAuthenticated(false);
-            } else {
-              console.log("Utilisateur interne validé après événement auth:", internalUser.email);
-              setIsAuthenticated(true);
+              return;
             }
+            
+            // Vérifier si le compte est actif
+            if (!internalUser.is_active) {
+              console.error("Compte utilisateur désactivé");
+              await supabase.auth.signOut();
+              setIsAuthenticated(false);
+              return;
+            }
+            
+            console.log("Utilisateur interne validé après événement auth:", internalUser.email, "Rôle:", internalUser.role);
+            setIsAuthenticated(true);
           } catch (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);
             setIsAuthenticated(false);

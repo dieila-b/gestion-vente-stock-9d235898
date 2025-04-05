@@ -54,22 +54,38 @@ export function useAuthActions(
         try {
           const { data: internalUser, error: internalError } = await supabase
             .from('internal_users')
-            .select('id, email')
+            .select('id, email, role, is_active')
             .eq('email', data.user.email)
             .single();
             
           console.log("Vérification internal_users après login:", internalUser, internalError);
             
-          if (internalError || !internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users:", internalError?.message);
+          if (internalError) {
+            console.error("Erreur lors de la vérification de l'utilisateur interne:", internalError.message);
+            toast.error("Erreur lors de la vérification de votre compte");
+            await supabase.auth.signOut();
+            setIsSubmitting(false);
+            return { success: false, error: "Erreur lors de la vérification de votre compte" };
+          }
+            
+          if (!internalUser) {
+            console.error("Utilisateur non trouvé dans internal_users");
             toast.error("Vous n'êtes pas autorisé à accéder à cette application");
-            // Déconnexion de l'utilisateur
             await supabase.auth.signOut();
             setIsSubmitting(false);
             return { success: false, error: "Vous n'êtes pas autorisé à accéder à cette application" };
           }
           
-          console.log("Utilisateur interne vérifié:", internalUser.email);
+          // Vérifier si l'utilisateur est actif
+          if (!internalUser.is_active) {
+            console.error("Compte utilisateur désactivé");
+            toast.error("Votre compte est désactivé. Contactez un administrateur.");
+            await supabase.auth.signOut();
+            setIsSubmitting(false);
+            return { success: false, error: "Votre compte est désactivé. Contactez un administrateur." };
+          }
+          
+          console.log("Utilisateur interne vérifié:", internalUser.email, "Rôle:", internalUser.role);
           setIsAuthenticated(true);
           setIsSubmitting(false);
           return { success: true };

@@ -69,10 +69,45 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return mockUser;
     }
 
-    // En production, insertion réelle de l'utilisateur dans la base de données
+    // En mode production, créer d'abord l'utilisateur dans Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { 
+        first_name: data.first_name,
+        last_name: data.last_name,
+        role: data.role
+      }
+    });
+    
+    if (authError) {
+      console.error("Erreur lors de la création de l'utilisateur Auth:", authError);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer l'utilisateur: " + authError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    if (!authData.user) {
+      console.error("Échec de création du compte Auth");
+      toast({
+        title: "Erreur",
+        description: "Échec de création du compte utilisateur",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    console.log("Utilisateur Auth créé:", authData.user);
+
+    // Ensuite, insertion dans la table internal_users
     const { data: insertedUser, error: insertError } = await supabase
       .from("internal_users")
       .insert({
+        id: authData.user.id,  // Utiliser l'ID du compte Auth
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
@@ -80,13 +115,21 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         address: data.address || null,
         role: data.role,
         is_active: data.is_active,
-        photo_url: data.photo_url || null
+        photo_url: data.photo_url || null,
+        user_id: authData.user.id  // Référence au compte Auth
       })
       .select("*")
       .single();
 
     if (insertError) {
-      console.error("Error inserting user:", insertError);
+      console.error("Erreur lors de l'insertion de l'utilisateur:", insertError);
+      
+      // Essayer de supprimer le compte Auth en cas d'échec
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (deleteError) {
+        console.error("Erreur lors de la suppression du compte Auth après échec:", deleteError);
+      }
       
       if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
         toast({
