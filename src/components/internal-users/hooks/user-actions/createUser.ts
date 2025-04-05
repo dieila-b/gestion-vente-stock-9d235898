@@ -99,8 +99,15 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     }
     
     // Vérifier si un utilisateur avec cet email existe déjà
-    const existingUser = authData.users.find(user => {
-      if (user && typeof user === 'object' && 'email' in user && user.email) {
+    // Utilisez une annotation de type pour définir explicitement le type d'utilisateur
+    type SupabaseUser = {
+      id: string;
+      email?: string | null;
+      [key: string]: any;
+    };
+    
+    const existingUser = authData.users.find((user: SupabaseUser) => {
+      if (user && typeof user === 'object' && user.email) {
         return user.email.toLowerCase().trim() === normalizedEmail;
       }
       return false;
