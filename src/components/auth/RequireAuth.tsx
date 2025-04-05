@@ -1,31 +1,43 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { toast } from "sonner";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
 
   useEffect(() => {
-    console.log(isDevelopmentMode 
-      ? "RequireAuth: Development mode - authentication bypass enabled" 
-      : "RequireAuth: Production mode - checking authentication", 
-      { isAuthenticated, loading });
+    console.log("RequireAuth effect running", { 
+      isAuthenticated, 
+      loading, 
+      isDevelopmentMode,
+      currentPath: location.pathname
+    });
     
-    // In development mode, always redirect from login page to dashboard
-    if (isDevelopmentMode && window.location.pathname === "/login") {
-      console.log("Development mode: Redirecting from login to dashboard");
-      navigate("/dashboard", { replace: true });
+    // In development mode, always allow access and redirect from login page to dashboard
+    if (isDevelopmentMode) {
+      console.log("Development mode: authentication bypass enabled");
+      if (location.pathname === "/login") {
+        console.log("Development mode: Redirecting from login to dashboard");
+        navigate("/dashboard", { replace: true });
+      }
       return;
     }
     
     // In production mode, check if user is authenticated
-    if (!isDevelopmentMode && !loading && !isAuthenticated) {
-      console.log("Production mode: User not authenticated, redirecting to login");
-      navigate("/login", { replace: true });
+    if (!isDevelopmentMode && !loading) {
+      if (!isAuthenticated) {
+        console.log("Production mode: User not authenticated, redirecting to login");
+        toast.error("Veuillez vous connecter pour accéder à cette page");
+        navigate("/login", { replace: true });
+      } else {
+        console.log("Production mode: User is authenticated, allowing access");
+      }
     }
-  }, [navigate, isAuthenticated, loading, isDevelopmentMode]);
+  }, [navigate, isAuthenticated, loading, isDevelopmentMode, location.pathname]);
 
   // Always grant access in development mode
   // In production, only grant access if authenticated or still loading
@@ -33,7 +45,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return null;
   }
 
-  // If still loading in production mode, could show a loading spinner here
+  // If still loading in production mode, show a loading spinner
   if (!isDevelopmentMode && loading) {
     return (
       <div className="flex items-center justify-center h-screen">

@@ -23,43 +23,64 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
+      // Normalisation de l'email
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log("Checking internal user with normalized email:", normalizedEmail);
+      
       // Check if user exists in internal_users table first
       const { data: internalUser, error: internalUserError } = await supabase
         .from("internal_users")
         .select("id, email")
-        .eq("email", email.toLowerCase().trim())
+        .eq("email", normalizedEmail)
         .single();
       
-      console.log("Internal user check:", internalUser, internalUserError);
+      console.log("Internal user check result:", internalUser, internalUserError);
       
-      if (internalUserError || !internalUser) {
-        console.error("User not found in internal_users table:", internalUserError || "No user found");
+      if (internalUserError) {
+        console.error("Error querying internal_users:", internalUserError.message);
+        if (internalUserError.code === "PGRST116") {
+          // Code PGRST116 correspond à "Did not return a single row"
+          return { 
+            success: false, 
+            error: "Cet email n'est pas associé à un compte utilisateur interne" 
+          };
+        }
+        return { 
+          success: false, 
+          error: "Erreur lors de la vérification de l'utilisateur" 
+        };
+      }
+      
+      if (!internalUser) {
+        console.error("No user found in internal_users table");
         return { 
           success: false, 
           error: "Cet email n'est pas associé à un compte utilisateur interne" 
         };
       }
 
-      console.log("Internal user found, attempting authentication");
+      console.log("Internal user found, attempting authentication with Supabase auth");
 
       // Actually sign in with Supabase auth
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: normalizedEmail,
         password
       });
 
-      console.log("Auth result:", data, error);
+      console.log("Auth result:", data ? "Success" : "Failed", error);
 
       if (error) {
         console.error("Authentication error:", error);
         return { 
           success: false, 
-          error: error.message || "Identifiants invalides" 
+          error: error.message === "Invalid login credentials" 
+            ? "Mot de passe incorrect" 
+            : error.message || "Identifiants invalides" 
         };
       }
 
       // Successfully authenticated
-      console.log("Authentication successful");
+      console.log("Authentication successful, user is now logged in");
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {

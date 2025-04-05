@@ -36,16 +36,24 @@ export default function Login() {
     e.preventDefault();
     setLoginError("");
     
-    if (!email || !password) {
-      toast.error("Veuillez saisir votre email et mot de passe");
+    // Validation
+    if (!email.trim()) {
+      setLoginError("Veuillez saisir votre email");
+      toast.error("Veuillez saisir votre email");
+      return;
+    }
+    
+    if (!password) {
+      setLoginError("Veuillez saisir votre mot de passe");
+      toast.error("Veuillez saisir votre mot de passe");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      console.log("Attempting login with:", email);
+      console.log("Attempting login with:", email.trim());
       
-      const result = await login(email, password);
+      const result = await login(email.trim(), password);
       console.log("Login result:", result);
       
       if (result.success) {
