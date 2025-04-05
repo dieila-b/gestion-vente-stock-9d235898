@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,25 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
+
+  // Function to handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setLocalIsSubmitting(true);
+    
+    try {
+      const result = await login(email, password);
+      if (result && !result.success) {
+        setErrorMsg(result.error || "Une erreur est survenue lors de la connexion");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion:", error);
+      setErrorMsg("Une erreur inattendue est survenue");
+    } finally {
+      setLocalIsSubmitting(false);
+    }
+  };
 
   // Rediriger automatiquement vers le dashboard en mode développement ou si déjà authentifié
   useEffect(() => {
