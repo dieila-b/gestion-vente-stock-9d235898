@@ -27,7 +27,7 @@ export const useInternalUsers = () => {
       console.log("Chargement des utilisateurs car autorisé");
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers]);
+  }, [isAuthorized, fetchUsers, isLoading]);
 
   // Gestionnaire de soumission de formulaire - mémorisé pour éviter les récréations
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {

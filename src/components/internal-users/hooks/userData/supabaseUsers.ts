@@ -17,7 +17,7 @@ export const fetchUsersFromSupabase = async (): Promise<InternalUser[] | null> =
       return [];
     }
 
-    // Map the data to ensure all required properties are present
+    // Mapper les données pour s'assurer que toutes les propriétés requises sont présentes
     const fetchedUsers: InternalUser[] = data.map(user => ({
       id: user.id,
       first_name: user.first_name,
@@ -27,13 +27,13 @@ export const fetchUsersFromSupabase = async (): Promise<InternalUser[] | null> =
       address: user.address || null,
       role: user.role as "admin" | "manager" | "employee",
       is_active: user.is_active,
-      // Handle the case where photo_url might not exist in the database
+      // Gérer le cas où photo_url pourrait ne pas exister dans la base de données
       photo_url: 'photo_url' in user ? (user.photo_url as string | null) : null
     }));
     
     return fetchedUsers;
   } catch (error) {
-    console.error("Error fetching users from Supabase:", error);
+    console.error("Erreur lors de la récupération des utilisateurs depuis Supabase:", error);
     return null;
   }
 };

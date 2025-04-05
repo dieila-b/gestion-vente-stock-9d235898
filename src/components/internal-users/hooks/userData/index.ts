@@ -1,3 +1,3 @@
 
-// Export the main hook from this directory
+// Export le hook principal de ce répertoire
 export { useUserData } from './useUserData';
