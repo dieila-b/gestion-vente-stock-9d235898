@@ -37,10 +37,11 @@ export function useAuthState() {
           
           // Vérifier si l'utilisateur existe dans la table internal_users
           try {
+            const normalizedEmail = data.session.user.email.toLowerCase().trim();
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, role, is_active')
-              .eq('email', data.session.user.email.toLowerCase())
+              .eq('email', normalizedEmail)
               .single();
             
             console.log("Recherche utilisateur interne:", internalUser, internalError);
@@ -104,10 +105,11 @@ export function useAuthState() {
         if (event === 'SIGNED_IN' && session) {
           try {
             // Vérifier si l'utilisateur est un utilisateur interne
+            const normalizedEmail = session.user.email.toLowerCase().trim();
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, role, is_active')
-              .eq('email', session.user.email.toLowerCase())
+              .eq('email', normalizedEmail)
               .single();
             
             console.log("Vérification internal_users après signin:", internalUser, internalError);

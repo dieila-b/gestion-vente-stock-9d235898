@@ -54,11 +54,12 @@ export function useAuthActions(
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
-          console.log("Vérification de l'utilisateur dans internal_users:", data.user.email);
+          const normalizedUserEmail = data.user.email.toLowerCase().trim();
+          console.log("Vérification de l'utilisateur dans internal_users:", normalizedUserEmail);
           const { data: internalUser, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, role, is_active')
-            .eq('email', data.user.email.toLowerCase().trim())
+            .eq('email', normalizedUserEmail)
             .single();
             
           console.log("Vérification internal_users après login:", internalUser, internalError);

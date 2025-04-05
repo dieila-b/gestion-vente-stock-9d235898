@@ -1,7 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { SupabaseUser } from "../types";
+
+// Définition du type SupabaseUser
+type SupabaseUser = {
+  id: string;
+  email: string;
+  aud: string;
+  created_at?: string;
+  confirmed_at?: string;
+  [key: string]: any;
+};
 
 export const checkIfUserExists = async (email: string): Promise<boolean> => {
   try {

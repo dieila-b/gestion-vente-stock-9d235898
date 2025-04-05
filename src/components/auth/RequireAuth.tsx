@@ -52,10 +52,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
+          const normalizedEmail = session.user.email.toLowerCase().trim();
           const { data, error } = await supabase
             .from('internal_users')
             .select('id, email')
-            .eq('email', session.user.email)
+            .eq('email', normalizedEmail)
             .single();
             
           console.log("Vérification internal_users dans RequireAuth:", data, error);
