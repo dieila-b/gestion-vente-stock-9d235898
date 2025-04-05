@@ -27,8 +27,26 @@ export function useAuthActions(
       const normalizedEmail = email.toLowerCase().trim();
       console.log("Login request with normalized email:", normalizedEmail);
       
-      // First try authentication directly with Supabase
-      console.log("Attempting direct authentication with Supabase");
+      // First check if the user exists in internal_users table
+      console.log("Checking if user exists in internal_users table");
+      const { data: internalUser, error: internalUserError } = await supabase
+        .from("internal_users")
+        .select("id, email")
+        .eq("email", normalizedEmail)
+        .single();
+        
+      console.log("Internal user check result:", internalUser, internalUserError);
+      
+      if (internalUserError || !internalUser) {
+        console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+        return { 
+          success: false, 
+          error: "Cet email n'est pas associé à un compte utilisateur interne" 
+        };
+      }
+      
+      // If user exists, attempt authentication with Supabase
+      console.log("User exists, attempting authentication with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password
@@ -38,24 +56,6 @@ export function useAuthActions(
 
       if (error) {
         console.error("Authentication error:", error);
-        
-        // Check if the user exists in internal_users table before returning password error
-        console.log("Checking if user exists in internal_users table");
-        const { data: internalUser, error: internalUserError } = await supabase
-          .from("internal_users")
-          .select("id, email")
-          .eq("email", normalizedEmail)
-          .single();
-          
-        console.log("Internal user check result:", internalUser, internalUserError);
-        
-        if (internalUserError || !internalUser) {
-          console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
-          return { 
-            success: false, 
-            error: "Cet email n'est pas associé à un compte utilisateur interne" 
-          };
-        }
         
         // If user exists but auth failed, it's likely a password issue
         if (error.message === "Invalid login credentials") {
