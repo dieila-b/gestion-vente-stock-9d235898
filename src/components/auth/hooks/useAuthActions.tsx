@@ -99,10 +99,11 @@ export function useAuthActions(
           setIsSubmitting(false);
           return { success: false, error: "Erreur de vérification utilisateur" };
         }
+      } else {
+        console.error("Aucun utilisateur retourné après connexion réussie");
+        setIsSubmitting(false);
+        return { success: false, error: "Erreur de connexion: aucun utilisateur trouvé" };
       }
-      
-      setIsSubmitting(false);
-      return { success: false, error: "Erreur inconnue lors de la connexion" };
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);

@@ -40,7 +40,7 @@ export function useAuthState() {
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, role, is_active')
-              .eq('email', data.session.user.email)
+              .eq('email', data.session.user.email.toLowerCase())
               .single();
             
             console.log("Recherche utilisateur interne:", internalUser, internalError);
@@ -107,7 +107,7 @@ export function useAuthState() {
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, role, is_active')
-              .eq('email', session.user.email)
+              .eq('email', session.user.email.toLowerCase())
               .single();
             
             console.log("Vérification internal_users après signin:", internalUser, internalError);
