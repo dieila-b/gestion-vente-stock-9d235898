@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/hooks/useAuth";
 import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -112,9 +113,9 @@ export default function Login() {
         </div>
         
         {errorMsg && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm">
-            {errorMsg}
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">

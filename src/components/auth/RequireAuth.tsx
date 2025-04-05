@@ -48,18 +48,28 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           return;
         }
         
-        console.log("Session active trouvée pour l'utilisateur:", session.user.email);
+        const userEmail = session.user.email;
+        if (!userEmail) {
+          console.error("Email utilisateur manquant dans la session");
+          setIsInternalUser(false);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Session active trouvée pour l'utilisateur:", userEmail);
         
         // Vérifier si l'utilisateur existe dans la table internal_users
         try {
-          const normalizedEmail = session.user.email.toLowerCase().trim();
+          const normalizedEmail = userEmail.toLowerCase().trim();
+          console.log("Vérification internal_users dans RequireAuth avec email:", normalizedEmail);
+          
           const { data, error } = await supabase
             .from('internal_users')
             .select('id, email')
             .eq('email', normalizedEmail)
             .single();
             
-          console.log("Vérification internal_users dans RequireAuth:", data, error);
+          console.log("Vérification internal_users dans RequireAuth - résultat:", data, error);
             
           if (error) {
             console.error("Erreur lors de la vérification de l'utilisateur interne:", error);

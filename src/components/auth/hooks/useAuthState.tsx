@@ -32,57 +32,69 @@ export function useAuthState() {
         
         console.log("Résultat getSession:", data);
         
-        if (data.session) {
-          console.log("Session active trouvée pour:", data.session.user.email);
+        if (!data.session) {
+          console.log("Aucune session active trouvée");
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+        
+        const userEmail = data.session.user.email;
+        if (!userEmail) {
+          console.error("Email utilisateur manquant dans la session");
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Session active trouvée pour:", userEmail);
+        
+        // Vérifier si l'utilisateur existe dans la table internal_users
+        try {
+          const normalizedEmail = userEmail.toLowerCase().trim();
+          console.log("Recherche utilisateur interne avec email:", normalizedEmail);
           
-          // Vérifier si l'utilisateur existe dans la table internal_users
-          try {
-            const normalizedEmail = data.session.user.email.toLowerCase().trim();
-            const { data: internalUser, error: internalError } = await supabase
-              .from('internal_users')
-              .select('id, email, role, is_active')
-              .eq('email', normalizedEmail)
-              .single();
-            
-            console.log("Recherche utilisateur interne:", internalUser, internalError);
-            
-            if (internalError) {
-              console.error("Erreur lors de la recherche utilisateur:", internalError.message);
-              await supabase.auth.signOut();
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
-            
-            if (!internalUser) {
-              console.error("Utilisateur non trouvé dans internal_users");
-              toast.error("Votre compte n'est pas autorisé à accéder à cette application");
-              await supabase.auth.signOut();
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
-            
-            // Vérifier si le compte est actif
-            if (!internalUser.is_active) {
-              console.error("Compte utilisateur désactivé");
-              toast.error("Votre compte est désactivé. Contactez un administrateur.");
-              await supabase.auth.signOut();
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
-            
-            console.log("Utilisateur interne validé:", internalUser.email, "Rôle:", internalUser.role);
-            setIsAuthenticated(true);
-          } catch (err) {
-            console.error("Erreur lors de la vérification internal_users:", err);
-            toast.error("Erreur de vérification de votre compte. Veuillez vous reconnecter.");
+          const { data: internalUser, error: internalError } = await supabase
+            .from('internal_users')
+            .select('id, email, role, is_active')
+            .eq('email', normalizedEmail)
+            .single();
+          
+          console.log("Recherche utilisateur interne - résultat:", internalUser, internalError);
+          
+          if (internalError) {
+            console.error("Erreur lors de la recherche utilisateur:", internalError.message);
             await supabase.auth.signOut();
             setIsAuthenticated(false);
+            setLoading(false);
+            return;
           }
-        } else {
-          console.log("Aucune session active trouvée");
+          
+          if (!internalUser) {
+            console.error("Utilisateur non trouvé dans internal_users");
+            toast.error("Votre compte n'est pas autorisé à accéder à cette application");
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+          
+          // Vérifier si le compte est actif
+          if (!internalUser.is_active) {
+            console.error("Compte utilisateur désactivé");
+            toast.error("Votre compte est désactivé. Contactez un administrateur.");
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+          
+          console.log("Utilisateur interne validé:", internalUser.email, "Rôle:", internalUser.role);
+          setIsAuthenticated(true);
+        } catch (err) {
+          console.error("Erreur lors de la vérification internal_users:", err);
+          toast.error("Erreur de vérification de votre compte. Veuillez vous reconnecter.");
+          await supabase.auth.signOut();
           setIsAuthenticated(false);
         }
       } catch (error) {
@@ -104,15 +116,24 @@ export function useAuthState() {
         
         if (event === 'SIGNED_IN' && session) {
           try {
+            const userEmail = session.user.email;
+            if (!userEmail) {
+              console.error("Email utilisateur manquant dans la session");
+              setIsAuthenticated(false);
+              return;
+            }
+            
             // Vérifier si l'utilisateur est un utilisateur interne
-            const normalizedEmail = session.user.email.toLowerCase().trim();
+            const normalizedEmail = userEmail.toLowerCase().trim();
+            console.log("Vérification internal_users après signin avec email:", normalizedEmail);
+            
             const { data: internalUser, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, role, is_active')
               .eq('email', normalizedEmail)
               .single();
             
-            console.log("Vérification internal_users après signin:", internalUser, internalError);
+            console.log("Vérification internal_users après signin - résultat:", internalUser, internalError);
             
             if (internalError) {
               console.error("Erreur lors de la recherche utilisateur:", internalError.message);

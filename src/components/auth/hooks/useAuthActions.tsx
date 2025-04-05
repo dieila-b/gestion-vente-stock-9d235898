@@ -49,61 +49,64 @@ export function useAuthActions(
         return { success: false, error: error.message };
       }
 
-      if (data.user) {
-        console.log("Utilisateur connecté avec succès:", data.user.email);
-        
-        // Vérifier si l'utilisateur existe dans la table internal_users
-        try {
-          const normalizedUserEmail = data.user.email.toLowerCase().trim();
-          console.log("Vérification de l'utilisateur dans internal_users:", normalizedUserEmail);
-          const { data: internalUser, error: internalError } = await supabase
-            .from('internal_users')
-            .select('id, email, role, is_active')
-            .eq('email', normalizedUserEmail)
-            .single();
-            
-          console.log("Vérification internal_users après login:", internalUser, internalError);
-            
-          if (internalError) {
-            console.error("Erreur lors de la vérification de l'utilisateur interne:", internalError.message);
-            toast.error("Erreur lors de la vérification de votre compte");
-            await supabase.auth.signOut();
-            setIsSubmitting(false);
-            return { success: false, error: "Erreur lors de la vérification de votre compte" };
-          }
-            
-          if (!internalUser) {
-            console.error("Utilisateur non trouvé dans internal_users");
-            toast.error("Vous n'êtes pas autorisé à accéder à cette application");
-            await supabase.auth.signOut();
-            setIsSubmitting(false);
-            return { success: false, error: "Vous n'êtes pas autorisé à accéder à cette application" };
-          }
-          
-          // Vérifier si l'utilisateur est actif
-          if (!internalUser.is_active) {
-            console.error("Compte utilisateur désactivé");
-            toast.error("Votre compte est désactivé. Contactez un administrateur.");
-            await supabase.auth.signOut();
-            setIsSubmitting(false);
-            return { success: false, error: "Votre compte est désactivé. Contactez un administrateur." };
-          }
-          
-          console.log("Utilisateur interne vérifié et actif:", internalUser.email, "Rôle:", internalUser.role);
-          setIsAuthenticated(true);
-          setIsSubmitting(false);
-          toast.success("Connexion réussie");
-          return { success: true };
-        } catch (err) {
-          console.error("Erreur lors de la vérification internal_users:", err);
-          await supabase.auth.signOut();
-          setIsSubmitting(false);
-          return { success: false, error: "Erreur de vérification utilisateur" };
-        }
-      } else {
-        console.error("Aucun utilisateur retourné après connexion réussie");
+      if (!data || !data.user) {
+        console.error("Données utilisateur manquantes après connexion");
         setIsSubmitting(false);
         return { success: false, error: "Erreur de connexion: aucun utilisateur trouvé" };
+      }
+
+      // Vérifier si l'utilisateur existe dans la table internal_users
+      try {
+        const userEmail = data.user.email;
+        if (!userEmail) {
+          console.error("Email utilisateur manquant");
+          setIsSubmitting(false);
+          return { success: false, error: "Email utilisateur manquant" };
+        }
+        
+        const normalizedUserEmail = userEmail.toLowerCase().trim();
+        console.log("Vérification de l'utilisateur dans internal_users:", normalizedUserEmail);
+        
+        const { data: internalUser, error: internalError } = await supabase
+          .from('internal_users')
+          .select('id, email, role, is_active')
+          .eq('email', normalizedUserEmail)
+          .single();
+          
+        console.log("Vérification internal_users après login:", internalUser, internalError);
+          
+        if (internalError) {
+          console.error("Erreur lors de la vérification de l'utilisateur interne:", internalError.message);
+          await supabase.auth.signOut();
+          setIsSubmitting(false);
+          return { success: false, error: "Erreur lors de la vérification de votre compte" };
+        }
+          
+        if (!internalUser) {
+          console.error("Utilisateur non trouvé dans internal_users");
+          await supabase.auth.signOut();
+          setIsSubmitting(false);
+          return { success: false, error: "Vous n'êtes pas autorisé à accéder à cette application" };
+        }
+        
+        // Vérifier si l'utilisateur est actif
+        if (!internalUser.is_active) {
+          console.error("Compte utilisateur désactivé");
+          await supabase.auth.signOut();
+          setIsSubmitting(false);
+          return { success: false, error: "Votre compte est désactivé. Contactez un administrateur." };
+        }
+        
+        console.log("Utilisateur interne vérifié et actif:", internalUser.email, "Rôle:", internalUser.role);
+        setIsAuthenticated(true);
+        setIsSubmitting(false);
+        toast.success("Connexion réussie");
+        return { success: true };
+      } catch (err) {
+        console.error("Erreur lors de la vérification internal_users:", err);
+        await supabase.auth.signOut();
+        setIsSubmitting(false);
+        return { success: false, error: "Erreur de vérification utilisateur" };
       }
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);

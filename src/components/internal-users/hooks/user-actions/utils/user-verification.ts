@@ -16,6 +16,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
   try {
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
+    console.log("Vérification d'existence pour email:", normalizedEmail);
     
     // Check if the user already exists in Auth
     const { data: authData, error: listError } = await supabase.auth.admin.listUsers();
@@ -41,10 +42,20 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true; // Consider as existing on error to prevent creation
     }
     
+    console.log("Utilisateurs trouvés dans Auth:", authData.users.length);
+    
     // Check if a user with this email already exists
     const existingUser = authData.users.find((user: SupabaseUser) => {
-      return user && typeof user === 'object' && user.email && 
-             user.email.toLowerCase().trim() === normalizedEmail;
+      if (!user || typeof user !== 'object' || !user.email) {
+        console.log("Utilisateur invalide dans la liste:", user);
+        return false;
+      }
+      const userEmail = user.email.toLowerCase().trim();
+      const matches = userEmail === normalizedEmail;
+      if (matches) {
+        console.log("Correspondance trouvée pour:", normalizedEmail);
+      }
+      return matches;
     });
     
     if (existingUser) {
@@ -57,6 +68,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true;
     }
     
+    console.log("Aucun utilisateur existant trouvé pour:", normalizedEmail);
     return false;
   } catch (error) {
     console.error("Erreur lors de la vérification d'existence:", error);
