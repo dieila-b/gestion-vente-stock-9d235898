@@ -22,7 +22,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     }
     
     // Validate user data from listUsers
-    if (!authData || !authData.users) {
+    if (!authData || !Array.isArray(authData.users)) {
       console.error("Données utilisateurs invalides retournées par listUsers");
       toast({
         title: "Erreur",
@@ -34,10 +34,8 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     
     // Check if a user with this email already exists
     const existingUser = authData.users.find((user: SupabaseUser) => {
-      if (user && typeof user === 'object' && user.email) {
-        return user.email.toLowerCase().trim() === normalizedEmail;
-      }
-      return false;
+      return user && typeof user === 'object' && user.email && 
+             user.email.toLowerCase().trim() === normalizedEmail;
     });
     
     if (existingUser) {
