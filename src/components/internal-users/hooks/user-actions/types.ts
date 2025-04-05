@@ -1,7 +1,7 @@
 
 export type SupabaseUser = {
   id: string;
-  email: string;
+  email?: string | null;
   aud: string;
   created_at?: string;
   confirmed_at?: string;
