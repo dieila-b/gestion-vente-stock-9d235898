@@ -35,7 +35,7 @@ export const useInternalUsers = () => {
     }
   }, [isAuthorized, fetchUsers]);
 
-  // Form submission handler - memoized to avoid recreations
+  // Form submission handler - define all callbacks at the top level, not conditionally
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
     console.log("Form submitted with values:", values);
     await submitUserAction(values, selectedUser);

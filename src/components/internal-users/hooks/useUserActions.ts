@@ -8,6 +8,7 @@ import {
   deleteUser,
   toggleUserStatus 
 } from "./user-actions";
+import { useCallback } from "react";
 
 export const useUserActions = (
   fetchUsers: () => Promise<void>,
@@ -15,7 +16,7 @@ export const useUserActions = (
   updateUserInList: (user: InternalUser) => void
 ) => {
   
-  const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
+  const handleSubmit = useCallback(async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
     try {
       console.log("handleSubmit called with values:", values);
       console.log("selectedUser:", selectedUser);
@@ -84,9 +85,9 @@ export const useUserActions = (
         variant: "destructive",
       });
     }
-  };
+  }, [addUser, updateUserInList]);
 
-  const handleDelete = async (user: InternalUser) => {
+  const handleDelete = useCallback(async (user: InternalUser) => {
     try {
       console.log("Attempting to delete user:", user);
       const success = await deleteUser(user);
@@ -106,9 +107,9 @@ export const useUserActions = (
         variant: "destructive",
       });
     }
-  };
+  }, [fetchUsers]);
 
-  const handleToggleStatus = async (user: InternalUser) => {
+  const handleToggleStatus = useCallback(async (user: InternalUser) => {
     try {
       console.log("Toggling status for user:", user);
       const success = await toggleUserStatus(user);
@@ -130,7 +131,7 @@ export const useUserActions = (
         variant: "destructive",
       });
     }
-  };
+  }, [updateUserInList]);
 
   return {
     handleSubmit,

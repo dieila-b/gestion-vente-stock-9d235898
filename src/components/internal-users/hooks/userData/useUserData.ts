@@ -15,12 +15,7 @@ export const useUserData = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isDevelopmentMode = import.meta.env.DEV;
 
-  // Initialize users on component mount
-  useEffect(() => {
-    console.log("useUserData hook mounted");
-    fetchUsers();
-  }, []);
-
+  // Define fetchUsers callback outside of the useEffect to ensure consistent reference
   const fetchUsers = useCallback(async () => {
     console.log("Fetching users...");
     setIsLoading(true);
@@ -71,6 +66,12 @@ export const useUserData = () => {
       setIsLoading(false);
     }
   }, [isDevelopmentMode]);
+
+  // Initialize users on component mount
+  useEffect(() => {
+    console.log("useUserData hook mounted");
+    fetchUsers();
+  }, [fetchUsers]);
 
   const addUser = useCallback((user: InternalUser) => {
     setUsers(prevUsers => {
