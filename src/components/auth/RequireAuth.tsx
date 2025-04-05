@@ -9,18 +9,19 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     console.log(isDevelopmentMode 
-      ? "RequireAuth: Authentication bypass enabled - granting all access" 
+      ? "RequireAuth: Development mode - authentication bypass enabled" 
       : "RequireAuth: Production mode - checking authentication");
     
     // In development mode, always redirect from login page to dashboard
     if (isDevelopmentMode && window.location.pathname === "/login") {
+      console.log("Development mode: Redirecting from login to dashboard");
       navigate("/dashboard", { replace: true });
       return;
     }
     
     // In production mode, check if user is authenticated
     if (!isDevelopmentMode && !loading && !isAuthenticated) {
-      console.log("User not authenticated, redirecting to login");
+      console.log("Production mode: User not authenticated, redirecting to login");
       navigate("/login", { replace: true });
     }
   }, [navigate, isAuthenticated, loading, isDevelopmentMode]);

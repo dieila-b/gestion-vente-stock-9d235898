@@ -12,9 +12,9 @@ export function useAuthActions(
 
   const login = async (email: string, password: string) => {
     if (isDevelopmentMode) {
-      console.log("No authentication mode: Automatic login");
+      console.log("Development mode: Automatic login success");
       setIsAuthenticated(true);
-      toast.success("Automatic login");
+      toast.success("Automatic login in development mode");
       return { success: true };
     }
 
@@ -29,12 +29,14 @@ export function useAuthActions(
         .single();
       
       if (internalUserError || !internalUser) {
-        console.error("User not found in internal_users table:", internalUserError);
+        console.error("User not found in internal_users table:", internalUserError || "No user found");
         return { 
           success: false, 
-          error: "Cet email n'est pas associé à un compte utilisateur interne"
+          error: "Cet email n'est pas associé à un compte utilisateur interne" 
         };
       }
+
+      console.log("Internal user found, attempting authentication");
 
       // Actually sign in with Supabase auth
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -46,18 +48,19 @@ export function useAuthActions(
         console.error("Authentication error:", error);
         return { 
           success: false, 
-          error: error.message || "Identifiants invalides"
+          error: error.message || "Identifiants invalides" 
         };
       }
 
       // Successfully authenticated
+      console.log("Authentication successful");
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
       return { 
         success: false, 
-        error: "Une erreur est survenue lors de la connexion"
+        error: "Une erreur est survenue lors de la connexion" 
       };
     } finally {
       setIsSubmitting(false);
@@ -66,7 +69,7 @@ export function useAuthActions(
   
   const logout = async () => {
     if (isDevelopmentMode) {
-      console.log("No authentication mode: Simulated logout");
+      console.log("Development mode: Simulated logout");
       toast.success("You are logged out");
       return;
     }

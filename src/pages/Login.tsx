@@ -18,11 +18,15 @@ export default function Login() {
   // In development mode, immediately redirect to dashboard
   useEffect(() => {
     if (isDevelopmentMode) {
-      console.log("Authentication disabled: Automatic redirect to dashboard");
-      toast.success("Automatic login");
+      console.log("Development mode: Automatic redirect to dashboard");
+      toast.success("Automatic login in development mode");
       navigate("/dashboard", { replace: true });
-    } else if (isAuthenticated && !loading) {
-      // If already authenticated in production mode, redirect to dashboard
+      return;
+    } 
+    
+    // If already authenticated in production mode, redirect to dashboard
+    if (isAuthenticated && !loading) {
+      console.log("Production mode: User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
   }, [navigate, isDevelopmentMode, isAuthenticated, loading]);
@@ -52,13 +56,13 @@ export default function Login() {
   };
 
   // If in development mode or still loading, show loading spinner
-  if (isDevelopmentMode || loading) {
+  if (isDevelopmentMode || (loading && !isDevelopmentMode)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-lg font-medium">
-            {isDevelopmentMode ? "Automatic redirect..." : "Chargement..."}
+            {isDevelopmentMode ? "Development mode: Automatic redirect..." : "Chargement..."}
           </p>
         </div>
       </div>

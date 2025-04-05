@@ -6,15 +6,15 @@ import { AuthContext } from "./context/AuthContext";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isDevelopmentMode = import.meta.env.DEV;
-  const { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode: stateDevMode } = useAuthState();
+  const { isAuthenticated, setIsAuthenticated, loading, setLoading } = useAuthState();
   const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading);
 
   // Log initial auth state
   useEffect(() => {
     console.log(
       isDevelopmentMode 
-        ? "Authentication disabled: All users are automatically authenticated" 
-        : "Production mode: Real authentication required"
+        ? "Authentication disabled: Development mode - all users are automatically authenticated" 
+        : "Production mode: Real authentication required for internal users"
     );
   }, [isDevelopmentMode]);
 

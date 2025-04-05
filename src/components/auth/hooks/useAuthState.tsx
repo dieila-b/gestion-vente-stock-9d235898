@@ -9,13 +9,13 @@ export function useAuthState() {
 
   useEffect(() => {
     if (isDevelopmentMode) {
-      console.log("Authentication disabled: All users are automatically authenticated");
+      console.log("Development mode: Authentication disabled - all users are automatically authenticated");
       setIsAuthenticated(true);
       setLoading(false);
       return;
     }
 
-    // In production mode, check if user is authenticated
+    // Production mode - check actual authentication status
     const checkAuthStatus = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -26,6 +26,7 @@ export function useAuthState() {
         } else {
           // Check if session exists and is valid
           setIsAuthenticated(!!data.session);
+          console.log("Auth session check:", !!data.session ? "User is authenticated" : "No active session");
         }
       } catch (error) {
         console.error("Auth state check error:", error);
