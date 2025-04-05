@@ -26,9 +26,9 @@ export function useAuthState() {
           setIsAuthenticated(false);
         } else {
           // Check if session exists and is valid
-          const hasValidSession = !!data.session;
-          setIsAuthenticated(hasValidSession);
+          const hasValidSession = !!data?.session;
           console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
+          setIsAuthenticated(hasValidSession);
         }
       } catch (error) {
         console.error("Auth state check error:", error);
@@ -41,7 +41,7 @@ export function useAuthState() {
     // Setup auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event, session);
+        console.log("Auth state changed:", event, !!session);
         setIsAuthenticated(!!session);
         setLoading(false);
       }

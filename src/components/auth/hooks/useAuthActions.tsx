@@ -25,43 +25,10 @@ export function useAuthActions(
       
       // Normalisation de l'email
       const normalizedEmail = email.toLowerCase().trim();
-      console.log("Checking internal user with normalized email:", normalizedEmail);
+      console.log("Login request with normalized email:", normalizedEmail);
       
-      // Check if user exists in internal_users table first
-      const { data: internalUser, error: internalUserError } = await supabase
-        .from("internal_users")
-        .select("id, email")
-        .eq("email", normalizedEmail)
-        .single();
-      
-      console.log("Internal user check result:", internalUser, internalUserError);
-      
-      if (internalUserError) {
-        console.error("Error querying internal_users:", internalUserError.message);
-        if (internalUserError.code === "PGRST116") {
-          // Code PGRST116 correspond à "Did not return a single row"
-          return { 
-            success: false, 
-            error: "Cet email n'est pas associé à un compte utilisateur interne" 
-          };
-        }
-        return { 
-          success: false, 
-          error: "Erreur lors de la vérification de l'utilisateur" 
-        };
-      }
-      
-      if (!internalUser) {
-        console.error("No user found in internal_users table");
-        return { 
-          success: false, 
-          error: "Cet email n'est pas associé à un compte utilisateur interne" 
-        };
-      }
-
-      console.log("Internal user found, attempting authentication with Supabase auth");
-
-      // Actually sign in with Supabase auth
+      // First try authentication directly with Supabase
+      console.log("Attempting direct authentication with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password
@@ -71,11 +38,35 @@ export function useAuthActions(
 
       if (error) {
         console.error("Authentication error:", error);
+        
+        if (error.message === "Invalid login credentials") {
+          return { 
+            success: false, 
+            error: "Mot de passe incorrect" 
+          };
+        }
+        
+        // If auth fails, check if the user exists in internal_users table
+        console.log("Auth failed, checking if user exists in internal_users table");
+        const { data: internalUser, error: internalUserError } = await supabase
+          .from("internal_users")
+          .select("id, email")
+          .eq("email", normalizedEmail)
+          .single();
+          
+        console.log("Internal user check result:", internalUser, internalUserError);
+        
+        if (internalUserError || !internalUser) {
+          console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+          return { 
+            success: false, 
+            error: "Cet email n'est pas associé à un compte utilisateur interne" 
+          };
+        }
+        
         return { 
           success: false, 
-          error: error.message === "Invalid login credentials" 
-            ? "Mot de passe incorrect" 
-            : error.message || "Identifiants invalides" 
+          error: "Mot de passe incorrect" 
         };
       }
 

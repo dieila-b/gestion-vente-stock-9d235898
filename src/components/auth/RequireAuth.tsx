@@ -31,8 +31,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     if (!isDevelopmentMode && !loading) {
       if (!isAuthenticated) {
         console.log("Production mode: User not authenticated, redirecting to login");
-        toast.error("Veuillez vous connecter pour accéder à cette page");
-        navigate("/login", { replace: true });
+        if (location.pathname !== "/login") {
+          toast.error("Veuillez vous connecter pour accéder à cette page");
+          navigate("/login", { replace: true, state: { from: location.pathname } });
+        }
       } else {
         console.log("Production mode: User is authenticated, allowing access");
       }
