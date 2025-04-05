@@ -89,7 +89,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     
     // Vérifier si un utilisateur avec cet email existe déjà
     const existingUser = authData.users.find(user => 
-      user.email && user.email.toLowerCase() === normalizedEmail
+      user.email && user.email.toLowerCase().trim() === normalizedEmail
     );
     
     if (existingUser) {
