@@ -7,7 +7,8 @@ import {
   PhoneField,
   AddressField,
   RoleField,
-  StatusField
+  StatusField,
+  PhotoField
 } from "./FormFields";
 import { FormActions } from "./FormActions";
 import { UserFormValues } from "../validation/user-form-schema";
@@ -33,6 +34,7 @@ export const FormContent = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <PhotoField form={form} />
         <NameFields form={form} />
         <EmailField form={form} />
         <PasswordFields form={form} />

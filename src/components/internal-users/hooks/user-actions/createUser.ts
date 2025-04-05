@@ -12,6 +12,7 @@ interface CreateUserData {
   address: string;
   role: "admin" | "manager" | "employee";
   is_active: boolean;
+  photo_url?: string | null;
 }
 
 export const createUser = async (data: CreateUserData): Promise<InternalUser | null> => {
@@ -52,8 +53,13 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active
+        is_active: data.is_active,
+        photo_url: data.photo_url || null
       };
+      
+      // Stocker l'utilisateur dans localStorage pour la persistance en mode dev
+      const existingUsers = JSON.parse(localStorage.getItem('internalUsers') || '[]');
+      localStorage.setItem('internalUsers', JSON.stringify([...existingUsers, mockUser]));
       
       toast({
         title: "Utilisateur créé (mode développeur)",
@@ -73,7 +79,8 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         phone: data.phone || null,
         address: data.address || null,
         role: data.role,
-        is_active: data.is_active
+        is_active: data.is_active,
+        photo_url: data.photo_url || null
       })
       .select("*")
       .single();

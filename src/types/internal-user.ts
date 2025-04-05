@@ -8,4 +8,5 @@ export type InternalUser = {
   role: "admin" | "manager" | "employee";
   address: string | null;
   is_active: boolean;
+  photo_url: string | null;
 };

@@ -25,7 +25,8 @@ export const useUserForm = ({ onSubmit, selectedUser }: UseUserFormProps) => {
       address: selectedUser?.address || "",
       role: selectedUser?.role || "employee",
       is_active: selectedUser?.is_active ?? true,
-      id: selectedUser?.id
+      id: selectedUser?.id,
+      photo_url: selectedUser?.photo_url || null,
     },
   });
 

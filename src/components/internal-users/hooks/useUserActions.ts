@@ -26,7 +26,8 @@ export const useUserActions = (
           address: values.address || "",
           role: values.role,
           is_active: values.is_active !== undefined ? values.is_active : true,
-          password: values.password
+          password: values.password,
+          photo_url: values.photo_url
         }, selectedUser);
 
         if (updatedUser) {
@@ -55,7 +56,8 @@ export const useUserActions = (
           phone: values.phone || "",
           address: values.address || "",
           role: values.role,
-          is_active: values.is_active !== undefined ? values.is_active : true
+          is_active: values.is_active !== undefined ? values.is_active : true,
+          photo_url: values.photo_url
         });
 
         if (newUser) {

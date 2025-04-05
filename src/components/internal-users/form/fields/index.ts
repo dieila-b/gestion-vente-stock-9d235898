@@ -6,6 +6,7 @@ import { PhoneField } from "./PhoneField";
 import { AddressField } from "./AddressField";
 import { RoleField } from "./RoleField";
 import { StatusField } from "./StatusField";
+import { PhotoField } from "./PhotoField";
 
 export {
   NameFields,
@@ -14,5 +15,6 @@ export {
   PhoneField,
   AddressField,
   RoleField,
-  StatusField
+  StatusField,
+  PhotoField
 };
