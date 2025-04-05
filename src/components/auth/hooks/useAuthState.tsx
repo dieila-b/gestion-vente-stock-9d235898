@@ -9,7 +9,7 @@ export function useAuthState() {
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    // En mode développement, considérer l'utilisateur comme authentifié automatiquement
+    // En mode développement, considérer l'utilisateur comme authentifié automatiquement et immédiatement
     if (isDevelopmentMode) {
       console.log("Mode développeur: Authentification complètement désactivée");
       setIsAuthenticated(true);
