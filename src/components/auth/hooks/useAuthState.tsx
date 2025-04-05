@@ -24,16 +24,18 @@ export function useAuthState() {
         if (error) {
           console.error("Error checking authentication:", error);
           setIsAuthenticated(false);
-        } else {
-          // Check if session exists and is valid
-          const hasValidSession = !!data?.session;
-          console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
-          setIsAuthenticated(hasValidSession);
+          setLoading(false);
+          return;
         }
+        
+        // Check if session exists and is valid
+        const hasValidSession = !!data?.session;
+        console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
+        setIsAuthenticated(hasValidSession);
+        setLoading(false);
       } catch (error) {
         console.error("Auth state check error:", error);
         setIsAuthenticated(false);
-      } finally {
         setLoading(false);
       }
     };

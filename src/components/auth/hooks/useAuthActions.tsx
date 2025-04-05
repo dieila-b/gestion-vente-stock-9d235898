@@ -23,7 +23,7 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // Normalisation de l'email
+      // Normalize the email
       const normalizedEmail = email.toLowerCase().trim();
       console.log("Login request with normalized email:", normalizedEmail);
       
@@ -39,15 +39,8 @@ export function useAuthActions(
       if (error) {
         console.error("Authentication error:", error);
         
-        if (error.message === "Invalid login credentials") {
-          return { 
-            success: false, 
-            error: "Mot de passe incorrect" 
-          };
-        }
-        
-        // If auth fails, check if the user exists in internal_users table
-        console.log("Auth failed, checking if user exists in internal_users table");
+        // Check if the user exists in internal_users table before returning password error
+        console.log("Checking if user exists in internal_users table");
         const { data: internalUser, error: internalUserError } = await supabase
           .from("internal_users")
           .select("id, email")
@@ -64,9 +57,18 @@ export function useAuthActions(
           };
         }
         
+        // If user exists but auth failed, it's likely a password issue
+        if (error.message === "Invalid login credentials") {
+          return { 
+            success: false, 
+            error: "Mot de passe incorrect" 
+          };
+        }
+        
+        // Generic error for other issues
         return { 
           success: false, 
-          error: "Mot de passe incorrect" 
+          error: "Une erreur est survenue lors de la connexion" 
         };
       }
 
