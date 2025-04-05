@@ -54,7 +54,7 @@ export default function Login() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Tentative de connexion avec email:", normalizedEmail);
       const result = await login(normalizedEmail, password);
-      console.log("Résultat login:", result);
+      console.log("Résultat login:", result.success ? "Succès" : "Échec", result.error || "");
       
       if (result.success) {
         console.log("Connexion réussie, redirection vers le dashboard");

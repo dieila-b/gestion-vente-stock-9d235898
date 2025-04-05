@@ -32,7 +32,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        console.log("Session dans RequireAuth:", session, sessionError);
+        console.log("Session dans RequireAuth:", session ? "Session active" : "Pas de session", sessionError);
         
         if (sessionError) {
           console.error("Erreur lors de la récupération de la session:", sessionError);
@@ -66,8 +66,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           const { data, error } = await supabase
             .from('internal_users')
             .select('id, email')
-            .eq('email', normalizedEmail)
-            .single();
+            .ilike('email', normalizedEmail)
+            .maybeSingle();
             
           console.log("Vérification internal_users dans RequireAuth - résultat:", data, error);
             

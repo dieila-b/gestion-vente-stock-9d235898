@@ -17,6 +17,10 @@ export function useAuthActions(
       return { success: true };
     }
     
+    if (!email || !password) {
+      return { success: false, error: "Veuillez saisir votre email et votre mot de passe" };
+    }
+    
     // Normaliser l'email
     const normalizedEmail = email.trim().toLowerCase();
     console.log("Fonction login appelée avec:", normalizedEmail);
@@ -29,7 +33,7 @@ export function useAuthActions(
         password,
       });
 
-      console.log("Résultat signInWithPassword:", data, error);
+      console.log("Résultat signInWithPassword:", data ? "Données reçues" : "Pas de données", error);
 
       if (error) {
         console.error("Erreur d'authentification:", error.message);
@@ -70,8 +74,8 @@ export function useAuthActions(
         const { data: internalUser, error: internalError } = await supabase
           .from('internal_users')
           .select('id, email, role, is_active')
-          .eq('email', normalizedUserEmail)
-          .single();
+          .ilike('email', normalizedUserEmail)
+          .maybeSingle();
           
         console.log("Vérification internal_users après login:", internalUser, internalError);
           
@@ -108,7 +112,7 @@ export function useAuthActions(
         setIsSubmitting(false);
         return { success: false, error: "Erreur de vérification utilisateur" };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la connexion:", error);
       setIsSubmitting(false);
       return { success: false, error: "Erreur technique lors de la tentative de connexion" };
