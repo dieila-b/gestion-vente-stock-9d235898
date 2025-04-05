@@ -37,7 +37,7 @@ export const useUserData = () => {
               address: user.address,
               role: user.role as "admin" | "manager" | "employee",
               is_active: user.is_active,
-              photo_url: user.photo_url
+              photo_url: user.photo_url as string | null
             }));
             
             console.log("Données utilisateurs récupérées du localStorage:", typedUsers);
@@ -73,7 +73,6 @@ export const useUserData = () => {
         console.log("Données utilisateurs récupérées de Supabase:", data);
         // Assurer que tous les utilisateurs ont la propriété photo_url
         fetchedUsers = data.map(user => ({
-          ...user,
           id: user.id,
           first_name: user.first_name,
           last_name: user.last_name,
@@ -82,7 +81,7 @@ export const useUserData = () => {
           address: user.address,
           role: user.role as "admin" | "manager" | "employee",
           is_active: user.is_active,
-          photo_url: 'photo_url' in user ? user.photo_url : null
+          photo_url: (user.photo_url as string | null)
         }));
       }
       
@@ -107,7 +106,7 @@ export const useUserData = () => {
               address: user.address,
               role: user.role as "admin" | "manager" | "employee",
               is_active: user.is_active,
-              photo_url: user.photo_url
+              photo_url: user.photo_url as string | null
             }));
             setUsers(typedUsers);
             console.log("Récupération des utilisateurs depuis localStorage après erreur:", typedUsers);
