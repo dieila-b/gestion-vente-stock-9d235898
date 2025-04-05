@@ -87,10 +87,24 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
     
+    // Définir le type correct pour les utilisateurs retournés par listUsers
+    if (!authData || !authData.users) {
+      console.error("Données utilisateurs invalides retournées par listUsers");
+      toast({
+        title: "Erreur",
+        description: "Impossible de vérifier les utilisateurs existants",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     // Vérifier si un utilisateur avec cet email existe déjà
-    const existingUser = authData.users.find(user => 
-      user.email && user.email.toLowerCase().trim() === normalizedEmail
-    );
+    const existingUser = authData.users.find(user => {
+      if (user && typeof user === 'object' && 'email' in user && user.email) {
+        return user.email.toLowerCase().trim() === normalizedEmail;
+      }
+      return false;
+    });
     
     if (existingUser) {
       console.error("L'utilisateur existe déjà dans Auth:", normalizedEmail);
