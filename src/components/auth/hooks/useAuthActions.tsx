@@ -17,13 +17,15 @@ export function useAuthActions(
       return { success: true };
     }
     
-    console.log("Fonction login appelée avec:", email);
+    // Normaliser l'email
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log("Fonction login appelée avec:", normalizedEmail);
     setIsSubmitting(true);
     
     try {
-      console.log("Tentative de connexion avec Supabase pour:", email);
+      console.log("Tentative de connexion avec Supabase pour:", normalizedEmail);
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
 
@@ -56,7 +58,7 @@ export function useAuthActions(
           const { data: internalUser, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, role, is_active')
-            .eq('email', data.user.email)
+            .eq('email', data.user.email.toLowerCase().trim())
             .single();
             
           console.log("Vérification internal_users après login:", internalUser, internalError);

@@ -50,8 +50,9 @@ export default function Login() {
     setLocalIsSubmitting(true);
     
     try {
-      console.log("Tentative de connexion avec email:", email);
-      const result = await login(email.trim().toLowerCase(), password);
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log("Tentative de connexion avec email:", normalizedEmail);
+      const result = await login(normalizedEmail, password);
       console.log("Résultat login:", result);
       
       if (result.success) {

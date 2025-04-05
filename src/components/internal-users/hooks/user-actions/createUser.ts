@@ -71,9 +71,11 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
 
     console.log("Création d'un nouvel utilisateur en production:", data.email);
     
+    // Normaliser l'email
+    const normalizedEmail = data.email.toLowerCase().trim();
+    
     // Vérifier si l'utilisateur existe déjà dans Auth
-    // Utiliser la méthode listUsers au lieu de getUserByEmail pour trouver l'utilisateur par email
-    const { data: usersList, error: listError } = await supabase.auth.admin.listUsers();
+    const { data: authData, error: listError } = await supabase.auth.admin.listUsers();
     
     if (listError) {
       console.error("Erreur lors de la vérification des utilisateurs existants:", listError);
@@ -85,12 +87,13 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
     
-    // Rechercher l'utilisateur par email dans la liste
-    const normalizedEmail = data.email.toLowerCase().trim();
-    const existingUser = usersList.users.find(u => u.email?.toLowerCase() === normalizedEmail);
+    // Vérifier si un utilisateur avec cet email existe déjà
+    const existingUser = authData.users.find(user => 
+      user.email && user.email.toLowerCase() === normalizedEmail
+    );
     
     if (existingUser) {
-      console.error("L'utilisateur existe déjà dans Auth:", data.email);
+      console.error("L'utilisateur existe déjà dans Auth:", normalizedEmail);
       toast({
         title: "Erreur",
         description: "Un utilisateur avec cet email existe déjà",
@@ -100,8 +103,8 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     }
 
     // En mode production, créer d'abord l'utilisateur dans Auth
-    console.log("Création du compte Auth pour:", data.email);
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    console.log("Création du compte Auth pour:", normalizedEmail);
+    const { data: newAuthData, error: authError } = await supabase.auth.admin.createUser({
       email: normalizedEmail,
       password: data.password,
       email_confirm: true,
@@ -122,7 +125,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
     
-    if (!authData.user) {
+    if (!newAuthData.user) {
       console.error("Échec de création du compte Auth");
       toast({
         title: "Erreur",
@@ -132,14 +135,14 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       return null;
     }
     
-    console.log("Utilisateur Auth créé avec succès:", authData.user.id);
+    console.log("Utilisateur Auth créé avec succès:", newAuthData.user.id);
 
     // Ensuite, insertion dans la table internal_users
-    console.log("Insertion dans la table internal_users:", authData.user.id);
+    console.log("Insertion dans la table internal_users:", newAuthData.user.id);
     const { data: insertedUser, error: insertError } = await supabase
       .from("internal_users")
       .insert({
-        id: authData.user.id,  // Utiliser l'ID du compte Auth
+        id: newAuthData.user.id,  // Utiliser l'ID du compte Auth
         first_name: data.first_name,
         last_name: data.last_name,
         email: normalizedEmail,  // Normaliser l'email
@@ -148,7 +151,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
         role: data.role,
         is_active: data.is_active,
         photo_url: data.photo_url || null,
-        user_id: authData.user.id  // Référence au compte Auth
+        user_id: newAuthData.user.id  // Référence au compte Auth
       })
       .select("*")
       .single();
@@ -158,7 +161,7 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
       
       // Essayer de supprimer le compte Auth en cas d'échec
       try {
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        await supabase.auth.admin.deleteUser(newAuthData.user.id);
         console.log("Compte Auth supprimé après échec d'insertion");
       } catch (deleteError) {
         console.error("Erreur lors de la suppression du compte Auth après échec:", deleteError);
