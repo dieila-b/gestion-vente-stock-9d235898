@@ -16,8 +16,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, loading, isDevelopmentMode]);
 
+  // Force isAuthenticated to true in development mode
+  const contextValue = {
+    isAuthenticated: isDevelopmentMode ? true : isAuthenticated,
+    loading: isDevelopmentMode ? false : loading,
+    login,
+    logout,
+    isSubmitting,
+    isDevelopmentMode
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, isSubmitting, isDevelopmentMode }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

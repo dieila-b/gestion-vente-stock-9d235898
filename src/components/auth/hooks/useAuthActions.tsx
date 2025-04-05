@@ -14,6 +14,8 @@ export function useAuthActions(
     // En mode développement, simuler une connexion réussie instantanée
     if (isDevelopmentMode) {
       console.log("Mode développeur: Connexion automatique");
+      setIsAuthenticated(true);
+      toast.success("Connexion automatique en mode développeur");
       return { success: true };
     }
     
@@ -147,5 +149,5 @@ export function useAuthActions(
     }
   };
 
-  return { login, logout, isSubmitting };
+  return { login, logout, isSubmitting: isDevelopmentMode ? false : isSubmitting };
 }

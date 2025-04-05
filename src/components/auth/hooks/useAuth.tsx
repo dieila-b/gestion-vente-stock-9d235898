@@ -14,6 +14,7 @@ export const useAuth = () => {
       ...context,
       isAuthenticated: true,
       loading: false,
+      isSubmitting: false
     };
   }
   

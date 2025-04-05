@@ -8,6 +8,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   // En mode développement, toujours donner accès complet sans vérification
   if (isDevelopmentMode) {
+    console.log("Mode développeur: Accès complet accordé automatiquement");
     return <>{children}</>;
   }
 

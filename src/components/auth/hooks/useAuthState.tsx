@@ -74,5 +74,5 @@ export function useAuthState() {
     };
   }, [isDevelopmentMode]);
 
-  return { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode };
+  return { isAuthenticated: isDevelopmentMode ? true : isAuthenticated, setIsAuthenticated, loading: isDevelopmentMode ? false : loading, setLoading, isDevelopmentMode };
 }
