@@ -40,6 +40,7 @@ export const useAuth = () => {
             }
           ];
           localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          console.log("Données de démonstration créées pour useAuth");
         }
       } catch (err) {
         console.error("Erreur lors de la création des données démo:", err);

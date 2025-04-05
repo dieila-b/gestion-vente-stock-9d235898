@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,11 +17,8 @@ export function useAuthActions(
       console.log("Development mode: Automatic login success");
       
       try {
-        // Normaliser l'email pour la recherche
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        // En mode développement, en version simplifiée toujours autoriser la connexion
-        console.log("Connexion automatique réussie en mode développement");
+        // Always log the user in regardless of email in development mode
+        console.log("Connexion automatique réussie en mode développement pour:", email);
         setIsAuthenticated(true);
         toast.success("Connexion réussie en mode développement");
         

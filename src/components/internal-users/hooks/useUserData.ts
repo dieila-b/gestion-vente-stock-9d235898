@@ -24,38 +24,31 @@ export const useUserData = () => {
         const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
         
         if (storedUsers) {
-          const parsedUsers = JSON.parse(storedUsers) as InternalUser[];
-          console.log("Données utilisateurs récupérées du localStorage:", parsedUsers);
-          setUsers(parsedUsers);
+          try {
+            const parsedUsers = JSON.parse(storedUsers);
+            
+            // Ensure proper typing by mapping the data
+            const typedUsers: InternalUser[] = parsedUsers.map((user: any) => ({
+              id: user.id,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              email: user.email,
+              phone: user.phone,
+              address: user.address,
+              role: user.role as "admin" | "manager" | "employee",
+              is_active: user.is_active,
+              photo_url: user.photo_url
+            }));
+            
+            console.log("Données utilisateurs récupérées du localStorage:", typedUsers);
+            setUsers(typedUsers);
+          } catch (error) {
+            console.error("Erreur lors du parsing des utilisateurs du localStorage:", error);
+            createDefaultUsers();
+          }
         } else {
           console.log("Aucun utilisateur trouvé dans localStorage, création d'utilisateurs par défaut");
-          // Créer des utilisateurs par défaut
-          const defaultUsers: InternalUser[] = [
-            {
-              id: "dev-1743844624581",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@gmail.com",
-              phone: "623268781",
-              address: "Matam",
-              role: "admin" as "admin" | "manager" | "employee",
-              is_active: true,
-              photo_url: null
-            },
-            {
-              id: "dev-1743853323494",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@yahoo.fr",
-              phone: "623268781",
-              address: "Madina",
-              role: "manager" as "admin" | "manager" | "employee",
-              is_active: true,
-              photo_url: null
-            }
-          ];
-          localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
-          setUsers(defaultUsers);
+          createDefaultUsers();
         }
         
         hasFetchedRef.current = true;
@@ -90,7 +83,7 @@ export const useUserData = () => {
           role: user.role as "admin" | "manager" | "employee",
           is_active: user.is_active,
           photo_url: 'photo_url' in user ? user.photo_url : null
-        })) as InternalUser[];
+        }));
       }
       
       setUsers(fetchedUsers);
@@ -103,9 +96,24 @@ export const useUserData = () => {
       if (isDevelopmentMode) {
         const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
         if (storedUsers) {
-          const devUsers = JSON.parse(storedUsers) as InternalUser[];
-          setUsers(devUsers);
-          console.log("Récupération des utilisateurs depuis localStorage après erreur:", devUsers);
+          try {
+            const parsedUsers = JSON.parse(storedUsers);
+            const typedUsers: InternalUser[] = parsedUsers.map((user: any) => ({
+              id: user.id,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              email: user.email,
+              phone: user.phone,
+              address: user.address,
+              role: user.role as "admin" | "manager" | "employee",
+              is_active: user.is_active,
+              photo_url: user.photo_url
+            }));
+            setUsers(typedUsers);
+            console.log("Récupération des utilisateurs depuis localStorage après erreur:", typedUsers);
+          } catch (err) {
+            console.error("Erreur lors du parsing des utilisateurs après erreur:", err);
+          }
         }
       } else {
         toast({
@@ -116,7 +124,38 @@ export const useUserData = () => {
       }
       setIsLoading(false);
     }
-  }, [isDevelopmentMode]); 
+  }, [isDevelopmentMode]);
+  
+  // Helper function to create default users
+  const createDefaultUsers = () => {
+    const defaultUsers: InternalUser[] = [
+      {
+        id: "dev-1743844624581",
+        first_name: "Dieila",
+        last_name: "Barry",
+        email: "wosyrab@gmail.com",
+        phone: "623268781",
+        address: "Matam",
+        role: "admin",
+        is_active: true,
+        photo_url: null
+      },
+      {
+        id: "dev-1743853323494",
+        first_name: "Dieila",
+        last_name: "Barry",
+        email: "wosyrab@yahoo.fr",
+        phone: "623268781",
+        address: "Madina",
+        role: "manager",
+        is_active: true,
+        photo_url: null
+      }
+    ];
+    localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
+    setUsers(defaultUsers);
+    console.log("Utilisateurs par défaut créés et stockés");
+  };
 
   // Méthode pour ajouter un utilisateur à la liste locale
   const addUser = useCallback((user: InternalUser) => {
