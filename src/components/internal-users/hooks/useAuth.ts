@@ -1,8 +1,6 @@
 
-import { useState, useEffect } from "react";
-
 export const useAuth = () => {
-  // Simulation d'un utilisateur autorisé
+  // Simulating an authorized user
   return {
     isAuthChecking: false,
     isAuthorized: true

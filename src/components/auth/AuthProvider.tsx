@@ -10,7 +10,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log("Authentification désactivée: Tous les utilisateurs sont authentifiés automatiquement");
+    console.log("Authentication disabled: All users are automatically authenticated");
   }, []);
 
   // Force authentication to be true always

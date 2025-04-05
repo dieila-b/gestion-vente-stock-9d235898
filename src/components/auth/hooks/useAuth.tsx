@@ -8,7 +8,7 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Always behave as if authenticated
+  // Always return as authenticated
   return {
     ...context,
     isAuthenticated: true,

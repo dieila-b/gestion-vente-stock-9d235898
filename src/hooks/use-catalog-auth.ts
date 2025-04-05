@@ -1,6 +1,6 @@
 
 export const useCatalogAuth = () => {
-  // Simulation d'un utilisateur authentifié
+  // Simulating an authenticated user
   return { 
     isAuthenticated: true, 
     loading: false 

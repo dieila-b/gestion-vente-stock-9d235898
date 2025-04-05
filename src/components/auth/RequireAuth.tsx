@@ -5,17 +5,16 @@ import { useNavigate } from "react-router-dom";
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
-  // Rediriger si on est sur la page login
+  // Redirect if on login page
   useEffect(() => {
-    console.log("Authentification désactivée: Accès complet accordé automatiquement");
+    console.log("Authentication disabled: Full access automatically granted");
     
-    // Si on est sur la page login, rediriger vers dashboard
+    // If on login page, redirect to dashboard
     if (window.location.pathname === "/login") {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
-  // Toujours donner accès complet sans vérification
-  console.log("Authentification désactivée: Accès complet accordé automatiquement");
+  // Always grant full access without verification
   return <>{children}</>;
 }
