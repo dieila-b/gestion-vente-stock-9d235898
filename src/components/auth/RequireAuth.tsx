@@ -21,7 +21,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     // In production mode, check if user is authenticated
     if (!isDevelopmentMode && !loading && !isAuthenticated) {
       console.log("User not authenticated, redirecting to login");
-      navigate("/unauthorized", { replace: true });
+      navigate("/login", { replace: true });
     }
   }, [navigate, isAuthenticated, loading, isDevelopmentMode]);
 
