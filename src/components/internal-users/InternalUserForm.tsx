@@ -24,7 +24,7 @@ export const InternalUserForm = ({
 }: InternalUserFormProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[95vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {selectedUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
