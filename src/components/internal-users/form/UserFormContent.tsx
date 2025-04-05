@@ -15,7 +15,7 @@ export const UserFormContent = ({
   selectedUser 
 }: UserFormContentProps) => {
   return (
-    <div className="max-h-[70vh] overflow-y-auto pr-1">
+    <div className="max-h-[75vh] overflow-y-auto pr-2">
       <FormContent
         onSubmit={onSubmit}
         onCancel={onCancel}
