@@ -1,20 +1,35 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
 
-  // Redirect if on login page
   useEffect(() => {
-    console.log("RequireAuth: Authentication bypass enabled - granting all access");
+    console.log(isDevelopmentMode 
+      ? "RequireAuth: Authentication bypass enabled - granting all access" 
+      : "RequireAuth: Production mode - checking authentication");
     
-    // If on login page, redirect to dashboard
-    if (window.location.pathname === "/login") {
+    // In development mode, always redirect from login page to dashboard
+    if (isDevelopmentMode && window.location.pathname === "/login") {
       navigate("/dashboard", { replace: true });
+      return;
     }
-  }, [navigate]);
+    
+    // In production mode, check if user is authenticated
+    if (!isDevelopmentMode && !loading && !isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
+      navigate("/unauthorized", { replace: true });
+    }
+  }, [navigate, isAuthenticated, loading, isDevelopmentMode]);
 
-  // Always grant full access without verification
+  // Always grant access in development mode
+  // In production, only grant access if authenticated
+  if (!isDevelopmentMode && !isAuthenticated && !loading) {
+    return null;
+  }
+
   return <>{children}</>;
 }

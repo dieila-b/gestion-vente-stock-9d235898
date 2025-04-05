@@ -8,14 +8,20 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  console.log("Auth hook: Authentication is disabled - returning authenticated status");
+  // Check if in development mode
+  const isDevelopmentMode = import.meta.env.DEV;
   
-  // Always return as authenticated with clear status
+  console.log(isDevelopmentMode 
+    ? "Auth hook: Authentication is disabled - returning authenticated status" 
+    : "Auth hook: Production mode - checking real authentication status");
+  
+  // In development mode, always return authenticated
+  // In production, return actual authentication status
   return {
     ...context,
-    isAuthenticated: true,
-    loading: false,
-    isSubmitting: false,
-    isDevelopmentMode: true
+    isAuthenticated: isDevelopmentMode ? true : context.isAuthenticated,
+    loading: isDevelopmentMode ? false : context.loading,
+    isSubmitting: isDevelopmentMode ? false : context.isSubmitting,
+    isDevelopmentMode
   };
 };

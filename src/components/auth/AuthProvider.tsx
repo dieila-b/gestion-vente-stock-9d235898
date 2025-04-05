@@ -5,22 +5,28 @@ import { useAuthActions } from "./hooks/useAuthActions";
 import { AuthContext } from "./context/AuthContext";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode } = useAuthState();
+  const isDevelopmentMode = import.meta.env.DEV;
+  const { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode: stateDevMode } = useAuthState();
   const { login, logout, isSubmitting } = useAuthActions(setIsAuthenticated, setLoading);
 
   // Log initial auth state
   useEffect(() => {
-    console.log("Authentication disabled: All users are automatically authenticated");
-  }, []);
+    console.log(
+      isDevelopmentMode 
+        ? "Authentication disabled: All users are automatically authenticated" 
+        : "Production mode: Real authentication required"
+    );
+  }, [isDevelopmentMode]);
 
-  // Force authentication to be true always
+  // In development mode, force authentication to be true
+  // In production, use actual authentication status
   const contextValue = {
-    isAuthenticated: true,
-    loading: false,
+    isAuthenticated: isDevelopmentMode ? true : isAuthenticated,
+    loading: isDevelopmentMode ? false : loading,
     login,
     logout,
-    isSubmitting: false,
-    isDevelopmentMode: true
+    isSubmitting: isDevelopmentMode ? false : isSubmitting,
+    isDevelopmentMode
   };
 
   return (
