@@ -29,6 +29,9 @@ export const InternalUserTable = ({
   onToggleStatus,
   onAddUser
 }: InternalUserTableProps) => {
+  console.log("InternalUserTable rendering with users:", users);
+  console.log("isLoading:", isLoading);
+
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
@@ -37,7 +40,8 @@ export const InternalUserTable = ({
     );
   }
 
-  if (users.length === 0) {
+  if (!users || users.length === 0) {
+    console.log("No users to display, showing empty state");
     return (
       <div className="text-center p-8">
         <h3 className="text-lg font-medium">Aucun utilisateur trouvé</h3>

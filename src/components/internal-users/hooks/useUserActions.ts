@@ -17,7 +17,11 @@ export const useUserActions = (
   
   const handleSubmit = async (values: UserFormValues, selectedUser: InternalUser | null): Promise<void> => {
     try {
+      console.log("handleSubmit called with values:", values);
+      console.log("selectedUser:", selectedUser);
+      
       if (selectedUser) {
+        console.log("Updating existing user:", selectedUser.id);
         const updatedUser = await updateUser({
           first_name: values.first_name,
           last_name: values.last_name,
@@ -31,7 +35,7 @@ export const useUserActions = (
         }, selectedUser);
 
         if (updatedUser) {
-          console.log("Utilisateur mis à jour avec succès:", updatedUser);
+          console.log("User updated successfully:", updatedUser);
           updateUserInList(updatedUser);
           toast({
             title: "Succès",
@@ -39,6 +43,7 @@ export const useUserActions = (
           });
         }
       } else {
+        console.log("Creating new user with email:", values.email);
         if (!values.password) {
           toast({
             title: "Erreur",
@@ -61,16 +66,18 @@ export const useUserActions = (
         });
 
         if (newUser) {
-          console.log("Nouvel utilisateur créé:", newUser);
+          console.log("New user created:", newUser);
           addUser(newUser);
           toast({
             title: "Succès",
             description: "Nouvel utilisateur créé avec succès",
           });
+        } else {
+          console.error("Failed to create user, newUser is null");
         }
       }
     } catch (error: any) {
-      console.error("Erreur lors de la soumission de l'utilisateur:", error);
+      console.error("Error submitting user:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors de l'opération",
@@ -81,8 +88,10 @@ export const useUserActions = (
 
   const handleDelete = async (user: InternalUser) => {
     try {
+      console.log("Attempting to delete user:", user);
       const success = await deleteUser(user);
       if (success) {
+        console.log("User deleted successfully, refreshing users list");
         await fetchUsers();
         toast({
           title: "Succès",
@@ -90,7 +99,7 @@ export const useUserActions = (
         });
       }
     } catch (error: any) {
-      console.error("Erreur lors de la suppression de l'utilisateur:", error);
+      console.error("Error deleting user:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors de la suppression",
@@ -101,9 +110,11 @@ export const useUserActions = (
 
   const handleToggleStatus = async (user: InternalUser) => {
     try {
+      console.log("Toggling status for user:", user);
       const success = await toggleUserStatus(user);
       if (success) {
         const updatedUser = { ...user, is_active: !user.is_active };
+        console.log("Status toggled successfully, updating user in list:", updatedUser);
         updateUserInList(updatedUser);
         
         toast({
@@ -112,7 +123,7 @@ export const useUserActions = (
         });
       }
     } catch (error: any) {
-      console.error("Erreur lors du changement de statut de l'utilisateur:", error);
+      console.error("Error toggling user status:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur s'est produite lors du changement de statut",

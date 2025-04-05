@@ -1,18 +1,22 @@
 
-import { InternalUser } from "@/types/internal-user";
+import { InternalUser } from '@/types/internal-user';
 
-// Clé pour localStorage en mode développement
+// LocalStorage key for development mode
 export const DEV_USERS_STORAGE_KEY = "internalUsers";
 
-// Récupérer les utilisateurs depuis localStorage
+// Get users from localStorage
 export const getUsersFromLocalStorage = (): InternalUser[] | null => {
   try {
     const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
-    if (!storedUsers) return null;
+    if (!storedUsers) {
+      console.log("No users found in localStorage");
+      return null;
+    }
     
     const parsedUsers = JSON.parse(storedUsers);
+    console.log("Retrieved users from localStorage:", parsedUsers);
     
-    // Assurer le typage correct en mappant les données
+    // Ensure correct typing by mapping the data
     const typedUsers: InternalUser[] = parsedUsers.map((user: any) => ({
       id: user.id,
       first_name: user.first_name,
@@ -27,21 +31,22 @@ export const getUsersFromLocalStorage = (): InternalUser[] | null => {
     
     return typedUsers;
   } catch (error) {
-    console.error("Erreur lors de la récupération des utilisateurs depuis localStorage:", error);
+    console.error("Error retrieving users from localStorage:", error);
     return null;
   }
 };
 
-// Sauvegarder les utilisateurs dans localStorage
+// Save users to localStorage
 export const saveUsersToLocalStorage = (users: InternalUser[]): void => {
   try {
+    console.log("Saving users to localStorage:", users);
     localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(users));
   } catch (error) {
-    console.error("Erreur lors de la sauvegarde des utilisateurs dans localStorage:", error);
+    console.error("Error saving users to localStorage:", error);
   }
 };
 
-// Créer des utilisateurs par défaut pour le mode développement
+// Create default users for development mode
 export const createDefaultUsers = (): InternalUser[] => {
   const defaultUsers: InternalUser[] = [
     {

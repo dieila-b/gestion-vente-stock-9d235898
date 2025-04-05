@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DEV_USERS_STORAGE_KEY } from "@/components/internal-users/hooks/userData/localStorage";
 
 export function useAuthActions(
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
@@ -17,13 +18,15 @@ export function useAuthActions(
       console.log("Development mode: Checking if email exists in demo users");
       
       try {
-        // En mode développement, vérifier si l'email existe dans les données de démonstration
-        const storedUsers = localStorage.getItem('internalUsers');
+        // In development mode, check if the email exists in the demo data
+        const storedUsers = localStorage.getItem(DEV_USERS_STORAGE_KEY);
+        console.log("Stored users in localStorage:", storedUsers);
+        
         if (storedUsers) {
           const users = JSON.parse(storedUsers);
           const normalizedEmail = email.toLowerCase().trim();
           
-          // Rechercher l'utilisateur par email
+          // Find user by email
           const foundUser = users.find((user: any) => 
             user.email && user.email.toLowerCase().trim() === normalizedEmail
           );
@@ -34,14 +37,14 @@ export function useAuthActions(
             toast.success("Connexion réussie en mode développement");
             return { success: true };
           } else {
-            console.log("User not found in development data for email:", normalizedEmail);
+            console.log("User not found in development data for email:", normalizedEmail, "Available users:", users);
             return { 
               success: false, 
               error: "Cet email n'est pas associé à un compte utilisateur interne" 
             };
           }
         } else {
-          // Créer des utilisateurs par défaut si aucun n'existe
+          // Create default users if none exist
           console.log("No users found in localStorage, creating default ones");
           const defaultUsers = [
             {
@@ -68,9 +71,10 @@ export function useAuthActions(
             }
           ];
           
-          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
+          console.log("Default users created and saved to localStorage:", defaultUsers);
           
-          // Vérifier si l'email saisi correspond à l'un des utilisateurs par défaut
+          // Check if the entered email matches one of the default users
           const normalizedEmail = email.toLowerCase().trim();
           const foundUser = defaultUsers.find(user => 
             user.email.toLowerCase().trim() === normalizedEmail
