@@ -10,7 +10,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log("État d'authentification initial:", { isAuthenticated, loading, isDevelopmentMode });
+    console.log("État d'authentification initial:", { 
+      isAuthenticated: isDevelopmentMode ? true : isAuthenticated, 
+      loading: isDevelopmentMode ? false : loading, 
+      isDevelopmentMode 
+    });
+    
     if (isDevelopmentMode) {
       console.log("Mode développeur: Authentification désactivée");
     }
@@ -22,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading: isDevelopmentMode ? false : loading,
     login,
     logout,
-    isSubmitting,
+    isSubmitting: isDevelopmentMode ? false : isSubmitting,
     isDevelopmentMode
   };
 

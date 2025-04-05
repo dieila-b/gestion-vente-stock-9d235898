@@ -2,9 +2,23 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
+  const navigate = useNavigate();
+
+  // En mode développement, rediriger immédiatement vers le dashboard et donner accès complet
+  useEffect(() => {
+    if (isDevelopmentMode) {
+      console.log("Mode développeur: Accès complet accordé automatiquement");
+      // Si on est sur la page login en mode dev, rediriger vers dashboard
+      if (window.location.pathname === "/login") {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isDevelopmentMode, navigate]);
 
   // En mode développement, toujours donner accès complet sans vérification
   if (isDevelopmentMode) {

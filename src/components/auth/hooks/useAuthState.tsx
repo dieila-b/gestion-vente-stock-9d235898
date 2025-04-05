@@ -9,12 +9,12 @@ export function useAuthState() {
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    // En mode développement, considérer l'utilisateur comme authentifié automatiquement et immédiatement
+    // En mode développement, définir immédiatement comme authentifié sans aucune vérification
     if (isDevelopmentMode) {
       console.log("Mode développeur: Authentification complètement désactivée");
       setIsAuthenticated(true);
       setLoading(false);
-      return;
+      return; // Sortir immédiatement sans exécuter le reste du code
     }
 
     // En production, vérifier la session Supabase au chargement
@@ -49,30 +49,43 @@ export function useAuthState() {
     };
 
     // Vérification de session uniquement en production
-    setLoading(true);
-    checkSession();
+    if (!isDevelopmentMode) {
+      setLoading(true);
+      checkSession();
 
-    // S'abonner aux changements d'authentification uniquement en production
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Événement d'authentification:", event, session?.user?.email);
-        
-        if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-          toast.success("Connexion réussie");
-        } else if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
-          console.log("Utilisateur déconnecté");
+      // S'abonner aux changements d'authentification uniquement en production
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log("Événement d'authentification:", event, session?.user?.email);
+          
+          if (event === 'SIGNED_IN' && session) {
+            setIsAuthenticated(true);
+            toast.success("Connexion réussie");
+          } else if (event === 'SIGNED_OUT') {
+            setIsAuthenticated(false);
+            console.log("Utilisateur déconnecté");
+          }
         }
-      }
-    );
+      );
 
-    return () => {
-      if (authListener && authListener.subscription && !isDevelopmentMode) {
-        authListener.subscription.unsubscribe();
-      }
-    };
+      return () => {
+        if (authListener && authListener.subscription) {
+          authListener.subscription.unsubscribe();
+        }
+      };
+    }
   }, [isDevelopmentMode]);
 
-  return { isAuthenticated: isDevelopmentMode ? true : isAuthenticated, setIsAuthenticated, loading: isDevelopmentMode ? false : loading, setLoading, isDevelopmentMode };
+  // En mode développement, toujours retourner comme authentifié
+  if (isDevelopmentMode) {
+    return { 
+      isAuthenticated: true, 
+      setIsAuthenticated, 
+      loading: false, 
+      setLoading, 
+      isDevelopmentMode 
+    };
+  }
+
+  return { isAuthenticated, setIsAuthenticated, loading, setLoading, isDevelopmentMode };
 }
