@@ -20,7 +20,7 @@ export default function Login() {
   useEffect(() => {
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic redirect to dashboard");
-      toast.success("Automatic login in development mode");
+      toast.success("Connexion automatique en mode développement");
       navigate("/dashboard", { replace: true });
       return;
     } 
@@ -80,7 +80,7 @@ export default function Login() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-lg font-medium">
-            {isDevelopmentMode ? "Development mode: Automatic redirect..." : "Chargement..."}
+            {isDevelopmentMode ? "Mode développement: Redirection automatique..." : "Chargement..."}
           </p>
         </div>
       </div>

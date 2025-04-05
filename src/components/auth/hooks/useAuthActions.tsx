@@ -15,8 +15,43 @@ export function useAuthActions(
     
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic login success");
+      
+      // En mode développement, simuler un utilisateur local
+      // Stocker des données utilisateur de démonstration dans le localStorage pour être utilisées ailleurs
+      const demoUsers = [
+        {
+          id: "dev-1743844624581",
+          first_name: "Dieila",
+          last_name: "Barry",
+          email: "wosyrab@gmail.com",
+          phone: "623268781",
+          address: "Matam",
+          role: "admin",
+          is_active: true,
+          photo_url: null
+        },
+        {
+          id: "dev-1743853323494",
+          first_name: "Dieila",
+          last_name: "Barry",
+          email: "wosyrab@yahoo.fr",
+          phone: "623268781",
+          address: "Madina",
+          role: "manager",
+          is_active: true,
+          photo_url: null
+        }
+      ];
+      
+      try {
+        localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
+        console.log("Données utilisateurs de démonstration stockées dans localStorage");
+      } catch (err) {
+        console.error("Erreur lors du stockage des données démo:", err);
+      }
+      
       setIsAuthenticated(true);
-      toast.success("Automatic login in development mode");
+      toast.success("Connexion automatique en mode développement");
       return { success: true };
     }
 
@@ -31,7 +66,7 @@ export function useAuthActions(
       console.log("Checking if user exists in internal_users table");
       const { data: internalUser, error: internalUserError } = await supabase
         .from("internal_users")
-        .select("id, email")
+        .select("id, email, role")
         .eq("email", normalizedEmail)
         .single();
         
@@ -68,7 +103,7 @@ export function useAuthActions(
         // Generic error for other issues
         return { 
           success: false, 
-          error: "Une erreur est survenue lors de la connexion" 
+          error: error.message || "Une erreur est survenue lors de la connexion" 
         };
       }
 
@@ -91,7 +126,7 @@ export function useAuthActions(
     if (isDevelopmentMode) {
       console.log("Development mode: Simulated logout");
       setIsAuthenticated(false);
-      toast.success("You are logged out");
+      toast.success("Vous êtes déconnecté");
       return;
     }
 

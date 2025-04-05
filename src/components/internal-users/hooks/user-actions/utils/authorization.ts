@@ -7,6 +7,17 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
     // En mode développement, toujours autoriser
     if (import.meta.env.DEV) {
       console.log("Mode développement: Autorisation automatique accordée");
+      
+      // En développement, essayons de récupérer les utilisateurs du localStorage
+      try {
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (storedUsers) {
+          console.log("Données utilisateurs récupérées du localStorage:", storedUsers);
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération des données localStorage:", err);
+      }
+      
       return true;
     }
     
