@@ -40,6 +40,8 @@ export function useAuthState() {
           ];
           localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
           console.log("Données utilisateurs de démo créées et stockées dans localStorage");
+        } else {
+          console.log("Utilisateurs de démonstration existants trouvés dans localStorage");
         }
       } catch (err) {
         console.error("Erreur lors de la création des données démo:", err);

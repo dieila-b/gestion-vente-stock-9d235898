@@ -13,6 +13,18 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
         const storedUsers = localStorage.getItem('internalUsers');
         if (storedUsers) {
           console.log("Données utilisateurs récupérées du localStorage:", storedUsers);
+          
+          // Simuler une vérification des rôles en utilisant le premier utilisateur qui a un rôle requis
+          const users = JSON.parse(storedUsers);
+          const eligibleUser = users.find(user => requiredRoles.includes(user.role));
+          
+          if (eligibleUser) {
+            console.log("Utilisateur avec rôle approprié trouvé dans les données de démonstration:", eligibleUser.role);
+          } else {
+            console.log("Aucun utilisateur avec le rôle requis trouvé dans les données de démonstration.");
+          }
+        } else {
+          console.log("Aucune donnée utilisateur trouvée dans localStorage");
         }
       } catch (err) {
         console.error("Erreur lors de la récupération des données localStorage:", err);

@@ -16,43 +16,66 @@ export function useAuthActions(
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic login success");
       
-      // En mode développement, simuler un utilisateur local
-      // Stocker des données utilisateur de démonstration dans le localStorage pour être utilisées ailleurs
-      const demoUsers = [
-        {
-          id: "dev-1743844624581",
-          first_name: "Dieila",
-          last_name: "Barry",
-          email: "wosyrab@gmail.com",
-          phone: "623268781",
-          address: "Matam",
-          role: "admin",
-          is_active: true,
-          photo_url: null
-        },
-        {
-          id: "dev-1743853323494",
-          first_name: "Dieila",
-          last_name: "Barry",
-          email: "wosyrab@yahoo.fr",
-          phone: "623268781",
-          address: "Madina",
-          role: "manager",
-          is_active: true,
-          photo_url: null
-        }
-      ];
-      
       try {
-        localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
-        console.log("Données utilisateurs de démonstration stockées dans localStorage");
+        // Récupérer les utilisateurs stockés localement ou créer des utilisateurs par défaut
+        let demoUsers = [];
+        const storedUsers = localStorage.getItem('internalUsers');
+        
+        if (storedUsers) {
+          demoUsers = JSON.parse(storedUsers);
+          console.log("Utilisateurs récupérés du localStorage:", demoUsers);
+        } else {
+          // Créer des utilisateurs de démonstration par défaut
+          demoUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
+          console.log("Données utilisateurs de démonstration créées et stockées dans localStorage");
+        }
+        
+        // En mode développement, vérifier si l'email correspond à un utilisateur
+        // Si oui, connecter automatiquement, sinon afficher une erreur comme en production
+        const userExists = demoUsers.some(user => user.email.toLowerCase() === email.toLowerCase());
+        
+        if (!userExists) {
+          console.log("Email non trouvé dans les utilisateurs de démonstration:", email);
+          return { 
+            success: false, 
+            error: "Cet email n'est pas associé à un compte utilisateur interne" 
+          };
+        }
+        
+        console.log("Utilisateur trouvé dans les données de démonstration, connexion automatique");
+        setIsAuthenticated(true);
+        toast.success("Connexion automatique en mode développement");
+        return { success: true };
       } catch (err) {
-        console.error("Erreur lors du stockage des données démo:", err);
+        console.error("Erreur lors du stockage ou de la vérification des données démo:", err);
+        // Même en cas d'erreur en mode développement, on considère que la connexion a réussi
+        setIsAuthenticated(true);
+        return { success: true };
       }
-      
-      setIsAuthenticated(true);
-      toast.success("Connexion automatique en mode développement");
-      return { success: true };
     }
 
     try {
