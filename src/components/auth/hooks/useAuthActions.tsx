@@ -16,7 +16,38 @@ export function useAuthActions(
     if (isDevelopmentMode) {
       console.log("Development mode: Automatic login success");
       
-      // En mode développement, authentification automatique sans vérification
+      try {
+        // Normalize the email to find a match in localStorage
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Check if the user exists in our demo data
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (storedUsers) {
+          const users = JSON.parse(storedUsers);
+          const user = users.find((u: any) => 
+            u.email.toLowerCase().trim() === normalizedEmail
+          );
+          
+          if (!user) {
+            console.log("User not found in development mode:", normalizedEmail);
+            return {
+              success: false,
+              error: "Cet email n'est pas associé à un compte utilisateur interne"
+            };
+          }
+          
+          if (!user.is_active) {
+            console.log("User account is inactive in development mode:", normalizedEmail);
+            return {
+              success: false,
+              error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+            };
+          }
+        }
+      } catch (err) {
+        console.error("Error checking development users:", err);
+      }
+      
       console.log("Connexion automatique réussie en mode développement pour:", email);
       setIsAuthenticated(true);
       toast.success("Connexion réussie en mode développement");
@@ -71,7 +102,7 @@ export function useAuthActions(
         console.error("Authentication error:", error);
         
         // If user exists but auth failed, it's likely a password issue
-        if (error.message === "Invalid login credentials") {
+        if (error.message.includes("Invalid login credentials")) {
           return { 
             success: false, 
             error: "Mot de passe incorrect" 

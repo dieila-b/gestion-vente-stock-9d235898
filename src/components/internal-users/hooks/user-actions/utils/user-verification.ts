@@ -71,18 +71,17 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true;
     }
     
-    // Si aucune correspondance dans la table internal_users, vérifiez aussi auth.users
-    // C'est important pour éviter les conflits entre auth et base de données
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+    // Check if user exists in auth.users
+    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
     
     if (authError) {
       console.error("Erreur lors de la vérification dans auth.users:", authError);
       return true; // Par précaution
     }
     
-    if (authData && Array.isArray(authData.users)) {
+    if (users && Array.isArray(users)) {
       // Vérifier si un utilisateur avec cet email existe dans auth.users
-      const existingUser = authData.users.find((user: SupabaseUser) => 
+      const existingUser = users.find((user: SupabaseUser) => 
         user && user.email && user.email.toLowerCase().trim() === normalizedEmail
       );
       

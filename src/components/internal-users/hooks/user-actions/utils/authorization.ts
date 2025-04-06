@@ -60,6 +60,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return true;
     }
     
+    // En production, vérifier l'utilisateur actuel
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -69,6 +70,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
     
     console.log("Vérification des permissions pour l'utilisateur:", user.id);
     
+    // Vérifier si l'utilisateur existe dans internal_users et a le rôle approprié
     const { data: userData, error: roleCheckError } = await supabase
       .from("internal_users")
       .select("role, is_active")
@@ -96,6 +98,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return false;
     }
     
+    // Vérifier si l'utilisateur a un des rôles requis
     if (!userData || !requiredRoles.includes(userData.role)) {
       console.log("Utilisateur sans permissions suffisantes:", userData?.role);
       toast({

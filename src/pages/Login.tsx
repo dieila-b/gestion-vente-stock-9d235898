@@ -131,7 +131,7 @@ export default function Login() {
               />
             </div>
             {loginError && (
-              <div className="text-sm font-medium text-destructive">
+              <div className="text-sm font-medium text-destructive bg-destructive/10 p-2 rounded-md">
                 {loginError}
               </div>
             )}
