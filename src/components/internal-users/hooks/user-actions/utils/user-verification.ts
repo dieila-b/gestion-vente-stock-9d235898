@@ -14,16 +14,45 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       console.log("Mode développement: Vérification d'existence pour email:", normalizedEmail);
       
       try {
+        // S'assurer que nous avons des utilisateurs dans le localStorage
         const storedUsers = localStorage.getItem('internalUsers');
-        if (storedUsers) {
-          const users = JSON.parse(storedUsers);
+        
+        if (!storedUsers) {
+          // Créer des utilisateurs par défaut si inexistants
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          console.log("Utilisateurs démo créés pour la vérification");
           
-          const existingUser = users.some((user: any) => 
-            user.email && user.email.toLowerCase().trim() === normalizedEmail
+          // Vérifier si l'email correspond à l'un des utilisateurs par défaut
+          const existingUser = defaultUsers.some(user => 
+            user.email.toLowerCase().trim() === normalizedEmail
           );
           
           if (existingUser) {
-            console.log("Utilisateur existant trouvé dans les données de démonstration:", normalizedEmail);
+            console.log("Utilisateur existant trouvé dans les utilisateurs par défaut:", normalizedEmail);
             toast({
               title: "Erreur",
               description: "Un utilisateur avec cet email existe déjà",
@@ -32,9 +61,29 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
             return true;
           }
           
-          console.log("Aucun utilisateur existant trouvé dans les données de démonstration pour:", normalizedEmail);
+          console.log("Aucun utilisateur existant trouvé dans les utilisateurs par défaut pour:", normalizedEmail);
           return false;
         }
+        
+        // Vérifier dans les utilisateurs existants
+        const users = JSON.parse(storedUsers);
+        
+        const existingUser = users.some((user: any) => 
+          user.email && user.email.toLowerCase().trim() === normalizedEmail
+        );
+        
+        if (existingUser) {
+          console.log("Utilisateur existant trouvé dans les données de démonstration:", normalizedEmail);
+          toast({
+            title: "Erreur",
+            description: "Un utilisateur avec cet email existe déjà",
+            variant: "destructive",
+          });
+          return true;
+        }
+        
+        console.log("Aucun utilisateur existant trouvé dans les données de démonstration pour:", normalizedEmail);
+        return false;
       } catch (err) {
         console.error("Erreur lors de la vérification dans les données localStorage:", err);
       }

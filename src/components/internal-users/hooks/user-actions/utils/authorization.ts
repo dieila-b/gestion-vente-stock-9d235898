@@ -8,8 +8,25 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
     if (import.meta.env.DEV) {
       console.log("Mode développement: Autorisation automatique accordée");
       
-      // En développement, essayons de récupérer les utilisateurs du localStorage
+      // En développement, essayons de récupérer l'utilisateur actuel
       try {
+        const currentUser = localStorage.getItem('currentUser');
+        
+        if (currentUser) {
+          const user = JSON.parse(currentUser);
+          console.log("Utilisateur actuel trouvé dans localStorage:", user);
+          
+          // Vérifier si l'utilisateur a un rôle approprié
+          if (user.role && requiredRoles.includes(user.role)) {
+            console.log("Utilisateur avec rôle approprié:", user.role);
+            return true;
+          }
+          
+          console.log("Utilisateur sans rôle approprié:", user.role);
+          return false;
+        }
+        
+        // Si aucun utilisateur actuel, vérifier dans les utilisateurs démo
         const storedUsers = localStorage.getItem('internalUsers');
         if (storedUsers) {
           console.log("Données utilisateurs récupérées du localStorage:", storedUsers);
@@ -20,8 +37,13 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
           
           if (eligibleUser) {
             console.log("Utilisateur avec rôle approprié trouvé dans les données de démonstration:", eligibleUser.role);
+            
+            // Définir cet utilisateur comme utilisateur actuel
+            localStorage.setItem('currentUser', JSON.stringify(eligibleUser));
+            return true;
           } else {
             console.log("Aucun utilisateur avec le rôle requis trouvé dans les données de démonstration.");
+            return false;
           }
         } else {
           console.log("Aucune donnée utilisateur trouvée dans localStorage");
@@ -52,6 +74,10 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
           ];
           localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
           console.log("Données utilisateurs par défaut créées pour le mode développement");
+          
+          // Définir le premier utilisateur comme utilisateur actuel
+          localStorage.setItem('currentUser', JSON.stringify(defaultUsers[0]));
+          return true;
         }
       } catch (err) {
         console.error("Erreur lors de la récupération des données localStorage:", err);

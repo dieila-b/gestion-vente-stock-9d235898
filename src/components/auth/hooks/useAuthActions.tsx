@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ export function useAuthActions(
     console.log("Login attempt with email:", email);
     
     if (isDevelopmentMode) {
-      console.log("Development mode: Automatic login success");
+      console.log("Development mode: Checking login credentials");
       
       try {
         // Normaliser l'email pour trouver une correspondance dans localStorage
@@ -23,36 +22,9 @@ export function useAuthActions(
         
         // Vérifier si l'utilisateur existe dans nos données de démo
         const storedUsers = localStorage.getItem('internalUsers');
-        if (storedUsers) {
-          const users = JSON.parse(storedUsers);
-          console.log("Development users found:", users.length);
-          
-          const user = users.find((u: any) => 
-            u.email && u.email.toLowerCase().trim() === normalizedEmail
-          );
-          
-          if (!user) {
-            console.log("User not found in development mode:", normalizedEmail);
-            return {
-              success: false,
-              error: "Cet email n'est pas associé à un compte utilisateur interne"
-            };
-          }
-          
-          if (!user.is_active) {
-            console.log("User account is inactive in development mode:", normalizedEmail);
-            return {
-              success: false,
-              error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
-            };
-          }
-          
-          console.log("User found in development mode:", user);
-          setIsAuthenticated(true);
-          toast.success("Connexion réussie en mode développement");
-          return { success: true };
-        } else {
-          console.log("No users found in localStorage");
+        
+        if (!storedUsers) {
+          console.log("No users found in localStorage, creating default users");
           // Créer des utilisateurs par défaut
           const defaultUsers = [
             {
@@ -80,9 +52,8 @@ export function useAuthActions(
           ];
           localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
           
-          // Vérifier à nouveau avec les utilisateurs nouvellement créés
           const user = defaultUsers.find((u) => 
-            u.email.toLowerCase().trim() === normalizedEmail
+            u.email.toLowerCase() === normalizedEmail
           );
           
           if (!user) {
@@ -93,20 +64,63 @@ export function useAuthActions(
             };
           }
           
+          if (!user.is_active) {
+            console.log("User account is inactive:", normalizedEmail);
+            return {
+              success: false,
+              error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+            };
+          }
+          
           console.log("User found in default users:", user);
           setIsAuthenticated(true);
+          
+          // Enregistrer l'utilisateur actuel en session
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          
           toast.success("Connexion réussie en mode développement");
           return { success: true };
         }
+        
+        // Si nous avons des utilisateurs stockés
+        const users = JSON.parse(storedUsers);
+        console.log("Development users found:", users.length);
+        
+        const user = users.find((u: any) => 
+          u.email && u.email.toLowerCase().trim() === normalizedEmail
+        );
+        
+        if (!user) {
+          console.log("User not found in development mode:", normalizedEmail);
+          return {
+            success: false,
+            error: "Cet email n'est pas associé à un compte utilisateur interne"
+          };
+        }
+        
+        if (!user.is_active) {
+          console.log("User account is inactive in development mode:", normalizedEmail);
+          return {
+            success: false,
+            error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+          };
+        }
+        
+        console.log("User found and active in development mode:", user);
+        
+        // Enregistrer l'utilisateur actuel en session
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        setIsAuthenticated(true);
+        toast.success("Connexion réussie en mode développement");
+        return { success: true };
       } catch (err) {
         console.error("Error checking development users:", err);
+        return {
+          success: false,
+          error: "Erreur lors de la vérification des identifiants"
+        };
       }
-      
-      // Si nous arrivons ici, quelque chose s'est mal passé lors de la vérification
-      return {
-        success: false,
-        error: "Erreur lors de la vérification des identifiants"
-      };
     }
 
     try {
@@ -196,6 +210,8 @@ export function useAuthActions(
   const logout = async () => {
     if (isDevelopmentMode) {
       console.log("Development mode: Simulated logout");
+      // Supprimer l'utilisateur actuel de la session
+      localStorage.removeItem('currentUser');
       setIsAuthenticated(false);
       toast.success("Vous êtes déconnecté");
       return;

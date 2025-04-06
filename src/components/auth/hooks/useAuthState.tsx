@@ -10,6 +10,10 @@ export function useAuthState() {
   useEffect(() => {
     if (isDevelopmentMode) {
       console.log("Development mode: Authentication disabled - all users are automatically authenticated");
+      
+      // Vérifier si nous avons un utilisateur actuel en session
+      const currentUser = localStorage.getItem('currentUser');
+      
       // En développement, créer des utilisateurs de démonstration si non existants
       try {
         const existingUsers = localStorage.getItem('internalUsers');
@@ -39,9 +43,23 @@ export function useAuthState() {
             }
           ];
           localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
+          
+          // Si aucun utilisateur actuel, définir le premier comme actuel
+          if (!currentUser) {
+            localStorage.setItem('currentUser', JSON.stringify(demoUsers[0]));
+          }
+          
           console.log("Données utilisateurs de démo créées et stockées dans localStorage");
         } else {
           console.log("Utilisateurs de démonstration existants trouvés dans localStorage");
+          
+          // Si aucun utilisateur actuel, définir le premier des utilisateurs existants comme actuel
+          if (!currentUser) {
+            const users = JSON.parse(existingUsers);
+            if (users && users.length > 0) {
+              localStorage.setItem('currentUser', JSON.stringify(users[0]));
+            }
+          }
         }
       } catch (err) {
         console.error("Erreur lors de la création des données démo:", err);
