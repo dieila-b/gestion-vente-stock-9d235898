@@ -68,7 +68,39 @@ export function useAuthState() {
         // Check if session exists and is valid
         const hasValidSession = !!data?.session;
         console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
-        setIsAuthenticated(hasValidSession);
+        
+        if (hasValidSession) {
+          // Verify if the authenticated user is in internal_users table
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.email) {
+              const { data: internalUser, error: internalUserError } = await supabase
+                .from('internal_users')
+                .select('id, email, is_active')
+                .eq('email', user.email.toLowerCase())
+                .single();
+              
+              if (internalUserError || !internalUser) {
+                console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+                setIsAuthenticated(false);
+              } else if (!internalUser.is_active) {
+                console.error("User account is not active");
+                setIsAuthenticated(false);
+              } else {
+                console.log("Valid internal user found:", internalUser.email);
+                setIsAuthenticated(true);
+              }
+            } else {
+              setIsAuthenticated(false);
+            }
+          } catch (verifyError) {
+            console.error("Error verifying internal user:", verifyError);
+            setIsAuthenticated(false);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error("Auth state check error:", error);
@@ -79,9 +111,41 @@ export function useAuthState() {
 
     // Setup auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, !!session);
-        setIsAuthenticated(!!session);
+        
+        if (session) {
+          // Verify the user is in internal_users table
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.email) {
+              const { data: internalUser, error: internalUserError } = await supabase
+                .from('internal_users')
+                .select('id, email, is_active')
+                .eq('email', user.email.toLowerCase())
+                .single();
+              
+              if (internalUserError || !internalUser) {
+                console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+                setIsAuthenticated(false);
+              } else if (!internalUser.is_active) {
+                console.error("User account is not active");
+                setIsAuthenticated(false);
+              } else {
+                console.log("Valid internal user found:", internalUser.email);
+                setIsAuthenticated(true);
+              }
+            } else {
+              setIsAuthenticated(false);
+            }
+          } catch (verifyError) {
+            console.error("Error verifying internal user:", verifyError);
+            setIsAuthenticated(false);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+        
         setLoading(false);
       }
     );

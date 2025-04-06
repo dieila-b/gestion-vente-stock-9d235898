@@ -69,24 +69,59 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
     
     console.log("Vérification des permissions pour l'utilisateur:", user.id);
     
+    // Vérifier dans la table internal_users par email
     const { data: userData, error: roleCheckError } = await supabase
       .from("internal_users")
-      .select("role")
-      .eq('id', user.id)
+      .select("role, is_active")
+      .eq('email', user.email)
       .single();
       
     if (roleCheckError) {
-      console.error("Erreur lors de la vérification du rôle:", roleCheckError);
+      console.error("Erreur lors de la vérification du rôle par email:", roleCheckError);
+      
+      // Essayer de vérifier par ID au cas où
+      const { data: userDataById, error: roleCheckErrorById } = await supabase
+        .from("internal_users")
+        .select("role, is_active")
+        .eq('id', user.id)
+        .single();
+        
+      if (roleCheckErrorById || !userDataById) {
+        console.error("Erreur lors de la vérification du rôle par ID:", roleCheckErrorById);
+        toast({
+          title: "Permissions insuffisantes",
+          description: "Impossible de vérifier votre rôle. Contactez l'administrateur.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Utiliser les données trouvées par ID
+      userData = userDataById;
+    }
+    
+    if (!userData) {
+      console.log("Aucun utilisateur interne trouvé pour cet email ou ID");
       toast({
         title: "Permissions insuffisantes",
-        description: "Impossible de vérifier votre rôle. Contactez l'administrateur.",
+        description: "Votre compte n'est pas associé à un utilisateur interne.",
         variant: "destructive",
       });
       return false;
     }
     
-    if (!userData || !requiredRoles.includes(userData.role)) {
-      console.log("Utilisateur sans permissions suffisantes:", userData?.role);
+    if (!userData.is_active) {
+      console.log("Le compte utilisateur est désactivé");
+      toast({
+        title: "Compte désactivé",
+        description: "Votre compte est désactivé. Contactez l'administrateur.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (!requiredRoles.includes(userData.role)) {
+      console.log("Utilisateur sans permissions suffisantes:", userData.role);
       toast({
         title: "Permissions insuffisantes",
         description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
