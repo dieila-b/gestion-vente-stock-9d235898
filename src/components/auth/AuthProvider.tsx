@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuthState } from "./hooks/useAuthState";
 import { useAuthActions } from "./hooks/useAuthActions";
 import { AuthContext } from "./context/AuthContext";
+import { createDemoUsers } from "./hooks/utils/createDemoUsers";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isDevelopmentMode = import.meta.env.DEV;
@@ -22,43 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Setting authenticated state to true (development mode)");
       setIsAuthenticated(true);
       setLoading(false);
-    }
-    
-    // Ensure demo users in localStorage
-    if (isDevelopmentMode) {
-      try {
-        const storedUsers = localStorage.getItem('internalUsers');
-        if (!storedUsers) {
-          const demoUsers = [
-            {
-              id: "dev-1743844624581",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@gmail.com",
-              phone: "623268781",
-              address: "Matam",
-              role: "admin",
-              is_active: true,
-              photo_url: null
-            },
-            {
-              id: "dev-1743853323494",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@yahoo.fr",
-              phone: "623268781",
-              address: "Madina",
-              role: "manager",
-              is_active: true,
-              photo_url: null
-            }
-          ];
-          localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
-          console.log("Utilisateurs de démo créés lors de l'initialisation de l'AuthProvider");
-        }
-      } catch (err) {
-        console.error("Erreur lors de la création des utilisateurs de démo:", err);
-      }
+      
+      // Ensure demo users in localStorage
+      createDemoUsers();
     }
   }, [isDevelopmentMode, setIsAuthenticated, setLoading]);
 
