@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { checkUserPermissions } from './user-actions/utils/authorization';
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAuth = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -10,13 +10,40 @@ export const useAuth = () => {
     const verifyPermissions = async () => {
       try {
         console.log("Vérification des permissions utilisateur...");
-        const hasPermission = await checkUserPermissions(['admin', 'manager']);
+        
+        // Get current authenticated user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error("Erreur d'authentification:", authError);
+          setIsAuthorized(false);
+          setIsAuthChecking(false);
+          return;
+        }
+        
+        // Check if user has admin or manager role
+        const { data: userData, error: userError } = await supabase
+          .from("internal_users")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        
+        if (userError || !userData) {
+          console.error("Erreur lors de la vérification des permissions:", userError);
+          setIsAuthorized(false);
+          setIsAuthChecking(false);
+          return;
+        }
+        
+        // Check if user has required role
+        const hasPermission = ['admin', 'manager'].includes(userData.role);
         console.log("Résultat de la vérification des permissions:", hasPermission);
+        
         setIsAuthorized(hasPermission);
+        setIsAuthChecking(false);
       } catch (error) {
         console.error("Erreur lors de la vérification des permissions:", error);
         setIsAuthorized(false);
-      } finally {
         setIsAuthChecking(false);
       }
     };

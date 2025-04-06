@@ -50,7 +50,9 @@ export function useAuthState() {
 
     // Cleanup subscription on unmount
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 

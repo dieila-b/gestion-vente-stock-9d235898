@@ -13,6 +13,11 @@ export const createUser = async (data: CreateUserData): Promise<InternalUser | n
     // Check permissions
     const hasPermission = await checkUserPermissions(['admin', 'manager']);
     if (!hasPermission) {
+      toast({
+        title: "Permissions insuffisantes",
+        description: "Vous n'avez pas les droits nécessaires pour créer un utilisateur",
+        variant: "destructive",
+      });
       return null;
     }
 
