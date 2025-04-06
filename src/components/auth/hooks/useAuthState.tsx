@@ -8,17 +8,49 @@ export function useAuthState() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Setup auth listener for session changes
-    const authSubscription = setupAuthListener();
-    
     // Check initial auth status
     checkInitialAuthStatus();
+    
+    // Setup auth listener for session changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, !!session);
+        
+        if (session) {
+          // Verify the user is in internal_users table
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const internalUser = await verifyInternalUser(user);
+              
+              if (!internalUser) {
+                console.error("User not found in internal_users table");
+                setIsAuthenticated(false);
+              } else if (!internalUser.is_active) {
+                console.error("User account is not active");
+                setIsAuthenticated(false);
+              } else {
+                console.log("Valid internal user found:", internalUser.email || internalUser.id, "Role:", internalUser.role);
+                setIsAuthenticated(true);
+              }
+            } else {
+              setIsAuthenticated(false);
+            }
+          } catch (verifyError) {
+            console.error("Error verifying internal user:", verifyError);
+            setIsAuthenticated(false);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+        
+        setLoading(false);
+      }
+    );
 
     // Cleanup subscription on unmount
     return () => {
-      if (authSubscription && authSubscription.data && authSubscription.data.subscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
@@ -74,45 +106,6 @@ export function useAuthState() {
       setIsAuthenticated(false);
       setLoading(false);
     }
-  };
-
-  // Setup auth state change listener
-  const setupAuthListener = () => {
-    return supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, !!session);
-        
-        if (session) {
-          // Verify the user is in internal_users table
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              const internalUser = await verifyInternalUser(user);
-              
-              if (!internalUser) {
-                console.error("User not found in internal_users table");
-                setIsAuthenticated(false);
-              } else if (!internalUser.is_active) {
-                console.error("User account is not active");
-                setIsAuthenticated(false);
-              } else {
-                console.log("Valid internal user found:", internalUser.email || internalUser.id, "Role:", internalUser.role);
-                setIsAuthenticated(true);
-              }
-            } else {
-              setIsAuthenticated(false);
-            }
-          } catch (verifyError) {
-            console.error("Error verifying internal user:", verifyError);
-            setIsAuthenticated(false);
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-        
-        setLoading(false);
-      }
-    );
   };
 
   return { 
