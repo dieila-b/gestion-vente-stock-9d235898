@@ -2,58 +2,103 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Vérifie si l'utilisateur actuel a les permissions nécessaires
-export const checkUserPermissions = async (allowedRoles: string[]): Promise<boolean> => {
+export const checkUserPermissions = async (requiredRoles: string[] = ['admin', 'manager']): Promise<boolean> => {
   try {
-    // Obtenir l'utilisateur authentifié actuel
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // En mode développement, toujours autoriser
+    if (import.meta.env.DEV) {
+      console.log("Mode développement: Autorisation automatique accordée");
+      
+      // En développement, essayons de récupérer les utilisateurs du localStorage
+      try {
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (storedUsers) {
+          console.log("Données utilisateurs récupérées du localStorage:", storedUsers);
+          
+          // Simuler une vérification des rôles en utilisant le premier utilisateur qui a un rôle requis
+          const users = JSON.parse(storedUsers);
+          const eligibleUser = users.find((user: any) => requiredRoles.includes(user.role));
+          
+          if (eligibleUser) {
+            console.log("Utilisateur avec rôle approprié trouvé dans les données de démonstration:", eligibleUser.role);
+          } else {
+            console.log("Aucun utilisateur avec le rôle requis trouvé dans les données de démonstration.");
+          }
+        } else {
+          console.log("Aucune donnée utilisateur trouvée dans localStorage");
+          // Si aucun utilisateur n'existe, créons-en par défaut
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          console.log("Données utilisateurs par défaut créées pour le mode développement");
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération des données localStorage:", err);
+      }
+      
+      return true;
+    }
     
-    if (authError || !user) {
-      console.error("Erreur d'authentification:", authError);
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour effectuer cette action",
-        variant: "destructive",
-      });
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log("Aucun utilisateur connecté");
       return false;
     }
-
-    // Vérifier si l'utilisateur est dans la table internal_users
-    const { data: userData, error: userError } = await supabase
+    
+    console.log("Vérification des permissions pour l'utilisateur:", user.id);
+    
+    const { data: userData, error: roleCheckError } = await supabase
       .from("internal_users")
       .select("role")
-      .eq("id", user.id)
+      .eq('id', user.id)
       .single();
-    
-    if (userError || !userData) {
-      console.error("Erreur lors de la vérification des permissions:", userError);
+      
+    if (roleCheckError) {
+      console.error("Erreur lors de la vérification du rôle:", roleCheckError);
       toast({
         title: "Permissions insuffisantes",
-        description: "Vous n'avez pas les droits nécessaires pour effectuer cette action",
+        description: "Impossible de vérifier votre rôle. Contactez l'administrateur.",
         variant: "destructive",
       });
       return false;
     }
     
-    // Vérifier si le rôle de l'utilisateur est dans les rôles autorisés
-    if (!allowedRoles.includes(userData.role)) {
-      console.error("Rôle non autorisé:", userData.role, "Rôles autorisés:", allowedRoles);
+    if (!userData || !requiredRoles.includes(userData.role)) {
+      console.log("Utilisateur sans permissions suffisantes:", userData?.role);
       toast({
         title: "Permissions insuffisantes",
-        description: "Vous n'avez pas les droits nécessaires pour effectuer cette action",
+        description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
         variant: "destructive",
       });
       return false;
     }
     
+    console.log("Utilisateur autorisé avec le rôle:", userData.role);
     return true;
   } catch (error) {
     console.error("Erreur lors de la vérification des permissions:", error);
-    toast({
-      title: "Erreur",
-      description: "Une erreur est survenue lors de la vérification des permissions",
-      variant: "destructive",
-    });
     return false;
   }
 };

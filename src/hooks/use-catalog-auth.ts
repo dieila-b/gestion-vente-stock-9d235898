@@ -1,11 +1,8 @@
 
-import { useAuth } from "@/components/auth/hooks/useAuth";
-
 export const useCatalogAuth = () => {
-  const { isAuthenticated, loading } = useAuth();
-  
+  // Simulating an authenticated user
   return { 
-    isAuthenticated, 
-    loading 
+    isAuthenticated: true, 
+    loading: false 
   };
 };

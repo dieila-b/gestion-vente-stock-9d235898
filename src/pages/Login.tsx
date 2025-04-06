@@ -10,19 +10,30 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, isDevelopmentMode } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
   useEffect(() => {
-    // If already authenticated, redirect to dashboard
+    if (isDevelopmentMode) {
+      // En mode développement, proposer de rediriger vers le dashboard mais ne pas le faire automatiquement
+      console.log("Development mode: Login page is available for testing");
+      
+      // Si déjà authentifié, alors rediriger
+      if (isAuthenticated && !loading) {
+        navigate("/dashboard", { replace: true });
+      }
+      return;
+    } 
+    
+    // If already authenticated in production mode, redirect to dashboard
     if (isAuthenticated && !loading) {
-      console.log("User already authenticated, redirecting to dashboard");
+      console.log("Production mode: User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isAuthenticated, loading]);
+  }, [navigate, isDevelopmentMode, isAuthenticated, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +57,16 @@ export default function Login() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail);
       
-      // Login attempt
+      // En mode développement, ignorer toutes les validations
+      if (isDevelopmentMode) {
+        console.log("Mode développement: authentification automatique");
+        const result = await login(normalizedEmail, "password-ignored-in-dev-mode");
+        toast.success("Connexion réussie en mode développement");
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+      
+      // Mode production normal
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
       
@@ -67,17 +87,18 @@ export default function Login() {
   };
 
   // If still loading, show loading spinner
-  if (loading) {
+  if (loading && !isDevelopmentMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-lg font-medium">Vérification de l'authentification...</p>
+          <p className="text-lg font-medium">Chargement...</p>
         </div>
       </div>
     );
   }
 
+  // In development or production mode, show login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -86,6 +107,13 @@ export default function Login() {
           <CardDescription>
             Entrez vos identifiants pour accéder à l'application
           </CardDescription>
+          {isDevelopmentMode && (
+            <div className="mt-2 text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-md">
+              Mode développement: Vous pouvez utiliser les emails de test suivants:
+              <div className="mt-1 font-medium">wosyrab@gmail.com ou wosyrab@yahoo.fr</div>
+              <div className="mt-1">(Mot de passe peut être n'importe quoi en dev mode)</div>
+            </div>
+          )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

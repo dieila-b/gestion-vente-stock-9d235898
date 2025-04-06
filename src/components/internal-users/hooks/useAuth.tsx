@@ -1,58 +1,74 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { checkUserPermissions } from './user-actions/utils/authorization';
 
 export const useAuth = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const isDevelopmentMode = import.meta.env.DEV;
   
   useEffect(() => {
+    // En mode développement, autoriser automatiquement
+    if (isDevelopmentMode) {
+      console.log("Mode développement: Autorisation automatique pour l'accès aux utilisateurs internes");
+      // Assurer que nous avons des utilisateurs de démonstration dans localStorage
+      try {
+        const storedUsers = localStorage.getItem('internalUsers');
+        if (!storedUsers) {
+          const defaultUsers = [
+            {
+              id: "dev-1743844624581",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@gmail.com",
+              phone: "623268781",
+              address: "Matam",
+              role: "admin",
+              is_active: true,
+              photo_url: null
+            },
+            {
+              id: "dev-1743853323494",
+              first_name: "Dieila",
+              last_name: "Barry",
+              email: "wosyrab@yahoo.fr",
+              phone: "623268781",
+              address: "Madina",
+              role: "manager",
+              is_active: true,
+              photo_url: null
+            }
+          ];
+          localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+          console.log("Données de démonstration créées pour useAuth");
+        }
+      } catch (err) {
+        console.error("Erreur lors de la création des données démo:", err);
+      }
+      
+      // Always authorize in development mode regardless of email
+      setIsAuthorized(true);
+      setIsAuthChecking(false);
+      return;
+    }
+    
+    // En mode production, vérifier les permissions
     const verifyPermissions = async () => {
       try {
         console.log("Vérification des permissions utilisateur...");
-        
-        // Get current authenticated user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-          console.error("Erreur d'authentification:", authError);
-          setIsAuthorized(false);
-          setIsAuthChecking(false);
-          return;
-        }
-        
-        // Check if user has admin or manager role
-        const { data: userData, error: userError } = await supabase
-          .from("internal_users")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        
-        if (userError || !userData) {
-          console.error("Erreur lors de la vérification des permissions:", userError);
-          setIsAuthorized(false);
-          setIsAuthChecking(false);
-          return;
-        }
-        
-        // Check if user has required role
-        const hasPermission = ['admin', 'manager'].includes(userData.role);
+        const hasPermission = await checkUserPermissions(['admin', 'manager']);
         console.log("Résultat de la vérification des permissions:", hasPermission);
-        
         setIsAuthorized(hasPermission);
-        setIsAuthChecking(false);
       } catch (error) {
         console.error("Erreur lors de la vérification des permissions:", error);
         setIsAuthorized(false);
+      } finally {
         setIsAuthChecking(false);
       }
     };
     
     verifyPermissions();
-  }, []);
+  }, [isDevelopmentMode]);
   
-  return { 
-    isAuthChecking, 
-    isAuthorized 
-  };
+  return { isAuthChecking, isAuthorized };
 };

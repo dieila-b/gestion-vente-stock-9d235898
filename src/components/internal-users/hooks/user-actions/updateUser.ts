@@ -17,7 +17,40 @@ interface UpdateUserData {
 
 export const updateUser = async (data: UpdateUserData, user: InternalUser): Promise<InternalUser | null> => {
   try {
-    // Préparation des données pour la mise à jour
+    // Vérifier si nous sommes en mode développement
+    const isDevelopmentMode = import.meta.env.DEV;
+    
+    // En mode développement, simuler une mise à jour réussie
+    if (isDevelopmentMode) {
+      // Créer l'utilisateur mis à jour
+      const updatedUser: InternalUser = {
+        ...user,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        address: data.address || null,
+        role: data.role,
+        is_active: data.is_active,
+        photo_url: data.photo_url !== undefined ? data.photo_url : user.photo_url
+      };
+      
+      // Mettre à jour l'utilisateur dans localStorage
+      const existingUsers = JSON.parse(localStorage.getItem('internalUsers') || '[]');
+      const updatedUsers = existingUsers.map((u: InternalUser) => 
+        u.id === user.id ? updatedUser : u
+      );
+      localStorage.setItem('internalUsers', JSON.stringify(updatedUsers));
+      
+      toast({
+        title: "Utilisateur mis à jour (mode développeur)",
+        description: `${data.first_name} ${data.last_name} a été mis à jour avec succès`,
+      });
+      
+      return updatedUser;
+    }
+
+    // En production, mise à jour réelle dans la base de données
     const updateData: any = {
       first_name: data.first_name,
       last_name: data.last_name,
