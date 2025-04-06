@@ -30,7 +30,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }, [navigate, isAuthenticated, loading, location.pathname]);
 
-  // In production mode, only grant access if authenticated or still loading
+  // Only grant access if authenticated or still loading
   if (!isAuthenticated && !loading) {
     return null;
   }

@@ -8,14 +8,5 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Always use production mode authentication
-  console.log("Auth hook: Production mode - checking real authentication status");
-  
-  return {
-    ...context,
-    isAuthenticated: context.isAuthenticated,
-    loading: context.loading,
-    isSubmitting: context.isSubmitting,
-    isDevelopmentMode: false
-  };
+  return context;
 };

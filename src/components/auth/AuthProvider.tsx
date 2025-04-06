@@ -10,7 +10,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log("Production mode: Real authentication required for internal users");
+    console.log("Authentication provider initialized");
   }, []);
 
   const contextValue = {
@@ -18,8 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     login,
     logout,
-    isSubmitting,
-    isDevelopmentMode: false
+    isSubmitting
   };
 
   return (

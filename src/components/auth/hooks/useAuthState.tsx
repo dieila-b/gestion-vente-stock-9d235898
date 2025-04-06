@@ -6,16 +6,19 @@ import { verifyInternalUser } from "./utils/verifyInternalUser";
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const isDevelopmentMode = false; // Force this to always be false
 
   useEffect(() => {
-    // Always use production mode authentication
+    // Setup auth listener for session changes
     const authSubscription = setupAuthListener();
+    
+    // Check initial auth status
     checkInitialAuthStatus();
 
-    // Cleanup
+    // Cleanup subscription on unmount
     return () => {
-      authSubscription.data.subscription.unsubscribe();
+      if (authSubscription && authSubscription.data && authSubscription.data.subscription) {
+        authSubscription.data.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -116,7 +119,6 @@ export function useAuthState() {
     isAuthenticated, 
     setIsAuthenticated, 
     loading, 
-    setLoading, 
-    isDevelopmentMode: false // Always return false
+    setLoading
   };
 }
