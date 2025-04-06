@@ -10,6 +10,9 @@ interface UseUserFormProps {
   selectedUser: InternalUser | null;
 }
 
+/**
+ * Hook for managing the user form state and submission
+ */
 export const useUserForm = ({ onSubmit, selectedUser }: UseUserFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 

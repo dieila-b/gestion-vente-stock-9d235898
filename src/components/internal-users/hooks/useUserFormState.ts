@@ -2,7 +2,10 @@
 import { useState } from "react";
 import { InternalUser } from "@/types/internal-user";
 
-// Renamed function to avoid conflicts with form/hooks/useUserForm.tsx
+/**
+ * Hook for managing user form dialog state
+ * Extracted from the original useUserForm.ts
+ */
 export const useUserFormState = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<InternalUser | null>(null);
