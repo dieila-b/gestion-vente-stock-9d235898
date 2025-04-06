@@ -1,21 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createDemoUsers } from "./utils/createDemoUsers";
 import { verifyInternalUser } from "./utils/verifyInternalUser";
 
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const isDevelopmentMode = import.meta.env.DEV;
+  const isDevelopmentMode = false; // Force this to always be false
 
   useEffect(() => {
-    if (isDevelopmentMode) {
-      handleDevMode();
-      return;
-    }
-
-    // Production mode - check actual authentication status
+    // Always use production mode authentication
     const authSubscription = setupAuthListener();
     checkInitialAuthStatus();
 
@@ -23,18 +17,7 @@ export function useAuthState() {
     return () => {
       authSubscription.data.subscription.unsubscribe();
     };
-  }, [isDevelopmentMode]);
-
-  // Development mode handler
-  const handleDevMode = () => {
-    console.log("Development mode: Authentication disabled - all users are automatically authenticated");
-    
-    // Create demo users if they don't exist
-    createDemoUsers();
-    
-    setIsAuthenticated(true);
-    setLoading(false);
-  };
+  }, []);
 
   // Check initial authentication state
   const checkInitialAuthStatus = async () => {
@@ -134,6 +117,6 @@ export function useAuthState() {
     setIsAuthenticated, 
     loading, 
     setLoading, 
-    isDevelopmentMode 
+    isDevelopmentMode: false // Always return false
   };
 }

@@ -2,25 +2,16 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { DEV_USERS_STORAGE_KEY } from "@/components/internal-users/hooks/userData/localStorage";
 
 export function useAuthActions(
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isDevelopmentMode = import.meta.env.DEV;
 
   const login = async (email: string, password: string) => {
     console.log("Login attempt with email:", email);
     
-    if (isDevelopmentMode) {
-      console.log("Development mode: Authentication completely disabled");
-      setIsAuthenticated(true);
-      toast.success("Connexion réussie en mode développement");
-      return { success: true };
-    }
-
     try {
       setIsSubmitting(true);
       
@@ -158,13 +149,6 @@ export function useAuthActions(
   };
   
   const logout = async () => {
-    if (isDevelopmentMode) {
-      console.log("Development mode: Simulated logout");
-      setIsAuthenticated(false);
-      toast.success("Vous êtes déconnecté");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       const { error } = await supabase.auth.signOut();

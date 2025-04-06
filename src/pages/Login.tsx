@@ -10,26 +10,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading, isDevelopmentMode } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
   useEffect(() => {
-    if (isDevelopmentMode) {
-      // In development mode, automatically redirect to dashboard
-      console.log("Development mode: Authentication disabled, redirecting to dashboard");
-      navigate("/dashboard", { replace: true });
-      return;
-    } 
-    
-    // If already authenticated in production mode, redirect to dashboard
+    // If already authenticated, redirect to dashboard
     if (isAuthenticated && !loading) {
-      console.log("Production mode: User already authenticated, redirecting to dashboard");
+      console.log("User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isDevelopmentMode, isAuthenticated, loading]);
+  }, [navigate, isAuthenticated, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,19 +66,18 @@ export default function Login() {
     }
   };
 
-  // If in development mode or still loading, show loading spinner
-  if (isDevelopmentMode || (loading && !isDevelopmentMode)) {
+  // If still loading, show loading spinner
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-lg font-medium">Redirection vers le tableau de bord...</p>
+          <p className="text-lg font-medium">Vérification de l'authentification...</p>
         </div>
       </div>
     );
   }
 
-  // In production mode, show login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
