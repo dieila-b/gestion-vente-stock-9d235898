@@ -17,7 +17,6 @@ export function useAuthState() {
         console.log("Auth state changed:", event, !!session);
         
         if (session) {
-          // Verify the user is in internal_users table
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -74,7 +73,6 @@ export function useAuthState() {
       console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
       
       if (hasValidSession) {
-        // Verify if the authenticated user is in internal_users table
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
