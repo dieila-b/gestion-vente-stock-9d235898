@@ -9,7 +9,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     const normalizedEmail = email.toLowerCase().trim();
     console.log("Vérification d'existence pour email:", normalizedEmail);
     
-    // Méthode plus fiable pour vérifier l'existence d'un utilisateur
+    // Méthode pour vérifier l'existence d'un utilisateur
     const { data, error } = await supabase
       .from('internal_users')
       .select('email')
@@ -37,7 +37,6 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     }
     
     // Si aucune correspondance dans la table internal_users, vérifiez aussi auth.users
-    // C'est important pour éviter les conflits entre auth et base de données
     const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
     
     if (authError) {

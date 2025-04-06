@@ -19,7 +19,7 @@ export function useAuthActions(
       const normalizedEmail = email.toLowerCase().trim();
       console.log("Login request with normalized email:", normalizedEmail);
       
-      // First, try to authenticate directly with Supabase
+      // Authenticate with Supabase
       console.log("Attempting authentication with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
