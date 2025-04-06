@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               address: "Matam",
               role: "admin",
               is_active: true,
-              photo_url": null
+              photo_url: null
             },
             {
               id: "dev-1743853323494",
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               address: "Madina",
               role: "manager",
               is_active: true,
-              photo_url": null
+              photo_url: null
             }
           ];
           localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
