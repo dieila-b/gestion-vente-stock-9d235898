@@ -75,47 +75,45 @@ export function useAuthState() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
               console.log("Auth user found:", user.id, user.email);
-              let internalUser = null;
-              let internalUserError = null;
               
-              // Try to find user by email first
+              // First try to find by email
+              let internalUser = null;
+              
               if (user.email) {
-                const emailResult = await supabase
+                console.log("Looking up internal user by email:", user.email);
+                const { data: emailUser, error: emailError } = await supabase
                   .from('internal_users')
                   .select('id, email, is_active, role')
                   .eq('email', user.email.toLowerCase())
                   .maybeSingle();
-                  
-                internalUser = emailResult.data;
-                internalUserError = emailResult.error;
                 
-                if (internalUserError || !internalUser) {
-                  console.log("User not found by email, trying by ID...");
-                  
-                  // Try to find by ID
-                  const idResult = await supabase
-                    .from('internal_users')
-                    .select('id, email, is_active, role')
-                    .eq('id', user.id)
-                    .maybeSingle();
-                    
-                  internalUser = idResult.data;
-                  internalUserError = idResult.error;
+                if (!emailError && emailUser) {
+                  console.log("User found by email:", emailUser);
+                  internalUser = emailUser;
+                } else {
+                  console.log("User not found by email, error:", emailError?.message || "No user found");
                 }
-              } else {
-                // Try by ID if no email
-                const idResult = await supabase
+              }
+              
+              // If not found by email, try by ID
+              if (!internalUser) {
+                console.log("Looking up internal user by ID:", user.id);
+                const { data: idUser, error: idError } = await supabase
                   .from('internal_users')
                   .select('id, email, is_active, role')
                   .eq('id', user.id)
                   .maybeSingle();
-                  
-                internalUser = idResult.data;
-                internalUserError = idResult.error;
+                
+                if (!idError && idUser) {
+                  console.log("User found by ID:", idUser);
+                  internalUser = idUser;
+                } else {
+                  console.log("User not found by ID, error:", idError?.message || "No user found");
+                }
               }
               
-              if (internalUserError || !internalUser) {
-                console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+              if (!internalUser) {
+                console.error("User not found in internal_users table");
                 setIsAuthenticated(false);
               } else if (!internalUser.is_active) {
                 console.error("User account is not active");
@@ -153,47 +151,44 @@ export function useAuthState() {
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+              // First try to find by email
               let internalUser = null;
-              let internalUserError = null;
               
-              // Try to find user by email first
               if (user.email) {
-                const emailResult = await supabase
+                console.log("Looking up internal user by email:", user.email);
+                const { data: emailUser, error: emailError } = await supabase
                   .from('internal_users')
                   .select('id, email, is_active, role')
                   .eq('email', user.email.toLowerCase())
                   .maybeSingle();
-                  
-                internalUser = emailResult.data;
-                internalUserError = emailResult.error;
                 
-                if (internalUserError || !internalUser) {
-                  console.log("User not found by email, trying by ID...");
-                  
-                  // Try to find by ID
-                  const idResult = await supabase
-                    .from('internal_users')
-                    .select('id, email, is_active, role')
-                    .eq('id', user.id)
-                    .maybeSingle();
-                    
-                  internalUser = idResult.data;
-                  internalUserError = idResult.error;
+                if (!emailError && emailUser) {
+                  console.log("User found by email:", emailUser);
+                  internalUser = emailUser;
+                } else {
+                  console.log("User not found by email, error:", emailError?.message || "No user found");
                 }
-              } else {
-                // Try by ID if no email
-                const idResult = await supabase
+              }
+              
+              // If not found by email, try by ID
+              if (!internalUser) {
+                console.log("Looking up internal user by ID:", user.id);
+                const { data: idUser, error: idError } = await supabase
                   .from('internal_users')
                   .select('id, email, is_active, role')
                   .eq('id', user.id)
                   .maybeSingle();
-                  
-                internalUser = idResult.data;
-                internalUserError = idResult.error;
+                
+                if (!idError && idUser) {
+                  console.log("User found by ID:", idUser);
+                  internalUser = idUser;
+                } else {
+                  console.log("User not found by ID, error:", idError?.message || "No user found");
+                }
               }
               
-              if (internalUserError || !internalUser) {
-                console.error("User not found in internal_users table:", internalUserError?.message || "No user found");
+              if (!internalUser) {
+                console.error("User not found in internal_users table");
                 setIsAuthenticated(false);
               } else if (!internalUser.is_active) {
                 console.error("User account is not active");

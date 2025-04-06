@@ -60,6 +60,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return true;
     }
     
+    // Get current user from Supabase
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -67,65 +68,47 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return false;
     }
     
-    console.log("Vérification des permissions pour l'utilisateur:", user.id);
+    console.log("Vérification des permissions pour l'utilisateur:", user.id, user.email);
     
-    // Vérifier dans la table internal_users par email
-    const { data: userDataByEmail, error: roleCheckError } = await supabase
-      .from("internal_users")
-      .select("role, is_active")
-      .eq('email', user.email)
-      .single();
-      
-    if (roleCheckError) {
-      console.error("Erreur lors de la vérification du rôle par email:", roleCheckError);
-      
-      // Essayer de vérifier par ID au cas où
-      const { data: userDataById, error: roleCheckErrorById } = await supabase
+    // First try to find user by email
+    let userDataByEmail = null;
+    let userDataById = null;
+    
+    if (user.email) {
+      const { data: emailData, error: emailError } = await supabase
         .from("internal_users")
         .select("role, is_active")
-        .eq('id', user.id)
-        .single();
-        
-      if (roleCheckErrorById || !userDataById) {
-        console.error("Erreur lors de la vérification du rôle par ID:", roleCheckErrorById);
-        toast({
-          title: "Permissions insuffisantes",
-          description: "Impossible de vérifier votre rôle. Contactez l'administrateur.",
-          variant: "destructive",
-        });
-        return false;
-      }
+        .eq('email', user.email.toLowerCase())
+        .maybeSingle();
       
-      // Utiliser les données trouvées par ID
-      if (userDataById) {
-        // Vérifier les permissions avec les données de l'utilisateur trouvé par ID
-        if (!userDataById.is_active) {
-          console.log("Le compte utilisateur est désactivé");
-          toast({
-            title: "Compte désactivé",
-            description: "Votre compte est désactivé. Contactez l'administrateur.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        if (!requiredRoles.includes(userDataById.role)) {
-          console.log("Utilisateur sans permissions suffisantes:", userDataById.role);
-          toast({
-            title: "Permissions insuffisantes",
-            description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        console.log("Utilisateur autorisé avec le rôle:", userDataById.role);
-        return true;
+      if (!emailError && emailData) {
+        console.log("Utilisateur trouvé par email:", user.email);
+        userDataByEmail = emailData;
+      } else {
+        console.log("Utilisateur non trouvé par email, erreur:", emailError?.message || "Aucun utilisateur trouvé");
       }
     }
     
-    // Utiliser les données trouvées par email si disponibles
+    // If not found by email, try by ID
     if (!userDataByEmail) {
+      const { data: idData, error: idError } = await supabase
+        .from("internal_users")
+        .select("role, is_active")
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (!idError && idData) {
+        console.log("Utilisateur trouvé par ID:", user.id);
+        userDataById = idData;
+      } else {
+        console.log("Utilisateur non trouvé par ID, erreur:", idError?.message || "Aucun utilisateur trouvé");
+      }
+    }
+    
+    // Use data found by either method
+    const userData = userDataByEmail || userDataById;
+    
+    if (!userData) {
       console.log("Aucun utilisateur interne trouvé pour cet email ou ID");
       toast({
         title: "Permissions insuffisantes",
@@ -135,7 +118,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return false;
     }
     
-    if (!userDataByEmail.is_active) {
+    if (!userData.is_active) {
       console.log("Le compte utilisateur est désactivé");
       toast({
         title: "Compte désactivé",
@@ -145,8 +128,8 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return false;
     }
     
-    if (!requiredRoles.includes(userDataByEmail.role)) {
-      console.log("Utilisateur sans permissions suffisantes:", userDataByEmail.role);
+    if (!requiredRoles.includes(userData.role)) {
+      console.log("Utilisateur sans permissions suffisantes:", userData.role);
       toast({
         title: "Permissions insuffisantes",
         description: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
@@ -155,7 +138,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       return false;
     }
     
-    console.log("Utilisateur autorisé avec le rôle:", userDataByEmail.role);
+    console.log("Utilisateur autorisé avec le rôle:", userData.role);
     return true;
   } catch (error) {
     console.error("Erreur lors de la vérification des permissions:", error);

@@ -53,7 +53,7 @@ export default function Login() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail);
       
-      // Connexion - fonctionne pour les modes développement et production
+      // Login attempt
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
       

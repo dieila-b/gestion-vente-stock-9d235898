@@ -39,9 +39,8 @@ export function useAuthActions(
 
       if (error) {
         console.error("Authentication error:", error);
-        
         // Check if it's an invalid credentials error
-        if (error.message === "Invalid login credentials") {
+        if (error.message.includes("Invalid login credentials")) {
           return { 
             success: false, 
             error: "Email ou mot de passe incorrect" 
@@ -58,95 +57,95 @@ export function useAuthActions(
       // If authentication successful, check if user is in internal_users table
       console.log("Authentication successful, checking if user is an internal user");
       
-      const { data: internalUser, error: internalUserError } = await supabase
-        .from("internal_users")
-        .select("id, email, role, is_active")
-        .eq("email", normalizedEmail)
-        .single();
+      try {
+        // Get current authenticated user
+        const { data: userData } = await supabase.auth.getUser();
         
-      console.log("Internal user check result:", internalUser, internalUserError);
-      
-      if (internalUserError) {
-        console.error("Error checking internal user:", internalUserError.message);
-        
-        // Don't sign out immediately, try by ID
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user && user.id) {
-          const { data: internalUserById, error: internalUserByIdError } = await supabase
-            .from("internal_users")
-            .select("id, email, role, is_active")
-            .eq("id", user.id)
-            .single();
-            
-          if (internalUserByIdError || !internalUserById) {
-            console.error("User not found by ID in internal_users table:", internalUserByIdError?.message || "No user found");
-            
-            // Sign out the user since they're not an internal user
-            await supabase.auth.signOut();
-            
-            return { 
-              success: false, 
-              error: "Cet utilisateur n'est pas associé à un compte interne" 
-            };
-          }
-          
-          // Found by ID - check if active
-          if (!internalUserById.is_active) {
-            console.error("User account is not active");
-            
-            // Sign out the user since their account is not active
-            await supabase.auth.signOut();
-            
-            return { 
-              success: false, 
-              error: "Votre compte est désactivé. Veuillez contacter l'administrateur." 
-            };
-          }
-          
-          // Valid internal user by ID
-          console.log("User is valid internal user by ID:", internalUserById.email || internalUserById.id);
-          setIsAuthenticated(true);
-          return { success: true };
-        } else {
-          // No user data available
+        if (!userData || !userData.user) {
+          console.error("Could not get authenticated user data");
           await supabase.auth.signOut();
-          return { 
-            success: false, 
-            error: "Cet email n'est pas associé à un compte utilisateur interne" 
+          return {
+            success: false,
+            error: "Erreur lors de la vérification des informations utilisateur"
           };
         }
-      }
-      
-      if (!internalUser) {
-        console.error("No internal user found for email:", normalizedEmail);
         
-        // Sign out the user since they're not an internal user
-        await supabase.auth.signOut();
+        // Try first by email
+        let internalUser = null;
         
-        return { 
-          success: false, 
-          error: "Cet email n'est pas associé à un compte utilisateur interne" 
-        };
-      }
-      
-      // Check if user is active
-      if (!internalUser.is_active) {
-        console.error("User account is not active");
+        if (userData.user.email) {
+          console.log("Checking internal user by email:", userData.user.email);
+          const { data: userByEmail, error: userByEmailError } = await supabase
+            .from("internal_users")
+            .select("id, email, role, is_active")
+            .eq("email", userData.user.email.toLowerCase())
+            .maybeSingle();
+          
+          if (!userByEmailError && userByEmail) {
+            console.log("Internal user found by email:", userByEmail);
+            internalUser = userByEmail;
+          } else {
+            console.log("User not found by email, error:", userByEmailError?.message || "No user");
+          }
+        }
         
-        // Sign out the user since their account is not active
-        await supabase.auth.signOut();
+        // If not found by email, try by ID
+        if (!internalUser) {
+          console.log("Checking internal user by ID:", userData.user.id);
+          const { data: userById, error: userByIdError } = await supabase
+            .from("internal_users")
+            .select("id, email, role, is_active")
+            .eq("id", userData.user.id)
+            .maybeSingle();
+          
+          if (!userByIdError && userById) {
+            console.log("Internal user found by ID:", userById);
+            internalUser = userById;
+          } else {
+            console.log("User not found by ID, error:", userByIdError?.message || "No user");
+          }
+        }
         
-        return { 
-          success: false, 
-          error: "Votre compte est désactivé. Veuillez contacter l'administrateur." 
-        };
-      }
+        // Check if we found a valid internal user
+        if (!internalUser) {
+          console.error("User not found in internal_users table");
+          
+          // Sign out the user since they're not an internal user
+          await supabase.auth.signOut();
+          
+          return { 
+            success: false, 
+            error: "Cet utilisateur n'est pas associé à un compte interne" 
+          };
+        }
+        
+        // Check if user is active
+        if (!internalUser.is_active) {
+          console.error("User account is not active");
+          
+          // Sign out the user since their account is not active
+          await supabase.auth.signOut();
+          
+          return { 
+            success: false, 
+            error: "Votre compte est désactivé. Veuillez contacter l'administrateur." 
+          };
+        }
 
-      // Successfully authenticated and user is valid internal user
-      console.log("User is authenticated and is a valid internal user");
-      setIsAuthenticated(true);
-      return { success: true };
+        // Valid internal user
+        console.log("User is valid internal user with role:", internalUser.role);
+        setIsAuthenticated(true);
+        toast.success("Connexion réussie");
+        return { success: true };
+        
+      } catch (verifyError) {
+        console.error("Error verifying internal user:", verifyError);
+        await supabase.auth.signOut();
+        return { 
+          success: false, 
+          error: "Erreur lors de la vérification de l'utilisateur" 
+        };
+      }
     } catch (error) {
       console.error("Login error:", error);
       return { 
