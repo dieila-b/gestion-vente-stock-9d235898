@@ -10,7 +10,6 @@ import { useUserActions } from "./hooks/useUserActions";
 export const useInternalUsers = () => {
   // Get authentication status
   const { isAuthChecking, isAuthorized } = useAuth();
-  const isDevelopmentMode = import.meta.env.DEV;
   
   // Get user data and actions
   const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
@@ -28,17 +27,15 @@ export const useInternalUsers = () => {
     console.log("useInternalUsers: Current user data - users:", users, "isLoading:", isLoading);
   }, [isAuthorized, isAuthChecking, users, isLoading]);
 
-  // Load users when authorized or in development mode
+  // Load users when authorized
   useEffect(() => {
-    if (isDevelopmentMode || isAuthorized) {
-      console.log(isDevelopmentMode 
-        ? "Development mode: Authentication disabled, fetching users regardless of auth status" 
-        : "User is authorized, fetching users");
+    if (isAuthorized) {
+      console.log("User is authorized, fetching users");
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers, isDevelopmentMode]);
+  }, [isAuthorized, fetchUsers]);
 
-  // Form submission handler - define all callbacks at the top level, not conditionally
+  // Form submission handler
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
     console.log("Form submitted with values:", values);
     await submitUserAction(values, selectedUser);
@@ -46,13 +43,13 @@ export const useInternalUsers = () => {
     setIsAddDialogOpen(false);
   }, [submitUserAction, selectedUser, setIsAddDialogOpen]);
 
-  // Add user handler - memoized to avoid recreations
+  // Add user handler
   const handleAddClick = useCallback(() => {
     setSelectedUser(null);
     setIsAddDialogOpen(true);
   }, [setSelectedUser, setIsAddDialogOpen]);
 
-  // Edit user handler - memoized to avoid recreations
+  // Edit user handler
   const handleEditClick = useCallback((user: InternalUser) => {
     setSelectedUser(user);
     setIsAddDialogOpen(true);
@@ -61,8 +58,8 @@ export const useInternalUsers = () => {
   return {
     users,
     isLoading,
-    isAuthChecking: isDevelopmentMode ? false : isAuthChecking,
-    isAuthorized: isDevelopmentMode ? true : isAuthorized,
+    isAuthChecking,
+    isAuthorized,
     isAddDialogOpen,
     selectedUser,
     setIsAddDialogOpen,
