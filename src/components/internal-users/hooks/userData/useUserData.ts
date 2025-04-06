@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { InternalUser } from '@/types/internal-user';
-import { fetchInternalUsers } from './supabaseUsers';
+import { fetchUsersFromSupabase } from './supabaseUsers';
 
 export const useUserData = () => {
   const [users, setUsers] = useState<InternalUser[]>([]);
@@ -12,7 +12,7 @@ export const useUserData = () => {
     setIsLoading(true);
     try {
       console.log("Fetching internal users from database");
-      const fetchedUsers = await fetchInternalUsers();
+      const fetchedUsers = await fetchUsersFromSupabase();
       console.log("Fetched users:", fetchedUsers?.length || 0);
       setUsers(fetchedUsers || []);
     } catch (error) {
