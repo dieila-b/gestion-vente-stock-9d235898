@@ -1,62 +1,52 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useCallback } from 'react';
 import { InternalUser } from '@/types/internal-user';
-import { fetchUsersFromSupabase } from './supabaseUsers';
+import { fetchInternalUsers } from './supabaseUsers';
 
 export const useUserData = () => {
   const [users, setUsers] = useState<InternalUser[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Define fetchUsers callback outside of the useEffect
+  // Fetch all users
   const fetchUsers = useCallback(async () => {
-    console.log("Fetching users...");
     setIsLoading(true);
-    
     try {
-      console.log("Production mode: fetching users from Supabase");
-      const supabaseUsers = await fetchUsersFromSupabase();
-      
-      if (supabaseUsers) {
-        console.log("Users retrieved from Supabase:", supabaseUsers);
-        setUsers(supabaseUsers);
-      } else {
-        console.error("Error retrieving users from Supabase");
-        toast({
-          title: "Erreur",
-          description: "Impossible de récupérer les utilisateurs",
-          variant: "destructive",
-        });
-        setUsers([]);
-      }
+      console.log("Fetching internal users from database");
+      const fetchedUsers = await fetchInternalUsers();
+      console.log("Fetched users:", fetchedUsers?.length || 0);
+      setUsers(fetchedUsers || []);
     } catch (error) {
-      console.error("Error retrieving users:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les utilisateurs",
-        variant: "destructive",
-      });
-      setUsers([]);
+      console.error("Error fetching users:", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Initialize users on component mount
-  useEffect(() => {
-    console.log("useUserData hook mounted");
-    fetchUsers();
-  }, [fetchUsers]);
-
+  // Add a new user to the list
   const addUser = useCallback((user: InternalUser) => {
-    setUsers(prevUsers => [...prevUsers, user]);
+    setUsers(prevUsers => [user, ...prevUsers]);
   }, []);
 
+  // Update a user in the list
   const updateUserInList = useCallback((updatedUser: InternalUser) => {
-    setUsers(prevUsers => prevUsers.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      )
+    );
   }, []);
 
-  return { users, isLoading, fetchUsers, addUser, updateUserInList };
+  // Remove a user from the list
+  const removeUserFromList = useCallback((userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+  }, []);
+
+  return {
+    users,
+    isLoading,
+    fetchUsers,
+    addUser,
+    updateUserInList,
+    removeUserFromList
+  };
 };
