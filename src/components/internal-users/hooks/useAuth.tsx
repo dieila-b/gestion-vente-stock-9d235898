@@ -10,7 +10,7 @@ export const useAuth = () => {
   useEffect(() => {
     // En mode développement, autoriser automatiquement
     if (isDevelopmentMode) {
-      console.log("Mode développement: Autorisation automatique pour l'accès aux utilisateurs internes");
+      console.log("Mode développement: Authentication complètement désactivée pour l'accès aux utilisateurs internes");
       // Assurer que nous avons des utilisateurs de démonstration dans localStorage
       try {
         const storedUsers = localStorage.getItem('internalUsers');
@@ -70,5 +70,8 @@ export const useAuth = () => {
     verifyPermissions();
   }, [isDevelopmentMode]);
   
-  return { isAuthChecking, isAuthorized };
+  return { 
+    isAuthChecking: isDevelopmentMode ? false : isAuthChecking, 
+    isAuthorized: isDevelopmentMode ? true : isAuthorized 
+  };
 };

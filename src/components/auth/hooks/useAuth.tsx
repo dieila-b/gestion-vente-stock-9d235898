@@ -12,7 +12,7 @@ export const useAuth = () => {
   const isDevelopmentMode = import.meta.env.DEV;
   
   console.log(isDevelopmentMode 
-    ? "Auth hook: Development mode - authentication is disabled" 
+    ? "Auth hook: Development mode - authentication is completely disabled" 
     : "Auth hook: Production mode - checking real authentication status");
   
   // In development mode, always return authenticated

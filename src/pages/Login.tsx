@@ -17,13 +17,9 @@ export default function Login() {
   
   useEffect(() => {
     if (isDevelopmentMode) {
-      // En mode développement, proposer de rediriger vers le dashboard mais ne pas le faire automatiquement
-      console.log("Development mode: Login page is available for testing");
-      
-      // Si déjà authentifié, alors rediriger
-      if (isAuthenticated && !loading) {
-        navigate("/dashboard", { replace: true });
-      }
+      // In development mode, automatically redirect to dashboard
+      console.log("Development mode: Authentication disabled, redirecting to dashboard");
+      navigate("/dashboard", { replace: true });
       return;
     } 
     
@@ -76,19 +72,19 @@ export default function Login() {
     }
   };
 
-  // If still loading, show loading spinner
-  if (loading && !isDevelopmentMode) {
+  // If in development mode or still loading, show loading spinner
+  if (isDevelopmentMode || (loading && !isDevelopmentMode)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-lg font-medium">Chargement...</p>
+          <p className="text-lg font-medium">Redirection vers le tableau de bord...</p>
         </div>
       </div>
     );
   }
 
-  // In development or production mode, show login form
+  // In production mode, show login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -97,13 +93,6 @@ export default function Login() {
           <CardDescription>
             Entrez vos identifiants pour accéder à l'application
           </CardDescription>
-          {isDevelopmentMode && (
-            <div className="mt-2 text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-md">
-              Mode développement: Vous pouvez utiliser les emails de test suivants:
-              <div className="mt-1 font-medium">wosyrab@gmail.com ou wosyrab@yahoo.fr</div>
-              <div className="mt-1">(Mot de passe peut être n'importe quoi en dev mode)</div>
-            </div>
-          )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

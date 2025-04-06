@@ -13,9 +13,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log(
       isDevelopmentMode 
-        ? "Authentication disabled: Development mode - all users are automatically authenticated" 
+        ? "Authentication COMPLETELY DISABLED: Development mode - all users are automatically authenticated" 
         : "Production mode: Real authentication required for internal users"
     );
+    
+    // In development mode, force authentication to be true
+    if (isDevelopmentMode) {
+      console.log("Setting authenticated state to true (development mode)");
+      setIsAuthenticated(true);
+      setLoading(false);
+    }
     
     // Ensure demo users in localStorage
     if (isDevelopmentMode) {
@@ -53,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Erreur lors de la création des utilisateurs de démo:", err);
       }
     }
-  }, [isDevelopmentMode]);
+  }, [isDevelopmentMode, setIsAuthenticated, setLoading]);
 
   // In development mode, force authentication to be true
   // In production, use actual authentication status

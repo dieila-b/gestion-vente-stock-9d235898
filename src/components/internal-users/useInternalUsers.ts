@@ -10,6 +10,7 @@ import { useUserActions } from "./hooks/useUserActions";
 export const useInternalUsers = () => {
   // Get authentication status
   const { isAuthChecking, isAuthorized } = useAuth();
+  const isDevelopmentMode = import.meta.env.DEV;
   
   // Get user data and actions
   const { users, isLoading, fetchUsers, addUser, updateUserInList } = useUserData();
@@ -27,13 +28,15 @@ export const useInternalUsers = () => {
     console.log("useInternalUsers: Current user data - users:", users, "isLoading:", isLoading);
   }, [isAuthorized, isAuthChecking, users, isLoading]);
 
-  // Load users when authorized
+  // Load users when authorized or in development mode
   useEffect(() => {
-    if (isAuthorized) {
-      console.log("User is authorized, fetching users");
+    if (isDevelopmentMode || isAuthorized) {
+      console.log(isDevelopmentMode 
+        ? "Development mode: Authentication disabled, fetching users regardless of auth status" 
+        : "User is authorized, fetching users");
       fetchUsers();
     }
-  }, [isAuthorized, fetchUsers]);
+  }, [isAuthorized, fetchUsers, isDevelopmentMode]);
 
   // Form submission handler - define all callbacks at the top level, not conditionally
   const handleSubmit = useCallback(async (values: UserFormValues): Promise<void> => {
@@ -58,8 +61,8 @@ export const useInternalUsers = () => {
   return {
     users,
     isLoading,
-    isAuthChecking,
-    isAuthorized,
+    isAuthChecking: isDevelopmentMode ? false : isAuthChecking,
+    isAuthorized: isDevelopmentMode ? true : isAuthorized,
     isAddDialogOpen,
     selectedUser,
     setIsAddDialogOpen,

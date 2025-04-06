@@ -17,9 +17,9 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       currentPath: location.pathname
     });
     
-    // In development mode, always allow access
+    // In development mode, always allow access without any checks
     if (isDevelopmentMode) {
-      console.log("Development mode: authentication bypass enabled");
+      console.log("Development mode: authentication completely disabled - all routes accessible");
       return;
     }
     
