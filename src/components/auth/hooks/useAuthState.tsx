@@ -16,12 +16,12 @@ export function useAuthState() {
     }
 
     // Production mode - check actual authentication status
-    const authListener = setupAuthListener();
+    const authSubscription = setupAuthListener();
     checkInitialAuthStatus();
 
     // Cleanup
     return () => {
-      authListener.subscription.unsubscribe();
+      authSubscription.data.subscription.unsubscribe();
     };
   }, [isDevelopmentMode]);
 
