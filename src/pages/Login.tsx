@@ -57,16 +57,7 @@ export default function Login() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail);
       
-      // En mode développement, ignorer toutes les validations
-      if (isDevelopmentMode) {
-        console.log("Mode développement: authentification automatique");
-        const result = await login(normalizedEmail, "password-ignored-in-dev-mode");
-        toast.success("Connexion réussie en mode développement");
-        navigate("/dashboard", { replace: true });
-        return;
-      }
-      
-      // Mode production normal
+      // Mode production normal ou développement
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
       

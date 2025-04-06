@@ -71,7 +71,7 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
     
     const { data: userData, error: roleCheckError } = await supabase
       .from("internal_users")
-      .select("role")
+      .select("role, is_active")
       .eq('id', user.id)
       .single();
       
@@ -80,6 +80,17 @@ export const checkUserPermissions = async (requiredRoles: string[] = ['admin', '
       toast({
         title: "Permissions insuffisantes",
         description: "Impossible de vérifier votre rôle. Contactez l'administrateur.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    // Vérifier si l'utilisateur est actif
+    if (!userData || !userData.is_active) {
+      console.log("Utilisateur inactif:", user.id);
+      toast({
+        title: "Compte désactivé",
+        description: "Votre compte a été désactivé. Contactez l'administrateur.",
         variant: "destructive",
       });
       return false;

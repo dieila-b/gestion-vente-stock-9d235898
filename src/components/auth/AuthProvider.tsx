@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               address: "Matam",
               role: "admin",
               is_active: true,
-              photo_url: null
+              photo_url": null
             },
             {
               id: "dev-1743853323494",
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               address: "Madina",
               role: "manager",
               is_active: true,
-              photo_url: null
+              photo_url": null
             }
           ];
           localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
@@ -55,8 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isDevelopmentMode]);
 
-  // In development mode, force authentication to be true
-  // In production, use actual authentication status
   const contextValue = {
     isAuthenticated: isDevelopmentMode ? true : isAuthenticated,
     loading: isDevelopmentMode ? false : loading,

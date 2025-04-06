@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,7 @@ export function useAuthActions(
       console.log("Checking if user exists in internal_users table");
       const { data: internalUser, error: internalUserError } = await supabase
         .from("internal_users")
-        .select("id, email, role")
+        .select("id, email, role, is_active")
         .eq("email", normalizedEmail)
         .single();
         
@@ -48,8 +49,17 @@ export function useAuthActions(
         };
       }
       
+      // Vérifier si l'utilisateur est actif
+      if (!internalUser.is_active) {
+        console.error("User account is inactive:", internalUser.email);
+        return {
+          success: false,
+          error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+        };
+      }
+      
       // If user exists, attempt authentication with Supabase
-      console.log("User exists, attempting authentication with Supabase");
+      console.log("User exists and is active, attempting authentication with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password
