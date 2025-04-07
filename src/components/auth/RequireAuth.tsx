@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
@@ -9,33 +8,27 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
 
+  console.log("🔍 Auth Check | MODE:", import.meta.env.MODE);
+
+  // 🔓 Bypass authentication when in development mode
+  if (import.meta.env.MODE === "development") {
+    console.log("🔓 Bypassing authentication in development mode");
+    return <>{children}</>;
+  }
+
   useEffect(() => {
-    console.log("RequireAuth effect running", { 
-      isAuthenticated, 
-      loading,
-      currentPath: location.pathname
-    });
-    
-    // Always check authentication regardless of mode
     if (!loading) {
       if (!isAuthenticated) {
-        console.log("User not authenticated, redirecting to login");
         if (location.pathname !== "/login" && location.pathname !== "/unauthorized") {
           toast.error("Veuillez vous connecter pour accéder à cette page");
           navigate("/login", { replace: true, state: { from: location.pathname } });
         }
-      } else {
-        console.log("User is authenticated, allowing access");
       }
     }
   }, [navigate, isAuthenticated, loading, location.pathname]);
 
-  // Only grant access if authenticated or still loading
-  if (!isAuthenticated && !loading) {
-    return null;
-  }
+  if (!isAuthenticated && !loading) return null;
 
-  // If still loading, show a loading spinner
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
