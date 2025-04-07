@@ -16,7 +16,15 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
+  // Bypass auth in development mode
   useEffect(() => {
+    if (import.meta.env.MODE === "development") {
+      console.log("Development mode detected, bypassing login");
+      toast.success("Connexion automatique (mode développement)");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+    
     // If already authenticated, redirect to dashboard
     if (isAuthenticated && !loading) {
       console.log("User already authenticated, redirecting to dashboard");
@@ -24,15 +32,14 @@ export default function Login() {
     }
   }, [navigate, isAuthenticated, loading]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
-    // ✅ Bypass en mode développement (via .env)
-    const bypassAuth = import.meta.env.VITE_BYPASS_AUTH === "true";
-    if (bypassAuth) {
-      console.warn("Bypass auth activé (développement uniquement)");
-      toast.success("Connexion fictive (dev)");
+    // ✅ Bypass en mode développement
+    if (import.meta.env.MODE === "development") {
+      console.warn("Mode développement: bypass automatique de l'authentification");
+      toast.success("Connexion automatique (mode développement)");
       navigate("/dashboard", { replace: true });
       return;
     }
@@ -73,6 +80,18 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  // If in development mode, show simplified loading message then auto-navigate
+  if (import.meta.env.MODE === "development") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-lg font-medium">Connexion automatique en mode développement...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If still loading, show loading spinner
   if (loading) {

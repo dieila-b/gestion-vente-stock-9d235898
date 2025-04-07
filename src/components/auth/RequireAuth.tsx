@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
@@ -17,9 +18,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   useEffect(() => {
+    console.log("RequireAuth effect running", { isAuthenticated, loading, currentPath: location.pathname });
+    
     if (!loading) {
       if (!isAuthenticated) {
         if (location.pathname !== "/login" && location.pathname !== "/unauthorized") {
+          console.log("User not authenticated, redirecting to login");
           toast.error("Veuillez vous connecter pour accéder à cette page");
           navigate("/login", { replace: true, state: { from: location.pathname } });
         }
@@ -27,7 +31,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }, [navigate, isAuthenticated, loading, location.pathname]);
 
-  if (!isAuthenticated && !loading) return null;
+  if (!isAuthenticated && !loading && import.meta.env.MODE !== "development") return null;
 
   if (loading) {
     return (
