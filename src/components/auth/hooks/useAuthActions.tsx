@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { handleDevModeLogin } from "./utils/devModeAuth";
 import { handleProdModeLogin } from "./utils/prodModeAuth";
 import { handleLogout } from "./utils/logoutHandler";
 
@@ -17,25 +16,14 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      if (isDevelopmentMode) {
-        // Development mode login
-        const result = handleDevModeLogin(email);
-        
-        if (result.success) {
-          setIsAuthenticated(true);
-        }
-        
-        return result;
-      } else {
-        // Production mode login
-        const result = await handleProdModeLogin(email, password);
-        
-        if (result.success) {
-          setIsAuthenticated(true);
-        }
-        
-        return result;
+      // Always use production login mode, regardless of env
+      const result = await handleProdModeLogin(email, password);
+      
+      if (result.success) {
+        setIsAuthenticated(true);
       }
+      
+      return result;
     } finally {
       setIsSubmitting(false);
     }
@@ -44,7 +32,7 @@ export function useAuthActions(
   const logout = async () => {
     try {
       setIsSubmitting(true);
-      await handleLogout(isDevelopmentMode);
+      await handleLogout(false); // Always use production logout mode
       setIsAuthenticated(false);
     } finally {
       setIsSubmitting(false);

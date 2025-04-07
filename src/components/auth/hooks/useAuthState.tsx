@@ -8,69 +8,9 @@ export function useAuthState() {
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    if (isDevelopmentMode) {
-      console.log("Development mode: Authentication disabled - all users are automatically authenticated");
-      
-      // Vérifier si nous avons un utilisateur actuel en session
-      const currentUser = localStorage.getItem('currentUser');
-      
-      // En développement, créer des utilisateurs de démonstration si non existants
-      try {
-        const existingUsers = localStorage.getItem('internalUsers');
-        if (!existingUsers) {
-          const demoUsers = [
-            {
-              id: "dev-1743844624581",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@gmail.com",
-              phone: "623268781",
-              address: "Matam",
-              role: "admin",
-              is_active: true,
-              photo_url: null
-            },
-            {
-              id: "dev-1743853323494",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@yahoo.fr",
-              phone: "623268781",
-              address: "Madina",
-              role: "manager",
-              is_active: true,
-              photo_url: null
-            }
-          ];
-          localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
-          
-          // Si aucun utilisateur actuel, définir le premier comme actuel
-          if (!currentUser) {
-            localStorage.setItem('currentUser', JSON.stringify(demoUsers[0]));
-          }
-          
-          console.log("Données utilisateurs de démo créées et stockées dans localStorage");
-        } else {
-          console.log("Utilisateurs de démonstration existants trouvés dans localStorage");
-          
-          // Si aucun utilisateur actuel, définir le premier des utilisateurs existants comme actuel
-          if (!currentUser) {
-            const users = JSON.parse(existingUsers);
-            if (users && users.length > 0) {
-              localStorage.setItem('currentUser', JSON.stringify(users[0]));
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Erreur lors de la création des données démo:", err);
-      }
-      
-      setIsAuthenticated(true);
-      setLoading(false);
-      return;
-    }
+    console.log("Authentication required for all users, even in development mode");
 
-    // Production mode - check actual authentication status
+    // Check authentication status regardless of mode
     const checkAuthStatus = async () => {
       try {
         console.log("Checking authentication status...");
@@ -157,7 +97,7 @@ export function useAuthState() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [isDevelopmentMode]);
+  }, []);
 
   return { 
     isAuthenticated, 

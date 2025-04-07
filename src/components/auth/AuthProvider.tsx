@@ -13,54 +13,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log(
       isDevelopmentMode 
-        ? "Authentication disabled: Development mode - all users are automatically authenticated" 
-        : "Production mode: Real authentication required for internal users"
+        ? "Mode développement: Authentification requise pour tous les utilisateurs" 
+        : "Mode production: Authentification requise pour tous les utilisateurs"
     );
-    
-    // Ensure demo users in localStorage
-    if (isDevelopmentMode) {
-      try {
-        const storedUsers = localStorage.getItem('internalUsers');
-        if (!storedUsers) {
-          const demoUsers = [
-            {
-              id: "dev-1743844624581",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@gmail.com",
-              phone: "623268781",
-              address: "Matam",
-              role: "admin",
-              is_active: true,
-              photo_url: null
-            },
-            {
-              id: "dev-1743853323494",
-              first_name: "Dieila",
-              last_name: "Barry",
-              email: "wosyrab@yahoo.fr",
-              phone: "623268781",
-              address: "Madina",
-              role: "manager",
-              is_active: true,
-              photo_url: null
-            }
-          ];
-          localStorage.setItem('internalUsers', JSON.stringify(demoUsers));
-          console.log("Utilisateurs de démo créés lors de l'initialisation de l'AuthProvider");
-        }
-      } catch (err) {
-        console.error("Erreur lors de la création des utilisateurs de démo:", err);
-      }
-    }
   }, [isDevelopmentMode]);
 
   const contextValue = {
-    isAuthenticated: isDevelopmentMode ? true : isAuthenticated,
-    loading: isDevelopmentMode ? false : loading,
+    isAuthenticated,
+    loading,
     login,
     logout,
-    isSubmitting: isDevelopmentMode ? false : isSubmitting,
+    isSubmitting,
     isDevelopmentMode
   };
 

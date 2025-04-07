@@ -17,23 +17,12 @@ export default function Login() {
   const [loginError, setLoginError] = useState("");
   
   useEffect(() => {
-    if (isDevelopmentMode) {
-      // En mode développement, proposer de rediriger vers le dashboard mais ne pas le faire automatiquement
-      console.log("Development mode: Login page is available for testing");
-      
-      // Si déjà authentifié, alors rediriger
-      if (isAuthenticated && !loading) {
-        navigate("/dashboard", { replace: true });
-      }
-      return;
-    } 
-    
-    // If already authenticated in production mode, redirect to dashboard
+    // If already authenticated, redirect to dashboard
     if (isAuthenticated && !loading) {
-      console.log("Production mode: User already authenticated, redirecting to dashboard");
+      console.log("User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isDevelopmentMode, isAuthenticated, loading]);
+  }, [navigate, isAuthenticated, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +46,6 @@ export default function Login() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail, "Mode:", isDevelopmentMode ? "Development" : "Production");
       
-      // Mode production normal ou développement
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
       
@@ -78,7 +66,7 @@ export default function Login() {
   };
 
   // If still loading, show loading spinner
-  if (loading && !isDevelopmentMode) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
@@ -89,7 +77,6 @@ export default function Login() {
     );
   }
 
-  // In development or production mode, show login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -98,13 +85,6 @@ export default function Login() {
           <CardDescription>
             Entrez vos identifiants pour accéder à l'application
           </CardDescription>
-          {isDevelopmentMode && (
-            <div className="mt-2 text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-md">
-              Mode développement: Vous pouvez utiliser les emails de test suivants:
-              <div className="mt-1 font-medium">wosyrab@gmail.com ou wosyrab@yahoo.fr</div>
-              <div className="mt-1">(Mot de passe peut être n'importe quoi en dev mode)</div>
-            </div>
-          )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

@@ -8,12 +8,10 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Check if in development mode
+  // Check if in development mode (for informational purposes only)
   const isDevelopmentMode = import.meta.env.DEV;
   
-  console.log(isDevelopmentMode 
-    ? "Auth hook: Development mode - authentication is disabled" 
-    : "Auth hook: Production mode - checking real authentication status");
+  console.log("Auth hook: Authentication required, checking real authentication status");
   
   return context;
 };
