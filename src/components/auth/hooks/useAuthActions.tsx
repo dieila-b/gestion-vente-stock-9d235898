@@ -32,7 +32,7 @@ export function useAuthActions(
   const logout = async () => {
     try {
       setIsSubmitting(true);
-      await handleLogout(isDevelopmentMode);
+      await handleLogout(false); // Always use production logout mode regardless of environment
       setIsAuthenticated(false);
     } finally {
       setIsSubmitting(false);

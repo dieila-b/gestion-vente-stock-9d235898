@@ -16,7 +16,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       currentPath: location.pathname
     });
     
-    // Check if user is authenticated for all modes
+    // Always check authentication regardless of mode
     if (!loading) {
       if (!isAuthenticated) {
         console.log("User not authenticated, redirecting to login");
