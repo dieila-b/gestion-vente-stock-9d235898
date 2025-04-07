@@ -24,17 +24,26 @@ export default function Login() {
     }
   }, [navigate, isAuthenticated, loading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-    
-    // Validation
+
+    // ✅ Bypass en mode développement (via .env)
+    const bypassAuth = import.meta.env.VITE_BYPASS_AUTH === "true";
+    if (bypassAuth) {
+      console.warn("Bypass auth activé (développement uniquement)");
+      toast.success("Connexion fictive (dev)");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    // 🔒 Validation classique
     if (!email.trim()) {
       setLoginError("Veuillez saisir votre email");
       toast.error("Veuillez saisir votre email");
       return;
     }
-    
+
     if (!password) {
       setLoginError("Veuillez saisir votre mot de passe");
       toast.error("Veuillez saisir votre mot de passe");
@@ -45,10 +54,10 @@ export default function Login() {
       setIsSubmitting(true);
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail);
-      
+
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
-      
+
       if (result.success) {
         toast.success("Connexion réussie");
         navigate("/dashboard", { replace: true });
