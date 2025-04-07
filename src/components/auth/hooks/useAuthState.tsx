@@ -10,7 +10,7 @@ export function useAuthState() {
   useEffect(() => {
     console.log("Authentication required for all users, even in development mode");
 
-    // Check authentication status regardless of mode
+    // Check authentication status
     const checkAuthStatus = async () => {
       try {
         console.log("Checking authentication status...");

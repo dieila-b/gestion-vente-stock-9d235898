@@ -16,7 +16,7 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // Always use production login mode, regardless of env
+      // Always use production login mode
       const result = await handleProdModeLogin(email, password);
       
       if (result.success) {
@@ -32,7 +32,7 @@ export function useAuthActions(
   const logout = async () => {
     try {
       setIsSubmitting(true);
-      await handleLogout(false); // Always use production logout mode
+      await handleLogout(isDevelopmentMode);
       setIsAuthenticated(false);
     } finally {
       setIsSubmitting(false);

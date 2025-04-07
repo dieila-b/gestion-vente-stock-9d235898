@@ -11,12 +11,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log(
-      isDevelopmentMode 
-        ? "Mode développement: Authentification requise pour tous les utilisateurs" 
-        : "Mode production: Authentification requise pour tous les utilisateurs"
-    );
-  }, [isDevelopmentMode]);
+    console.log("Authentification requise pour tous les utilisateurs");
+  }, []);
 
   const contextValue = {
     isAuthenticated,

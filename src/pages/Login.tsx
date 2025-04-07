@@ -44,7 +44,7 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       const normalizedEmail = email.trim().toLowerCase();
-      console.log("Attempting login with:", normalizedEmail, "Mode:", isDevelopmentMode ? "Development" : "Production");
+      console.log("Attempting login with:", normalizedEmail);
       
       const result = await login(normalizedEmail, password);
       console.log("Login result:", result);
