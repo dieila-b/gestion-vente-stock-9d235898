@@ -28,7 +28,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     }
     
     if (!internalUser) {
-      console.error("User not found in internal_users table");
+      console.error("User not found in internal_users table:", normalizedEmail);
       return { 
         success: false, 
         error: "Cet email n'est pas associé à un compte utilisateur interne" 

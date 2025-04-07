@@ -55,7 +55,7 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       const normalizedEmail = email.trim().toLowerCase();
-      console.log("Attempting login with:", normalizedEmail);
+      console.log("Attempting login with:", normalizedEmail, "Mode:", isDevelopmentMode ? "Development" : "Production");
       
       // Mode production normal ou développement
       const result = await login(normalizedEmail, password);
