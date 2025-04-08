@@ -7,6 +7,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isSubmitting: boolean;
+  isDevelopmentMode: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

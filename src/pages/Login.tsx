@@ -10,19 +10,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, isDevelopmentMode } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
-  // If already authenticated, redirect to dashboard
+  // Si mode développement ou déjà authentifié, rediriger vers le dashboard
   useEffect(() => {
+    if (isDevelopmentMode) {
+      console.log("Login: Development mode - automatically redirecting to dashboard");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+    
     if (isAuthenticated && !loading) {
       console.log("User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isAuthenticated, loading]);
+  }, [navigate, isAuthenticated, loading, isDevelopmentMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,8 +71,8 @@ export default function Login() {
     }
   };
 
-  // If still loading, show loading spinner
-  if (loading) {
+  // Si toujours en chargement, afficher un spinner
+  if (loading && !isDevelopmentMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
@@ -75,6 +81,11 @@ export default function Login() {
         </div>
       </div>
     );
+  }
+  
+  // En mode développement, nous ne devrions jamais voir cette page
+  if (isDevelopmentMode) {
+    return null;
   }
 
   return (

@@ -3,10 +3,16 @@ import { useAuth } from "./hooks/useAuth";
 import { useLocation, Navigate } from "react-router-dom";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
   const location = useLocation();
 
   console.log("RequireAuth: Checking authentication status");
+
+  // En mode développement, toujours autoriser l'accès
+  if (isDevelopmentMode) {
+    console.log("RequireAuth: Development mode - bypassing authentication check");
+    return children;
+  }
 
   if (loading) {
     console.log("RequireAuth: Authentication check in progress...");
