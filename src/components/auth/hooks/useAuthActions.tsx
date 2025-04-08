@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { handleProdModeLogin } from "./utils/prodModeAuth";
+import { handleDevModeLogin } from "./utils/devModeAuth";
 import { handleLogout } from "./utils/logoutHandler";
 
 export function useAuthActions(
@@ -16,13 +17,19 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // En mode développement, toujours réussir la connexion
+      // En mode développement, vérifier les identifiants dans localStorage
       if (isDevelopmentMode) {
-        console.log("Development mode: Auto-login successful");
-        setIsAuthenticated(true);
-        return { success: true };
+        console.log("Development mode: Checking credentials");
+        const result = handleDevModeLogin(email);
+        
+        if (result.success) {
+          setIsAuthenticated(true);
+        }
+        
+        return result;
       }
       
+      // En mode production, vérifier avec Supabase
       const result = await handleProdModeLogin(email, password);
       
       if (result.success) {
