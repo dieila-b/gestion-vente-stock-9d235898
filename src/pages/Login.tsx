@@ -16,19 +16,13 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
-  // Si mode développement ou déjà authentifié, rediriger vers le dashboard
+  // Si déjà authentifié, rediriger vers le dashboard
   useEffect(() => {
-    if (isDevelopmentMode) {
-      console.log("Login: Development mode - automatically redirecting to dashboard");
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-    
     if (isAuthenticated && !loading) {
       console.log("User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isAuthenticated, loading, isDevelopmentMode]);
+  }, [navigate, isAuthenticated, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +66,7 @@ export default function Login() {
   };
 
   // Si toujours en chargement, afficher un spinner
-  if (loading && !isDevelopmentMode) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
@@ -81,11 +75,6 @@ export default function Login() {
         </div>
       </div>
     );
-  }
-  
-  // En mode développement, nous ne devrions jamais voir cette page
-  if (isDevelopmentMode) {
-    return null;
   }
 
   return (
@@ -96,6 +85,11 @@ export default function Login() {
           <CardDescription>
             Entrez vos identifiants pour accéder à l'application
           </CardDescription>
+          {isDevelopmentMode && (
+            <div className="text-sm p-2 bg-yellow-100 text-yellow-800 rounded-md">
+              Mode développement: Authentification requise
+            </div>
+          )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

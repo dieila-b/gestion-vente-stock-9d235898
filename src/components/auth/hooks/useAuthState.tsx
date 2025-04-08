@@ -10,15 +10,7 @@ export function useAuthState() {
   useEffect(() => {
     console.log("Checking authentication status...");
 
-    // En mode développeur, on bypass l'authentification
-    if (isDevelopmentMode) {
-      console.log("Development mode: Bypassing authentication check");
-      setIsAuthenticated(true);
-      setLoading(false);
-      return;
-    }
-
-    // Check authentication status for production mode
+    // Check authentication status for all environments
     const checkAuthStatus = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -70,7 +62,7 @@ export function useAuthState() {
       }
     };
 
-    // Setup auth state change listener for production
+    // Setup auth state change listener for all environments
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, !!session);

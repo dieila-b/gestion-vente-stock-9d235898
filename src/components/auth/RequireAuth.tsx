@@ -8,12 +8,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   console.log("RequireAuth: Checking authentication status", { isDevelopmentMode, isAuthenticated, loading });
 
-  // En mode développement, toujours autoriser l'accès
-  if (isDevelopmentMode) {
-    console.log("RequireAuth: Development mode - bypassing authentication check");
-    return <>{children}</>;
-  }
-
   if (loading) {
     console.log("RequireAuth: Authentication check in progress...");
     return <div className="flex items-center justify-center min-h-screen">

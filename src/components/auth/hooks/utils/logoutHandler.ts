@@ -2,18 +2,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Handle logout for all modes
+// Handle logout for all environments
 export const handleLogout = async (isDevelopmentMode: boolean): Promise<void> => {
   try {
     console.log("Performing logout, development mode:", isDevelopmentMode);
     
-    // En mode développement, juste afficher un message et ne pas essayer de déconnecter Supabase
-    if (isDevelopmentMode) {
-      console.log("Development mode: Simulating logout");
-      toast.success("Vous êtes déconnecté (mode développement)");
-      return;
-    }
-    
+    // Always try to sign out from Supabase
     const { error } = await supabase.auth.signOut();
     
     if (error) {
