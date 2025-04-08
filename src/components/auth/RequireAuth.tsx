@@ -1,45 +1,21 @@
-
-import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "./hooks/useAuth";
-import { toast } from "sonner";
+import { useSession } from "@lib/auth";
+import { useLocation, Navigate } from "react-router-dom";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
+  const session = useSession();
   const location = useLocation();
-  const { isAuthenticated, loading } = useAuth();
 
-  console.log("🔍 Auth Check | MODE:", import.meta.env.MODE);
+  const isDev = import.meta.env.MODE === "development";
+  console.log("Environment =", import.meta.env.MODE);
 
-  // 🔓 Bypass authentication when in development mode
-  if (import.meta.env.DEV) {
-    console.log("🔓 Bypassing authentication in development mode");
-    return <>{children}</>;
+  if (isDev) {
+    console.log("Bypassing auth in development mode.");
+    return children;
   }
 
-  useEffect(() => {
-    console.log("RequireAuth effect running", { isAuthenticated, loading, currentPath: location.pathname });
-    
-    if (!loading) {
-      if (!isAuthenticated) {
-        if (location.pathname !== "/login" && location.pathname !== "/unauthorized") {
-          console.log("User not authenticated, redirecting to login");
-          toast.error("Veuillez vous connecter pour accéder à cette page");
-          navigate("/login", { replace: true, state: { from: location.pathname } });
-        }
-      }
-    }
-  }, [navigate, isAuthenticated, loading, location.pathname]);
-
-  if (!isAuthenticated && !loading && !import.meta.env.DEV) return null;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+  if (!session) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
