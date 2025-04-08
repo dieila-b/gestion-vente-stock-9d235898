@@ -11,8 +11,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log("Authentification requise pour tous les utilisateurs");
-  }, []);
+    if (isDevelopmentMode) {
+      console.log("Développement: authentification automatique");
+    } else {
+      console.log("Production: authentification requise pour tous les utilisateurs");
+    }
+  }, [isDevelopmentMode]);
 
   const contextValue = {
     isAuthenticated,

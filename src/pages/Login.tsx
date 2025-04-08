@@ -18,7 +18,7 @@ export default function Login() {
   
   // Bypass auth in development mode
   useEffect(() => {
-    if (import.meta.env.MODE === "development") {
+    if (import.meta.env.DEV) {
       console.log("Development mode detected, bypassing login");
       toast.success("Connexion automatique (mode développement)");
       navigate("/dashboard", { replace: true });
@@ -37,7 +37,7 @@ export default function Login() {
     setLoginError("");
 
     // ✅ Bypass en mode développement
-    if (import.meta.env.MODE === "development") {
+    if (import.meta.env.DEV) {
       console.warn("Mode développement: bypass automatique de l'authentification");
       toast.success("Connexion automatique (mode développement)");
       navigate("/dashboard", { replace: true });
@@ -82,7 +82,7 @@ export default function Login() {
   };
 
   // If in development mode, show simplified loading message then auto-navigate
-  if (import.meta.env.MODE === "development") {
+  if (import.meta.env.DEV) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">

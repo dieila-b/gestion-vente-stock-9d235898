@@ -9,13 +9,14 @@ export const useAuth = () => {
   }
   
   // Check if we're in development mode
-  if (import.meta.env.MODE === "development") {
+  if (import.meta.env.DEV) {
     console.log("Auth hook: Development mode detected, bypassing auth");
     // Return that we're already authenticated in development mode
     return {
       ...context,
       isAuthenticated: true,
-      loading: false
+      loading: false,
+      isDevelopmentMode: true
     };
   }
   

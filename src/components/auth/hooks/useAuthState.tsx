@@ -8,7 +8,15 @@ export function useAuthState() {
   const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    console.log("Authentication required for all users, even in development mode");
+    // In development mode, we're already authenticated
+    if (isDevelopmentMode) {
+      console.log("Development mode: Auto-authentication enabled");
+      setIsAuthenticated(true);
+      setLoading(false);
+      return;
+    }
+
+    console.log("Production mode: Authentication required for all users");
 
     // Check authentication status
     const checkAuthStatus = async () => {
@@ -97,7 +105,7 @@ export function useAuthState() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [isDevelopmentMode]);
 
   return { 
     isAuthenticated, 

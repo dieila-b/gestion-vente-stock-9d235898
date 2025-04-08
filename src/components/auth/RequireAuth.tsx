@@ -12,7 +12,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   console.log("🔍 Auth Check | MODE:", import.meta.env.MODE);
 
   // 🔓 Bypass authentication when in development mode
-  if (import.meta.env.MODE === "development") {
+  if (import.meta.env.DEV) {
     console.log("🔓 Bypassing authentication in development mode");
     return <>{children}</>;
   }
@@ -31,7 +31,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }, [navigate, isAuthenticated, loading, location.pathname]);
 
-  if (!isAuthenticated && !loading && import.meta.env.MODE !== "development") return null;
+  if (!isAuthenticated && !loading && !import.meta.env.DEV) return null;
 
   if (loading) {
     return (
