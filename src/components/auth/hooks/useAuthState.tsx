@@ -5,23 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const isDevelopmentMode = import.meta.env.DEV;
 
   useEffect(() => {
-    // In development mode, we're already authenticated
-    if (isDevelopmentMode) {
-      console.log("Development mode: Auto-authentication enabled");
-      setIsAuthenticated(true);
-      setLoading(false);
-      return;
-    }
-
-    console.log("Production mode: Authentication required for all users");
+    console.log("Checking authentication status...");
 
     // Check authentication status
     const checkAuthStatus = async () => {
       try {
-        console.log("Checking authentication status...");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -36,7 +26,7 @@ export function useAuthState() {
         console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
         
         if (hasValidSession) {
-          // Vérifier que l'utilisateur existe dans internal_users
+          // Verify that user exists in internal_users
           const { data: userData } = await supabase.auth.getUser();
           if (userData && userData.user) {
             const { data: internalUser, error: internalError } = await supabase
@@ -52,7 +42,7 @@ export function useAuthState() {
               return;
             }
             
-            // Vérifier si l'utilisateur est actif
+            // Check if user is active
             if (!internalUser.is_active) {
               console.error("User is deactivated:", userData.user.id);
               setIsAuthenticated(false);
@@ -77,7 +67,7 @@ export function useAuthState() {
         console.log("Auth state changed:", event, !!session);
         
         if (session) {
-          // Vérifier que l'utilisateur existe dans internal_users et est actif
+          // Verify that user exists in internal_users and is active
           const { data: internalUser, error: internalError } = await supabase
             .from('internal_users')
             .select('id, is_active')
@@ -105,13 +95,12 @@ export function useAuthState() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [isDevelopmentMode]);
+  }, []);
 
   return { 
     isAuthenticated, 
     setIsAuthenticated, 
     loading, 
-    setLoading, 
-    isDevelopmentMode 
+    setLoading
   };
 }

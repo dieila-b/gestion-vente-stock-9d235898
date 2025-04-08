@@ -10,22 +10,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading, isDevelopmentMode } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   
-  // Bypass auth in development mode
+  // If already authenticated, redirect to dashboard
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log("Development mode detected, bypassing login");
-      toast.success("Connexion automatique (mode développement)");
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-    
-    // If already authenticated, redirect to dashboard
     if (isAuthenticated && !loading) {
       console.log("User already authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
@@ -36,15 +28,7 @@ export default function Login() {
     e.preventDefault();
     setLoginError("");
 
-    // ✅ Bypass en mode développement
-    if (import.meta.env.DEV) {
-      console.warn("Mode développement: bypass automatique de l'authentification");
-      toast.success("Connexion automatique (mode développement)");
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-
-    // 🔒 Validation classique
+    // Validation
     if (!email.trim()) {
       setLoginError("Veuillez saisir votre email");
       toast.error("Veuillez saisir votre email");
@@ -80,18 +64,6 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
-
-  // If in development mode, show simplified loading message then auto-navigate
-  if (import.meta.env.DEV) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-lg font-medium">Connexion automatique en mode développement...</p>
-        </div>
-      </div>
-    );
-  }
 
   // If still loading, show loading spinner
   if (loading) {

@@ -8,7 +8,6 @@ export function useAuthActions(
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isDevelopmentMode = import.meta.env.DEV;
 
   const login = async (email: string, password: string) => {
     console.log("Login attempt with email:", email);
@@ -16,7 +15,6 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // Always use production login mode
       const result = await handleProdModeLogin(email, password);
       
       if (result.success) {
@@ -32,7 +30,7 @@ export function useAuthActions(
   const logout = async () => {
     try {
       setIsSubmitting(true);
-      await handleLogout(false); // Always use production logout mode regardless of environment
+      await handleLogout(false);
       setIsAuthenticated(false);
     } finally {
       setIsSubmitting(false);
