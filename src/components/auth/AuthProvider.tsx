@@ -11,17 +11,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Détection du mode développement
   const isDevelopmentMode = import.meta.env.DEV;
 
-  // Log initial auth state
+  // Log initial auth state and auto-authenticate in dev mode
   useEffect(() => {
     console.log(`AuthProvider initialized: ${isDevelopmentMode ? 'Development mode - authentication bypassed' : 'Authentication required for all users'}`);
     
     // Auto-authentifier en mode développement
-    if (isDevelopmentMode && !isAuthenticated) {
+    if (isDevelopmentMode) {
       console.log("Development mode: Auto-authenticating user");
       setIsAuthenticated(true);
       setLoading(false);
     }
-  }, [isDevelopmentMode, isAuthenticated, setIsAuthenticated, setLoading]);
+  }, [isDevelopmentMode, setIsAuthenticated, setLoading]);
 
   const contextValue = {
     isAuthenticated,

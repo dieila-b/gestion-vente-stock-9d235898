@@ -6,12 +6,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
   const location = useLocation();
 
-  console.log("RequireAuth: Checking authentication status");
+  console.log("RequireAuth: Checking authentication status", { isDevelopmentMode, isAuthenticated, loading });
 
   // En mode développement, toujours autoriser l'accès
   if (isDevelopmentMode) {
     console.log("RequireAuth: Development mode - bypassing authentication check");
-    return children;
+    return <>{children}</>;
   }
 
   if (loading) {
@@ -27,5 +27,5 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   console.log("RequireAuth: Valid session found, rendering children");
-  return children;
+  return <>{children}</>;
 }

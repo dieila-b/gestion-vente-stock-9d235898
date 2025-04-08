@@ -8,12 +8,20 @@ export function useAuthActions(
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const isDevelopmentMode = import.meta.env.DEV;
+  
   const login = async (email: string, password: string) => {
     console.log("Login attempt with email:", email);
     
     try {
       setIsSubmitting(true);
+      
+      // En mode développement, toujours réussir la connexion
+      if (isDevelopmentMode) {
+        console.log("Development mode: Auto-login successful");
+        setIsAuthenticated(true);
+        return { success: true };
+      }
       
       const result = await handleProdModeLogin(email, password);
       
@@ -30,7 +38,7 @@ export function useAuthActions(
   const logout = async () => {
     try {
       setIsSubmitting(true);
-      await handleLogout(false);
+      await handleLogout(isDevelopmentMode);
       setIsAuthenticated(false);
     } finally {
       setIsSubmitting(false);
