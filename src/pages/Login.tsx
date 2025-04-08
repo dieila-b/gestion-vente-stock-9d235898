@@ -28,21 +28,34 @@ export default function Login() {
     e.preventDefault();
     setLoginError("");
 
-    // Validation
-    if (!email.trim()) {
-      setLoginError("Veuillez saisir votre email");
-      toast.error("Veuillez saisir votre email");
-      return;
-    }
-
-    if (!password) {
-      setLoginError("Veuillez saisir votre mot de passe");
-      toast.error("Veuillez saisir votre mot de passe");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
+      
+      // In development mode, no validation needed
+      if (isDevelopmentMode) {
+        console.log("Development mode: Automatic login without validation");
+        const result = await login("dev@example.com", "password");
+        
+        if (result.success) {
+          toast.success("Connexion réussie (Mode développement)");
+          navigate("/dashboard", { replace: true });
+        }
+        return;
+      }
+      
+      // In production mode, validate inputs
+      if (!email.trim()) {
+        setLoginError("Veuillez saisir votre email");
+        toast.error("Veuillez saisir votre email");
+        return;
+      }
+
+      if (!password) {
+        setLoginError("Veuillez saisir votre mot de passe");
+        toast.error("Veuillez saisir votre mot de passe");
+        return;
+      }
+
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Attempting login with:", normalizedEmail);
 
@@ -83,38 +96,44 @@ export default function Login() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
           <CardDescription>
-            Entrez vos identifiants pour accéder à l'application
+            {isDevelopmentMode 
+              ? "Mode développement: Authentification automatique activée" 
+              : "Entrez vos identifiants pour accéder à l'application"}
           </CardDescription>
           {isDevelopmentMode && (
-            <div className="text-sm p-2 bg-yellow-100 text-yellow-800 rounded-md">
-              Mode développement: Authentification requise
+            <div className="text-sm p-2 bg-green-100 text-green-800 rounded-md">
+              Mode développement: Cliquez simplement sur Se connecter pour accéder à l'application
             </div>
           )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="votre@email.com" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+            {!isDevelopmentMode && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="votre@email.com" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mot de passe</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
             {loginError && (
               <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">
                 {loginError}
@@ -133,7 +152,7 @@ export default function Login() {
                   Connexion en cours...
                 </>
               ) : (
-                "Se connecter"
+                isDevelopmentMode ? "Accéder à l'application" : "Se connecter"
               )}
             </Button>
           </CardFooter>

@@ -13,7 +13,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Log initial auth state
   useEffect(() => {
-    console.log(`AuthProvider initialized: ${isDevelopmentMode ? 'Development mode' : 'Production mode'} - authentication required for all users`);
+    if (isDevelopmentMode) {
+      console.log("AuthProvider initialized: Development mode - authentication bypass enabled");
+    } else {
+      console.log("AuthProvider initialized: Production mode - authentication required for all users");
+    }
   }, [isDevelopmentMode]);
 
   const contextValue = {

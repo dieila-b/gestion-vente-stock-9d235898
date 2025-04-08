@@ -10,7 +10,15 @@ export function useAuthState() {
   useEffect(() => {
     console.log("Checking authentication status...");
 
-    // Check authentication status for all environments
+    // In development mode, auto-authenticate
+    if (isDevelopmentMode) {
+      console.log("Development mode detected: Auto-authenticating user");
+      setIsAuthenticated(true);
+      setLoading(false);
+      return;
+    }
+
+    // Only check authentication with Supabase in production mode
     const checkAuthStatus = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -62,40 +70,42 @@ export function useAuthState() {
       }
     };
 
-    // Setup auth state change listener for all environments
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, !!session);
-        
-        if (session) {
-          // Verify that user exists in internal_users and is active
-          const { data: internalUser, error: internalError } = await supabase
-            .from('internal_users')
-            .select('id, is_active')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (internalError || !internalUser || !internalUser.is_active) {
-            console.error("User not in internal_users, not active, or error:", internalError?.message);
-            setIsAuthenticated(false);
+    // Only set up auth state change listener in production mode
+    if (!isDevelopmentMode) {
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log("Auth state changed:", event, !!session);
+          
+          if (session) {
+            // Verify that user exists in internal_users and is active
+            const { data: internalUser, error: internalError } = await supabase
+              .from('internal_users')
+              .select('id, is_active')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (internalError || !internalUser || !internalUser.is_active) {
+              console.error("User not in internal_users, not active, or error:", internalError?.message);
+              setIsAuthenticated(false);
+            } else {
+              setIsAuthenticated(true);
+            }
           } else {
-            setIsAuthenticated(true);
+            setIsAuthenticated(false);
           }
-        } else {
-          setIsAuthenticated(false);
+          
+          setLoading(false);
         }
-        
-        setLoading(false);
-      }
-    );
+      );
 
-    // Initial auth check
-    checkAuthStatus();
+      // Initial auth check for production
+      checkAuthStatus();
 
-    // Cleanup
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+      // Cleanup
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    }
   }, [isDevelopmentMode]);
 
   return { 

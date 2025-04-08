@@ -20,6 +20,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  console.log("RequireAuth: Valid session found, rendering children");
+  console.log("RequireAuth: Valid session found", isDevelopmentMode ? "(Development mode bypass)" : "(Production mode)");
   return <>{children}</>;
 }

@@ -7,7 +7,14 @@ export const handleLogout = async (isDevelopmentMode: boolean): Promise<void> =>
   try {
     console.log("Performing logout, development mode:", isDevelopmentMode);
     
-    // Always try to sign out from Supabase
+    // In development mode, skip Supabase signout
+    if (isDevelopmentMode) {
+      console.log("Development mode: Skipping Supabase signout");
+      toast.success("Vous êtes déconnecté (Mode développement)");
+      return;
+    }
+    
+    // In production mode, sign out from Supabase
     const { error } = await supabase.auth.signOut();
     
     if (error) {
