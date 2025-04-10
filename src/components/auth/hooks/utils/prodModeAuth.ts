@@ -19,7 +19,8 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     const { data: internalUsers, error: internalUserError } = await supabase
       .from("internal_users")
       .select("email, is_active")
-      .eq("email", normalizedEmail);
+      .eq("email", normalizedEmail)
+      .limit(1);
       
     if (internalUserError) {
       console.error("Error checking internal_users:", internalUserError.message);

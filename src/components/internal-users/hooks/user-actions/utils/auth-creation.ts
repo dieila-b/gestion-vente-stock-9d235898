@@ -17,9 +17,10 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
       
       if (!searchError && authUsersData) {
         // Find user with matching email
-        const existingUser = authUsersData.users.find(user => 
-          user.email?.toLowerCase() === normalizedEmail
-        );
+        const existingUser = authUsersData.users.find(user => {
+          // Make sure to check if email exists before comparing
+          return user.email && user.email.toLowerCase() === normalizedEmail;
+        });
         
         if (existingUser) {
           console.log("Utilisateur Auth existant trouvé:", existingUser.email);
@@ -54,9 +55,10 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
           
           if (!searchError && authUsersData) {
             // Find user with matching email
-            const existingUser = authUsersData.users.find(user => 
-              user.email?.toLowerCase() === normalizedEmail
-            );
+            const existingUser = authUsersData.users.find(user => {
+              // Make sure to check if email exists before comparing
+              return user.email && user.email.toLowerCase() === normalizedEmail;
+            });
             
             if (existingUser) {
               console.log("Utilisateur Auth déjà existant récupéré:", existingUser.email);

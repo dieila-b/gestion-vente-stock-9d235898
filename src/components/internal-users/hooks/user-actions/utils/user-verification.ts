@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { SupabaseUser } from "../types";
 
 export const checkIfUserExists = async (email: string): Promise<boolean> => {
   try {
@@ -96,7 +95,8 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('internal_users')
       .select('email')
-      .eq('email', normalizedEmail);
+      .eq('email', normalizedEmail)
+      .limit(1);
     
     if (error) {
       console.error("Erreur lors de la vérification dans internal_users:", error);
@@ -125,9 +125,10 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       
       if (!authError && authUsersData) {
         // Find user with matching email
-        const existingUser = authUsersData.users.find(user => 
-          user.email?.toLowerCase() === normalizedEmail
-        );
+        const existingUser = authUsersData.users.find(user => {
+          // Make sure to check if email exists before comparing
+          return user.email && user.email.toLowerCase() === normalizedEmail;
+        });
         
         if (existingUser) {
           console.log("Utilisateur existant trouvé dans auth:", existingUser.email);
