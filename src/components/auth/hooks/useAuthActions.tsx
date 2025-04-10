@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { handleDevModeLogin } from "./utils/devModeAuth";
 import { handleProdModeLogin } from "./utils/prodModeAuth";
 import { handleLogout } from "./utils/logoutHandler";
 import { useDevMode } from "./useDevMode";
@@ -19,13 +20,23 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // In development mode or testing mode, auto-authenticate
-      if (isDevelopmentMode || testingMode) {
-        console.log(isDevelopmentMode 
-          ? "Development mode: Auto-authenticating without credentials check" 
-          : "Testing mode: Auto-authenticating without credentials check");
+      // In testing mode only, auto-authenticate
+      if (testingMode) {
+        console.log("Testing mode: Auto-authenticating without credentials check");
         setIsAuthenticated(true);
         return { success: true };
+      }
+      
+      // In development mode, use dev mode login that checks credentials
+      if (isDevelopmentMode) {
+        console.log("Development mode: Checking login credentials");
+        const result = await handleDevModeLogin(email);
+        
+        if (result.success) {
+          setIsAuthenticated(true);
+        }
+        
+        return result;
       }
       
       // In production mode, use the regular authentication flow
@@ -45,7 +56,7 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // In development mode, just set authentication state to false
+      // In development or testing mode, just set authentication state to false
       if (isDevelopmentMode || testingMode) {
         console.log(isDevelopmentMode 
           ? "Development mode: Simple logout without server calls" 

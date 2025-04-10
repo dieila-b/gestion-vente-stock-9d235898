@@ -47,28 +47,23 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       
-      // In development or testing mode, no validation needed
-      if (isDevelopmentMode || testingMode) {
-        console.log(isDevelopmentMode 
-          ? "Development mode: Automatic login without validation" 
-          : "Testing mode: Automatic login without validation in production");
+      // In testing mode, no validation needed
+      if (testingMode) {
+        console.log("Testing mode: Automatic login without validation in production");
         
         const result = await login(email, password);
         
         if (result.success) {
-          toast.success(isDevelopmentMode 
-            ? "Connexion réussie (Mode développement)" 
-            : "Connexion réussie (Mode test)");
+          toast.success("Connexion réussie (Mode test)");
           navigate("/dashboard", { replace: true });
         } else {
-          // Even in dev mode, handle errors
           setLoginError(result.error || "Échec de la connexion");
           toast.error(result.error || "Échec de la connexion");
         }
         return;
       }
       
-      // In normal production mode, validate inputs
+      // Validate inputs for all modes
       if (!email.trim()) {
         setLoginError("Veuillez saisir votre email");
         toast.error("Veuillez saisir votre email");

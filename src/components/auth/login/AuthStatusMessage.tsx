@@ -8,28 +8,33 @@ interface AuthStatusMessageProps {
 }
 
 export const AuthStatusMessage = ({ isDevelopmentMode, testingMode }: AuthStatusMessageProps) => {
-  // Normal authentication message
-  if (!isDevelopmentMode && !testingMode) {
+  // Testing mode message
+  if (testingMode) {
+    return (
+      <>
+        <CardDescription>
+          Mode test: Authentification automatique activée en production
+        </CardDescription>
+        <div className="text-sm p-2 bg-yellow-100 text-yellow-800 rounded-md mt-2">
+          Mode test: Bypass d'authentification activé en production
+        </div>
+      </>
+    );
+  }
+  
+  // Development mode message
+  if (isDevelopmentMode) {
     return (
       <CardDescription>
-        Entrez vos identifiants pour accéder à l'application
+        Mode développement: Veuillez vous connecter avec vos identifiants
       </CardDescription>
     );
   }
 
-  // Development or testing mode message
+  // Normal authentication message
   return (
-    <>
-      <CardDescription>
-        {isDevelopmentMode 
-          ? "Mode développement: Authentification automatique activée" 
-          : "Mode test: Authentification automatique activée en production"}
-      </CardDescription>
-      <div className={`text-sm p-2 ${testingMode ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"} rounded-md mt-2`}>
-        {isDevelopmentMode 
-          ? "Mode développement: Cliquez simplement sur Se connecter pour accéder à l'application" 
-          : "Mode test: Bypass d'authentification activé en production"}
-      </div>
-    </>
+    <CardDescription>
+      Entrez vos identifiants pour accéder à l'application
+    </CardDescription>
   );
 };
