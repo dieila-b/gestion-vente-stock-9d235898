@@ -12,16 +12,20 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
     
     // Vérifier si un utilisateur Auth existe déjà avec cet email
     try {
-      // First, try to get users from auth.users table by filtering on email
-      const { data: authUsers, error: searchError } = await supabase.auth.admin.listUsers({
-        filter: `email.eq.${normalizedEmail}`
-      });
+      // Get all users and filter the results manually since filter param isn't supported in the type
+      const { data: authUsersData, error: searchError } = await supabase.auth.admin.listUsers();
       
-      if (!searchError && authUsers && authUsers.users.length > 0) {
-        const existingUser = authUsers.users[0];
-        console.log("Utilisateur Auth existant trouvé:", existingUser.email);
-        // Utilisateur Auth existant, mais pas encore dans internal_users
-        return existingUser.id;
+      if (!searchError && authUsersData) {
+        // Find user with matching email
+        const existingUser = authUsersData.users.find(user => 
+          user.email?.toLowerCase() === normalizedEmail
+        );
+        
+        if (existingUser) {
+          console.log("Utilisateur Auth existant trouvé:", existingUser.email);
+          // Utilisateur Auth existant, mais pas encore dans internal_users
+          return existingUser.id;
+        }
       }
     } catch (error) {
       console.log("Vérification utilisateur Auth existant impossible (permissions):", error);
@@ -45,15 +49,19 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
       // Si l'erreur est que l'utilisateur existe déjà, essayons de le récupérer
       if (authError.message.includes("already exists")) {
         try {
-          // Search for existing user with that email
-          const { data: authUsers, error: searchError } = await supabase.auth.admin.listUsers({
-            filter: `email.eq.${normalizedEmail}`
-          });
+          // Get all users and filter manually
+          const { data: authUsersData, error: searchError } = await supabase.auth.admin.listUsers();
           
-          if (!searchError && authUsers && authUsers.users.length > 0) {
-            const existingUser = authUsers.users[0];
-            console.log("Utilisateur Auth déjà existant récupéré:", existingUser.email);
-            return existingUser.id;
+          if (!searchError && authUsersData) {
+            // Find user with matching email
+            const existingUser = authUsersData.users.find(user => 
+              user.email?.toLowerCase() === normalizedEmail
+            );
+            
+            if (existingUser) {
+              console.log("Utilisateur Auth déjà existant récupéré:", existingUser.email);
+              return existingUser.id;
+            }
           }
         } catch (error) {
           console.log("Récupération utilisateur Auth existant impossible (permissions):", error);
