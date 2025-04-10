@@ -21,10 +21,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   // Authentication status message
-  if (testingMode) {
+  if (isDevelopmentMode) {
+    console.log("RequireAuth: Development mode active - Authentication bypassed");
+  } else if (testingMode) {
     console.log("RequireAuth: TESTING MODE active in production - Authentication bypassed");
-  } else if (isDevelopmentMode) {
-    console.log("RequireAuth: Development mode active - Normal authentication required");
   } else {
     console.log("RequireAuth: Production mode - Valid user session verified");
   }

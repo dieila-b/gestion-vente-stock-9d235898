@@ -26,20 +26,6 @@ export default function Login() {
     }
   }, [navigate, isAuthenticated, loading]);
 
-  // Force recreation of default users in development mode on component mount
-  useEffect(() => {
-    if (isDevelopmentMode) {
-      try {
-        // In development mode, force recreate default users on component mount
-        const { createDefaultDevUsers } = require("@/components/auth/hooks/utils/devModeAuth");
-        createDefaultDevUsers();
-        console.log("Default development users recreated during Login mount");
-      } catch (error) {
-        console.error("Error recreating default development users:", error);
-      }
-    }
-  }, [isDevelopmentMode]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -47,23 +33,23 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       
-      // In testing mode, no validation needed
-      if (testingMode) {
-        console.log("Testing mode: Automatic login without validation in production");
+      // En mode développement ou test, authentification automatique
+      if (isDevelopmentMode || testingMode) {
+        console.log(isDevelopmentMode 
+          ? "Development mode: Auto-authenticating user" 
+          : "Testing mode: Auto-authenticating user");
         
         const result = await login(email, password);
         
         if (result.success) {
-          toast.success("Connexion réussie (Mode test)");
+          const modeMessage = isDevelopmentMode ? "Mode développement" : "Mode test";
+          toast.success(`Connexion réussie (${modeMessage})`);
           navigate("/dashboard", { replace: true });
-        } else {
-          setLoginError(result.error || "Échec de la connexion");
-          toast.error(result.error || "Échec de la connexion");
         }
         return;
       }
       
-      // Validate inputs for all modes
+      // Validation des champs en mode production
       if (!email.trim()) {
         setLoginError("Veuillez saisir votre email");
         toast.error("Veuillez saisir votre email");

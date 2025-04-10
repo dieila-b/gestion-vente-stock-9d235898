@@ -30,12 +30,13 @@ export const LoginForm = ({
   isDevelopmentMode,
   testingMode
 }: LoginFormProps) => {
-  const requiresCredentials = !isDevelopmentMode && !testingMode;
+  // En mode développement ou test, ne pas afficher les champs de saisie
+  const showCredentialFields = !isDevelopmentMode && !testingMode;
 
   return (
     <form onSubmit={onSubmit}>
       <CardContent className="space-y-4">
-        {requiresCredentials && (
+        {showCredentialFields && (
           <>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -80,7 +81,7 @@ export const LoginForm = ({
             </>
           ) : (
             isDevelopmentMode 
-              ? "Accéder à l'application" 
+              ? "Accéder à l'application (Mode dev)" 
               : testingMode 
                 ? "Accéder à l'application (Mode test)" 
                 : "Se connecter"

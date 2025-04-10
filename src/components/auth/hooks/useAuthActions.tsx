@@ -20,26 +20,16 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // In testing mode only, auto-authenticate
-      if (testingMode) {
-        console.log("Testing mode: Auto-authenticating without credentials check");
+      // En mode développement ou testing, auto-authentification
+      if (isDevelopmentMode || testingMode) {
+        console.log(isDevelopmentMode 
+          ? "Development mode: Auto-authenticating without credentials check" 
+          : "Testing mode: Auto-authenticating without credentials check");
         setIsAuthenticated(true);
         return { success: true };
       }
       
-      // In development mode, use dev mode login that checks credentials
-      if (isDevelopmentMode) {
-        console.log("Development mode: Checking login credentials");
-        const result = await handleDevModeLogin(email);
-        
-        if (result.success) {
-          setIsAuthenticated(true);
-        }
-        
-        return result;
-      }
-      
-      // In production mode, use the regular authentication flow
+      // En mode production, utiliser le flux d'authentification normal
       const result = await handleProdModeLogin(email, password);
       
       if (result.success) {
@@ -56,7 +46,7 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
-      // In development or testing mode, just set authentication state to false
+      // En mode développement ou testing, simplement mettre l'état d'authentification à false
       if (isDevelopmentMode || testingMode) {
         console.log(isDevelopmentMode 
           ? "Development mode: Simple logout without server calls" 
@@ -65,7 +55,7 @@ export function useAuthActions(
         return;
       }
       
-      // In production mode, use the regular logout flow
+      // En mode production, utiliser le flux de déconnexion normal
       await handleLogout(isDevelopmentMode);
       setIsAuthenticated(false);
     } finally {

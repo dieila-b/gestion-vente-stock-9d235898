@@ -8,7 +8,7 @@ interface AuthStatusMessageProps {
 }
 
 export const AuthStatusMessage = ({ isDevelopmentMode, testingMode }: AuthStatusMessageProps) => {
-  // Testing mode message
+  // Mode test message
   if (testingMode) {
     return (
       <>
@@ -22,16 +22,21 @@ export const AuthStatusMessage = ({ isDevelopmentMode, testingMode }: AuthStatus
     );
   }
   
-  // Development mode message
+  // Mode développement message
   if (isDevelopmentMode) {
     return (
-      <CardDescription>
-        Mode développement: Veuillez vous connecter avec vos identifiants
-      </CardDescription>
+      <>
+        <CardDescription>
+          Mode développement: Authentification automatique activée
+        </CardDescription>
+        <div className="text-sm p-2 bg-blue-100 text-blue-800 rounded-md mt-2">
+          Mode développement: Bypass d'authentification activé
+        </div>
+      </>
     );
   }
 
-  // Normal authentication message
+  // Message d'authentification normale
   return (
     <CardDescription>
       Entrez vos identifiants pour accéder à l'application

@@ -15,15 +15,17 @@ export function useAuthState() {
     console.log("Mode de développement:", isDevelopmentMode ? "Oui" : "Non");
     console.log("Mode de test:", testingMode ? "Oui" : "Non");
 
-    // In testing mode only, auto-authenticate
-    if (testingMode) {
-      console.log("Testing mode detected: Auto-authenticating user in production");
+    // En mode développement ou mode test, authentification automatique
+    if (isDevelopmentMode || testingMode) {
+      console.log(isDevelopmentMode 
+        ? "Development mode detected: Auto-authenticating user" 
+        : "Testing mode detected: Auto-authenticating user in production");
       setIsAuthenticated(true);
       setLoading(false);
       return;
     }
 
-    // Check authentication with Supabase in both production and development mode
+    // En mode production, vérifier l'authentification avec Supabase
     const checkAuthStatus = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -53,48 +55,6 @@ export function useAuthState() {
           }
           
           const normalizedEmail = userEmail.toLowerCase().trim();
-          
-          // In development mode, check internal_users in localStorage
-          if (isDevelopmentMode) {
-            try {
-              const storedUsers = localStorage.getItem('internalUsers');
-              if (!storedUsers) {
-                console.error("No users found in localStorage for dev mode");
-                setIsAuthenticated(false);
-                setLoading(false);
-                return;
-              }
-              
-              const users = JSON.parse(storedUsers);
-              const internalUser = users.find((u: any) => 
-                u.email && u.email.toLowerCase().trim() === normalizedEmail
-              );
-              
-              if (!internalUser) {
-                console.error("User not found in internal_users dev storage:", normalizedEmail);
-                setIsAuthenticated(false);
-                setLoading(false);
-                return;
-              }
-              
-              if (!internalUser.is_active) {
-                console.error("User is deactivated in dev mode:", normalizedEmail);
-                setIsAuthenticated(false);
-                setLoading(false);
-                return;
-              }
-              
-              console.log("User is active in dev mode internal_users:", normalizedEmail);
-              setIsAuthenticated(true);
-              setLoading(false);
-              return;
-            } catch (error) {
-              console.error("Error checking dev mode users:", error);
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
-          }
           
           // Verify that user exists in internal_users
           const { data: internalUsers, error: internalError } = await supabase
@@ -149,10 +109,16 @@ export function useAuthState() {
       }
     };
 
-    // Set up auth state change listener for all modes
+    // Set up auth state change listener for production mode only
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, !!session);
+        
+        // En mode développement ou test, ignorer les changements d'état
+        if (isDevelopmentMode || testingMode) {
+          console.log("Development/Testing mode: Ignoring auth state change");
+          return;
+        }
         
         if (session && session.user) {
           // Get user's email
@@ -165,43 +131,6 @@ export function useAuthState() {
           }
           
           const normalizedEmail = userEmail.toLowerCase().trim();
-          
-          // In development mode, check internal_users in localStorage
-          if (isDevelopmentMode) {
-            try {
-              const storedUsers = localStorage.getItem('internalUsers');
-              if (!storedUsers) {
-                console.error("No users found in localStorage for dev mode");
-                setIsAuthenticated(false);
-                return;
-              }
-              
-              const users = JSON.parse(storedUsers);
-              const internalUser = users.find((u: any) => 
-                u.email && u.email.toLowerCase().trim() === normalizedEmail
-              );
-              
-              if (!internalUser) {
-                console.error("User not found in internal_users dev storage:", normalizedEmail);
-                setIsAuthenticated(false);
-                return;
-              }
-              
-              if (!internalUser.is_active) {
-                console.error("User is deactivated in dev mode:", normalizedEmail);
-                setIsAuthenticated(false);
-                return;
-              }
-              
-              console.log("User is active in dev mode internal_users:", normalizedEmail);
-              setIsAuthenticated(true);
-              return;
-            } catch (error) {
-              console.error("Error checking dev mode users:", error);
-              setIsAuthenticated(false);
-              return;
-            }
-          }
           
           // Verify that user exists in internal_users and is active
           const { data: internalUsers, error: internalError } = await supabase
@@ -247,7 +176,9 @@ export function useAuthState() {
     );
 
     // Initial auth check
-    checkAuthStatus();
+    if (!isDevelopmentMode && !testingMode) {
+      checkAuthStatus();
+    }
 
     // Cleanup
     return () => {
