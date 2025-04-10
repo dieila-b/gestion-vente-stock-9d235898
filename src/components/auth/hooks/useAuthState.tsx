@@ -39,34 +39,45 @@ export function useAuthState() {
         const hasValidSession = !!data?.session;
         console.log("Auth session check:", hasValidSession ? "User is authenticated" : "No active session");
         
-        if (hasValidSession) {
+        if (hasValidSession && data.session?.user) {
+          console.log("Valid session found for user:", data.session.user.email);
+          
           // Verify that user exists in internal_users
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData && userData.user) {
-            const { data: internalUser, error: internalError } = await supabase
-              .from('internal_users')
-              .select('id, is_active')
-              .eq('id', userData.user.id)
-              .single();
+          const { data: internalUsers, error: internalError } = await supabase
+            .from('internal_users')
+            .select('id, email, is_active')
+            .eq('email', data.session.user.email);
               
-            if (internalError || !internalUser) {
-              console.error("User not found in internal_users or error:", internalError?.message);
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
-            
-            // Check if user is active
-            if (!internalUser.is_active) {
-              console.error("User is deactivated:", userData.user.id);
-              setIsAuthenticated(false);
-              setLoading(false);
-              return;
-            }
+          if (internalError) {
+            console.error("Error checking internal_users:", internalError.message);
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
           }
+          
+          if (!internalUsers || internalUsers.length === 0) {
+            console.error("User not found in internal_users:", data.session.user.email);
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+            
+          // Check if user is active
+          const internalUser = internalUsers[0];
+          if (!internalUser.is_active) {
+            console.error("User is deactivated:", data.session.user.email);
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+          
+          console.log("User is active in internal_users:", data.session.user.email);
+          setIsAuthenticated(true);
+          setLoading(false);
+          return;
         }
         
-        setIsAuthenticated(hasValidSession);
+        setIsAuthenticated(false);
         setLoading(false);
       } catch (error) {
         console.error("Auth state check error:", error);
@@ -81,20 +92,35 @@ export function useAuthState() {
         async (event, session) => {
           console.log("Auth state changed:", event, !!session);
           
-          if (session) {
+          if (session && session.user) {
             // Verify that user exists in internal_users and is active
-            const { data: internalUser, error: internalError } = await supabase
+            const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
-              .select('id, is_active')
-              .eq('id', session.user.id)
-              .single();
+              .select('id, email, is_active')
+              .eq('email', session.user.email);
               
-            if (internalError || !internalUser || !internalUser.is_active) {
-              console.error("User not in internal_users, not active, or error:", internalError?.message);
+            if (internalError) {
+              console.error("Error checking internal_users on auth change:", internalError.message);
               setIsAuthenticated(false);
-            } else {
-              setIsAuthenticated(true);
+              return;
             }
+            
+            if (!internalUsers || internalUsers.length === 0) {
+              console.error("User not found in internal_users on auth change:", session.user.email);
+              setIsAuthenticated(false);
+              return;
+            }
+            
+            // Check if user is active
+            const internalUser = internalUsers[0];
+            if (!internalUser.is_active) {
+              console.error("User is deactivated on auth change:", session.user.email);
+              setIsAuthenticated(false);
+              return;
+            }
+            
+            console.log("User is active in internal_users on auth change:", session.user.email);
+            setIsAuthenticated(true);
           } else {
             setIsAuthenticated(false);
           }

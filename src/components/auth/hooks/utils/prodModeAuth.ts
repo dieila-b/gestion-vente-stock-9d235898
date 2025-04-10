@@ -16,11 +16,10 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     console.log("Login request with normalized email:", normalizedEmail);
     
     // Vérifier d'abord si l'utilisateur existe dans internal_users
-    const { data: internalUserByEmail, error: internalUserError } = await supabase
+    const { data: internalUsers, error: internalUserError } = await supabase
       .from("internal_users")
       .select("email, is_active")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
+      .eq("email", normalizedEmail);
       
     if (internalUserError) {
       console.error("Error checking internal_users:", internalUserError.message);
@@ -30,13 +29,16 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       };
     }
     
-    if (!internalUserByEmail) {
+    // Si aucun utilisateur trouvé
+    if (!internalUsers || internalUsers.length === 0) {
       console.error("User not found in internal_users table:", normalizedEmail);
       return { 
         success: false, 
         error: "Cet email n'est pas associé à un compte utilisateur interne" 
       };
     }
+    
+    const internalUserByEmail = internalUsers[0];
     
     // Vérifier si l'utilisateur est actif
     if (internalUserByEmail && !internalUserByEmail.is_active) {

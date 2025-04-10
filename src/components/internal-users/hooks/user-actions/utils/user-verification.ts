@@ -92,50 +92,11 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return false;
     }
     
-    // Vérifier d'abord si l'utilisateur existe dans auth.users
-    try {
-      // Get all users and filter manually since 'search' is no longer supported
-      const { data, error } = await supabase.auth.admin.listUsers();
-      
-      if (!error && data?.users && data.users.length > 0) {
-        // Filtrer manuellement les utilisateurs par email
-        const existingUser = data.users.find((user: any) => 
-          user && user.email && user.email.toLowerCase().trim() === normalizedEmail
-        );
-        
-        if (existingUser) {
-          console.log("Utilisateur existant trouvé dans auth.users:", existingUser.email);
-          
-          // Vérifier si cet utilisateur existe aussi dans internal_users
-          const { data: internalUser, error: internalUserError } = await supabase
-            .from('internal_users')
-            .select('id')
-            .eq('id', existingUser.id)
-            .maybeSingle();
-            
-          if (!internalUserError && !internalUser) {
-            console.log("Utilisateur existe dans auth mais pas dans internal_users, création autorisée");
-            return false;
-          }
-          
-          toast({
-            title: "Erreur",
-            description: "Un utilisateur avec cet email existe déjà dans le système d'authentification",
-            variant: "destructive",
-          });
-          return true;
-        }
-      }
-    } catch (error) {
-      console.log("Erreur ou permission insuffisante pour vérifier auth.users, on continue avec internal_users:", error);
-    }
-    
     // Méthode plus fiable pour vérifier l'existence d'un utilisateur dans internal_users
     const { data, error } = await supabase
       .from('internal_users')
       .select('email')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
+      .eq('email', normalizedEmail);
     
     if (error) {
       console.error("Erreur lors de la vérification dans internal_users:", error);
@@ -147,14 +108,31 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true; // Consider as existing on error to prevent creation
     }
     
-    if (data) {
-      console.log("Utilisateur existant trouvé dans internal_users:", data.email);
+    if (data && data.length > 0) {
+      console.log("Utilisateur existant trouvé dans internal_users:", data[0].email);
       toast({
         title: "Erreur",
         description: "Un utilisateur avec cet email existe déjà",
         variant: "destructive",
       });
       return true;
+    }
+    
+    // Vérifier dans les utilisateurs d'authentification Supabase
+    try {
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(normalizedEmail);
+      
+      if (!authError && authUser) {
+        console.log("Utilisateur existant trouvé dans auth:", authUser.email);
+        toast({
+          title: "Erreur",
+          description: "Un utilisateur avec cet email existe déjà dans le système d'authentification",
+          variant: "destructive",
+        });
+        return true;
+      }
+    } catch (error) {
+      console.log("Note: La vérification dans auth.users nécessite des permissions admin");
     }
     
     console.log("Aucun utilisateur existant trouvé pour:", normalizedEmail);
