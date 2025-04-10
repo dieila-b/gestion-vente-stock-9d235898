@@ -120,10 +120,13 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     
     // Vérifier dans les utilisateurs d'authentification Supabase
     try {
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(normalizedEmail);
+      // Use listUsers with filter instead of getUserByEmail
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
+        filter: `email.eq.${normalizedEmail}`
+      });
       
-      if (!authError && authUser) {
-        console.log("Utilisateur existant trouvé dans auth:", authUser.email);
+      if (!authError && authUsers && authUsers.users.length > 0) {
+        console.log("Utilisateur existant trouvé dans auth:", authUsers.users[0].email);
         toast({
           title: "Erreur",
           description: "Un utilisateur avec cet email existe déjà dans le système d'authentification",
