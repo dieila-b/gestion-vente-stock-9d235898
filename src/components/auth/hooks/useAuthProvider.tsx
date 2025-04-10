@@ -23,12 +23,21 @@ export function useAuthProvider() {
     } else {
       console.log("AuthProvider initialized: Production mode - authentication required for all users");
     }
-  }, [isDevelopmentMode, testingMode]);
+    
+    // Log current authentication state for debugging
+    console.log("Current authentication state:", { 
+      isAuthenticated, 
+      loading, 
+      isDevelopmentMode, 
+      testingMode 
+    });
+  }, [isDevelopmentMode, testingMode, isAuthenticated, loading]);
 
   // Handle side effects when testing mode changes
   useEffect(() => {
     if (testingMode) {
       // Automatically authenticate in testing mode
+      console.log("Testing mode activated: auto-authenticating user");
       setIsAuthenticated(true);
       setLoading(false);
     }

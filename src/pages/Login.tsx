@@ -38,7 +38,7 @@ export default function Login() {
         console.log(isDevelopmentMode 
           ? "Development mode: Automatic login without validation" 
           : "Testing mode: Automatic login without validation in production");
-        const result = await login("dev@example.com", "password");
+        const result = await login(email, password);
         
         if (result.success) {
           toast.success(isDevelopmentMode 
