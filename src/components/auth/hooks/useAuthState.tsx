@@ -6,19 +6,22 @@ export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const isDevelopmentMode = import.meta.env.DEV;
+  const isTestingMode = localStorage.getItem('auth_testing_mode') === 'enabled';
 
   useEffect(() => {
     console.log("Checking authentication status...");
 
-    // In development mode, auto-authenticate
-    if (isDevelopmentMode) {
-      console.log("Development mode detected: Auto-authenticating user");
+    // In development mode or testing mode, auto-authenticate
+    if (isDevelopmentMode || isTestingMode) {
+      console.log(isDevelopmentMode 
+        ? "Development mode detected: Auto-authenticating user" 
+        : "Testing mode detected: Auto-authenticating user in production");
       setIsAuthenticated(true);
       setLoading(false);
       return;
     }
 
-    // Only check authentication with Supabase in production mode
+    // Only check authentication with Supabase in normal production mode
     const checkAuthStatus = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -70,8 +73,8 @@ export function useAuthState() {
       }
     };
 
-    // Only set up auth state change listener in production mode
-    if (!isDevelopmentMode) {
+    // Only set up auth state change listener in normal production mode
+    if (!isDevelopmentMode && !isTestingMode) {
       const { data: authListener } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           console.log("Auth state changed:", event, !!session);
@@ -106,7 +109,7 @@ export function useAuthState() {
         authListener?.subscription.unsubscribe();
       };
     }
-  }, [isDevelopmentMode]);
+  }, [isDevelopmentMode, isTestingMode]);
 
   return { 
     isAuthenticated, 

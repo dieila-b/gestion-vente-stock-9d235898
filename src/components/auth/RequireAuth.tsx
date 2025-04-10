@@ -3,10 +3,10 @@ import { useAuth } from "./hooks/useAuth";
 import { useLocation, Navigate } from "react-router-dom";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading, isDevelopmentMode } = useAuth();
+  const { isAuthenticated, loading, isDevelopmentMode, testingMode } = useAuth();
   const location = useLocation();
 
-  console.log("RequireAuth: Checking authentication status", { isDevelopmentMode, isAuthenticated, loading });
+  console.log("RequireAuth: Checking authentication status", { isDevelopmentMode, testingMode, isAuthenticated, loading });
 
   if (loading) {
     console.log("RequireAuth: Authentication check in progress...");
@@ -20,9 +20,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Enhanced development mode message
+  // Enhanced development/testing mode message
   if (isDevelopmentMode) {
     console.log("RequireAuth: Development mode active - Authentication bypassed automatically");
+  } else if (testingMode) {
+    console.log("RequireAuth: TESTING MODE active in production - Authentication bypassed");
   } else {
     console.log("RequireAuth: Production mode - Valid user session verified");
   }

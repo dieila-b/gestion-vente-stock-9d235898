@@ -8,6 +8,9 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   isSubmitting: boolean;
   isDevelopmentMode: boolean;
+  testingMode: boolean;
+  enableTestingMode: () => void;
+  disableTestingMode: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
