@@ -12,8 +12,9 @@ import { Switch } from "@/components/ui/switch";
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading, isDevelopmentMode, testingMode, enableTestingMode, disableTestingMode } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Pré-remplir avec l'email de démonstration
+  const [email, setEmail] = useState("wosyrab@yahoo.fr");
+  const [password, setPassword] = useState("password123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [showTestingControls, setShowTestingControls] = useState(false);
@@ -127,6 +128,14 @@ export default function Login() {
               {isDevelopmentMode 
                 ? "Mode développement: Cliquez simplement sur Se connecter pour accéder à l'application" 
                 : "Mode test: Bypass d'authentification activé en production"}
+            </div>
+          )}
+          
+          {!isDevelopmentMode && !testingMode && (
+            <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded-md text-sm">
+              <p>Identifiants de démonstration:</p>
+              <p className="font-mono mt-1">Email: wosyrab@yahoo.fr</p>
+              <p className="font-mono">Mot de passe: password123</p>
             </div>
           )}
           
