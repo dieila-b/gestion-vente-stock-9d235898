@@ -71,10 +71,14 @@ export default function Login() {
             return;
           }
           
-          // Explicitly type the users array to fix the TypeScript error
+          // Fix TypeScript error by properly typing the users array
           if (authData && authData.users) {
-            const authUser = authData.users.find(u => 
-              u.email && u.email.toLowerCase() === normalizedEmail
+            // Explicitly cast users to any array first, then map to correct type
+            const users = Array.isArray(authData.users) ? authData.users as any[] : [];
+            
+            const authUser = users.find(u => 
+              u && typeof u === 'object' && 'email' in u && 
+              typeof u.email === 'string' && u.email.toLowerCase() === normalizedEmail
             );
             
             if (authUser) {
@@ -287,4 +291,3 @@ export default function Login() {
     </div>
   );
 }
-
