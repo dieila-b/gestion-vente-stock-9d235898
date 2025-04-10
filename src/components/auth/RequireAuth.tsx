@@ -20,6 +20,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  console.log("RequireAuth: Valid session found", isDevelopmentMode ? "(Development mode bypass)" : "(Production mode)");
+  // Enhanced development mode message
+  if (isDevelopmentMode) {
+    console.log("RequireAuth: Development mode active - Authentication bypassed automatically");
+  } else {
+    console.log("RequireAuth: Production mode - Valid user session verified");
+  }
+  
   return <>{children}</>;
 }

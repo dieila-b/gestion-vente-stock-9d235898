@@ -101,7 +101,7 @@ export default function Login() {
               : "Entrez vos identifiants pour accéder à l'application"}
           </CardDescription>
           {isDevelopmentMode && (
-            <div className="text-sm p-2 bg-green-100 text-green-800 rounded-md">
+            <div className="text-sm p-2 bg-green-100 text-green-800 rounded-md mt-2">
               Mode développement: Cliquez simplement sur Se connecter pour accéder à l'application
             </div>
           )}
