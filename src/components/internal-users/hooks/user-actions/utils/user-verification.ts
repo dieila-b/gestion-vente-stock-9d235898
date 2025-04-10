@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { SupabaseUser } from "../types";
 
 export const checkIfUserExists = async (email: string): Promise<boolean> => {
   try {
@@ -125,7 +126,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       
       if (!authError && authUsersData) {
         // Find user with matching email
-        const existingUser = authUsersData.users.find(user => {
+        const existingUser = authUsersData.users.find((user: SupabaseUser) => {
           // Make sure to check if email exists before comparing
           return user.email && user.email.toLowerCase() === normalizedEmail;
         });

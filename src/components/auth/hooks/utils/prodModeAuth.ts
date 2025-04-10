@@ -19,7 +19,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     const { data: internalUsers, error: internalUserError } = await supabase
       .from("internal_users")
       .select("email, is_active")
-      .eq("email", normalizedEmail)
+      .ilike("email", normalizedEmail)  // Use case-insensitive matching
       .limit(1);
       
     if (internalUserError) {

@@ -43,7 +43,7 @@ export function useAuthState() {
           console.log("Valid session found for user:", data.session.user.email);
           
           // Get user's email from the session
-          const userEmail = data.session.user.email?.toLowerCase();
+          const userEmail = data.session.user.email?.toLowerCase().trim();
           
           if (!userEmail) {
             console.error("User session has no email");
@@ -56,7 +56,7 @@ export function useAuthState() {
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, is_active')
-            .eq('email', userEmail)
+            .ilike('email', userEmail)  // Use case-insensitive matching
             .limit(1);
               
           if (internalError) {
@@ -105,7 +105,7 @@ export function useAuthState() {
           
           if (session && session.user) {
             // Get user's email
-            const userEmail = session.user.email?.toLowerCase();
+            const userEmail = session.user.email?.toLowerCase().trim();
             
             if (!userEmail) {
               console.error("User session has no email");
@@ -117,7 +117,7 @@ export function useAuthState() {
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, is_active')
-              .eq('email', userEmail)
+              .ilike('email', userEmail)  // Use case-insensitive matching
               .limit(1);
               
             if (internalError) {
