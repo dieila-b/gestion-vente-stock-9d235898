@@ -14,6 +14,11 @@ export const verifyInternalUser = async (userEmail: string): Promise<{ isValid: 
   console.log("Vérification de l'utilisateur interne:", normalizedEmail);
   
   try {
+    // Récupérer la session actuelle pour vérification
+    const { data: sessionData } = await supabase.auth.getSession();
+    const isSessionActive = !!sessionData.session;
+    console.log("État de la session:", isSessionActive ? "Active" : "Inactive");
+
     // Vérifier que l'utilisateur existe dans internal_users
     const { data: internalUsers, error: internalError } = await supabase
       .from('internal_users')
@@ -33,6 +38,8 @@ export const verifyInternalUser = async (userEmail: string): Promise<{ isValid: 
       
     // Vérifier si l'utilisateur est actif
     const internalUser = internalUsers[0];
+    console.log("Utilisateur trouvé dans internal_users:", internalUser);
+    
     if (!internalUser.is_active) {
       console.error("L'utilisateur est désactivé:", normalizedEmail);
       return { isValid: true, isActive: false };

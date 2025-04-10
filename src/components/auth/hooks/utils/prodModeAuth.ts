@@ -18,6 +18,39 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     const normalizedEmail = email.toLowerCase().trim();
     console.log("Demande de connexion avec email normalisé:", normalizedEmail);
     
+    // Vérification préliminaire pour voir si l'utilisateur est dans internal_users
+    console.log("Vérification préliminaire dans internal_users");
+    const { data: internalUsers, error: internalUserCheckError } = await supabase
+      .from("internal_users")
+      .select("email, is_active")
+      .ilike("email", normalizedEmail)
+      .limit(1);
+      
+    if (internalUserCheckError) {
+      console.error("Erreur lors de la vérification préliminaire:", internalUserCheckError.message);
+    }
+    
+    if (!internalUsers || internalUsers.length === 0) {
+      console.error("Utilisateur non trouvé dans internal_users:", normalizedEmail);
+      toast.error("Cet email n'est pas associé à un compte utilisateur interne");
+      return { 
+        success: false, 
+        error: "Cet email n'est pas associé à un compte utilisateur interne" 
+      };
+    }
+    
+    const internalUser = internalUsers[0];
+    if (!internalUser.is_active) {
+      console.error("Utilisateur désactivé:", normalizedEmail);
+      toast.error("Ce compte a été désactivé");
+      return {
+        success: false,
+        error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+      };
+    }
+    
+    console.log("Utilisateur trouvé dans internal_users et actif:", normalizedEmail);
+    
     // Vérification des identifiants avec Supabase Auth
     console.log("Tentative d'authentification avec Supabase pour:", normalizedEmail);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -50,57 +83,6 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       return {
         success: false,
         error: "Erreur d'authentification: aucune donnée utilisateur"
-      };
-    }
-    
-    // Maintenant, vérifier si l'utilisateur est dans la table internal_users et actif
-    console.log("Vérification si l'utilisateur est un utilisateur interne:", normalizedEmail);
-    const { data: internalUsers, error: internalUserError } = await supabase
-      .from("internal_users")
-      .select("email, is_active")
-      .ilike("email", normalizedEmail)
-      .limit(1);
-      
-    // Log de débogage pour la requête
-    console.log("Résultat de la requête internal_users:", internalUsers ? JSON.stringify(internalUsers) : "null", 
-                "Erreur:", internalUserError ? internalUserError.message : "aucune");
-      
-    if (internalUserError) {
-      console.error("Erreur lors de la vérification internal_users:", internalUserError.message);
-      toast.error("Erreur lors de la vérification du compte");
-      return { 
-        success: false, 
-        error: "Erreur lors de la vérification du compte: " + internalUserError.message
-      };
-    }
-    
-    // Si aucun utilisateur trouvé dans internal_users
-    if (!internalUsers || internalUsers.length === 0) {
-      console.error("Utilisateur non trouvé dans la table internal_users:", normalizedEmail);
-      
-      // Déconnexion pour éviter un état d'authentification incohérent
-      await supabase.auth.signOut();
-      
-      toast.error("Cet email n'est pas associé à un compte utilisateur interne");
-      return { 
-        success: false, 
-        error: "Cet email n'est pas associé à un compte utilisateur interne" 
-      };
-    }
-    
-    const internalUserByEmail = internalUsers[0];
-    
-    // Vérifier si l'utilisateur est actif
-    if (internalUserByEmail && !internalUserByEmail.is_active) {
-      console.error("L'utilisateur existe mais est désactivé:", normalizedEmail);
-      
-      // Déconnexion pour éviter un état d'authentification incohérent
-      await supabase.auth.signOut();
-      
-      toast.error("Ce compte a été désactivé");
-      return {
-        success: false,
-        error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
       };
     }
     

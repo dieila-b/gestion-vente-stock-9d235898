@@ -42,25 +42,35 @@ export function useAuthActions(
         if (isDevelopmentMode) {
           const devResult = await handleDevModeLogin(email);
           if (!devResult.success) {
+            setIsSubmitting(false);
             return devResult;
           }
         }
         
         setIsAuthenticated(true);
         toast.success(`Connexion réussie (${isDevelopmentMode ? "Mode développement" : "Mode test"})`);
+        setIsSubmitting(false);
         return { success: true };
       }
       
       // En mode production, utiliser le flux d'authentification normal
+      console.log("Mode production: Tentative de connexion standard pour", email);
       const result = await handleProdModeLogin(email, password);
       
       if (result.success) {
+        console.log("Connexion réussie pour", email);
         setIsAuthenticated(true);
+      } else {
+        console.error("Échec de connexion pour", email, ":", result.error);
       }
       
-      return result;
-    } finally {
       setIsSubmitting(false);
+      return result;
+    } catch (error: any) {
+      console.error("Erreur inattendue lors de la connexion:", error);
+      toast.error("Une erreur inattendue s'est produite");
+      setIsSubmitting(false);
+      return { success: false, error: error?.message || "Erreur inconnue" };
     }
   };
   
@@ -75,6 +85,7 @@ export function useAuthActions(
           : "Mode test: Déconnexion simple sans appels serveur");
         setIsAuthenticated(false);
         toast.success("Déconnexion réussie");
+        setIsSubmitting(false);
         return;
       }
       
@@ -82,7 +93,10 @@ export function useAuthActions(
       await handleLogout(isDevelopmentMode);
       setIsAuthenticated(false);
       toast.success("Déconnexion réussie");
-    } finally {
+      setIsSubmitting(false);
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast.error("Erreur lors de la déconnexion");
       setIsSubmitting(false);
     }
   };

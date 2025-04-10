@@ -24,7 +24,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
               id: "dev-1743844624581",
               first_name: "Dieila",
               last_name: "Barry",
-              email: "dielabarry@outlook.com", // Ajout de cet utilisateur par défaut
+              email: "dielabarry@outlook.com",
               phone: "623268781",
               address: "Matam",
               role: "admin",
@@ -104,10 +104,11 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     }
     
     // Méthode plus fiable pour vérifier l'existence d'un utilisateur dans internal_users
+    console.log("Vérification dans la base de données pour:", normalizedEmail);
     const { data, error } = await supabase
       .from('internal_users')
-      .select('email')
-      .ilike('email', normalizedEmail)  // Utilisation de ilike pour la recherche insensible à la casse
+      .select('id, email, is_active')
+      .ilike('email', normalizedEmail)
       .limit(1);
     
     if (error) {
@@ -120,8 +121,10 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true; // Consider as existing on error to prevent creation
     }
     
+    console.log("Résultat de la vérification internalUsers:", data);
+    
     if (data && data.length > 0) {
-      console.log("Utilisateur existant trouvé dans internal_users:", data[0].email);
+      console.log("Utilisateur existant trouvé dans internal_users:", data[0].email, "Active:", data[0].is_active);
       toast({
         title: "Erreur",
         description: "Un utilisateur avec cet email existe déjà",
@@ -132,8 +135,13 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     
     // Vérifier dans les utilisateurs d'authentification Supabase
     try {
+      console.log("Vérification dans Supabase Auth pour:", normalizedEmail);
       // Get all users and filter manually
       const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error("Erreur lors de la vérification dans auth:", authError);
+      }
       
       if (!authError && authUsersData) {
         // Find user with matching email

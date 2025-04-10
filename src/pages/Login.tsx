@@ -12,7 +12,7 @@ import { DemoCredentials } from "@/components/auth/login/DemoCredentials";
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading, isDevelopmentMode, testingMode, enableTestingMode, disableTestingMode } = useAuth();
-  const [email, setEmail] = useState("dielabarry@outlook.com");
+  const [email, setEmail] = useState("wosyrab@yahoo.fr"); // Pré-remplir avec un compte existant
   const [password, setPassword] = useState("password123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
@@ -49,6 +49,7 @@ export default function Login() {
           setLoginError(result.error);
           toast.error(result.error);
         }
+        setIsSubmitting(false);
         return;
       }
       
@@ -56,12 +57,14 @@ export default function Login() {
       if (!email.trim()) {
         setLoginError("Veuillez saisir votre email");
         toast.error("Veuillez saisir votre email");
+        setIsSubmitting(false);
         return;
       }
 
       if (!password) {
         setLoginError("Veuillez saisir votre mot de passe");
         toast.error("Veuillez saisir votre mot de passe");
+        setIsSubmitting(false);
         return;
       }
 
@@ -76,7 +79,6 @@ export default function Login() {
         navigate("/dashboard", { replace: true });
       } else {
         setLoginError(result.error || "Échec de la connexion");
-        toast.error(result.error || "Échec de la connexion");
       }
     } catch (error) {
       console.error("Erreur de connexion:", error);

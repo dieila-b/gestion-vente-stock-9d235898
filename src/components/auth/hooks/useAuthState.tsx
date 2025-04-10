@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDevMode } from "./useDevMode";
 import { useTestingMode } from "./useTestingMode";
 import { useInitialAuthCheck } from "./utils/useInitialAuthCheck";
@@ -12,6 +12,8 @@ export function useAuthState() {
   const { testingMode } = useTestingMode();
 
   console.log("Mode de test:", testingMode ? "Oui" : "Non");
+  console.log("Mode de développement:", isDevelopmentMode ? "Oui" : "Non");
+  console.log("État d'authentification actuel:", isAuthenticated ? "Authentifié" : "Non authentifié");
 
   // Vérifier l'état d'authentification initial
   useInitialAuthCheck({
@@ -27,6 +29,16 @@ export function useAuthState() {
     testingMode,
     setIsAuthenticated
   });
+
+  // Log d'état pour déboggage
+  useEffect(() => {
+    console.log("État d'authentification mis à jour:", { 
+      isAuthenticated, 
+      loading, 
+      isDevelopmentMode, 
+      testingMode 
+    });
+  }, [isAuthenticated, loading, isDevelopmentMode, testingMode]);
 
   return { 
     isAuthenticated, 
