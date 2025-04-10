@@ -96,7 +96,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('internal_users')
       .select('email')
-      .eq('email', normalizedEmail)
+      .ilike('email', normalizedEmail)  // Utilisation de ilike pour la recherche insensible à la casse
       .limit(1);
     
     if (error) {
@@ -128,7 +128,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
         // Find user with matching email
         const existingUser = authUsersData.users.find((user: SupabaseUser) => {
           // Make sure to check if email exists before comparing
-          return user.email && user.email.toLowerCase() === normalizedEmail;
+          return user.email && user.email.toLowerCase().trim() === normalizedEmail;
         });
         
         if (existingUser) {

@@ -19,7 +19,7 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
         // Find user with matching email
         const existingUser = authUsersData.users.find((user: SupabaseUser) => {
           // Make sure to check if email exists before comparing
-          return user.email && user.email.toLowerCase() === normalizedEmail;
+          return user.email && user.email.toLowerCase().trim() === normalizedEmail;
         });
         
         if (existingUser) {
@@ -57,7 +57,7 @@ export const createAuthUser = async (data: CreateUserData): Promise<string | nul
             // Find user with matching email
             const existingUser = authUsersData.users.find((user: SupabaseUser) => {
               // Make sure to check if email exists before comparing
-              return user.email && user.email.toLowerCase() === normalizedEmail;
+              return user.email && user.email.toLowerCase().trim() === normalizedEmail;
             });
             
             if (existingUser) {
