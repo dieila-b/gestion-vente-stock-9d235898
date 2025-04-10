@@ -11,6 +11,8 @@ export function useAuthState() {
   const { isDevelopmentMode } = useDevMode();
   const { testingMode } = useTestingMode();
 
+  console.log("Mode de test:", testingMode ? "Oui" : "Non");
+
   // Vérifier l'état d'authentification initial
   useInitialAuthCheck({
     isDevelopmentMode,

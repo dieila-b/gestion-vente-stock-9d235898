@@ -68,6 +68,7 @@ export function useInitialAuthCheck({
             return;
           }
           
+          // Vérifier si l'utilisateur est un utilisateur interne valide
           const { isValid, isActive } = await verifyInternalUser(userEmail);
           
           if (!isValid || !isActive) {

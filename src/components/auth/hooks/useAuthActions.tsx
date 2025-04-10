@@ -21,6 +21,17 @@ export function useAuthActions(
     try {
       setIsSubmitting(true);
       
+      // Validation de base des champs
+      if (!email || !email.trim()) {
+        toast.error("Veuillez saisir votre email");
+        return { success: false, error: "Veuillez saisir votre email" };
+      }
+      
+      if (!password) {
+        toast.error("Veuillez saisir votre mot de passe");
+        return { success: false, error: "Veuillez saisir votre mot de passe" };
+      }
+      
       // En mode développement ou testing, auto-authentification
       if (isDevelopmentMode || testingMode) {
         console.log(isDevelopmentMode 

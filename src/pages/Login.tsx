@@ -45,6 +45,9 @@ export default function Login() {
           const modeMessage = isDevelopmentMode ? "Mode développement" : "Mode test";
           toast.success(`Connexion réussie (${modeMessage})`);
           navigate("/dashboard", { replace: true });
+        } else if (result.error) {
+          setLoginError(result.error);
+          toast.error(result.error);
         }
         return;
       }
@@ -63,10 +66,10 @@ export default function Login() {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
-      console.log("Attempting login with:", normalizedEmail);
+      console.log("Tentative de connexion avec:", normalizedEmail);
 
       const result = await login(normalizedEmail, password);
-      console.log("Login result:", result);
+      console.log("Résultat de la connexion:", result);
 
       if (result.success) {
         toast.success("Connexion réussie");
@@ -76,7 +79,7 @@ export default function Login() {
         toast.error(result.error || "Échec de la connexion");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Erreur de connexion:", error);
       setLoginError("Une erreur est survenue lors de la connexion");
       toast.error("Une erreur est survenue lors de la connexion");
     } finally {

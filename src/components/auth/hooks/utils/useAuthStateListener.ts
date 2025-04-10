@@ -18,7 +18,7 @@ export function useAuthStateListener({
   useEffect(() => {
     console.log("Configuration de l'écouteur d'état d'authentification");
     
-    // Configurer l'écouteur d'état d'authentification uniquement en mode production
+    // Configurer l'écouteur d'état d'authentification
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Changement d'état d'authentification:", event, !!session);
@@ -46,6 +46,7 @@ export function useAuthStateListener({
             return;
           }
           
+          // Vérifier si l'utilisateur est un utilisateur interne valide
           const { isValid, isActive } = await verifyInternalUser(userEmail);
           
           if (!isValid || !isActive) {

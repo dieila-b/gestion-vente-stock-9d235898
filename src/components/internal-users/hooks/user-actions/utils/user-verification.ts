@@ -24,7 +24,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
               id: "dev-1743844624581",
               first_name: "Dieila",
               last_name: "Barry",
-              email: "wosyrab@gmail.com",
+              email: "dielabarry@outlook.com", // Ajout de cet utilisateur par défaut
               phone: "623268781",
               address: "Matam",
               role: "admin",
@@ -46,7 +46,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
               id: "dev-1743853323495",
               first_name: "Dieila",
               last_name: "Barry",
-              email: "dielabarry@outlook.com",
+              email: "wosyrab@gmail.com",
               phone: "623268781",
               address: "Madina",
               role: "manager",
