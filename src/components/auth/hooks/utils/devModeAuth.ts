@@ -27,6 +27,17 @@ export const createDefaultDevUsers = () => {
       role: "manager",
       is_active: true,
       photo_url: null
+    },
+    {
+      id: "dev-1743853323495",
+      first_name: "Dieila",
+      last_name: "Barry",
+      email: "dielabarry@outlook.com",
+      phone: "623268781",
+      address: "Madina",
+      role: "manager",
+      is_active: true,
+      photo_url: null
     }
   ];
   

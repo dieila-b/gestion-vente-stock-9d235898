@@ -26,6 +26,10 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       .ilike("email", normalizedEmail)
       .limit(1);
       
+    // Log de débogage pour la requête
+    console.log("Résultat de la requête:", internalUsers ? JSON.stringify(internalUsers) : "null", 
+                "Erreur:", internalUserError ? internalUserError.message : "aucune");
+      
     if (internalUserError) {
       console.error("Error checking internal_users:", internalUserError.message);
       return { 
@@ -37,6 +41,17 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     // Si aucun utilisateur trouvé dans internal_users
     if (!internalUsers || internalUsers.length === 0) {
       console.error("User not found in internal_users table:", normalizedEmail);
+      
+      // Tentative de requête directe pour vérifier si la table existe et a des données
+      const { data: allUsers, error: allUsersError } = await supabase
+        .from("internal_users")
+        .select("email")
+        .limit(5);
+        
+      console.log("Vérification des données dans la table:", 
+                  allUsers ? `${allUsers.length} utilisateurs trouvés` : "aucun utilisateur", 
+                  "Erreur:", allUsersError ? allUsersError.message : "aucune");
+      
       return { 
         success: false, 
         error: "Cet email n'est pas associé à un compte utilisateur interne" 

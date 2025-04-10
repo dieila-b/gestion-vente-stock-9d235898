@@ -12,12 +12,66 @@ export function useAuthState() {
 
   useEffect(() => {
     console.log("Checking authentication status...");
+    console.log("Mode de développement:", isDevelopmentMode ? "Oui" : "Non");
+    console.log("Mode de test:", testingMode ? "Oui" : "Non");
 
     // In development mode or testing mode, auto-authenticate
     if (isDevelopmentMode || testingMode) {
       console.log(isDevelopmentMode 
         ? "Development mode detected: Auto-authenticating user" 
         : "Testing mode detected: Auto-authenticating user in production");
+        
+      // En mode développement, s'assurer d'avoir des utilisateurs par défaut
+      if (isDevelopmentMode) {
+        try {
+          // S'assurer que nous avons des utilisateurs dans le localStorage
+          const storedUsers = localStorage.getItem('internalUsers');
+          
+          if (!storedUsers) {
+            // Créer des utilisateurs par défaut si inexistants
+            const defaultUsers = [
+              {
+                id: "dev-1743844624581",
+                first_name: "Dieila",
+                last_name: "Barry",
+                email: "wosyrab@gmail.com",
+                phone: "623268781",
+                address: "Matam",
+                role: "admin",
+                is_active: true,
+                photo_url: null
+              },
+              {
+                id: "dev-1743853323494",
+                first_name: "Dieila",
+                last_name: "Barry",
+                email: "wosyrab@yahoo.fr",
+                phone: "623268781",
+                address: "Madina",
+                role: "manager",
+                is_active: true,
+                photo_url: null
+              },
+              {
+                id: "dev-1743853323495",
+                first_name: "Dieila",
+                last_name: "Barry",
+                email: "dielabarry@outlook.com",
+                phone: "623268781",
+                address: "Madina",
+                role: "manager",
+                is_active: true,
+                photo_url: null
+              }
+            ];
+            localStorage.setItem('internalUsers', JSON.stringify(defaultUsers));
+            console.log("Utilisateurs démo créés pour useAuthState");
+          }
+        } catch (err) {
+          console.error("Erreur lors de la création des utilisateurs démo:", err);
+        }
+      }
+      
       setIsAuthenticated(true);
       setLoading(false);
       return;

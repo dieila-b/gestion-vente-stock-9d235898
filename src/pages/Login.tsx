@@ -12,7 +12,7 @@ import { DemoCredentials } from "@/components/auth/login/DemoCredentials";
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading, isDevelopmentMode, testingMode, enableTestingMode, disableTestingMode } = useAuth();
-  const [email, setEmail] = useState("wosyrab@yahoo.fr");
+  const [email, setEmail] = useState("dielabarry@outlook.com");
   const [password, setPassword] = useState("password123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
