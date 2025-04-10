@@ -108,7 +108,7 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('internal_users')
       .select('id, email, is_active')
-      .ilike('email', normalizedEmail)
+      .eq('email', normalizedEmail)
       .limit(1);
     
     if (error) {
@@ -121,10 +121,29 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
       return true; // Consider as existing on error to prevent creation
     }
     
-    console.log("Résultat de la vérification internalUsers:", data);
+    console.log("Résultat de la vérification internalUsers (eq):", data);
     
     if (data && data.length > 0) {
       console.log("Utilisateur existant trouvé dans internal_users:", data[0].email, "Active:", data[0].is_active);
+      toast({
+        title: "Erreur",
+        description: "Un utilisateur avec cet email existe déjà",
+        variant: "destructive",
+      });
+      return true;
+    }
+    
+    // Vérifier avec ilike si aucun résultat exact
+    const { data: fuzzyData, error: fuzzyError } = await supabase
+      .from('internal_users')
+      .select('id, email, is_active')
+      .ilike('email', normalizedEmail)
+      .limit(1);
+      
+    if (fuzzyError) {
+      console.error("Erreur lors de la vérification flexible dans internal_users:", fuzzyError);
+    } else if (fuzzyData && fuzzyData.length > 0) {
+      console.log("Utilisateur existant trouvé dans internal_users (ilike):", fuzzyData[0].email, "Active:", fuzzyData[0].is_active);
       toast({
         title: "Erreur",
         description: "Un utilisateur avec cet email existe déjà",

@@ -23,8 +23,17 @@ export const verifyInternalUser = async (userEmail: string): Promise<{ isValid: 
     const { data: internalUsers, error: internalError } = await supabase
       .from('internal_users')
       .select('id, email, is_active')
-      .ilike('email', normalizedEmail)
+      .eq('email', normalizedEmail)
       .limit(1);
+    
+    // Log complet de la requête et de la réponse pour débogage
+    console.log("Requête de vérification:", {
+      table: 'internal_users',
+      email: normalizedEmail,
+      query: 'eq'
+    });
+    
+    console.log("Réponse brute:", internalUsers);
         
     if (internalError) {
       console.error("Erreur lors de la vérification dans internal_users:", internalError.message);
@@ -33,6 +42,32 @@ export const verifyInternalUser = async (userEmail: string): Promise<{ isValid: 
     
     if (!internalUsers || internalUsers.length === 0) {
       console.error("Utilisateur non trouvé dans internal_users:", normalizedEmail);
+      
+      // Essayer avec ilike pour être plus flexible
+      const { data: fuzzyUsers, error: fuzzyError } = await supabase
+        .from('internal_users')
+        .select('id, email, is_active')
+        .ilike('email', normalizedEmail)
+        .limit(1);
+        
+      if (fuzzyError) {
+        console.error("Erreur lors de la recherche flexible:", fuzzyError.message);
+        return { isValid: false, isActive: false };
+      }
+      
+      if (fuzzyUsers && fuzzyUsers.length > 0) {
+        console.log("Utilisateur trouvé avec recherche flexible:", fuzzyUsers[0]);
+        const fuzzyUser = fuzzyUsers[0];
+        
+        if (!fuzzyUser.is_active) {
+          console.error("L'utilisateur est désactivé:", fuzzyUser.email);
+          return { isValid: true, isActive: false };
+        }
+        
+        console.log("L'utilisateur est valide et actif (recherche flexible):", fuzzyUser.email);
+        return { isValid: true, isActive: true };
+      }
+      
       return { isValid: false, isActive: false };
     }
       

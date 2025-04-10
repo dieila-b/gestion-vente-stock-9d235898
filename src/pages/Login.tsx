@@ -8,6 +8,7 @@ import { LoginForm } from "@/components/auth/login/LoginForm";
 import { TestingModeToggle } from "@/components/auth/login/TestingModeToggle";
 import { AuthStatusMessage } from "@/components/auth/login/AuthStatusMessage";
 import { DemoCredentials } from "@/components/auth/login/DemoCredentials";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,6 +18,74 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [showTestingControls, setShowTestingControls] = useState(false);
+  
+  // Vérifier directement la présence de l'utilisateur dans la base de données au chargement
+  useEffect(() => {
+    const checkUserExistsInDatabase = async () => {
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log("Vérification initiale de l'existence de:", normalizedEmail);
+      
+      try {
+        // Vérifier dans internal_users
+        const { data: internalUsers, error: internalError } = await supabase
+          .from('internal_users')
+          .select('id, email, is_active')
+          .eq('email', normalizedEmail)
+          .limit(1);
+          
+        if (internalError) {
+          console.error("Erreur lors de la vérification initiale dans internal_users:", internalError);
+          return;
+        }
+        
+        if (!internalUsers || internalUsers.length === 0) {
+          console.log("Utilisateur non trouvé avec eq dans internal_users, tentative avec ilike");
+          
+          const { data: fuzzyUsers, error: fuzzyError } = await supabase
+            .from('internal_users')
+            .select('id, email, is_active')
+            .ilike('email', normalizedEmail)
+            .limit(1);
+            
+          if (fuzzyError) {
+            console.error("Erreur lors de la recherche flexible:", fuzzyError);
+            return;
+          }
+          
+          if (fuzzyUsers && fuzzyUsers.length > 0) {
+            console.log("Utilisateur trouvé avec ilike:", fuzzyUsers[0]);
+          } else {
+            console.error("ATTENTION: L'utilisateur", normalizedEmail, "n'existe pas dans internal_users");
+          }
+        } else {
+          console.log("Utilisateur trouvé dans internal_users:", internalUsers[0]);
+        }
+        
+        // Vérifier dans auth.users via Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+        
+        if (authError) {
+          console.error("Erreur lors de la vérification dans auth.users:", authError);
+          return;
+        }
+        
+        const authUser = authData?.users.find(u => u.email && u.email.toLowerCase() === normalizedEmail);
+        
+        if (authUser) {
+          console.log("Utilisateur trouvé dans auth.users:", authUser.email);
+        } else {
+          console.error("ATTENTION: L'utilisateur", normalizedEmail, "n'existe pas dans auth.users");
+        }
+        
+      } catch (error) {
+        console.error("Erreur lors de la vérification initiale:", error);
+      }
+    };
+    
+    if (!isDevelopmentMode && !testingMode) {
+      checkUserExistsInDatabase();
+    }
+  }, [email, isDevelopmentMode, testingMode]);
   
   // Si déjà authentifié, rediriger vers le dashboard
   useEffect(() => {
@@ -70,6 +139,60 @@ export default function Login() {
 
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Tentative de connexion avec:", normalizedEmail);
+
+      // Vérifier directement la présence de l'utilisateur dans la base de données
+      const { data: internalUsers, error: internalError } = await supabase
+        .from('internal_users')
+        .select('id, email, is_active')
+        .eq('email', normalizedEmail)
+        .limit(1);
+        
+      if (internalError) {
+        console.error("Erreur lors de la vérification dans internal_users:", internalError);
+        setLoginError("Erreur de vérification: " + internalError.message);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!internalUsers || internalUsers.length === 0) {
+        console.log("Utilisateur non trouvé avec eq, tentative avec ilike");
+        
+        const { data: fuzzyUsers, error: fuzzyError } = await supabase
+          .from('internal_users')
+          .select('id, email, is_active')
+          .ilike('email', normalizedEmail)
+          .limit(1);
+          
+        if (fuzzyError) {
+          console.error("Erreur lors de la recherche flexible:", fuzzyError);
+        }
+        
+        if (!fuzzyUsers || fuzzyUsers.length === 0) {
+          console.error("Utilisateur non trouvé dans internal_users:", normalizedEmail);
+          setLoginError("Cet email n'est pas associé à un compte utilisateur interne");
+          toast.error("Cet email n'est pas associé à un compte utilisateur interne");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (!fuzzyUsers[0].is_active) {
+          console.error("Utilisateur désactivé:", fuzzyUsers[0].email);
+          setLoginError("Ce compte utilisateur a été désactivé");
+          toast.error("Ce compte a été désactivé");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        console.log("Utilisateur trouvé avec ilike et actif:", fuzzyUsers[0]);
+      } else if (!internalUsers[0].is_active) {
+        console.error("Utilisateur désactivé:", internalUsers[0].email);
+        setLoginError("Ce compte utilisateur a été désactivé");
+        toast.error("Ce compte a été désactivé");
+        setIsSubmitting(false);
+        return;
+      } else {
+        console.log("Utilisateur trouvé et actif:", internalUsers[0]);
+      }
 
       const result = await login(normalizedEmail, password);
       console.log("Résultat de la connexion:", result);

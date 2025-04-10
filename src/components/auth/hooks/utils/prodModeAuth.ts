@@ -22,34 +22,73 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     console.log("Vérification préliminaire dans internal_users");
     const { data: internalUsers, error: internalUserCheckError } = await supabase
       .from("internal_users")
-      .select("email, is_active")
-      .ilike("email", normalizedEmail)
+      .select("id, email, is_active")
+      .eq("email", normalizedEmail)
       .limit(1);
       
+    console.log("Résultat de la vérification préliminaire:", internalUsers);
+    
     if (internalUserCheckError) {
       console.error("Erreur lors de la vérification préliminaire:", internalUserCheckError.message);
-    }
-    
-    if (!internalUsers || internalUsers.length === 0) {
-      console.error("Utilisateur non trouvé dans internal_users:", normalizedEmail);
-      toast.error("Cet email n'est pas associé à un compte utilisateur interne");
+      toast.error("Erreur de vérification utilisateur: " + internalUserCheckError.message);
       return { 
         success: false, 
-        error: "Cet email n'est pas associé à un compte utilisateur interne" 
+        error: "Erreur de vérification: " + internalUserCheckError.message 
       };
     }
     
-    const internalUser = internalUsers[0];
-    if (!internalUser.is_active) {
-      console.error("Utilisateur désactivé:", normalizedEmail);
-      toast.error("Ce compte a été désactivé");
-      return {
-        success: false,
-        error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
-      };
+    // Si l'utilisateur n'est pas trouvé avec une recherche exacte, essayer avec ilike
+    if (!internalUsers || internalUsers.length === 0) {
+      console.log("Utilisateur non trouvé avec recherche exacte, tentative avec ilike:", normalizedEmail);
+      const { data: fuzzyUsers, error: fuzzyError } = await supabase
+        .from("internal_users")
+        .select("id, email, is_active")
+        .ilike("email", normalizedEmail)
+        .limit(1);
+        
+      if (fuzzyError) {
+        console.error("Erreur lors de la recherche flexible:", fuzzyError.message);
+      }
+      
+      if (!fuzzyUsers || fuzzyUsers.length === 0) {
+        console.error("Utilisateur non trouvé dans internal_users (même avec recherche flexible):", normalizedEmail);
+        toast.error("Cet email n'est pas associé à un compte utilisateur interne");
+        return { 
+          success: false, 
+          error: "Cet email n'est pas associé à un compte utilisateur interne" 
+        };
+      }
+      
+      // Utiliser le résultat de la recherche flexible
+      if (fuzzyUsers && fuzzyUsers.length > 0) {
+        const fuzzyUser = fuzzyUsers[0];
+        console.log("Utilisateur trouvé avec recherche flexible:", fuzzyUser);
+        
+        if (!fuzzyUser.is_active) {
+          console.error("Utilisateur désactivé:", fuzzyUser.email);
+          toast.error("Ce compte a été désactivé");
+          return {
+            success: false,
+            error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+          };
+        }
+        
+        console.log("Utilisateur trouvé et actif avec recherche flexible:", fuzzyUser.email);
+      }
+    } else {
+      // Vérifier si l'utilisateur est actif
+      const internalUser = internalUsers[0];
+      if (!internalUser.is_active) {
+        console.error("Utilisateur désactivé:", normalizedEmail);
+        toast.error("Ce compte a été désactivé");
+        return {
+          success: false,
+          error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+        };
+      }
+      
+      console.log("Utilisateur trouvé dans internal_users et actif:", internalUser);
     }
-    
-    console.log("Utilisateur trouvé dans internal_users et actif:", normalizedEmail);
     
     // Vérification des identifiants avec Supabase Auth
     console.log("Tentative d'authentification avec Supabase pour:", normalizedEmail);
@@ -70,7 +109,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
         };
       }
       
-      toast.error("Erreur d'authentification");
+      toast.error("Erreur d'authentification: " + authError.message);
       return { 
         success: false, 
         error: authError.message || "Une erreur est survenue lors de la connexion" 
@@ -86,7 +125,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       };
     }
     
-    console.log("Authentification réussie pour l'utilisateur interne:", normalizedEmail);
+    console.log("Authentification réussie pour l'utilisateur:", normalizedEmail);
     toast.success("Connexion réussie");
     return { success: true };
     
