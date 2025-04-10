@@ -94,12 +94,11 @@ export const checkIfUserExists = async (email: string): Promise<boolean> => {
     
     // Vérifier d'abord si l'utilisateur existe dans auth.users
     try {
-      const { data, error } = await supabase.auth.admin.listUsers({
-        search: normalizedEmail
-      });
+      // Get all users and filter manually since 'search' is no longer supported
+      const { data, error } = await supabase.auth.admin.listUsers();
       
       if (!error && data?.users && data.users.length > 0) {
-        // Vérifier si un utilisateur avec cet email existe
+        // Filtrer manuellement les utilisateurs par email
         const existingUser = data.users.find((user: any) => 
           user && user.email && user.email.toLowerCase().trim() === normalizedEmail
         );
