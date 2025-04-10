@@ -7,7 +7,8 @@ interface DemoCredentialsProps {
 }
 
 export const DemoCredentials = ({ isDevelopmentMode, testingMode }: DemoCredentialsProps) => {
-  if (isDevelopmentMode || testingMode) {
+  // Only show demo credentials in development mode or testing mode
+  if (!isDevelopmentMode && !testingMode) {
     return null;
   }
 

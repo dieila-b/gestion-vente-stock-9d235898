@@ -26,6 +26,20 @@ export default function Login() {
     }
   }, [navigate, isAuthenticated, loading]);
 
+  // Force recreation of default users in development mode on component mount
+  useEffect(() => {
+    if (isDevelopmentMode) {
+      try {
+        // In development mode, force recreate default users on component mount
+        const { createDefaultDevUsers } = require("@/components/auth/hooks/utils/devModeAuth");
+        createDefaultDevUsers();
+        console.log("Default development users recreated during Login mount");
+      } catch (error) {
+        console.error("Error recreating default development users:", error);
+      }
+    }
+  }, [isDevelopmentMode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -38,6 +52,7 @@ export default function Login() {
         console.log(isDevelopmentMode 
           ? "Development mode: Automatic login without validation" 
           : "Testing mode: Automatic login without validation in production");
+        
         const result = await login(email, password);
         
         if (result.success) {
@@ -45,6 +60,10 @@ export default function Login() {
             ? "Connexion réussie (Mode développement)" 
             : "Connexion réussie (Mode test)");
           navigate("/dashboard", { replace: true });
+        } else {
+          // Even in dev mode, handle errors
+          setLoginError(result.error || "Échec de la connexion");
+          toast.error(result.error || "Échec de la connexion");
         }
         return;
       }

@@ -41,7 +41,9 @@ export const createDefaultDevUsers = () => {
     }
   ];
   
+  // Ensure we're replacing any existing data with these defaults
   localStorage.setItem(DEV_USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
+  console.log("Default dev users created:", defaultUsers.length);
   return defaultUsers;
 };
 
@@ -62,15 +64,34 @@ export const handleDevModeLogin = (email: string): { success: boolean; error?: s
     } else {
       users = JSON.parse(storedUsers);
       console.log("Development users found:", users.length);
+      
+      // Check if our test account exists in the stored users
+      const testAccountExists = users.some((u: any) => 
+        u.email && u.email.toLowerCase().trim() === "dielabarry@outlook.com"
+      );
+      
+      // If our test account doesn't exist, recreate the default users
+      if (!testAccountExists) {
+        console.log("Test account not found in stored users, recreating defaults");
+        users = createDefaultDevUsers();
+      }
     }
     
-    // Find user with matching email
+    // Find user with matching email - explicit log to debug
+    users.forEach((u: any, index: number) => {
+      console.log(`Checking user ${index}:`, u.email?.toLowerCase().trim(), "against", normalizedEmail);
+    });
+    
     const user = users.find((u: any) => 
       u.email && u.email.toLowerCase().trim() === normalizedEmail
     );
     
     if (!user) {
       console.log("User not found in development mode:", normalizedEmail);
+      
+      // Debug output of all available users
+      console.log("Available users:", users.map((u: any) => u.email));
+      
       return {
         success: false,
         error: "Cet email n'est pas associé à un compte utilisateur interne"
