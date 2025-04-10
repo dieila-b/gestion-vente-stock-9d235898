@@ -11,6 +11,7 @@ export type CreateUserData = {
   role: "admin" | "manager" | "employee";
   password: string;
   photo_url?: string | null;
+  is_active?: boolean;
 };
 
 export type UpdateUserData = {
