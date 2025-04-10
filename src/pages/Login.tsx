@@ -3,16 +3,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoginForm } from "@/components/auth/login/LoginForm";
+import { TestingModeToggle } from "@/components/auth/login/TestingModeToggle";
+import { AuthStatusMessage } from "@/components/auth/login/AuthStatusMessage";
+import { DemoCredentials } from "@/components/auth/login/DemoCredentials";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading, isDevelopmentMode, testingMode, enableTestingMode, disableTestingMode } = useAuth();
-  // Pré-remplir avec l'email de démonstration
   const [email, setEmail] = useState("wosyrab@yahoo.fr");
   const [password, setPassword] = useState("password123");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,114 +115,36 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold cursor-pointer" onClick={handleTitleClick}>Connexion</CardTitle>
-          <CardDescription>
-            {isDevelopmentMode 
-              ? "Mode développement: Authentification automatique activée" 
-              : testingMode 
-                ? "Mode test: Authentification automatique activée en production" 
-                : "Entrez vos identifiants pour accéder à l'application"}
-          </CardDescription>
-          {(isDevelopmentMode || testingMode) && (
-            <div className={`text-sm p-2 ${testingMode ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"} rounded-md mt-2`}>
-              {isDevelopmentMode 
-                ? "Mode développement: Cliquez simplement sur Se connecter pour accéder à l'application" 
-                : "Mode test: Bypass d'authentification activé en production"}
-            </div>
-          )}
-          
-          {!isDevelopmentMode && !testingMode && (
-            <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded-md text-sm">
-              <p>Identifiants de démonstration:</p>
-              <p className="font-mono mt-1">Email: wosyrab@yahoo.fr</p>
-              <p className="font-mono">Mot de passe: password123</p>
-            </div>
-          )}
+          <AuthStatusMessage 
+            isDevelopmentMode={isDevelopmentMode} 
+            testingMode={testingMode} 
+          />
+          <DemoCredentials 
+            isDevelopmentMode={isDevelopmentMode}
+            testingMode={testingMode}
+          />
           
           {showTestingControls && !isDevelopmentMode && (
-            <div className="mt-4 p-2 border border-dashed border-yellow-400 rounded-md">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="testing-mode" className="font-medium text-sm">
-                  Mode test en production
-                </Label>
-                <Switch 
-                  id="testing-mode" 
-                  checked={testingMode}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      enableTestingMode();
-                      toast.success("Mode test activé", {
-                        description: "L'authentification est maintenant contournée"
-                      });
-                    } else {
-                      disableTestingMode();
-                      toast.info("Mode test désactivé", {
-                        description: "L'authentification normale est restaurée"
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                ⚠️ Le mode test contourne l'authentification. Utiliser uniquement pour le développement.
-              </p>
-            </div>
+            <TestingModeToggle 
+              testingMode={testingMode}
+              enableTestingMode={enableTestingMode}
+              disableTestingMode={disableTestingMode}
+              isDevelopmentMode={isDevelopmentMode}
+            />
           )}
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {!isDevelopmentMode && !testingMode && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="votre@email.com" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            )}
-            {loginError && (
-              <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">
-                {loginError}
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Connexion en cours...
-                </>
-              ) : (
-                isDevelopmentMode 
-                  ? "Accéder à l'application" 
-                  : testingMode 
-                    ? "Accéder à l'application (Mode test)" 
-                    : "Se connecter"
-              )}
-            </Button>
-          </CardFooter>
-        </form>
+        
+        <LoginForm
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          loginError={loginError}
+          isDevelopmentMode={isDevelopmentMode}
+          testingMode={testingMode}
+        />
       </Card>
     </div>
   );
