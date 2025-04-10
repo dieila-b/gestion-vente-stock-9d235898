@@ -68,6 +68,10 @@ export function useAuthState() {
           
           if (!internalUsers || internalUsers.length === 0) {
             console.error("User not found in internal_users:", userEmail);
+            
+            // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
+            await supabase.auth.signOut();
+            
             setIsAuthenticated(false);
             setLoading(false);
             return;
@@ -77,6 +81,10 @@ export function useAuthState() {
           const internalUser = internalUsers[0];
           if (!internalUser.is_active) {
             console.error("User is deactivated:", userEmail);
+            
+            // Déconnexion de l'utilisateur désactivé
+            await supabase.auth.signOut();
+            
             setIsAuthenticated(false);
             setLoading(false);
             return;
@@ -128,6 +136,10 @@ export function useAuthState() {
             
             if (!internalUsers || internalUsers.length === 0) {
               console.error("User not found in internal_users on auth change:", userEmail);
+              
+              // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
+              await supabase.auth.signOut();
+              
               setIsAuthenticated(false);
               return;
             }
@@ -136,6 +148,10 @@ export function useAuthState() {
             const internalUser = internalUsers[0];
             if (!internalUser.is_active) {
               console.error("User is deactivated on auth change:", userEmail);
+              
+              // Déconnexion de l'utilisateur désactivé
+              await supabase.auth.signOut();
+              
               setIsAuthenticated(false);
               return;
             }

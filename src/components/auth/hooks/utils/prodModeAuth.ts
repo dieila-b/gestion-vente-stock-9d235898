@@ -15,11 +15,54 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     const normalizedEmail = email.toLowerCase().trim();
     console.log("Login request with normalized email:", normalizedEmail);
     
-    // Vérifier d'abord si l'utilisateur existe dans internal_users
+    // Tenter d'abord l'authentification avec Supabase
+    console.log("Attempting authentication with Supabase for:", normalizedEmail);
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password
+    });
+    
+    if (authError) {
+      console.error("Authentication error:", authError);
+      
+      if (authError.message.includes("Invalid login credentials")) {
+        return { 
+          success: false, 
+          error: "Email ou mot de passe incorrect" 
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: authError.message || "Une erreur est survenue lors de la connexion" 
+      };
+    }
+    
+    if (!authData?.user) {
+      console.error("No user data returned from authentication");
+      return {
+        success: false,
+        error: "Erreur d'authentification: aucune donnée utilisateur"
+      };
+    }
+    
+    // Une fois authentifié, vérifier si l'utilisateur existe dans internal_users
+    const userEmail = authData.user.email?.toLowerCase().trim();
+    console.log("User authenticated, checking internal_users table for:", userEmail);
+    
+    if (!userEmail) {
+      console.error("Authenticated user has no email");
+      return { 
+        success: false, 
+        error: "Erreur: le compte authentifié n'a pas d'email associé" 
+      };
+    }
+    
+    // Vérifier dans internal_users si l'utilisateur existe et est actif
     const { data: internalUsers, error: internalUserError } = await supabase
       .from("internal_users")
       .select("email, is_active")
-      .ilike("email", normalizedEmail)  // Use case-insensitive matching
+      .ilike("email", userEmail)  // Utiliser ilike pour une recherche insensible à la casse
       .limit(1);
       
     if (internalUserError) {
@@ -32,7 +75,11 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     
     // Si aucun utilisateur trouvé
     if (!internalUsers || internalUsers.length === 0) {
-      console.error("User not found in internal_users table:", normalizedEmail);
+      console.error("User not found in internal_users table:", userEmail);
+      
+      // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
+      await supabase.auth.signOut();
+      
       return { 
         success: false, 
         error: "Cet email n'est pas associé à un compte utilisateur interne" 
@@ -43,46 +90,20 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     
     // Vérifier si l'utilisateur est actif
     if (internalUserByEmail && !internalUserByEmail.is_active) {
-      console.error("User exists but is deactivated:", normalizedEmail);
+      console.error("User exists but is deactivated:", userEmail);
+      
+      // Déconnexion de l'utilisateur désactivé
+      await supabase.auth.signOut();
+      
       return {
         success: false,
         error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
       };
     }
     
-    // Maintenant tenter l'authentification avec Supabase
-    console.log("Attempting authentication with Supabase for internal user:", normalizedEmail);
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password
-    });
+    console.log("Authentication successful for internal user:", userEmail);
+    return { success: true };
     
-    if (authError) {
-      console.error("Authentication error:", authError);
-      
-      if (authError.message.includes("Invalid login credentials")) {
-        return { 
-          success: false, 
-          error: "Mot de passe incorrect" 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: authError.message || "Une erreur est survenue lors de la connexion" 
-      };
-    }
-    
-    if (authData?.user) {
-      console.log("Authentication successful for internal user:", normalizedEmail);
-      return { success: true };
-    }
-    
-    // Erreur générique pour les autres problèmes
-    return { 
-      success: false, 
-      error: "Une erreur est survenue lors de la connexion" 
-    };
   } catch (error: any) {
     console.error("Login error:", error);
     return { 
