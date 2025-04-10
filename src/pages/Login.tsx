@@ -9,6 +9,7 @@ import { TestingModeToggle } from "@/components/auth/login/TestingModeToggle";
 import { AuthStatusMessage } from "@/components/auth/login/AuthStatusMessage";
 import { DemoCredentials } from "@/components/auth/login/DemoCredentials";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -62,19 +63,28 @@ export default function Login() {
         }
         
         // Vérifier dans auth.users via Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-        
-        if (authError) {
-          console.error("Erreur lors de la vérification dans auth.users:", authError);
-          return;
-        }
-        
-        const authUser = authData?.users.find(u => u.email && u.email.toLowerCase() === normalizedEmail);
-        
-        if (authUser) {
-          console.log("Utilisateur trouvé dans auth.users:", authUser.email);
-        } else {
-          console.error("ATTENTION: L'utilisateur", normalizedEmail, "n'existe pas dans auth.users");
+        try {
+          const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+          
+          if (authError) {
+            console.error("Erreur lors de la vérification dans auth.users:", authError);
+            return;
+          }
+          
+          // Explicitly type the users array to fix the TypeScript error
+          if (authData && authData.users) {
+            const authUser = authData.users.find(u => 
+              u.email && u.email.toLowerCase() === normalizedEmail
+            );
+            
+            if (authUser) {
+              console.log("Utilisateur trouvé dans auth.users:", authUser.email);
+            } else {
+              console.error("ATTENTION: L'utilisateur", normalizedEmail, "n'existe pas dans auth.users");
+            }
+          }
+        } catch (authListError) {
+          console.error("Erreur lors de la liste des utilisateurs auth:", authListError);
         }
         
       } catch (error) {
@@ -277,3 +287,4 @@ export default function Login() {
     </div>
   );
 }
+
