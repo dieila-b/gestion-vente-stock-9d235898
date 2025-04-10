@@ -5,6 +5,7 @@ import { handleProdModeLogin } from "./utils/prodModeAuth";
 import { handleLogout } from "./utils/logoutHandler";
 import { useDevMode } from "./useDevMode";
 import { useTestingMode } from "./useTestingMode";
+import { toast } from "sonner";
 
 export function useAuthActions(
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
@@ -15,7 +16,7 @@ export function useAuthActions(
   const { testingMode } = useTestingMode();
   
   const login = async (email: string, password: string) => {
-    console.log("Login attempt with email:", email);
+    console.log("Tentative de connexion avec email:", email);
     
     try {
       setIsSubmitting(true);
@@ -23,9 +24,19 @@ export function useAuthActions(
       // En mode développement ou testing, auto-authentification
       if (isDevelopmentMode || testingMode) {
         console.log(isDevelopmentMode 
-          ? "Development mode: Auto-authenticating without credentials check" 
-          : "Testing mode: Auto-authenticating without credentials check");
+          ? "Mode développement: Auto-authentification sans vérification des identifiants" 
+          : "Mode test: Auto-authentification sans vérification des identifiants");
+        
+        // En mode développement, vérifier quand même que l'email correspond à un utilisateur valide
+        if (isDevelopmentMode) {
+          const devResult = await handleDevModeLogin(email);
+          if (!devResult.success) {
+            return devResult;
+          }
+        }
+        
         setIsAuthenticated(true);
+        toast.success(`Connexion réussie (${isDevelopmentMode ? "Mode développement" : "Mode test"})`);
         return { success: true };
       }
       
@@ -49,15 +60,17 @@ export function useAuthActions(
       // En mode développement ou testing, simplement mettre l'état d'authentification à false
       if (isDevelopmentMode || testingMode) {
         console.log(isDevelopmentMode 
-          ? "Development mode: Simple logout without server calls" 
-          : "Testing mode: Simple logout without server calls");
+          ? "Mode développement: Déconnexion simple sans appels serveur" 
+          : "Mode test: Déconnexion simple sans appels serveur");
         setIsAuthenticated(false);
+        toast.success("Déconnexion réussie");
         return;
       }
       
       // En mode production, utiliser le flux de déconnexion normal
       await handleLogout(isDevelopmentMode);
       setIsAuthenticated(false);
+      toast.success("Déconnexion réussie");
     } finally {
       setIsSubmitting(false);
     }

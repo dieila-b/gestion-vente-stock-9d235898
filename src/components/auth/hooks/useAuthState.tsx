@@ -11,7 +11,7 @@ export function useAuthState() {
   const { isDevelopmentMode } = useDevMode();
   const { testingMode } = useTestingMode();
 
-  // Check initial authentication status
+  // Vérifier l'état d'authentification initial
   useInitialAuthCheck({
     isDevelopmentMode,
     testingMode,
@@ -19,7 +19,7 @@ export function useAuthState() {
     setLoading
   });
 
-  // Set up auth state change listener
+  // Configurer l'écouteur de changement d'état d'authentification
   useAuthStateListener({
     isDevelopmentMode,
     testingMode,

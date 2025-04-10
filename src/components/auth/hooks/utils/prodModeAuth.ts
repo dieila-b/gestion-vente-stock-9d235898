@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Handle login in production mode
+// Gérer la connexion en mode production
 export const handleProdModeLogin = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Log pour débugger
@@ -14,9 +14,9 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       return { success: true };
     }
     
-    // Normalize email
+    // Normaliser l'email
     const normalizedEmail = email.toLowerCase().trim();
-    console.log("Login request with normalized email:", normalizedEmail);
+    console.log("Demande de connexion avec email normalisé:", normalizedEmail);
     
     // Vérifier d'abord si l'utilisateur existe dans internal_users
     console.log("Vérification de l'utilisateur dans internal_users:", normalizedEmail);
@@ -31,7 +31,8 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
                 "Erreur:", internalUserError ? internalUserError.message : "aucune");
       
     if (internalUserError) {
-      console.error("Error checking internal_users:", internalUserError.message);
+      console.error("Erreur lors de la vérification internal_users:", internalUserError.message);
+      toast.error("Erreur lors de la vérification du compte");
       return { 
         success: false, 
         error: "Erreur lors de la vérification du compte: " + internalUserError.message
@@ -40,7 +41,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     
     // Si aucun utilisateur trouvé dans internal_users
     if (!internalUsers || internalUsers.length === 0) {
-      console.error("User not found in internal_users table:", normalizedEmail);
+      console.error("Utilisateur non trouvé dans la table internal_users:", normalizedEmail);
       
       // Tentative de requête directe pour vérifier si la table existe et a des données
       const { data: allUsers, error: allUsersError } = await supabase
@@ -52,6 +53,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
                   allUsers ? `${allUsers.length} utilisateurs trouvés` : "aucun utilisateur", 
                   "Erreur:", allUsersError ? allUsersError.message : "aucune");
       
+      toast.error("Email non reconnu");
       return { 
         success: false, 
         error: "Cet email n'est pas associé à un compte utilisateur interne" 
@@ -62,7 +64,8 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     
     // Vérifier si l'utilisateur est actif
     if (internalUserByEmail && !internalUserByEmail.is_active) {
-      console.error("User exists but is deactivated:", normalizedEmail);
+      console.error("L'utilisateur existe mais est désactivé:", normalizedEmail);
+      toast.error("Compte désactivé");
       return {
         success: false,
         error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
@@ -77,16 +80,18 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     });
     
     if (authError) {
-      console.error("Authentication error:", authError);
+      console.error("Erreur d'authentification:", authError);
       
       if (authError.message.includes("Invalid login credentials")) {
         console.log("Identifiants invalides pour:", normalizedEmail);
+        toast.error("Email ou mot de passe incorrect");
         return { 
           success: false, 
           error: "Email ou mot de passe incorrect" 
         };
       }
       
+      toast.error("Erreur d'authentification");
       return { 
         success: false, 
         error: authError.message || "Une erreur est survenue lors de la connexion" 
@@ -94,18 +99,21 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     }
     
     if (!authData?.user) {
-      console.error("No user data returned from authentication");
+      console.error("Aucune donnée utilisateur retournée par l'authentification");
+      toast.error("Erreur d'authentification");
       return {
         success: false,
         error: "Erreur d'authentification: aucune donnée utilisateur"
       };
     }
     
-    console.log("Authentication successful for internal user:", normalizedEmail);
+    console.log("Authentification réussie pour l'utilisateur interne:", normalizedEmail);
+    toast.success("Connexion réussie");
     return { success: true };
     
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.error("Erreur de connexion:", error);
+    toast.error("Erreur lors de la connexion");
     return { 
       success: false, 
       error: "Une erreur est survenue lors de la connexion: " + (error.message || "Erreur inconnue")
