@@ -5,6 +5,9 @@ import { toast } from "sonner";
 // Handle login in production mode
 export const handleProdModeLogin = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Log pour débugger
+    console.log("Tentative de connexion avec:", email, "Mot de passe fourni:", password ? "******" : "non fourni");
+    
     // En mode test, on accepte n'importe quel email/mot de passe
     if (localStorage.getItem('auth_testing_mode') === 'enabled') {
       console.log("Mode test: authentification automatique avec:", email);
@@ -15,8 +18,44 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
     const normalizedEmail = email.toLowerCase().trim();
     console.log("Login request with normalized email:", normalizedEmail);
     
-    // Tenter d'abord l'authentification avec Supabase
-    console.log("Attempting authentication with Supabase for:", normalizedEmail);
+    // Vérifier d'abord si l'utilisateur existe dans internal_users
+    console.log("Vérification de l'utilisateur dans internal_users:", normalizedEmail);
+    const { data: internalUsers, error: internalUserError } = await supabase
+      .from("internal_users")
+      .select("email, is_active")
+      .ilike("email", normalizedEmail)
+      .limit(1);
+      
+    if (internalUserError) {
+      console.error("Error checking internal_users:", internalUserError.message);
+      return { 
+        success: false, 
+        error: "Erreur lors de la vérification du compte: " + internalUserError.message
+      };
+    }
+    
+    // Si aucun utilisateur trouvé dans internal_users
+    if (!internalUsers || internalUsers.length === 0) {
+      console.error("User not found in internal_users table:", normalizedEmail);
+      return { 
+        success: false, 
+        error: "Cet email n'est pas associé à un compte utilisateur interne" 
+      };
+    }
+    
+    const internalUserByEmail = internalUsers[0];
+    
+    // Vérifier si l'utilisateur est actif
+    if (internalUserByEmail && !internalUserByEmail.is_active) {
+      console.error("User exists but is deactivated:", normalizedEmail);
+      return {
+        success: false,
+        error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
+      };
+    }
+    
+    // Une fois vérifié dans internal_users, procéder à l'authentification avec Supabase
+    console.log("Utilisateur trouvé et actif, tentative d'authentification avec Supabase pour:", normalizedEmail);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password
@@ -26,6 +65,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       console.error("Authentication error:", authError);
       
       if (authError.message.includes("Invalid login credentials")) {
+        console.log("Identifiants invalides pour:", normalizedEmail);
         return { 
           success: false, 
           error: "Email ou mot de passe incorrect" 
@@ -46,62 +86,7 @@ export const handleProdModeLogin = async (email: string, password: string): Prom
       };
     }
     
-    // Une fois authentifié, vérifier si l'utilisateur existe dans internal_users
-    const userEmail = authData.user.email?.toLowerCase().trim();
-    console.log("User authenticated, checking internal_users table for:", userEmail);
-    
-    if (!userEmail) {
-      console.error("Authenticated user has no email");
-      return { 
-        success: false, 
-        error: "Erreur: le compte authentifié n'a pas d'email associé" 
-      };
-    }
-    
-    // Vérifier dans internal_users si l'utilisateur existe et est actif
-    const { data: internalUsers, error: internalUserError } = await supabase
-      .from("internal_users")
-      .select("email, is_active")
-      .ilike("email", userEmail)  // Utiliser ilike pour une recherche insensible à la casse
-      .limit(1);
-      
-    if (internalUserError) {
-      console.error("Error checking internal_users:", internalUserError.message);
-      return { 
-        success: false, 
-        error: "Erreur lors de la vérification du compte: " + internalUserError.message
-      };
-    }
-    
-    // Si aucun utilisateur trouvé
-    if (!internalUsers || internalUsers.length === 0) {
-      console.error("User not found in internal_users table:", userEmail);
-      
-      // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
-      await supabase.auth.signOut();
-      
-      return { 
-        success: false, 
-        error: "Cet email n'est pas associé à un compte utilisateur interne" 
-      };
-    }
-    
-    const internalUserByEmail = internalUsers[0];
-    
-    // Vérifier si l'utilisateur est actif
-    if (internalUserByEmail && !internalUserByEmail.is_active) {
-      console.error("User exists but is deactivated:", userEmail);
-      
-      // Déconnexion de l'utilisateur désactivé
-      await supabase.auth.signOut();
-      
-      return {
-        success: false,
-        error: "Ce compte utilisateur a été désactivé. Contactez votre administrateur."
-      };
-    }
-    
-    console.log("Authentication successful for internal user:", userEmail);
+    console.log("Authentication successful for internal user:", normalizedEmail);
     return { success: true };
     
   } catch (error: any) {

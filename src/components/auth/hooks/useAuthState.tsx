@@ -43,7 +43,7 @@ export function useAuthState() {
           console.log("Valid session found for user:", data.session.user.email);
           
           // Get user's email from the session
-          const userEmail = data.session.user.email?.toLowerCase().trim();
+          const userEmail = data.session.user.email;
           
           if (!userEmail) {
             console.error("User session has no email");
@@ -52,11 +52,13 @@ export function useAuthState() {
             return;
           }
           
+          const normalizedEmail = userEmail.toLowerCase().trim();
+          
           // Verify that user exists in internal_users
           const { data: internalUsers, error: internalError } = await supabase
             .from('internal_users')
             .select('id, email, is_active')
-            .ilike('email', userEmail)  // Use case-insensitive matching
+            .ilike('email', normalizedEmail)
             .limit(1);
               
           if (internalError) {
@@ -67,7 +69,7 @@ export function useAuthState() {
           }
           
           if (!internalUsers || internalUsers.length === 0) {
-            console.error("User not found in internal_users:", userEmail);
+            console.error("User not found in internal_users:", normalizedEmail);
             
             // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
             await supabase.auth.signOut();
@@ -80,7 +82,7 @@ export function useAuthState() {
           // Check if user is active
           const internalUser = internalUsers[0];
           if (!internalUser.is_active) {
-            console.error("User is deactivated:", userEmail);
+            console.error("User is deactivated:", normalizedEmail);
             
             // Déconnexion de l'utilisateur désactivé
             await supabase.auth.signOut();
@@ -90,7 +92,7 @@ export function useAuthState() {
             return;
           }
           
-          console.log("User is active in internal_users:", userEmail);
+          console.log("User is active in internal_users:", normalizedEmail);
           setIsAuthenticated(true);
           setLoading(false);
           return;
@@ -113,7 +115,7 @@ export function useAuthState() {
           
           if (session && session.user) {
             // Get user's email
-            const userEmail = session.user.email?.toLowerCase().trim();
+            const userEmail = session.user.email;
             
             if (!userEmail) {
               console.error("User session has no email");
@@ -121,11 +123,13 @@ export function useAuthState() {
               return;
             }
             
+            const normalizedEmail = userEmail.toLowerCase().trim();
+            
             // Verify that user exists in internal_users and is active
             const { data: internalUsers, error: internalError } = await supabase
               .from('internal_users')
               .select('id, email, is_active')
-              .ilike('email', userEmail)  // Use case-insensitive matching
+              .ilike('email', normalizedEmail)
               .limit(1);
               
             if (internalError) {
@@ -135,7 +139,7 @@ export function useAuthState() {
             }
             
             if (!internalUsers || internalUsers.length === 0) {
-              console.error("User not found in internal_users on auth change:", userEmail);
+              console.error("User not found in internal_users on auth change:", normalizedEmail);
               
               // Déconnexion de l'utilisateur authentifié qui n'est pas dans internal_users
               await supabase.auth.signOut();
@@ -147,7 +151,7 @@ export function useAuthState() {
             // Check if user is active
             const internalUser = internalUsers[0];
             if (!internalUser.is_active) {
-              console.error("User is deactivated on auth change:", userEmail);
+              console.error("User is deactivated on auth change:", normalizedEmail);
               
               // Déconnexion de l'utilisateur désactivé
               await supabase.auth.signOut();
@@ -156,7 +160,7 @@ export function useAuthState() {
               return;
             }
             
-            console.log("User is active in internal_users on auth change:", userEmail);
+            console.log("User is active in internal_users on auth change:", normalizedEmail);
             setIsAuthenticated(true);
           } else {
             setIsAuthenticated(false);
