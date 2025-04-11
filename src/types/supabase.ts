@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -21,7 +22,7 @@ export interface Database {
         Insert: {
           id?: string
           cash_register_id?: string
-          type?: string
+          type: string
           amount?: number
           description?: string
           created_at?: string
@@ -50,7 +51,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          name?: string
+          name: string
           initial_amount?: number
           current_amount?: number
           status?: string
@@ -85,6 +86,7 @@ export interface Database {
           image_url: string
           created_at: string
           updated_at: string
+          unit_id: string
         }
         Insert: {
           id?: string
@@ -98,6 +100,7 @@ export interface Database {
           image_url?: string
           created_at?: string
           updated_at?: string
+          unit_id?: string
         }
         Update: {
           id?: string
@@ -111,6 +114,7 @@ export interface Database {
           image_url?: string
           created_at?: string
           updated_at?: string
+          unit_id?: string
         }
         Relationships: []
       }
@@ -132,6 +136,14 @@ export interface Database {
           created_at: string
           updated_at: string
           status: string
+          whatsapp: string
+          mobile_1: string
+          mobile_2: string
+          credit_limit: number
+          balance: number
+          rc_number: string
+          cc_number: string
+          tax_number: string
         }
         Insert: {
           id?: string
@@ -149,7 +161,15 @@ export interface Database {
           client_type?: string
           created_at?: string
           updated_at?: string
-          status?: string
+          status: string
+          whatsapp?: string
+          mobile_1?: string
+          mobile_2?: string
+          credit_limit?: number
+          balance?: number
+          rc_number?: string
+          cc_number?: string
+          tax_number?: string
         }
         Update: {
           id?: string
@@ -168,6 +188,14 @@ export interface Database {
           created_at?: string
           updated_at?: string
           status?: string
+          whatsapp?: string
+          mobile_1?: string
+          mobile_2?: string
+          credit_limit?: number
+          balance?: number
+          rc_number?: string
+          cc_number?: string
+          tax_number?: string
         }
         Relationships: []
       }
@@ -213,6 +241,30 @@ export interface Database {
         }
         Relationships: []
       }
+      customer_return_items: {
+        Row: {
+          id: string
+          return_id: string
+          product_id: string
+          quantity: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          return_id?: string
+          product_id?: string
+          quantity?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          return_id?: string
+          product_id?: string
+          quantity?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           id: string
@@ -239,6 +291,7 @@ export interface Database {
           id: string
           amount: number
           description: string
+          date: string
           category_id: string
           created_at: string
         }
@@ -246,15 +299,53 @@ export interface Database {
           id?: string
           amount: number
           description?: string
-          category_id: string
+          date: string
+          category_id?: string
           created_at?: string
         }
         Update: {
           id?: string
           amount?: number
           description?: string
+          date?: string
           category_id?: string
           created_at?: string
+        }
+        Relationships: []
+      }
+      outcome_entries: {
+        Row: {
+          id: string
+          amount: number
+          description: string
+          date: string
+          expense_category_id: string
+          created_at: string
+          receipt_number: string
+          payment_method: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          amount: number
+          description?: string
+          date: string
+          expense_category_id?: string
+          created_at?: string
+          receipt_number?: string
+          payment_method?: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          amount?: number
+          description?: string
+          date?: string
+          expense_category_id?: string
+          created_at?: string
+          receipt_number?: string
+          payment_method?: string
+          status?: string
         }
         Relationships: []
       }
@@ -273,7 +364,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
-          id: string
+          id?: string
           email: string
           first_name: string
           last_name: string
@@ -355,8 +446,8 @@ export interface Database {
           product_id: string
           quantity: number
           price: number
-          discount: number
           total: number
+          discount: number
           delivered_quantity: number
           created_at: string
         }
@@ -366,8 +457,8 @@ export interface Database {
           product_id?: string
           quantity?: number
           price?: number
-          discount?: number
           total?: number
+          discount?: number
           delivered_quantity?: number
           created_at?: string
         }
@@ -377,8 +468,8 @@ export interface Database {
           product_id?: string
           quantity?: number
           price?: number
-          discount?: number
           total?: number
+          discount?: number
           delivered_quantity?: number
           created_at?: string
         }
@@ -411,30 +502,6 @@ export interface Database {
         }
         Relationships: []
       }
-      outcome_entries: {
-        Row: {
-          id: string
-          amount: number
-          description: string
-          expense_category_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          amount: number
-          description?: string
-          expense_category_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          amount?: number
-          description?: string
-          expense_category_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
       payments: {
         Row: {
           id: string
@@ -462,60 +529,12 @@ export interface Database {
         }
         Relationships: []
       }
-      pos_locations: {
-        Row: {
-          id: string
-          name: string
-          address: string
-          manager: string
-          email: string
-          phone: string
-          status: string
-          capacity: number
-          surface: number
-          occupied: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          address?: string
-          manager?: string
-          email?: string
-          phone?: string
-          status?: string
-          capacity?: number
-          surface?: number
-          occupied?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          address?: string
-          manager?: string
-          email?: string
-          phone?: string
-          status?: string
-          capacity?: number
-          surface?: number
-          occupied?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       preorders: {
         Row: {
           id: string
           client_id: string
-          status: string
           notes: string
+          status: string
           total_amount: number
           paid_amount: number
           remaining_amount: number
@@ -525,8 +544,8 @@ export interface Database {
         Insert: {
           id?: string
           client_id?: string
-          status?: string
           notes?: string
+          status?: string
           total_amount?: number
           paid_amount?: number
           remaining_amount?: number
@@ -536,8 +555,8 @@ export interface Database {
         Update: {
           id?: string
           client_id?: string
-          status?: string
           notes?: string
+          status?: string
           total_amount?: number
           paid_amount?: number
           remaining_amount?: number
@@ -553,8 +572,8 @@ export interface Database {
           product_id: string
           quantity: number
           unit_price: number
-          discount: number
           total_price: number
+          discount: number
           status: string
           created_at: string
         }
@@ -564,8 +583,8 @@ export interface Database {
           product_id?: string
           quantity?: number
           unit_price?: number
-          discount?: number
           total_price?: number
+          discount?: number
           status?: string
           created_at?: string
         }
@@ -575,8 +594,8 @@ export interface Database {
           product_id?: string
           quantity?: number
           unit_price?: number
-          discount?: number
           total_price?: number
+          discount?: number
           status?: string
           created_at?: string
         }
@@ -586,72 +605,246 @@ export interface Database {
         Row: {
           id: string
           name: string
-          symbol: string
-          description: string
+          abbreviation: string
           created_at: string
         }
         Insert: {
           id?: string
           name: string
-          symbol: string
-          description?: string
+          abbreviation: string
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
-          symbol?: string
-          description?: string
+          abbreviation?: string
           created_at?: string
         }
         Relationships: []
       }
-      suppliers: {
+      purchase_orders: {
+        Row: {
+          id: string
+          supplier_id: string
+          order_number: string
+          expected_delivery_date: string
+          warehouse_id: string
+          notes: string
+          status: string
+          total_amount: number
+          payment_status: string
+          paid_amount: number
+          transit_cost: number
+          logistics_cost: number
+          tax_rate: number
+          subtotal: number
+          tax_amount: number
+          total_ttc: number
+          shipping_cost: number
+          discount: number
+          created_at: string
+          updated_at: string
+          deleted: boolean
+        }
+        Insert: {
+          id?: string
+          supplier_id: string
+          order_number?: string
+          expected_delivery_date?: string
+          warehouse_id?: string
+          notes?: string
+          status?: string
+          total_amount?: number
+          payment_status?: string
+          paid_amount?: number
+          transit_cost?: number
+          logistics_cost?: number
+          tax_rate?: number
+          subtotal?: number
+          tax_amount?: number
+          total_ttc?: number
+          shipping_cost?: number
+          discount?: number
+          created_at?: string
+          updated_at?: string
+          deleted?: boolean
+        }
+        Update: {
+          id?: string
+          supplier_id?: string
+          order_number?: string
+          expected_delivery_date?: string
+          warehouse_id?: string
+          notes?: string
+          status?: string
+          total_amount?: number
+          payment_status?: string
+          paid_amount?: number
+          transit_cost?: number
+          logistics_cost?: number
+          tax_rate?: number
+          subtotal?: number
+          tax_amount?: number
+          total_ttc?: number
+          shipping_cost?: number
+          discount?: number
+          created_at?: string
+          updated_at?: string
+          deleted?: boolean
+        }
+        Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          id: string
+          purchase_order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          total_price: number
+          selling_price: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          purchase_order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+          total_price?: number
+          selling_price?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          purchase_order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+          total_price?: number
+          selling_price?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      stock_transfers: {
+        Row: {
+          id: string
+          from_warehouse_id: string
+          to_warehouse_id: string
+          product_id: string
+          quantity: number
+          created_at: string
+          source_warehouse_id: string
+          destination_warehouse_id: string
+          source_pos_id: string
+          destination_pos_id: string
+          transfer_type: string
+          notes: string
+          status: string
+          transfer_date: string
+        }
+        Insert: {
+          id?: string
+          from_warehouse_id?: string
+          to_warehouse_id?: string
+          product_id?: string
+          quantity: number
+          created_at?: string
+          source_warehouse_id?: string
+          destination_warehouse_id?: string
+          source_pos_id?: string
+          destination_pos_id?: string
+          transfer_type?: string
+          notes?: string
+          status?: string
+          transfer_date?: string
+        }
+        Update: {
+          id?: string
+          from_warehouse_id?: string
+          to_warehouse_id?: string
+          product_id?: string
+          quantity?: number
+          created_at?: string
+          source_warehouse_id?: string
+          destination_warehouse_id?: string
+          source_pos_id?: string
+          destination_pos_id?: string
+          transfer_type?: string
+          notes?: string
+          status?: string
+          transfer_date?: string
+        }
+        Relationships: []
+      }
+      stock_transfer_items: {
+        Row: {
+          id: string
+          transfer_id: string
+          product_id: string
+          quantity: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          transfer_id?: string
+          product_id?: string
+          quantity: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          transfer_id?: string
+          product_id?: string
+          quantity?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      warehouses: {
         Row: {
           id: string
           name: string
-          contact: string
-          email: string
-          phone: string
-          address: string
-          website: string
+          location: string
+          surface: number
+          capacity: number
+          occupied: number
+          manager: string
           status: string
-          country: string
-          city: string
-          postal_box: string
-          landline: string
+          address: string
+          is_active: boolean
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           name: string
-          contact: string
-          email: string
-          phone: string
-          address: string
-          website?: string
+          location?: string
+          surface?: number
+          capacity?: number
+          occupied?: number
+          manager?: string
           status?: string
-          country?: string
-          city?: string
-          postal_box?: string
-          landline?: string
+          address?: string
+          is_active?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          contact?: string
-          email?: string
-          phone?: string
-          address?: string
-          website?: string
+          location?: string
+          surface?: number
+          capacity?: number
+          occupied?: number
+          manager?: string
           status?: string
-          country?: string
-          city?: string
-          postal_box?: string
-          landline?: string
+          address?: string
+          is_active?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -693,48 +886,100 @@ export interface Database {
         }
         Relationships: []
       }
-      warehouses: {
+      warehouse_stock_movements: {
+        Row: {
+          id: string
+          product_id: string
+          warehouse_id: string
+          quantity: number
+          type: string
+          created_at: string
+          reason: string
+        }
+        Insert: {
+          id?: string
+          product_id?: string
+          warehouse_id?: string
+          quantity: number
+          type: string
+          created_at?: string
+          reason?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          warehouse_id?: string
+          quantity?: number
+          type?: string
+          created_at?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      // Additional tables that were missing
+      bank_accounts: {
         Row: {
           id: string
           name: string
-          location: string
-          address: string
-          manager: string
+          bank_name: string
+          account_type: string
+          account_number: string
+          current_balance: number
+          initial_balance: number
           status: string
-          capacity: number
-          surface: number
-          occupied: number
-          is_active: boolean
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           name: string
-          location?: string
-          address?: string
-          manager?: string
+          bank_name: string
+          account_type: string
+          account_number: string
+          current_balance?: number
+          initial_balance?: number
           status?: string
-          capacity?: number
-          surface?: number
-          occupied?: number
-          is_active?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          location?: string
-          address?: string
-          manager?: string
+          bank_name?: string
+          account_type?: string
+          account_number?: string
+          current_balance?: number
+          initial_balance?: number
           status?: string
-          capacity?: number
-          surface?: number
-          occupied?: number
-          is_active?: boolean
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_payments: {
+        Row: {
+          id: string
+          invoice_id: string
+          amount: number
+          payment_method: string
+          created_at: string
+          notes: string
+        }
+        Insert: {
+          id?: string
+          invoice_id: string
+          amount: number
+          payment_method: string
+          created_at?: string
+          notes?: string
+        }
+        Update: {
+          id?: string
+          invoice_id?: string
+          amount?: number
+          payment_method?: string
+          created_at?: string
+          notes?: string
         }
         Relationships: []
       }
@@ -746,7 +991,7 @@ export interface Database {
           issue_date: string
           due_date: string
           total_amount: number
-          payment_status: 'paid' | 'partial' | 'pending'
+          payment_status: "paid" | "partial" | "pending"
           paid_amount: number
           remaining_amount: number
           status: string
@@ -761,7 +1006,7 @@ export interface Database {
           issue_date: string
           due_date: string
           total_amount: number
-          payment_status?: 'paid' | 'partial' | 'pending'
+          payment_status?: "paid" | "partial" | "pending"
           paid_amount?: number
           remaining_amount?: number
           status?: string
@@ -776,7 +1021,7 @@ export interface Database {
           issue_date?: string
           due_date?: string
           total_amount?: number
-          payment_status?: 'paid' | 'partial' | 'pending'
+          payment_status?: "paid" | "partial" | "pending"
           paid_amount?: number
           remaining_amount?: number
           status?: string
@@ -786,162 +1031,360 @@ export interface Database {
         }
         Relationships: []
       }
-      geographic_zones: {
+      invoice_items: {
         Row: {
           id: string
-          name: string
-          type: string
-          description: string
-          parent_id: string | null
+          invoice_id: string
+          product_id: string
+          quantity: number
+          price: number
+          total: number
           created_at: string
         }
         Insert: {
           id?: string
-          name: string
-          type: string
-          description?: string
-          parent_id?: string | null
+          invoice_id: string
+          product_id: string
+          quantity: number
+          price: number
+          total: number
           created_at?: string
+        }
+        Update: {
+          id?: string
+          invoice_id?: string
+          product_id?: string
+          quantity?: number
+          price?: number
+          total?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          id: string
+          quote_number: string
+          client_id: string
+          issue_date: string
+          expiry_date: string
+          total_amount: number
+          status: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          quote_number?: string
+          client_id: string
+          issue_date: string
+          expiry_date: string
+          total_amount: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          quote_number?: string
+          client_id?: string
+          issue_date?: string
+          expiry_date?: string
+          total_amount?: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          id: string
+          name: string
+          phone: string
+          email: string
+          address: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone?: string
+          email?: string
+          address?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          type?: string
-          description?: string
-          parent_id?: string | null
+          phone?: string
+          email?: string
+          address?: string
+          status?: string
           created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }
-      stock_transfers: {
-        Row: {
-          id: string
-          from_warehouse_id: string
-          to_warehouse_id: string
-          product_id: string
-          quantity: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          from_warehouse_id?: string
-          to_warehouse_id?: string
-          product_id?: string
-          quantity: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          from_warehouse_id?: string
-          to_warehouse_id?: string
-          product_id?: string
-          quantity?: number
-          created_at?: string
-        }
-        Relationships: []
-      }
-      purchase_orders: {
+      supplier_orders: {
         Row: {
           id: string
           supplier_id: string
           order_number: string
-          expected_delivery_date: string
-          warehouse_id: string
-          notes: string
           status: string
           total_amount: number
-          payment_status: string
-          paid_amount: number
           created_at: string
           updated_at: string
-          deleted: boolean
-          logistics_cost: number
-          transit_cost: number
-          tax_rate: number
-          subtotal: number
-          tax_amount: number
-          total_ttc: number
-          shipping_cost: number
-          discount: number
         }
         Insert: {
           id?: string
           supplier_id: string
           order_number?: string
-          expected_delivery_date?: string
-          warehouse_id?: string
-          notes?: string
           status?: string
           total_amount?: number
-          payment_status?: string
-          paid_amount?: number
           created_at?: string
           updated_at?: string
-          deleted?: boolean
-          logistics_cost?: number
-          transit_cost?: number
-          tax_rate?: number
-          subtotal?: number
-          tax_amount?: number
-          total_ttc?: number
-          shipping_cost?: number
-          discount?: number
         }
         Update: {
           id?: string
           supplier_id?: string
           order_number?: string
-          expected_delivery_date?: string
-          warehouse_id?: string
-          notes?: string
           status?: string
           total_amount?: number
-          payment_status?: string
-          paid_amount?: number
           created_at?: string
           updated_at?: string
-          deleted?: boolean
-          logistics_cost?: number
-          transit_cost?: number
-          tax_rate?: number
-          subtotal?: number
-          tax_amount?: number
-          total_ttc?: number
-          shipping_cost?: number
-          discount?: number
         }
         Relationships: []
       }
-      purchase_order_items: {
+      supplier_order_products: {
         Row: {
           id: string
-          purchase_order_id: string
+          order_id: string
           product_id: string
           quantity: number
           unit_price: number
           total_price: number
           created_at: string
-          selling_price: number
         }
         Insert: {
           id?: string
-          purchase_order_id: string
+          order_id: string
           product_id: string
           quantity: number
           unit_price: number
           total_price: number
           created_at?: string
-          selling_price: number
         }
         Update: {
           id?: string
-          purchase_order_id?: string
+          order_id?: string
           product_id?: string
           quantity?: number
           unit_price?: number
           total_price?: number
           created_at?: string
-          selling_price?: number
+        }
+        Relationships: []
+      }
+      supplier_returns: {
+        Row: {
+          id: string
+          supplier_id: string
+          purchase_order_id: string
+          return_date: string
+          status: string
+          notes: string
+          total_amount: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          supplier_id: string
+          purchase_order_id?: string
+          return_date: string
+          status?: string
+          notes?: string
+          total_amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          supplier_id?: string
+          purchase_order_id?: string
+          return_date?: string
+          status?: string
+          notes?: string
+          total_amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_return_items: {
+        Row: {
+          id: string
+          return_id: string
+          product_id: string
+          quantity: number
+          reason: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          return_id: string
+          product_id: string
+          quantity: number
+          reason?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          return_id?: string
+          product_id?: string
+          quantity?: number
+          reason?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      inventory: {
+        Row: {
+          id: string
+          name: string
+          quantity: number
+          category: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          quantity?: number
+          category?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          quantity?: number
+          category?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          id: string
+          key: string
+          value: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          value: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchase_invoices: {
+        Row: {
+          id: string
+          invoice_number: string
+          supplier_id: string
+          issue_date: string
+          due_date: string
+          total_amount: number
+          tax_amount: number
+          payment_status: string
+          paid_amount: number
+          remaining_amount: number
+          status: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          invoice_number: string
+          supplier_id: string
+          issue_date: string
+          due_date: string
+          total_amount: number
+          tax_amount?: number
+          payment_status?: string
+          paid_amount?: number
+          remaining_amount?: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          invoice_number?: string
+          supplier_id?: string
+          issue_date?: string
+          due_date?: string
+          total_amount?: number
+          tax_amount?: number
+          payment_status?: string
+          paid_amount?: number
+          remaining_amount?: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchase_invoice_payments: {
+        Row: {
+          id: string
+          invoice_id: string
+          amount: number
+          payment_method: string
+          notes: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          invoice_id: string
+          amount: number
+          payment_method: string
+          notes?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          invoice_id?: string
+          amount?: number
+          payment_method?: string
+          notes?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -981,6 +1424,42 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted?: boolean
+        }
+        Relationships: []
+      }
+      delivery_note_items: {
+        Row: {
+          id: string
+          delivery_note_id: string
+          product_id: string
+          expected_quantity: number
+          received_quantity: number
+          unit_price: number
+          status: string
+          created_at: string
+          quantity_received: number
+        }
+        Insert: {
+          id?: string
+          delivery_note_id: string
+          product_id: string
+          expected_quantity: number
+          received_quantity?: number
+          unit_price: number
+          status?: string
+          created_at?: string
+          quantity_received?: number
+        }
+        Update: {
+          id?: string
+          delivery_note_id?: string
+          product_id?: string
+          expected_quantity?: number
+          received_quantity?: number
+          unit_price?: number
+          status?: string
+          created_at?: string
+          quantity_received?: number
         }
         Relationships: []
       }

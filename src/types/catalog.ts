@@ -11,6 +11,7 @@ export interface NewProductUnit {
   name: string;
   symbol: string;
   description?: string;
+  abbreviation?: string;
 }
 
 export interface Product {
@@ -41,4 +42,31 @@ export interface CatalogState {
   selectedProduct: Product | null;
   categories: Category[];
   isFormVisible: boolean;
+}
+
+// Add CatalogProduct interface that was missing
+export interface CatalogProduct {
+  id: string;
+  name: string;
+  description?: string;
+  reference?: string;
+  category?: string;
+  price: number;
+  purchase_price?: number;
+  stock?: number;
+  image_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  unit_id?: string;
+}
+
+export interface InvoiceProduct {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  product_id: string;
+  description?: string;
+  reference?: string;
+  category?: string;
 }

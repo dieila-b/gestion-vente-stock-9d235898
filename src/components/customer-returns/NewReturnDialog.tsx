@@ -86,7 +86,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
   }, [isOpen]);
 
   const handleSubmit = async () => {
-    await onSubmit(form.getValues());
+    await onSubmit();
     onSuccess();
   };
 
@@ -103,19 +103,19 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 gap-4">
             <ReturnClientSelect 
-              clientId={form.getValues("client_id")} 
+              clientId={form.getValues("client_id") || ""} 
               onClientChange={handleClientChange} 
             />
 
             <ReturnInvoiceSelect 
-              clientId={form.getValues("client_id")}
-              invoiceId={form.getValues("invoice_id")}
+              clientId={form.getValues("client_id") || ""}
+              invoiceId={form.getValues("invoice_id") || ""}
               filteredInvoices={invoices}
               onInvoiceChange={handleInvoiceChange}
             />
 
             <ReturnReasonField 
-              reason={form.getValues("reason")} 
+              reason={form.getValues("reason") || ""} 
               onChange={(e) => form.setValue("reason", e.target.value)} 
             />
 
@@ -135,7 +135,13 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
               onManualProductChange={() => {
                 // Not implemented in this version
               }}
-              onRemoveManualProduct={removeItemFromReturn}
+              onRemoveManualProduct={(index: number) => {
+                // We need to find the product ID by index
+                if (index >= 0 && index < selectedItems.length) {
+                  const productId = selectedItems[index].product_id;
+                  removeItemFromReturn(productId);
+                }
+              }}
               onAddManualProduct={() => {
                 // Not implemented in this version
               }}

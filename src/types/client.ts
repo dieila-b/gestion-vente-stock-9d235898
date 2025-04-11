@@ -16,6 +16,16 @@ export interface Client {
   created_at?: string;
   updated_at?: string;
   status: string;
+  
+  // Add missing properties
+  whatsapp?: string;
+  mobile_1?: string;
+  mobile_2?: string;
+  credit_limit?: number;
+  rc_number?: string;
+  cc_number?: string;
+  tax_number?: string;
+  balance?: number;
 }
 
 export interface NewClient {
@@ -32,4 +42,15 @@ export interface NewClient {
   client_code?: string;
   client_type?: string;
   status: string;
+  
+  // Add missing properties
+  whatsapp?: string;
+  mobile_1?: string;
+  mobile_2?: string;
+  credit_limit?: number;
+  rc_number?: string;
+  cc_number?: string;
+  tax_number?: string;
 }
+
+export type ClientFormData = Omit<Client, "id" | "created_at" | "updated_at">;
