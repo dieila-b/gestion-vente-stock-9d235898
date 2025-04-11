@@ -35,8 +35,7 @@ export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       try {
-        // Using the DatabaseTables approach doesn't work correctly with the current setup
-        // Let's use a direct fetch instead
+        // Get POS locations using a direct query instead
         const { data, error } = await supabase
           .from('pos_locations')
           .select('*')
@@ -76,11 +75,11 @@ export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({
             <SelectValue placeholder="Sélectionner un point de vente" />
           </SelectTrigger>
           <SelectContent>
-            {safeMap(posLocationList, (location: any) => (
+            {Array.isArray(posLocationList) && posLocationList.map((location: any) => (
               <SelectItem key={location.id} value={location.id}>
                 {location.name || 'Unnamed location'}
               </SelectItem>
-            ), [])}
+            ))}
           </SelectContent>
         </Select>
       </div>

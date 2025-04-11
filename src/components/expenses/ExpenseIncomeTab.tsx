@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { isSelectQueryError, safeMap } from '@/utils/supabase-helpers';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -23,7 +22,7 @@ interface IncomeEntry {
   category: Category;
 }
 
-export const ExpenseIncomeTab: React.FC = () => {
+export function ExpenseIncomeTab() {
   const [incomeEntries, setIncomeEntries] = useState<IncomeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,4 +135,4 @@ export const ExpenseIncomeTab: React.FC = () => {
       </Card>
     </div>
   );
-};
+}

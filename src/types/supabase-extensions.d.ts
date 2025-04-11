@@ -1,4 +1,6 @@
 
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
+
 /**
  * This file extends the Supabase type definitions with custom types for error handling
  */
@@ -44,3 +46,8 @@ export type SafeRow<T> = {
       ? ArrayOrQueryError<U> 
       : T[K];
 };
+
+/**
+ * Custom type for PostgrestQueryBuilder with explicit typing
+ */
+export type SafePostgrestQueryBuilder<T> = PostgrestQueryBuilder<any, any, T>;

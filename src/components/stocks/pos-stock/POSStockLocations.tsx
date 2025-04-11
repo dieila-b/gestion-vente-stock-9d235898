@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useExtendedTables } from '@/hooks/use-supabase-table-extension';
 
 interface POSLocation {
   id: string;
@@ -24,12 +25,13 @@ interface POSStockLocationsProps {
 export function POSStockLocations({ onLocationChange, selectedLocation }: POSStockLocationsProps) {
   const [locations, setLocations] = useState<POSLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { posLocations } = useExtendedTables();
 
   useEffect(() => {
     const fetchLocations = async () => {
       try {
         setIsLoading(true);
-        // Use direct query instead of useExtendedTables to avoid type errors
+        // Use direct query via Supabase client
         const { data, error } = await supabase
           .from('pos_locations')
           .select('id, name')
@@ -37,11 +39,17 @@ export function POSStockLocations({ onLocationChange, selectedLocation }: POSSto
 
         if (error) throw error;
         
-        setLocations(data || []);
+        // Transform the data into the POSLocation format
+        const locationData = (data || []).map(item => ({
+          id: item.id,
+          name: item.name
+        }));
+        
+        setLocations(locationData);
         
         // If no location is selected and we have locations, select the first one
-        if (!selectedLocation && data && data.length > 0) {
-          onLocationChange(data[0].id);
+        if (!selectedLocation && locationData && locationData.length > 0) {
+          onLocationChange(locationData[0].id);
         }
       } catch (error) {
         console.error('Error fetching POS locations:', error);

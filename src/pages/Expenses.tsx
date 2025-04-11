@@ -1,33 +1,27 @@
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ExpenseIncomeTab } from "@/components/expenses/ExpenseIncomeTab";
 import { ExpenseOutcomeTab } from "@/components/expenses/ExpenseOutcomeTab";
-import { ExpenseCategoriesTab } from "@/components/expenses/ExpenseCategoriesTab";
 
 export default function Expenses() {
   return (
     <DashboardLayout>
-      <div className="h-full flex flex-col">
-        <Tabs defaultValue="outcome" className="flex-1">
-          <div className="px-4 py-6">
-            <TabsList className="enhanced-glass">
-              <TabsTrigger value="outcome">Sorties</TabsTrigger>
-              <TabsTrigger value="income">Entrées</TabsTrigger>
-              <TabsTrigger value="categories">Catégories</TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="outcome">
-            <ExpenseOutcomeTab />
-          </TabsContent>
-
+      <div className="container mx-auto py-6">
+        <h1 className="text-2xl font-bold mb-4">Gestion des Dépenses & Revenus</h1>
+        
+        <Tabs defaultValue="income" className="mt-6">
+          <TabsList className="grid grid-cols-2 w-full max-w-md mb-8">
+            <TabsTrigger value="income">Revenus</TabsTrigger>
+            <TabsTrigger value="outcome">Dépenses</TabsTrigger>
+          </TabsList>
+          
           <TabsContent value="income">
             <ExpenseIncomeTab />
           </TabsContent>
-
-          <TabsContent value="categories">
-            <ExpenseCategoriesTab />
+          
+          <TabsContent value="outcome">
+            <ExpenseOutcomeTab />
           </TabsContent>
         </Tabs>
       </div>

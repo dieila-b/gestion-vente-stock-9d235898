@@ -28,7 +28,7 @@ interface OutcomeEntry {
   category: Category;
 }
 
-export const ExpenseOutcomeTab: React.FC = () => {
+export function ExpenseOutcomeTab() {
   const [outcomeEntries, setOutcomeEntries] = useState<OutcomeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -155,7 +155,7 @@ export const ExpenseOutcomeTab: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={item.status === 'completed' ? 'success' : 'warning'}
+                        variant={item.status === 'completed' ? 'outline' : 'secondary'}
                       >
                         {item.status === 'completed' ? 'Terminé' : 'En attente'}
                       </Badge>
@@ -169,4 +169,4 @@ export const ExpenseOutcomeTab: React.FC = () => {
       </Card>
     </div>
   );
-};
+}
