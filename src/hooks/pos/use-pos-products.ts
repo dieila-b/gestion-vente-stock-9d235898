@@ -31,8 +31,19 @@ export function usePOSProducts(posLocationId: string) {
 
   // Format products for use in the POS system
   const formattedProducts: CartItem[] = products.map(item => {
-    // Use safe product accessor
-    const safeProduct = getSafeProduct(item.product);
+    // Use safe product accessor to handle SelectQueryError
+    const product = item.product;
+    
+    // If product is a SelectQueryError, use default values
+    const safeProduct = isSelectQueryError(product) 
+      ? { 
+          id: item.product_id || "unknown", 
+          name: "Unknown Product", 
+          reference: "", 
+          category: "", 
+          image_url: "" 
+        }
+      : product;
     
     return {
       id: item.product_id,

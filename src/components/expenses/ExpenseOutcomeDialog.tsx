@@ -50,6 +50,7 @@ export function ExpenseOutcomeDialog({ isOpen, onClose, onSubmit }: ExpenseOutco
       receipt_number?: string;
       payment_method: string;
       status: string;
+      date: string;  // Adding required date field
     }) => {
       const { data, error } = await supabase
         .from('outcome_entries')
@@ -88,7 +89,8 @@ export function ExpenseOutcomeDialog({ isOpen, onClose, onSubmit }: ExpenseOutco
         expense_category_id: categoryId,
         receipt_number: receiptNumber || undefined,
         payment_method: paymentMethod,
-        status: 'completed'
+        status: 'completed',
+        date: new Date().toISOString() // Current date as ISO string
       });
     } finally {
       setIsSubmitting(false);

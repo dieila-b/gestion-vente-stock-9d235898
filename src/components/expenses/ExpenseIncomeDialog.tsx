@@ -45,6 +45,7 @@ export function ExpenseIncomeDialog({ isOpen, onClose, onSubmit }: ExpenseIncome
       amount: number;
       description: string;
       category_id: string;
+      date: string; // Adding required date field
     }) => {
       const { data, error } = await supabase
         .from('income_entries')
@@ -80,7 +81,8 @@ export function ExpenseIncomeDialog({ isOpen, onClose, onSubmit }: ExpenseIncome
       await createIncomeMutation.mutateAsync({
         amount: parseFloat(amount),
         description,
-        category_id: categoryId
+        category_id: categoryId,
+        date: new Date().toISOString() // Current date as ISO string
       });
     } finally {
       setIsSubmitting(false);

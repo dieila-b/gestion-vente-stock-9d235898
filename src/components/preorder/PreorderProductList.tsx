@@ -1,88 +1,75 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCatalog } from '@/hooks/use-catalog';
-import { Product } from '@/types/pos';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Plus } from 'lucide-react';
+import { Product } from '@/types/pos';
 
-export interface PreorderProductListProps {
-  addToCart: (product: any, quantity?: number) => void;
+interface PreorderProductListProps {
+  addToCart: (product: Product, quantity?: number) => void;
 }
 
-export const PreorderProductList = ({ addToCart }: PreorderProductListProps) => {
+export function PreorderProductList({ addToCart }: PreorderProductListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const { products, isLoading } = useCatalog();
-
-  const filteredProducts = searchQuery 
-    ? products.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : products;
-
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-  };
+  
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (product.category && product.category.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Catalogue de produits</CardTitle>
-        <div className="relative mt-2">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un produit..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+        <CardTitle>Produits</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Rechercher un produit"
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
         {isLoading ? (
           <div className="text-center py-8">Chargement des produits...</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-8">
-            {searchQuery ? "Aucun produit trouvé pour cette recherche" : "Aucun produit disponible"}
+          <div className="text-center py-8 text-muted-foreground">
+            Aucun produit trouvé
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProducts.map(product => (
-              <div key={product.id} className="border rounded-lg overflow-hidden">
-                {product.image_url ? (
-                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover"
-                    />
+          <div className="space-y-4">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="flex justify-between items-center p-4 border rounded-md hover:bg-muted/50 transition-colors"
+              >
+                <div>
+                  <div className="font-medium">{product.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {product.reference && <span>Réf: {product.reference}</span>}
+                    {product.category && (
+                      <span className="ml-2">Catégorie: {product.category}</span>
+                    )}
                   </div>
-                ) : (
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-400">
-                    Pas d'image
-                  </div>
-                )}
-                <div className="p-3">
-                  <h3 className="font-medium truncate">{product.name}</h3>
-                  <div className="text-sm text-gray-500 truncate">
-                    {product.reference ? `Réf: ${product.reference}` : ''}
-                    {product.category ? (product.reference ? ` | ${product.category}` : product.category) : ''}
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="font-bold">{product.price} DH</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleAddToCart(product)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </Button>
+                  <div className="text-sm font-medium mt-1">
+                    {product.price.toLocaleString()} GNF
                   </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addToCart(product)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ajouter
+                </Button>
               </div>
             ))}
           </div>
@@ -90,4 +77,4 @@ export const PreorderProductList = ({ addToCart }: PreorderProductListProps) => 
       </CardContent>
     </Card>
   );
-};
+}

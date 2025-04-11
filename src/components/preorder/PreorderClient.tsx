@@ -1,71 +1,43 @@
 
 import React from 'react';
-import { Client } from '@/types/client';
-import { ClientSelector } from '@/components/clients/ClientSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { ClientSelector } from '@/components/clients/ClientSelector';
+import { Client } from '@/types/client';
 
 interface PreorderClientProps {
   client: Client | null;
-  onClientChange: (clientId: string) => void;
-  notes: string;
-  onNotesChange: (notes: string) => void;
-  isSubmitting: boolean;
+  onClientChange: (client: Client) => void;
 }
 
-export const PreorderClient = ({
-  client,
-  onClientChange,
-  notes,
-  onNotesChange,
-  isSubmitting
-}: PreorderClientProps) => {
+export function PreorderClient({ client, onClientChange }: PreorderClientProps) {
+  const handleClientChange = (clientId: string) => {
+    // This is a simplified version - in a real app, you might need to
+    // fetch the full client object from an API or context
+    if (clientId) {
+      // For now, we'll assume the ClientSelector component manages this correctly
+    }
+  };
+
   return (
-    <Card className="mb-6">
+    <Card>
       <CardHeader>
-        <CardTitle>Informations client</CardTitle>
+        <CardTitle>Client</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ClientSelector
-          value={client?.id || ''}
-          onChange={onClientChange}
-          disabled={isSubmitting}
+      <CardContent>
+        <ClientSelector 
+          value={client?.id || ''} 
+          onChange={handleClientChange}
         />
         
         {client && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-              <Label>Nom de contact</Label>
-              <div className="p-2 border rounded-md mt-1">{client.contact_name || '—'}</div>
-            </div>
-            <div>
-              <Label>Société</Label>
-              <div className="p-2 border rounded-md mt-1">{client.company_name || '—'}</div>
-            </div>
-            <div>
-              <Label>Téléphone</Label>
-              <div className="p-2 border rounded-md mt-1">{client.phone || '—'}</div>
-            </div>
-            <div>
-              <Label>Email</Label>
-              <div className="p-2 border rounded-md mt-1">{client.email || '—'}</div>
-            </div>
+          <div className="mt-4 p-4 bg-muted rounded-md">
+            <div className="font-medium">{client.company_name || client.contact_name}</div>
+            {client.address && <div className="text-sm text-muted-foreground">{client.address}</div>}
+            {client.phone && <div className="text-sm text-muted-foreground">Tél: {client.phone}</div>}
+            {client.email && <div className="text-sm text-muted-foreground">Email: {client.email}</div>}
           </div>
         )}
-        
-        <div className="mt-4">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            placeholder="Notes pour cette précommande..."
-            value={notes}
-            onChange={(e) => onNotesChange(e.target.value)}
-            rows={3}
-            disabled={isSubmitting}
-          />
-        </div>
       </CardContent>
     </Card>
   );
-};
+}

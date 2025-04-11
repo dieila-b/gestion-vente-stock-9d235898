@@ -1,141 +1,117 @@
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Client } from '@/types/client';
 import { CartItem, Product } from '@/types/pos';
-import { 
-  isSelectQueryError, 
-  safeGetProperty, 
-  safeMap,
-  safeForEach,
-  safeSpread
-} from '@/utils/supabase-helpers';
+import { Client } from '@/types/client';
+import { toast } from 'sonner';
 
 export function usePreorderCart() {
-  const { id } = useParams<{ id: string }>();
-  const [client, setClient] = useState<Client | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [preorderState, setPreorderState] = useState<{
-    id: string;
-    status: string;
-    notes: string;
-    totalAmount: number;
-    paidAmount: number;
-    remainingAmount: number;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch the preorder data when ID is available
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  
+  // Load cart from localStorage on component mount
   useEffect(() => {
-    const fetchPreorder = async () => {
-      if (!id) return;
-      
-      setIsLoading(true);
+    const savedCart = localStorage.getItem('preorderCart');
+    const savedClient = localStorage.getItem('preorderClient');
+    
+    if (savedCart) {
       try {
-        const { data, error } = await supabase
-          .from('preorders')
-          .select(`
-            *,
-            client:clients(*),
-            items:preorder_items(
-              id,
-              quantity,
-              unit_price,
-              total_price,
-              product_id,
-              product:catalog(*)
-            )
-          `)
-          .eq('id', id)
-          .single();
-          
-        if (error) throw error;
-        
-        // Create a default client
-        const defaultClient: Client = {
-          id: "",
-          company_name: "Unknown",
-          contact_name: "",
-          email: "",
-          phone: "",
-          status: "particulier"
-        };
-
-        // Handle potential SelectQueryError for client
-        let clientData: Client;
-        if (isSelectQueryError(data.client)) {
-          clientData = defaultClient;
-        } else {
-          // Safely extract client properties with fallbacks to default values
-          clientData = {
-            id: safeGetProperty(data.client, 'id', defaultClient.id),
-            company_name: safeGetProperty(data.client, 'company_name', defaultClient.company_name),
-            contact_name: safeGetProperty(data.client, 'contact_name', defaultClient.contact_name),
-            email: safeGetProperty(data.client, 'email', defaultClient.email),
-            phone: safeGetProperty(data.client, 'phone', defaultClient.phone),
-            status: safeGetProperty(data.client, 'status', defaultClient.status) as "particulier" | "entreprise"
-          };
-        }
-        
-        setClient(clientData);
-        
-        // Convert preorder items to cart items
-        const cartItems: CartItem[] = [];
-        
-        if (Array.isArray(data.items)) {
-          data.items.forEach((item: any) => {
-            if (isSelectQueryError(item.product)) return;
-            
-            const product = item.product;
-            const cartItem: CartItem = {
-              id: product.id,
-              name: product.name,
-              quantity: item.quantity,
-              price: item.unit_price,
-              unit_price: item.unit_price,
-              total: item.total_price,
-              category: product.category || '',
-              reference: product.reference || '',
-              discount: 0, // Assuming discount is not stored for preorder items
-              discounted_price: item.unit_price,
-              original_price: product.price || item.unit_price,
-              stock: product.stock || 0,
-              image_url: product.image_url
-            };
-            
-            cartItems.push(cartItem);
-          });
-        }
-        
-        setCart(cartItems);
-        
-        // Set preorder state
-        setPreorderState({
-          id: data.id,
-          status: data.status || '',
-          notes: data.notes || '',
-          totalAmount: data.total_amount,
-          paidAmount: data.paid_amount,
-          remainingAmount: data.remaining_amount
-        });
-        
+        setCart(JSON.parse(savedCart));
       } catch (error) {
-        console.error('Error fetching preorder:', error);
-        toast.error("Erreur lors du chargement de la précommande");
-      } finally {
-        setIsLoading(false);
+        console.error('Error parsing saved cart:', error);
+        localStorage.removeItem('preorderCart');
       }
-    };
-
-    fetchPreorder();
-  }, [id]);
-
+    }
+    
+    if (savedClient) {
+      try {
+        setSelectedClient(JSON.parse(savedClient));
+      } catch (error) {
+        console.error('Error parsing saved client:', error);
+        localStorage.removeItem('preorderClient');
+      }
+    }
+  }, []);
+  
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('preorderCart', JSON.stringify(cart));
+  }, [cart]);
+  
+  // Save selected client to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedClient) {
+      localStorage.setItem('preorderClient', JSON.stringify(selectedClient));
+    }
+  }, [selectedClient]);
+  
+  const addToCart = (product: Product, quantity = 1) => {
+    setCart(prevCart => {
+      // Check if product already exists in cart
+      const existingItemIndex = prevCart.findIndex(item => item.id === product.id);
+      
+      if (existingItemIndex !== -1) {
+        // Update quantity if product already exists
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex].quantity += quantity;
+        toast.success(`Quantité mise à jour: ${product.name}`);
+        return updatedCart;
+      } else {
+        // Add new product to cart
+        const newItem: CartItem = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: quantity,
+          category: product.category,
+          reference: product.reference,
+          image_url: product.image_url
+        };
+        toast.success(`Produit ajouté: ${product.name}`);
+        return [...prevCart, newItem];
+      }
+    });
+  };
+  
+  const removeFromCart = (id: string) => {
+    setCart(prevCart => {
+      const item = prevCart.find(item => item.id === id);
+      if (item) {
+        toast.info(`Produit retiré: ${item.name}`);
+      }
+      return prevCart.filter(item => item.id !== id);
+    });
+  };
+  
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(id);
+      return;
+    }
+    
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
+  };
+  
+  const clearCart = () => {
+    setCart([]);
+    localStorage.removeItem('preorderCart');
+    toast.info("Panier vidé");
+  };
+  
+  const selectClient = (client: Client) => {
+    setSelectedClient(client);
+  };
+  
   return {
-    client,
     cart,
-    preorderState,
-    isLoading
+    selectedClient,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    selectClient
   };
 }

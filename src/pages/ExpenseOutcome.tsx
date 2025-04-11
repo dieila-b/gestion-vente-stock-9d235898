@@ -7,9 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { ExpenseOutcomeDialog } from '@/components/expenses/ExpenseOutcomeDialog';
-import { Category } from '@/components/expenses/ExpenseIncomeTab';
-import { OutcomeEntry } from '@/components/expenses/ExpenseOutcomeTab';
+import { Category } from '@/pages/ExpenseIncome';
 import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { getSafeCategory } from '@/utils/error-handlers';
+
+export interface OutcomeEntry {
+  id: string;
+  amount: number;
+  date: string;
+  description: string;
+  category: Category;
+  receipt_number?: string;
+  payment_method?: string;
+  status?: string;
+}
 
 export default function ExpenseOutcome() {
   const [isAddOutcomeOpen, setIsAddOutcomeOpen] = useState(false);
@@ -43,12 +54,9 @@ export default function ExpenseOutcome() {
         };
 
         // Safely handle the category property which might be a SelectQueryError
-        let category: Category;
-        if (isSelectQueryError(entry.category)) {
-          category = defaultCategory;
-        } else {
-          category = (entry.category as Category) || defaultCategory;
-        }
+        const category = isSelectQueryError(entry.category) 
+          ? defaultCategory 
+          : (entry.category as Category) || defaultCategory;
 
         return {
           id: entry.id,
@@ -133,7 +141,7 @@ export default function ExpenseOutcome() {
           <ExpenseOutcomeDialog
             isOpen={isAddOutcomeOpen}
             onClose={() => setIsAddOutcomeOpen(false)}
-            onSuccess={() => {
+            onSubmit={() => {
               refetch();
               setIsAddOutcomeOpen(false);
             }}

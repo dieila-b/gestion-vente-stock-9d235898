@@ -1,7 +1,6 @@
 
-import { Database } from "@/types/supabase";
+import { Database, DatabaseTables } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseTables } from "@/types/supabase-types";
 import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 
 /**
@@ -9,12 +8,12 @@ import { PostgrestQueryBuilder } from "@supabase/supabase-js";
  */
 export function createTableQuery<T extends string>(
   tableName: T
-) {
+): PostgrestQueryBuilder<Database, any, any> {
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
-  // Use the from method with the table name, and cast the result to any to bypass type restrictions
-  return getClient().from(tableName) as PostgrestQueryBuilder<any, any, any>;
+  // Use the from method with the table name, and cast the result to bypass type restrictions
+  return getClient().from(tableName) as PostgrestQueryBuilder<Database, any, any>;
 }
 
 /**
