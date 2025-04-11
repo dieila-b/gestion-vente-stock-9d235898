@@ -8,6 +8,7 @@ import { Client } from '@/types/client';
 
 interface InvoicePreviewProps {
   client: Client;
+  cart: CartItem[];
   notes: string;
   onNotesChange: React.Dispatch<React.SetStateAction<string>>;
   onValidate: () => Promise<void>;
@@ -16,6 +17,7 @@ interface InvoicePreviewProps {
 
 export function InvoicePreview({
   client,
+  cart,
   notes,
   onNotesChange,
   isSubmitting
@@ -46,6 +48,34 @@ export function InvoicePreview({
               <p>{new Date().toLocaleDateString()}</p>
             </div>
           </div>
+
+          {cart && cart.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg mb-2">Articles</h3>
+              <div className="border rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qté</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {cart.map(item => (
+                      <tr key={item.id}>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">{item.name}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">{item.quantity}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">{item.price.toLocaleString()} GNF</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">{(item.price * item.quantity).toLocaleString()} GNF</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <Label htmlFor="notes">Notes</Label>

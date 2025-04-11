@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function useEditOrder(setSelectedClient: (client: Client | null) => void, setCart: (items: any[]) => void) {
   const [searchParams] = useSearchParams();
@@ -80,6 +81,12 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
 
   useEffect(() => {
     if (editOrder && editOrder.client) {
+      // Handle case where client is a SelectQueryError
+      if (isSelectQueryError(editOrder.client)) {
+        toast.error("Erreur lors du chargement des données du client");
+        return;
+      }
+      
       const clientData = {
         ...editOrder.client,
         status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
@@ -87,17 +94,31 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
       
       setSelectedClient(clientData);
       
-      const cartItems = editOrder.items.map((item: any) => ({
-        id: item.product.id,
-        name: item.product.name,
-        price: item.price,
-        quantity: item.quantity,
-        discount: item.discount || 0,
-        category: item.product.category,
-        image: item.product.image_url,
-        // Include delivered quantity information to preserve it when editing
-        deliveredQuantity: item.delivered_quantity || 0
-      }));
+      // Handle case where items is a SelectQueryError
+      if (isSelectQueryError(editOrder.items)) {
+        toast.error("Erreur lors du chargement des articles de la facture");
+        return;
+      }
+      
+      const cartItems = editOrder.items.map((item: any) => {
+        // Handle case where product is a SelectQueryError
+        const product = isSelectQueryError(item.product) 
+          ? { id: item.product_id, name: "Unknown Product", category: "", image_url: "" }
+          : item.product;
+          
+        return {
+          id: product.id,
+          name: product.name,
+          price: item.price,
+          quantity: item.quantity,
+          discount: item.discount || 0,
+          category: product.category,
+          image: product.image_url,
+          // Include delivered quantity information to preserve it when editing
+          deliveredQuantity: item.delivered_quantity || 0
+        };
+      });
+      
       setCart(cartItems);
     }
   }, [editOrder, setCart, setSelectedClient]);

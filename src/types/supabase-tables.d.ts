@@ -32,6 +32,19 @@ export interface SupabaseTables {
     created_at?: string | null;
   };
   
+  price_requests: {
+    id: string;
+    supplier_id: string;
+    product_id: string;
+    quantity: number;
+    unit_price?: number | null;
+    status?: string | null;
+    priceRequested?: boolean | null;
+    notes?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  };
+  
   delivery_note_items: {
     id: string;
     delivery_note_id: string;

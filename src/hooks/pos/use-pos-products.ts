@@ -2,12 +2,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CartItem, Product } from '@/types/pos';
-import { getSafeProduct } from '@/utils/error-handlers';
+import { createTableQuery } from '@/hooks/use-supabase-table-extension';
+import { useState } from 'react';
 import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { getSafeProduct } from '@/utils/error-handlers';
 
-export function usePOSProducts(posLocationId: string) {
-  const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['pos-products', posLocationId],
+export function usePOSProducts(posLocationId: string, selectedCategory: string | null = null, searchTerm: string = '') {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20; // Number of products per page
+  
+  const { data = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['pos-products', posLocationId, selectedCategory, searchTerm, currentPage],
     enabled: !!posLocationId && posLocationId !== '_all',
     queryFn: async () => {
       if (!posLocationId || posLocationId === '_all') {
@@ -30,7 +35,7 @@ export function usePOSProducts(posLocationId: string) {
   });
 
   // Format products for use in the POS system
-  const formattedProducts: CartItem[] = products.map(item => {
+  const formattedProducts: CartItem[] = data.map(item => {
     // Use safe product accessor to handle SelectQueryError
     const product = item.product;
     
@@ -57,9 +62,56 @@ export function usePOSProducts(posLocationId: string) {
     };
   });
 
+  // Filter products based on search term and category
+  const filteredProducts = formattedProducts.filter(product => {
+    const matchesSearch = 
+      !searchTerm || 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.reference && product.reference.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  // Extract unique categories from products
+  const categories = Array.from(new Set(
+    formattedProducts
+      .map(product => product.category)
+      .filter(Boolean)
+  ));
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const refetchStock = () => refetch();
+
   return {
-    products: formattedProducts,
+    products: paginatedProducts,
+    categories,
+    stockItems: data,
     isLoading,
-    error
+    error,
+    currentPage,
+    totalPages,
+    goToNextPage,
+    goToPrevPage,
+    refetchStock
   };
 }

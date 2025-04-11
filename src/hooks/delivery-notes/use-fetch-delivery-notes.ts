@@ -2,6 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { safelyMapData } from "@/hooks/use-error-handling";
 
 export function useFetchDeliveryNotes() {
   return useQuery({
@@ -48,26 +50,41 @@ export function useFetchDeliveryNotes() {
       if (!data) return [];
 
       const transformedData = data.map(note => {
-        const items = (note.items || []).map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          quantity_ordered: item.quantity_ordered,
-          quantity_received: item.quantity_received,
-          unit_price: item.unit_price,
-          product: {
-            name: item.product.name,
-            reference: item.product.reference,
-            category: item.product.category
-          }
-        }));
+        // Create default values for potentially errored fields
+        const defaultSupplier = { name: 'Unknown Supplier', phone: '', email: '' };
+        const defaultPurchaseOrder = { order_number: 'Unknown', total_amount: 0 };
+        
+        // Safely handle items which may be a SelectQueryError
+        const items = isSelectQueryError(note.items) 
+          ? [] 
+          : (note.items || []).map(item => {
+              const defaultProduct = { name: 'Unknown Product', reference: '', category: '' };
+              const product = isSelectQueryError(item.product) ? defaultProduct : item.product || defaultProduct;
+              
+              return {
+                id: item.id,
+                product_id: item.product_id,
+                quantity_ordered: item.quantity_ordered,
+                quantity_received: item.quantity_received,
+                unit_price: item.unit_price,
+                product
+              };
+            });
+        
+        // Handle supplier which may be a SelectQueryError
+        const supplier = isSelectQueryError(note.supplier) ? defaultSupplier : note.supplier || defaultSupplier;
+        
+        // Handle purchase_order which may be a SelectQueryError
+        const purchaseOrder = isSelectQueryError(note.purchase_order) ? defaultPurchaseOrder : note.purchase_order || defaultPurchaseOrder;
 
+        // Return the transformed delivery note
         return {
           id: note.id,
           delivery_number: note.delivery_number,
           created_at: note.created_at,
           status: note.status,
-          supplier: note.supplier,
-          purchase_order: note.purchase_order || null,
+          supplier,
+          purchase_order: purchaseOrder,
           items
         } as DeliveryNote;
       });

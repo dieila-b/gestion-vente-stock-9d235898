@@ -1,6 +1,10 @@
 
-// Re-export all payment-related hooks
-export * from './usePOSPayment';
-export * from './useInvoicePrinting';
-export * from './useOrderProcessing';
-export * from './usePaymentRecording';
+/**
+ * This index file exports the payment hooks to simplify imports
+ */
+
+import { usePOSPayment } from './use-pos-payment';
+
+export {
+  usePOSPayment
+};

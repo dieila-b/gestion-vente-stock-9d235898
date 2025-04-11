@@ -1,19 +1,20 @@
 
-import { Database, DatabaseTables } from "@/types/supabase";
+import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
+import type { PostgrestQueryBuilder } from "@supabase/supabase-js";
+import type { SupabaseTables } from "@/types/supabase-tables";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type
  */
 export function createTableQuery<T extends string>(
   tableName: T
-): PostgrestQueryBuilder<Database, any, any> {
+): PostgrestQueryBuilder<Database, T, any> {
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
   // Use the from method with the table name, and cast the result to bypass type restrictions
-  return getClient().from(tableName) as PostgrestQueryBuilder<Database, any, any>;
+  return getClient().from(tableName) as PostgrestQueryBuilder<Database, T, any>;
 }
 
 /**

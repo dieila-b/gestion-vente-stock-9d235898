@@ -1,49 +1,58 @@
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { POSLocation } from "@/types/pos-location";
+import { useState, useEffect } from "react";
+import { createTableQuery } from "./use-supabase-table-extension";
 
-interface POSLocationPartial {
+export interface POSLocation {
   id: string;
   name: string;
+  address?: string;
+  surface?: number;
+  capacity?: number;
+  occupied?: number;
+  manager?: string;
+  is_active?: boolean;
 }
 
 export function usePOSLocations() {
-  const [locations, setLocations] = useState<POSLocationPartial[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeRegister, setActiveRegister] = useState<string | null>(null);
 
-  useQuery({
-    queryKey: ['pos-locations'],
+  // Get all POS locations using the table extension hook
+  const { data: posLocations = [], isLoading } = useQuery({
+    queryKey: ["pos-locations"],
     queryFn: async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('pos_locations')
-          .select('id, name, phone, address')
-          .order('name');
-          
-        if (error) throw error;
-        
-        // Create a simplified list of locations with just id and name
-        const locationsList = (data || []).map((location: any) => ({
-          id: location.id,
-          name: location.name || 'Unnamed location'
-        }));
-        
-        setLocations(locationsList);
-        return locationsList;
-      } catch (error) {
-        console.error('Error fetching POS locations:', error);
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    }
+      const { data, error } = await createTableQuery('pos_locations')
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data as POSLocation[] || [];
+    },
   });
 
+  // Set the active register from local storage
+  useEffect(() => {
+    const savedRegister = localStorage.getItem("activeRegister");
+    if (savedRegister) {
+      setActiveRegister(savedRegister);
+    } else if (posLocations.length > 0) {
+      // Default to first active POS location
+      const defaultPOS = posLocations.find((pos) => pos.is_active) || posLocations[0];
+      setActiveRegister(defaultPOS.id);
+      localStorage.setItem("activeRegister", defaultPOS.id);
+    }
+  }, [posLocations]);
+
+  // Change the active register
+  const changeActiveRegister = (registerId: string) => {
+    setActiveRegister(registerId);
+    localStorage.setItem("activeRegister", registerId);
+  };
+
   return {
-    locations,
-    isLoading
+    posLocations,
+    activeRegister,
+    changeActiveRegister,
+    isLoading,
   };
 }
