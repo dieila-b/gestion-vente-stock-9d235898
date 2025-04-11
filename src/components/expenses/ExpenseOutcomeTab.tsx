@@ -1,172 +1,103 @@
-
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { isSelectQueryError } from '@/utils/supabase-helpers';
-import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
-interface Category {
+export interface OutcomeEntry {
+  id: string;
+  amount: number;
+  date: string;
+  description: string;
+  receipt_number?: string;
+  payment_method?: string;
+  status?: string;
+  category: Category;
+}
+
+export interface Category {
   id: string;
   name: string;
   type: string;
 }
 
-interface OutcomeEntry {
-  id: string;
-  amount: number;
-  date: string;
-  description: string;
-  expense_category_id: string;
-  receipt_number: string;
-  payment_method: string;
-  status: string;
-  category: Category;
-}
-
 export function ExpenseOutcomeTab() {
   const [outcomeEntries, setOutcomeEntries] = useState<OutcomeEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOutcomeEntries();
-  }, []);
-
-  const fetchOutcomeEntries = async () => {
-    setIsLoading(true);
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['outcome-entries'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('outcome_entries')
         .select(`
           *,
-          expense_categories (
-            id,
-            name,
-            type
-          )
+          category: expense_categories(*)
         `)
-        .order('date', { ascending: false });
+        .eq('type', 'expense')
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error("Erreur lors du chargement des sorties");
-        return;
-      }
-
-      // Transform data to handle SelectQueryError
-      const transformedData = data.map((item: any) => ({
-        id: item.id,
-        amount: item.amount,
-        description: item.description,
-        date: item.date,
-        expense_category_id: item.expense_category_id,
-        created_at: item.created_at,
-        receipt_number: item.receipt_number || "",
-        payment_method: item.payment_method || "",
-        status: item.status || "completed",
-        category: !isSelectQueryError(item.expense_categories) 
-          ? { 
-              id: item.expense_categories?.id || "", 
-              name: item.expense_categories?.name || "Catégorie inconnue", 
-              type: item.expense_categories?.type || "expense" 
-            }
-          : { id: "", name: "Catégorie inconnue", type: "expense" }
-      }));
-
-      setOutcomeEntries(transformedData);
-    } catch (error) {
-      console.error('Error fetching outcome entries:', error);
-      toast.error("Erreur lors du chargement des données");
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+      return data;
     }
-  };
+  });
 
-  // Helper function for rendering category names safely
-  const renderCategory = (item: any) => {
-    if (!item.category || !item.category.name) {
-      return "Catégorie inconnue";
+  useEffect(() => {
+    if (data) {
+      const mappedEntries = data.map((entry) => {
+        // Create a default category in case we get a SelectQueryError
+        const defaultCategory: Category = {
+          id: "unknown",
+          name: "Unknown Category",
+          type: "expense"
+        };
+
+        // Handle potential SelectQueryError for category
+        const category = isSelectQueryError(entry.category) 
+          ? defaultCategory 
+          : entry.category || defaultCategory;
+
+        return {
+          id: entry.id,
+          amount: entry.amount,
+          date: entry.created_at,
+          description: entry.description,
+          receipt_number: entry.receipt_number,
+          payment_method: entry.payment_method,
+          status: entry.status,
+          category: category
+        } as OutcomeEntry;
+      });
+      
+      setOutcomeEntries(mappedEntries);
     }
-    return item.category.name;
-  };
+  }, [data]);
 
-  // Helper function to format payment method
-  const formatPaymentMethod = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return 'Espèces';
-      case 'bank_transfer':
-        return 'Virement bancaire';
-      case 'check':
-        return 'Chèque';
-      case 'mobile_money':
-        return 'Mobile Money';
-      default:
-        return method || '-';
-    }
-  };
-
+  // The rest of your component logic
+  
   return (
-    <div className="p-4 md:p-6">
-      <Card className="overflow-hidden">
-        <div className="p-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Sorties de Dépenses</h2>
+    <Card>
+      <CardContent className="p-6">
+        {/* Your expense entries UI */}
+        <div>
+          {isLoading && <p>Loading expense entries...</p>}
+          {error && <p>Error loading expense entries: {error.message}</p>}
+          {!isLoading && !error && outcomeEntries.length === 0 && (
+            <p>No expense entries found</p>
+          )}
+          {outcomeEntries.map(entry => (
+            <div key={entry.id} className="mb-2 p-3 border rounded">
+              <p><strong>Amount:</strong> {entry.amount}</p>
+              <p><strong>Category:</strong> {entry.category.name}</p>
+              <p><strong>Description:</strong> {entry.description}</p>
+              <p><strong>Payment Method:</strong> {entry.payment_method || 'N/A'}</p>
+              <p><strong>Receipt Number:</strong> {entry.receipt_number || 'N/A'}</p>
+              <p><strong>Status:</strong> {entry.status || 'N/A'}</p>
+              <p><strong>Date:</strong> {new Date(entry.date).toLocaleDateString()}</p>
+            </div>
+          ))}
         </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Mode de paiement</TableHead>
-                <TableHead className="text-right">Montant</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Chargement des données...
-                  </TableCell>
-                </TableRow>
-              ) : outcomeEntries.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Aucune dépense trouvée
-                  </TableCell>
-                </TableRow>
-              ) : (
-                outcomeEntries.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{format(new Date(item.date), "Pp", { locale: fr })}</TableCell>
-                    <TableCell>{renderCategory(item)}</TableCell>
-                    <TableCell>{item.description || "-"}</TableCell>
-                    <TableCell>{formatPaymentMethod(item.payment_method)}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('fr-FR', {
-                        style: 'currency',
-                        currency: 'GNF'
-                      }).format(item.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={item.status === 'completed' ? 'outline' : 'secondary'}
-                      >
-                        {item.status === 'completed' ? 'Terminé' : 'En attente'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,160 +1,136 @@
 
-import { useEffect, useState } from "react";
-import { useCart } from "@/hooks/use-cart";
-import { Client } from "@/types/client";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Product } from "@/types/pos";
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Client } from '@/types/client';
+import { CartItem, Product } from '@/types/pos';
 import { 
   isSelectQueryError, 
   safeGetProperty, 
-  safeMap, 
-  safeForEach 
-} from "@/utils/supabase-helpers";
-import { useSupabaseErrorHandler } from "@/hooks/use-supabase-error-handler";
+  safeMap,
+  safeForEach,
+  safeSpread
+} from '@/utils/supabase-helpers';
 
-export function usePreorderCart(
-  editId: string | null,
-  setIsEditing: (value: boolean) => void,
-  setSelectedClient: (client: Client | null) => void,
-  setIsLoading: (value: boolean) => void
-) {
-  const { 
-    cart, 
-    updateQuantity, 
-    removeFromCart, 
-    updateDiscount, 
-    clearCart, 
-    addToCart, 
-    setQuantity 
-  } = useCart();
-
-  const { safeSpread } = useSupabaseErrorHandler();
+export function usePreorderCart() {
+  const { id } = useParams<{ id: string }>();
+  const [client, setClient] = useState<Client | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [preorderState, setPreorderState] = useState<{
-    id: string | null;
+    id: string;
     status: string;
     notes: string;
+    totalAmount: number;
     paidAmount: number;
-  }>({
-    id: null,
-    status: 'draft',
-    notes: '',
-    paidAmount: 0,
-  });
+    remainingAmount: number;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch the preorder data when ID is available
   useEffect(() => {
-    const loadPreorderForEditing = async () => {
-      if (!editId) return;
+    const fetchPreorder = async () => {
+      if (!id) return;
       
       setIsLoading(true);
-      setIsEditing(true);
-      
       try {
-        const { data: preorder, error } = await supabase
+        const { data, error } = await supabase
           .from('preorders')
           .select(`
             *,
             client:clients(*),
             items:preorder_items(
               id,
-              product_id,
               quantity,
               unit_price,
               total_price,
-              discount,
-              status
+              product_id,
+              product:catalog(*)
             )
           `)
-          .eq('id', editId)
+          .eq('id', id)
           .single();
           
         if (error) throw error;
         
-        if (!preorder) {
-          toast.error("Précommande non trouvée");
-          return;
-        }
-        
-        if (preorder.client && !isSelectQueryError(preorder.client)) {
-          const clientData = {
-            ...preorder.client,
-            status: (safeGetProperty(preorder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier') as 'particulier' | 'entreprise'
-          };
-          setSelectedClient(clientData);
-        }
-        
-        const productIds = safeMap(preorder.items, (item: any) => item.product_id, []);
-        
-        if (productIds.length > 0) {
-          const { data: products, error: productsError } = await supabase
-            .from('catalog')
-            .select('*')
-            .in('id', productIds);
-            
-          if (productsError) throw productsError;
-          
-          clearCart();
-          
-          safeForEach(preorder.items, (item: any) => {
-            const product = products?.find((p: any) => p.id === item.product_id);
-            if (product) {
-              const cartItem = {
-                ...product as Product,
-                quantity: item.quantity,
-                discount: item.discount
-              };
-              addToCart(cartItem, undefined);
-            }
-          });
-          
-          toast.success("Précommande chargée pour modification");
-        }
+        // Create a default client
+        const defaultClient: Client = {
+          id: "",
+          company_name: "Unknown",
+          contact_name: "",
+          email: "",
+          phone: "",
+          status: "particulier"
+        };
 
+        // Handle potential SelectQueryError for client
+        let clientData: Client;
+        if (isSelectQueryError(data.client)) {
+          clientData = defaultClient;
+        } else {
+          // If we have client data, cast the status to ensure it's either 'particulier' or 'entreprise'
+          const status = (data.client?.status === 'entreprise') ? 'entreprise' : 'particulier';
+          clientData = {
+            ...safeSpread(data.client, defaultClient),
+            status: status
+          };
+        }
+        
+        setClient(clientData);
+        
+        // Convert preorder items to cart items
+        const cartItems: CartItem[] = [];
+        
+        safeMap(data.items, (item: any) => {
+          if (isSelectQueryError(item.product)) return;
+          
+          const product = item.product;
+          const cartItem: CartItem = {
+            id: item.id,
+            product_id: item.product_id,
+            name: product.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            price: item.unit_price,
+            total: item.total_price,
+            category: product.category || '',
+            reference: product.reference || '',
+            discount: 0, // Assuming discount is not stored for preorder items
+            discounted_price: item.unit_price,
+            original_price: product.price || item.unit_price,
+            stock: product.stock || 0
+          };
+          
+          cartItems.push(cartItem);
+        });
+        
+        setCart(cartItems);
+        
         // Set preorder state
         setPreorderState({
-          id: preorder.id,
-          status: preorder.status || 'draft',
-          notes: preorder.notes || '',
-          paidAmount: preorder.paid_amount || 0,
+          id: data.id,
+          status: data.status,
+          notes: data.notes || '',
+          totalAmount: data.total_amount,
+          paidAmount: data.paid_amount,
+          remainingAmount: data.remaining_amount
         });
-
+        
       } catch (error) {
-        console.error('Error loading preorder:', error);
+        console.error('Error fetching preorder:', error);
         toast.error("Erreur lors du chargement de la précommande");
       } finally {
         setIsLoading(false);
       }
     };
-    
-    loadPreorderForEditing();
-  }, [editId, addToCart, clearCart, setIsEditing, setIsLoading, setSelectedClient]);
 
-  const setCartItemQuantity = (productId: string, quantity: number) => {
-    console.log("Setting exact quantity:", { productId, quantity });
-    setQuantity(productId, quantity);
-  };
-
-  const validatePreorder = () => {
-    console.log("Validating preorder:", { cartLength: cart.length });
-    
-    if (cart.length === 0) {
-      toast.error("Veuillez ajouter des produits à la précommande");
-      return false;
-    }
-    
-    return true;
-  };
+    fetchPreorder();
+  }, [id]);
 
   return {
+    client,
     cart,
-    updateQuantity,
-    removeFromCart,
-    updateDiscount,
-    clearCart,
-    addToCart,
-    setCartItemQuantity,
-    validatePreorder,
     preorderState,
-    setPreorderState
+    isLoading
   };
 }

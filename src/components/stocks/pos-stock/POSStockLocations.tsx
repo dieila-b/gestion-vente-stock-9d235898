@@ -8,13 +8,17 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useExtendedTables } from '@/hooks/use-supabase-table-extension';
+import { createTableQuery } from '@/hooks/use-supabase-table-extension';
 
 interface POSLocation {
   id: string;
   name: string;
+  phone?: string;
+  address?: string;
+  manager?: string;
+  status?: string;
+  is_active?: boolean;
 }
 
 interface POSStockLocationsProps {
@@ -25,24 +29,27 @@ interface POSStockLocationsProps {
 export function POSStockLocations({ onLocationChange, selectedLocation }: POSStockLocationsProps) {
   const [locations, setLocations] = useState<POSLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { posLocations } = useExtendedTables();
 
   useEffect(() => {
     const fetchLocations = async () => {
       try {
         setIsLoading(true);
-        // Use direct query via Supabase client
-        const { data, error } = await supabase
-          .from('pos_locations')
-          .select('id, name')
+        // Use createTableQuery instead of direct supabase client
+        const response = await createTableQuery('pos_locations')
+          .select('id, name, phone, address, status, is_active')
           .order('name');
 
+        const { data, error } = response;
         if (error) throw error;
         
         // Transform the data into the POSLocation format
         const locationData = (data || []).map(item => ({
           id: item.id,
-          name: item.name
+          name: item.name || 'Unnamed location',
+          phone: item.phone,
+          address: item.address,
+          status: item.status,
+          is_active: item.is_active
         }));
         
         setLocations(locationData);

@@ -2,7 +2,7 @@
 import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseTables } from "@/types/supabase-types";
-import { SafePostgrestQueryBuilder } from "@/types/supabase-extensions";
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type
@@ -13,8 +13,8 @@ export function createTableQuery<T extends string>(
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
-  // We need to use a more flexible type assertion here
-  return getClient().from(tableName) as unknown as SafePostgrestQueryBuilder<any>;
+  // Use explicit casting to work around type restrictions
+  return getClient().from(tableName as any);
 }
 
 /**
