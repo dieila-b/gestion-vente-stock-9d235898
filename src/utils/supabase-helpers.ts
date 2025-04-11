@@ -87,9 +87,9 @@ export function safeForEach<T>(
 }
 
 /**
- * Safely spread properties from an object that might be a SelectQueryError
+ * Safely get a default object when the original might be a SelectQueryError
  */
-export function safeSpread<T extends object>(obj: any, defaultObj: T): T {
+export function safeGetObject<T extends object>(obj: any, defaultObj: T): T {
   if (isSelectQueryError(obj) || !obj) return defaultObj;
   if (typeof obj !== 'object') return defaultObj;
   
@@ -120,6 +120,29 @@ export function safeGetNestedProperty<T>(
 }
 
 /**
+ * Safely cast any value to a specific type, providing a default if it's a SelectQueryError
+ */
+export function safeCast<T>(value: any, defaultValue: T): T {
+  if (isSelectQueryError(value) || value === undefined || value === null) {
+    return defaultValue;
+  }
+  return value as T;
+}
+
+/**
+ * Safely handle arrays that might be SelectQueryErrors or undefined
+ */
+export function safeArray<T>(array: any, defaultValue: T[] = []): T[] {
+  if (!array || isSelectQueryError(array)) {
+    return defaultValue;
+  }
+  if (!Array.isArray(array)) {
+    return defaultValue;
+  }
+  return array as T[];
+}
+
+/**
  * Transform a Supabase response to flatten nested objects
  */
 export function transformSupabaseResponse<T extends Record<string, any>>(response: T): T {
@@ -140,28 +163,6 @@ export function transformSupabaseResponse<T extends Record<string, any>>(respons
   });
 
   return result as T;
-}
-
-/**
- * Safely perform a callback on an array that might be a SelectQueryError
- */
-export function safeArrayOperation<T, R>(
-  array: any,
-  operation: (arr: T[]) => R,
-  defaultValue: R
-): R {
-  if (!array || isSelectQueryError(array) || !Array.isArray(array)) {
-    return defaultValue;
-  }
-
-  return operation(array as T[]);
-}
-
-/**
- * Check if a response from Supabase was successful
- */
-export function isSuccessResponse(response: { error: any }): boolean {
-  return !response.error;
 }
 
 /**

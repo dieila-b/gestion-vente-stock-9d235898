@@ -1,8 +1,6 @@
 
-import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseTables } from "@/types/supabase-tables";
-import { PostgrestQueryBuilder } from "@supabase/postgrest-js";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type

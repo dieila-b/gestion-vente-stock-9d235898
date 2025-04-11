@@ -1,96 +1,100 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { DeliveryNote } from "@/types/delivery-note";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
-import { safelyMapData, safelyUnwrapObject } from "@/hooks/use-error-handling";
+import { isSelectQueryError, safeArray, safeGetObject } from "@/utils/supabase-helpers";
 
 export function useFetchDeliveryNotes() {
-  return useQuery({
-    queryKey: ['delivery-notes'],
+  const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { data: deliveryNotes = [], isLoading, refetch } = useQuery({
+    queryKey: ["delivery-notes", filter],
     queryFn: async () => {
-      console.log("Fetching delivery notes...");
-      const { data, error } = await supabase
-        .from('delivery_notes')
-        .select(`
-          id,
-          delivery_number,
-          created_at,
-          status,
-          supplier:suppliers (
-            name,
-            phone,
-            email
-          ),
-          purchase_order:purchase_orders!delivery_notes_purchase_order_id_fkey (
-            order_number,
-            total_amount
-          ),
-          items:delivery_note_items (
-            id,
-            product_id,
-            expected_quantity,
-            received_quantity,
-            unit_price,
-            product:catalog!delivery_note_items_product_id_fkey (
-              name,
-              reference,
-              category
-            )
-          )
-        `)
-        .eq('deleted', false)
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from("delivery_notes")
+          .select(`
+            *,
+            supplier:suppliers(*),
+            purchase_order:purchase_orders(*),
+            items:delivery_note_items(*)
+          `)
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching delivery notes:", error);
-        throw error;
-      }
-      
-      if (!data) return [];
-
-      const transformedData = data.map(note => {
-        // Create default values for potentially errored fields
-        const defaultSupplier = { name: 'Unknown Supplier', phone: '', email: '' };
-        const defaultPurchaseOrder = { order_number: 'Unknown', total_amount: 0 };
-        
-        // Safely handle items which may be a SelectQueryError
-        let items = [];
-        if (!isSelectQueryError(note.items)) {
-          items = Array.isArray(note.items) ? note.items.map(item => {
-            const defaultProduct = { name: 'Unknown Product', reference: '', category: '' };
-            const product = isSelectQueryError(item.product) ? defaultProduct : (item.product || defaultProduct);
-            
-            return {
-              id: item.id,
-              product_id: item.product_id,
-              expected_quantity: item.expected_quantity,
-              received_quantity: item.received_quantity,
-              unit_price: item.unit_price,
-              product
-            };
-          }) : [];
+        if (filter !== "all") {
+          query = query.eq("status", filter);
         }
-        
-        // Handle supplier which may be a SelectQueryError
-        const supplier = safelyUnwrapObject(note.supplier, defaultSupplier);
-        
-        // Handle purchase_order which may be a SelectQueryError
-        const purchaseOrder = safelyUnwrapObject(note.purchase_order, defaultPurchaseOrder);
 
-        // Return the transformed delivery note
-        return {
-          id: note.id,
-          delivery_number: note.delivery_number,
-          created_at: note.created_at,
-          status: note.status,
-          supplier,
-          purchase_order: purchaseOrder,
-          items
-        } as DeliveryNote;
-      });
-      
-      return transformedData;
-    }
+        if (searchTerm) {
+          query = query.or(
+            `delivery_number.ilike.%${searchTerm}%,purchase_order.order_number.ilike.%${searchTerm}%`
+          );
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        // Process delivery notes to handle potential join errors
+        const processedNotes = (data || []).map((note) => {
+          // Create default objects for potentially errored joins
+          const defaultSupplier = {
+            id: note.supplier_id || "",
+            name: "Unknown Supplier",
+            phone: "",
+            email: "",
+          };
+
+          const defaultPurchaseOrder = {
+            id: note.purchase_order_id || "",
+            order_number: "Unknown Order",
+          };
+
+          // Use safe getters to handle SelectQueryErrors
+          const supplier = isSelectQueryError(note.supplier)
+            ? defaultSupplier
+            : note.supplier || defaultSupplier;
+
+          const purchaseOrder = isSelectQueryError(note.purchase_order)
+            ? defaultPurchaseOrder
+            : note.purchase_order || defaultPurchaseOrder;
+
+          // Handle items which might be a SelectQueryError
+          const items = isSelectQueryError(note.items) 
+            ? [] 
+            : note.items || [];
+
+          // Return the processed delivery note
+          return {
+            id: note.id,
+            delivery_number: note.delivery_number,
+            created_at: note.created_at,
+            status: note.status,
+            supplier: supplier,
+            purchase_order: purchaseOrder,
+            items: items,
+          } as DeliveryNote;
+        });
+
+        return processedNotes;
+      } catch (error) {
+        console.error("Error fetching delivery notes:", error);
+        toast.error("Erreur lors du chargement des bons de livraison");
+        return [];
+      }
+    },
   });
+
+  return {
+    deliveryNotes,
+    isLoading,
+    filter,
+    setFilter,
+    searchTerm,
+    setSearchTerm,
+    refetch,
+  };
 }

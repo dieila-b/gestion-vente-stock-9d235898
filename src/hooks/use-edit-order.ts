@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
-import { safelyUnwrapObject, safeMap } from "@/hooks/use-error-handling";
+import { isSelectQueryError, safeArray, safeGetObject } from "@/utils/supabase-helpers";
 
 export function useEditOrder(setSelectedClient: (client: Client | null) => void, setCart: (items: any[]) => void) {
   const [searchParams] = useSearchParams();
@@ -92,8 +91,8 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
         phone: ""
       };
       
-      // Safely unwrap client data
-      const clientData = isSelectQueryError(editOrder.client) 
+      // Safely get client data
+      const clientData = isSelectQueryError(editOrder.client)
         ? defaultClient
         : {
             ...defaultClient,
@@ -103,10 +102,10 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
       
       setSelectedClient(clientData);
       
-      // Safely map order items or use empty array
-      const items = isSelectQueryError(editOrder.items) ? [] : (editOrder.items || []);
+      // Safely handle order items
+      const items = safeArray(editOrder.items, []);
       
-      const cartItems = safeMap(items, (item: any) => {
+      const cartItems = items.map((item: any) => {
         // Create default product
         const defaultProduct = { 
           id: item.product_id, 
@@ -116,7 +115,9 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
         };
         
         // Safely handle product data
-        const product = safelyUnwrapObject(item.product, defaultProduct);
+        const product = isSelectQueryError(item.product)
+          ? defaultProduct
+          : item.product || defaultProduct;
           
         return {
           id: product.id,

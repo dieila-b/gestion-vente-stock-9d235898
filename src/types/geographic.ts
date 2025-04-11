@@ -1,12 +1,24 @@
 
-export type GeographicZone = {
+/**
+ * Define types for geographic data
+ */
+
+export interface ParentZone {
   id: string;
   name: string;
   type: "region" | "zone" | "emplacement";
-  parent_id?: string;
-  description?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-};
+}
 
-export type ParentZone = Pick<GeographicZone, "id" | "name" | "type">;
+export interface GeographicZone {
+  id: string;
+  name: string;
+  type: "region" | "zone" | "emplacement";
+  description?: string;
+  parent_id?: string;
+  created_at: string;
+}
+
+export interface ZoneType {
+  id: string;
+  name: string;
+}

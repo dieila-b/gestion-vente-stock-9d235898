@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
 import { toast } from "sonner";
-import { createTableQuery } from "@/hooks/use-supabase-table-extension";
+import { supabase } from "@/integrations/supabase/client";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function usePOSPayment({
   selectedClient,
@@ -113,7 +114,7 @@ export function usePOSPayment({
 
       // Create or update order items
       const orderItems = cart.map(item => {
-        // Determine delivered quantity based on deliveredItems parameter or from cart item
+        // Determine delivered quantity based on deliveredItems parameter or from cart item's deliveredQuantity
         const deliveredQty = deliveredItems?.[item.id]?.quantity || 
                             (item.deliveredQuantity !== undefined ? item.deliveredQuantity : 
                             (delivered ? item.quantity : 0));
@@ -184,6 +185,3 @@ export function usePOSPayment({
     handlePayment
   };
 }
-
-// Import at the end to avoid circular references
-import { supabase } from "@/integrations/supabase/client";
