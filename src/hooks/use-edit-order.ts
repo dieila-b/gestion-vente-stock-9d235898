@@ -7,6 +7,7 @@ import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { safelyUnwrapObject, safeMap } from "@/hooks/use-error-handling";
 
 export function useEditOrder(setSelectedClient: (client: Client | null) => void, setCart: (items: any[]) => void) {
   const [searchParams] = useSearchParams();
@@ -67,7 +68,7 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
 
       if (error) throw error;
       
-      // Si la facture est déjà payée ou partiellement payée, empêcher l'édition du panier et rediriger vers la liste des factures
+      // If the invoice is already paid or partially paid, prevent editing
       if (data && (data.payment_status === 'paid' || data.payment_status === 'partial')) {
         toast.error("Les factures payées ou partiellement payées ne peuvent pas être modifiées");
         navigate("/sales-invoices");
@@ -81,30 +82,38 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
 
   useEffect(() => {
     if (editOrder && editOrder.client) {
-      // Handle case where client is a SelectQueryError
-      if (isSelectQueryError(editOrder.client)) {
-        toast.error("Erreur lors du chargement des données du client");
-        return;
-      }
+      // Create a default client object
+      const defaultClient: Client = {
+        id: "unknown",
+        company_name: "Unknown Company",
+        contact_name: "Unknown Contact",
+        status: "particulier"
+      };
       
-      const clientData = {
-        ...editOrder.client,
-        status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+      // Safely unwrap client data
+      const clientData = safelyUnwrapObject(editOrder.client, defaultClient);
+      
+      const client = {
+        ...clientData,
+        status: clientData.status === 'entreprise' ? 'entreprise' : 'particulier'
       } as Client;
       
-      setSelectedClient(clientData);
+      setSelectedClient(client);
       
-      // Handle case where items is a SelectQueryError
-      if (isSelectQueryError(editOrder.items)) {
-        toast.error("Erreur lors du chargement des articles de la facture");
-        return;
-      }
+      // Safely map order items or use empty array
+      const items = isSelectQueryError(editOrder.items) ? [] : (editOrder.items || []);
       
-      const cartItems = editOrder.items.map((item: any) => {
-        // Handle case where product is a SelectQueryError
-        const product = isSelectQueryError(item.product) 
-          ? { id: item.product_id, name: "Unknown Product", category: "", image_url: "" }
-          : item.product;
+      const cartItems = safeMap(items, (item: any) => {
+        // Create default product
+        const defaultProduct = { 
+          id: item.product_id, 
+          name: "Unknown Product", 
+          category: "", 
+          image_url: "" 
+        };
+        
+        // Safely handle product data
+        const product = safelyUnwrapObject(item.product, defaultProduct);
           
         return {
           id: product.id,
@@ -114,7 +123,6 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
           discount: item.discount || 0,
           category: product.category,
           image: product.image_url,
-          // Include delivered quantity information to preserve it when editing
           deliveredQuantity: item.delivered_quantity || 0
         };
       });

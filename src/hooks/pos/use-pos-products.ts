@@ -2,10 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CartItem, Product } from '@/types/pos';
-import { createTableQuery } from '@/hooks/use-supabase-table-extension';
 import { useState } from 'react';
 import { isSelectQueryError } from '@/utils/supabase-helpers';
-import { getSafeProduct } from '@/utils/error-handlers';
 
 export function usePOSProducts(posLocationId: string, selectedCategory: string | null = null, searchTerm: string = '') {
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,11 +34,11 @@ export function usePOSProducts(posLocationId: string, selectedCategory: string |
 
   // Format products for use in the POS system
   const formattedProducts: CartItem[] = data.map(item => {
-    // Use safe product accessor to handle SelectQueryError
-    const product = item.product;
+    // Get the product data from the join
+    const productData = item.product;
     
-    // If product is a SelectQueryError, use default values
-    const safeProduct = isSelectQueryError(product) 
+    // Set defaults for product data if it's a SelectQueryError
+    const safeProduct = isSelectQueryError(productData) 
       ? { 
           id: item.product_id || "unknown", 
           name: "Unknown Product", 
@@ -48,7 +46,7 @@ export function usePOSProducts(posLocationId: string, selectedCategory: string |
           category: "", 
           image_url: "" 
         }
-      : product;
+      : productData;
     
     return {
       id: item.product_id,

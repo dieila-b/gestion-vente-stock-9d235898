@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
-import { safelyMapData } from "@/hooks/use-error-handling";
+import { safelyMapData, safelyUnwrapObject } from "@/hooks/use-error-handling";
 
 export function useFetchDeliveryNotes() {
   return useQuery({
@@ -29,8 +29,8 @@ export function useFetchDeliveryNotes() {
           items:delivery_note_items (
             id,
             product_id,
-            quantity_ordered,
-            quantity_received,
+            expected_quantity,
+            received_quantity,
             unit_price,
             product:catalog!delivery_note_items_product_id_fkey (
               name,
@@ -64,18 +64,18 @@ export function useFetchDeliveryNotes() {
               return {
                 id: item.id,
                 product_id: item.product_id,
-                quantity_ordered: item.quantity_ordered,
-                quantity_received: item.quantity_received,
+                expected_quantity: item.expected_quantity,
+                received_quantity: item.received_quantity,
                 unit_price: item.unit_price,
                 product
               };
             });
         
         // Handle supplier which may be a SelectQueryError
-        const supplier = isSelectQueryError(note.supplier) ? defaultSupplier : note.supplier || defaultSupplier;
+        const supplier = safelyUnwrapObject(note.supplier, defaultSupplier);
         
         // Handle purchase_order which may be a SelectQueryError
-        const purchaseOrder = isSelectQueryError(note.purchase_order) ? defaultPurchaseOrder : note.purchase_order || defaultPurchaseOrder;
+        const purchaseOrder = safelyUnwrapObject(note.purchase_order, defaultPurchaseOrder);
 
         // Return the transformed delivery note
         return {

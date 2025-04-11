@@ -12,32 +12,43 @@ export function usePOSCombined(posLocationId: string, selectedCategory: string |
   const [error, setError] = useState<Error | null>(null);
 
   // Get products from main POS system
-  const posProducts = usePOSProducts(posLocationId, selectedCategory, searchTerm);
+  const {
+    products,
+    categories,
+    stockItems,
+    isLoading: productsLoading,
+    error: productsError,
+    currentPage,
+    totalPages,
+    goToNextPage,
+    goToPrevPage,
+    refetchStock
+  } = usePOSProducts(posLocationId, selectedCategory, searchTerm);
 
   // Combine products and handle loading states
   useEffect(() => {
-    setIsLoading(posProducts.isLoading);
+    setIsLoading(productsLoading);
     
-    if (posProducts.error) {
-      setError(posProducts.error as Error);
+    if (productsError) {
+      setError(productsError as Error);
     } else {
       setError(null);
     }
     
     // Update combined products when source products change
-    setCombinedProducts(posProducts.products);
-  }, [posProducts.products, posProducts.isLoading, posProducts.error]);
+    setCombinedProducts(products);
+  }, [products, productsLoading, productsError]);
 
   return {
     products: combinedProducts,
-    categories: posProducts.categories,
-    stockItems: posProducts.stockItems,
+    categories,
+    stockItems,
     isLoading,
     error,
-    currentPage: posProducts.currentPage,
-    totalPages: posProducts.totalPages,
-    goToNextPage: posProducts.goToNextPage,
-    goToPrevPage: posProducts.goToPrevPage,
-    refetchStock: posProducts.refetchStock
+    currentPage,
+    totalPages,
+    goToNextPage,
+    goToPrevPage,
+    refetchStock
   };
 }

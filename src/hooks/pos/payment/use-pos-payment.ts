@@ -1,23 +1,9 @@
 
 import { useState } from "react";
-import { CartItem } from "@/types/pos";
 import { Client } from "@/types/client";
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
+import { CartItem } from "@/types/pos";
 import { toast } from "sonner";
-
-interface PaymentHookProps {
-  selectedClient: Client | null;
-  cart: CartItem[];
-  calculateTotal: () => number;
-  calculateSubtotal: () => number;
-  calculateTotalDiscount: () => number;
-  clearCart: () => void;
-  selectedPDV?: string;
-  activeRegister?: string | null;
-  refetchStock?: () => void;
-  editOrderId?: string | null;
-}
+import { createTableQuery } from "@/hooks/use-supabase-table-extension";
 
 export function usePOSPayment({
   selectedClient,
@@ -30,148 +16,161 @@ export function usePOSPayment({
   activeRegister,
   refetchStock,
   editOrderId
-}: PaymentHookProps) {
+}: {
+  selectedClient: Client | null;
+  cart: CartItem[];
+  calculateTotal: () => number;
+  calculateSubtotal: () => number;
+  calculateTotalDiscount: () => number;
+  clearCart: () => void;
+  selectedPDV: string;
+  activeRegister: any;
+  refetchStock: () => void;
+  editOrderId?: string | null;
+}) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Process payment and save order
   const handlePayment = async (
-    amount: number,
-    paymentMethod: string,
-    notes?: string,
-    delivered = false
+    amount: number, 
+    method: string, 
+    notes?: string, 
+    delivered?: boolean, 
+    partiallyDelivered?: boolean, 
+    deliveredItems?: Record<string, { delivered: boolean, quantity: number }>
   ) => {
-    if (!selectedClient) {
-      toast.error("Veuillez sélectionner un client");
-      return;
-    }
-
-    if (cart.length === 0) {
-      toast.error("Le panier est vide");
-      return;
-    }
-
     setIsLoading(true);
-
     try {
-      const orderId = editOrderId || uuidv4();
-      const orderTotal = calculateTotal();
+      // Validate client
+      if (!selectedClient) {
+        toast.error("Veuillez sélectionner un client");
+        setIsLoading(false);
+        return;
+      }
+
+      // Determine delivery status
+      let deliveryStatus = 'pending';
+      if (delivered) {
+        deliveryStatus = 'delivered';
+      } else if (partiallyDelivered) {
+        deliveryStatus = 'partial';
+      } else {
+        // This is the "awaiting delivery" status
+        deliveryStatus = 'awaiting';
+      }
+
+      // Calculate values
       const subtotal = calculateSubtotal();
       const discount = calculateTotalDiscount();
-      
-      // Prepare order data
+      const total = calculateTotal();
+      const remaining = Math.max(0, total - amount);
+      const paymentStatus = amount >= total ? 'paid' : amount > 0 ? 'partial' : 'pending';
+
+      // Create or update order
       const orderData = {
-        id: orderId,
         client_id: selectedClient.id,
-        total: subtotal,
         discount,
-        final_total: orderTotal,
+        total: subtotal,
+        final_total: total,
         paid_amount: amount,
-        remaining_amount: orderTotal - amount,
-        payment_status: amount >= orderTotal ? "paid" : amount > 0 ? "partial" : "pending",
-        pos_location_id: selectedPDV || activeRegister,
-        cash_register_id: activeRegister,
-        comment: notes
+        remaining_amount: remaining,
+        payment_status: paymentStatus,
+        delivery_status: deliveryStatus,
+        comment: notes || ''
       };
 
-      let orderResult;
-      
-      // If editing an existing order
+      // If editing, update existing order; otherwise create new one
+      let orderId;
       if (editOrderId) {
-        // Update the existing order
-        const { data, error } = await supabase
-          .from("orders")
+        const { data: updatedOrder, error: updateError } = await supabase
+          .from('orders')
           .update(orderData)
-          .eq("id", editOrderId)
-          .select()
+          .eq('id', editOrderId)
+          .select('id')
           .single();
-
-        if (error) throw error;
-        orderResult = data;
-
-        // Delete existing order items to replace them
-        await supabase.from("order_items").delete().eq("order_id", editOrderId);
+          
+        if (updateError) throw updateError;
+        orderId = updatedOrder.id;
+        
+        // Delete existing items to replace them
+        const { error: deleteError } = await supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', orderId);
+          
+        if (deleteError) throw deleteError;
       } else {
-        // Create a new order
-        const { data, error } = await supabase
-          .from("orders")
+        const { data: newOrder, error: createError } = await supabase
+          .from('orders')
           .insert(orderData)
-          .select()
+          .select('id')
           .single();
-
-        if (error) throw error;
-        orderResult = data;
+          
+        if (createError) throw createError;
+        orderId = newOrder.id;
       }
 
-      // Prepare order items
-      const orderItems = cart.map((item) => ({
-        order_id: orderId,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount || 0,
-        total: (item.price * item.quantity) - (item.discount || 0),
-        delivered_quantity: delivered ? item.quantity : item.deliveredQuantity || 0,
-        delivery_status: delivered ? "delivered" : "pending"
-      }));
+      // Create or update order items
+      const orderItems = cart.map(item => {
+        // Determine delivered quantity based on deliveredItems parameter or from cart item
+        const deliveredQty = deliveredItems?.[item.id]?.quantity || 
+                            (item.deliveredQuantity !== undefined ? item.deliveredQuantity : 
+                            (delivered ? item.quantity : 0));
+        
+        return {
+          order_id: orderId,
+          product_id: item.id,
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount || 0,
+          delivered_quantity: deliveredQty,
+          total: (item.price - (item.discount || 0)) * item.quantity
+        };
+      });
 
-      // Insert order items
       const { error: itemsError } = await supabase
-        .from("order_items")
+        .from('order_items')
         .insert(orderItems);
-
+        
       if (itemsError) throw itemsError;
 
-      // Create payment record if amount > 0
+      // Record payment if amount > 0
       if (amount > 0) {
         const { error: paymentError } = await supabase
-          .from("payments")
+          .from('order_payments')
           .insert({
-            client_id: selectedClient.id,
+            order_id: orderId,
             amount,
-            payment_method: paymentMethod,
-            notes: `Payment for order #${orderId}`
+            payment_method: method,
+            notes
           });
-
+          
         if (paymentError) throw paymentError;
-      }
 
-      toast.success(
-        editOrderId
-          ? "Commande mise à jour avec succès"
-          : "Commande créée avec succès"
-      );
-
-      // Update inventory if delivered
-      if (delivered && selectedPDV !== "_all") {
-        for (const item of cart) {
-          const { error: stockError } = await supabase
-            .from("warehouse_stock")
-            .update({
-              quantity: supabase.rpc("decrement", {
-                x: item.quantity
-              })
-            })
-            .eq("product_id", item.id)
-            .eq("pos_location_id", selectedPDV);
-
-          if (stockError) {
-            console.error("Error updating stock:", stockError);
-            toast.error(`Erreur lors de la mise à jour du stock: ${stockError.message}`);
-          }
+        // Update cash register for cash payments
+        if (method === 'cash' && activeRegister) {
+          const { error: cashError } = await supabase
+            .from('cash_register_transactions')
+            .insert({
+              cash_register_id: activeRegister.id,
+              type: 'deposit',
+              amount,
+              description: `Encaissement vente #${orderId}`
+            });
+            
+          if (cashError) throw cashError;
         }
       }
 
-      // Reset cart and refresh
+      // Clear cart and refresh stock data
+      refetchStock();
       clearCart();
-      if (refetchStock) {
-        refetchStock();
-      }
-
-      return orderResult;
+      
+      toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès");
     } catch (error) {
-      console.error("Error processing payment:", error);
+      console.error('Error processing payment:', error);
       toast.error("Erreur lors du traitement du paiement");
-      return null;
     } finally {
       setIsLoading(false);
       setIsPaymentDialogOpen(false);
@@ -185,3 +184,6 @@ export function usePOSPayment({
     handlePayment
   };
 }
+
+// Import at the end to avoid circular references
+import { supabase } from "@/integrations/supabase/client";

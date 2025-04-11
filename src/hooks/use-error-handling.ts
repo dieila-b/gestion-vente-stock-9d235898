@@ -2,68 +2,112 @@
 import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 /**
- * Utility to safely access properties on potentially errored data
- * @param data The data that might be a SelectQueryError
- * @param defaultValue Default value to return if data is an error
- */
-export function safelyGetData<T>(data: any, defaultValue: T): T {
-  if (isSelectQueryError(data)) {
-    return defaultValue;
-  }
-  return data || defaultValue;
-}
-
-/**
- * Safely map over data that might be a SelectQueryError
- * @param data The data that might be a SelectQueryError
- * @param mapFn Map function to apply if data is valid
- * @param defaultValue Default value to return if data is an error
+ * Safely map through data that might be a SelectQueryError
  */
 export function safelyMapData<T, R>(
   data: any,
   mapFn: (item: T) => R,
   defaultValue: R[] = []
 ): R[] {
-  if (isSelectQueryError(data) || !Array.isArray(data)) {
+  if (!data || isSelectQueryError(data) || !Array.isArray(data)) {
     return defaultValue;
   }
   return data.map(mapFn);
 }
 
 /**
- * Cast potentially errored data to a type, with fallback
- * @param data Data to cast
- * @param defaultObj Default object to use if data is an error
+ * Safely handle properties of an object that might be a SelectQueryError
  */
-export function castOrDefault<T>(data: any, defaultObj: T): T {
-  if (isSelectQueryError(data)) {
-    return defaultObj;
+export function safelyGetProperty<T>(
+  obj: any,
+  propName: string,
+  defaultValue: T
+): T {
+  if (!obj || isSelectQueryError(obj)) {
+    return defaultValue;
   }
-  return data as T || defaultObj;
+  return (obj[propName] !== undefined && obj[propName] !== null) 
+    ? obj[propName] as T 
+    : defaultValue;
 }
 
 /**
- * Convert an object with potential SelectQueryErrors to a safe object
- * @param obj Object with potential SelectQueryErrors
- * @param defaultValues Default values for different keys
+ * Safely unwrap an object that might be a SelectQueryError
  */
-export function safeObject<T extends Record<string, any>>(
-  obj: any, 
-  defaultValues: Partial<T>
+export function safelyUnwrapObject<T>(
+  obj: any,
+  defaultObj: T
 ): T {
-  if (!obj || typeof obj !== 'object') {
-    return defaultValues as T;
+  if (!obj || isSelectQueryError(obj)) {
+    return defaultObj;
   }
-  
-  const result = { ...defaultValues } as T;
-  
-  for (const key in obj) {
-    if (isSelectQueryError(obj[key])) {
-      result[key] = defaultValues[key as keyof T] as any;
-    } else {
-      result[key] = obj[key];
-    }
+  return obj as T;
+}
+
+/**
+ * Safe property accessor for items that might be SelectQueryErrors
+ */
+export function safe<T>(
+  item: any,
+  defaultValue: T
+): T {
+  if (isSelectQueryError(item)) {
+    return defaultValue;
   }
-  
-  return result;
+  return (item as T) || defaultValue;
+}
+
+/**
+ * Type guard for checking if array is not a SelectQueryError
+ */
+export function isValidArray<T>(arr: any): arr is T[] {
+  return Array.isArray(arr) && !isSelectQueryError(arr);
+}
+
+/**
+ * Safe property access for potentially SelectQueryError objects
+ */
+export function safeProperty<P extends string, T>(
+  obj: any,
+  prop: P,
+  defaultValue: T
+): T {
+  if (!obj || isSelectQueryError(obj)) {
+    return defaultValue;
+  }
+  const value = obj[prop];
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  return value as T;
+}
+
+/**
+ * Safe map operation that handles SelectQueryErrors
+ */
+export function safeMap<T, R>(
+  arr: any,
+  mapFn: (item: T) => R
+): R[] {
+  if (!arr || isSelectQueryError(arr) || !Array.isArray(arr)) {
+    return [];
+  }
+  return arr.map(mapFn);
+}
+
+/**
+ * Safely access an object cast to a specific type
+ */
+export function safeCast<T>(obj: any, defaultValue: T): T {
+  if (!obj || isSelectQueryError(obj)) {
+    return defaultValue;
+  }
+  return obj as T;
+}
+
+/**
+ * Creates a default fallback object with all required properties
+ */
+export function createFallback<T extends object>(defaults: T): T {
+  return { ...defaults };
 }
