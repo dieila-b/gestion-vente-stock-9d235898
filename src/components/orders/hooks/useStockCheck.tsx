@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { isSelectQueryError, safeGetProperty, safeArrayOperation } from "@/utils/supabase-helpers";
+import { isSelectQueryError, safeArray } from "@/utils/supabase-helpers";
 
 export function useStockCheck(
   setIsUpdating: (value: boolean) => void,
@@ -34,7 +34,7 @@ export function useStockCheck(
       let updatedItems = 0;
       
       // Safely process the items array
-      const items = !isSelectQueryError(order.items) ? order.items || [] : [];
+      const items = safeArray(order.items, []);
       
       // Check each product
       for (const item of items) {

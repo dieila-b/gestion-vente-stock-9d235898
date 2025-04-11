@@ -51,6 +51,7 @@ export function useFetchDeliveryNotes() {
           const defaultPurchaseOrder = {
             id: note.purchase_order_id || "",
             order_number: "Unknown Order",
+            total_amount: 0,
           };
 
           // Use safe getters to handle SelectQueryErrors
@@ -63,9 +64,7 @@ export function useFetchDeliveryNotes() {
             : note.purchase_order || defaultPurchaseOrder;
 
           // Handle items which might be a SelectQueryError
-          const items = isSelectQueryError(note.items) 
-            ? [] 
-            : note.items || [];
+          const items = safeArray(note.items, []);
 
           // Return the processed delivery note
           return {

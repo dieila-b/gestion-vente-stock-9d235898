@@ -97,7 +97,7 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
         : {
             ...defaultClient,
             ...editOrder.client,
-            status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+            status: safeGetProperty(editOrder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier'
           };
       
       setSelectedClient(clientData);

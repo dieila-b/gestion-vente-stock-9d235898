@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for handling Supabase responses, errors, and data transformation
  */
@@ -70,6 +71,21 @@ export function safeMap<T, R>(
   }
 
   return array.map(mapFn);
+}
+
+/**
+ * Safely perform an operation on an array that might be a SelectQueryError
+ */
+export function safeArrayOperation<T, R>(
+  array: any,
+  operation: (array: T[]) => R,
+  defaultValue: R
+): R {
+  if (!array || isSelectQueryError(array) || !Array.isArray(array)) {
+    return defaultValue;
+  }
+
+  return operation(array as T[]);
 }
 
 /**

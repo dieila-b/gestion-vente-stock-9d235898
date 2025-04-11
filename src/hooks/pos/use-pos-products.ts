@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CartItem, Product } from '@/types/pos';
 import { useState } from 'react';
-import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { isSelectQueryError, safeGetProperty } from '@/utils/supabase-helpers';
 
 export function usePOSProducts(posLocationId: string, selectedCategory: string | null = null, searchTerm: string = '') {
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,9 +34,6 @@ export function usePOSProducts(posLocationId: string, selectedCategory: string |
 
   // Format products for use in the POS system
   const formattedProducts: CartItem[] = data.map(item => {
-    // Get the product data from the join
-    const productData = item.product;
-    
     // Set defaults for product data if it's a SelectQueryError
     const defaultProduct = { 
       id: item.product_id || "unknown", 
@@ -46,17 +43,17 @@ export function usePOSProducts(posLocationId: string, selectedCategory: string |
       image_url: "" 
     };
     
-    const safeProduct = isSelectQueryError(productData) ? defaultProduct : productData;
+    const safeProduct = isSelectQueryError(item.product) ? defaultProduct : item.product || defaultProduct;
     
     return {
       id: item.product_id,
-      name: safeProduct.name,
+      name: safeGetProperty(safeProduct, 'name', 'Unknown Product'),
       quantity: 1, // Default quantity for cart
       price: item.unit_price, // Use unit_price from warehouse_stock
       stock: item.quantity,
-      category: safeProduct.category,
-      reference: safeProduct.reference,
-      image_url: safeProduct.image_url,
+      category: safeGetProperty(safeProduct, 'category', ''),
+      reference: safeGetProperty(safeProduct, 'reference', ''),
+      image_url: safeGetProperty(safeProduct, 'image_url', ''),
     };
   });
 
