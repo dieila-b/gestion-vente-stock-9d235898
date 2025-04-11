@@ -68,18 +68,16 @@ export function usePreorderCart() {
         if (isSelectQueryError(data.client)) {
           clientData = defaultClient;
         } else {
-          // If we have client data, cast the status to ensure it's either 'particulier' or 'entreprise'
-          const clientStatus = (data.client?.status === 'entreprise') ? 'entreprise' : 'particulier';
+          // Extract client data safely
+          const clientStatus = data.client?.status === 'entreprise' ? 'entreprise' : 'particulier';
           
-          // Use a type assertion to access properties safely
           clientData = {
-            ...defaultClient,
             id: data.client?.id || defaultClient.id,
             company_name: data.client?.company_name || defaultClient.company_name,
             contact_name: data.client?.contact_name || defaultClient.contact_name,
             email: data.client?.email || defaultClient.email,
             phone: data.client?.phone || defaultClient.phone,
-            status: clientStatus
+            status: clientStatus as "particulier" | "entreprise"
           };
         }
         
@@ -97,8 +95,8 @@ export function usePreorderCart() {
               id: product.id,
               name: product.name,
               quantity: item.quantity,
-              unit_price: item.unit_price,
               price: item.unit_price,
+              unit_price: item.unit_price,
               total: item.total_price,
               category: product.category || '',
               reference: product.reference || '',

@@ -78,20 +78,24 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
 
       if (orderError) throw orderError;
 
+      // Préparation des données des produits
+      const productItems = products.map(product => ({
+        order_id: orderData.id,
+        name: product.name,
+        quantity: product.quantity,
+        category: product.category,
+        reference: product.reference,
+        price_requested: true,
+        status: "pending",
+        product_id: null,  // Add product_id as null
+        unit_price: 0,     // Add unit_price as 0
+        total_price: 0     // Add total_price as 0
+      }));
+
       // Ajout des produits
       const { error: productsError } = await supabase
         .from('supplier_order_products')
-        .insert(
-          products.map(product => ({
-            order_id: orderData.id,
-            name: product.name,
-            quantity: product.quantity,
-            category: product.category,
-            reference: product.reference,
-            price_requested: true,
-            status: "pending",
-          }))
-        );
+        .insert(productItems);
 
       if (productsError) throw productsError;
 

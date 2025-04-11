@@ -9,23 +9,14 @@ import { POSStockHeader } from "@/components/stocks/pos-stock/POSStockHeader";
 import { POSStockLocations } from "@/components/stocks/pos-stock/POSStockLocations";
 import { StockItemsFilter } from "@/components/stocks/pos-stock/StockItemsFilter";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
-
-export interface POSLocation {
-  id: string;
-  name: string;
-  phone?: string;
-  address?: string;
-  manager?: string;
-  status?: string;
-  is_active?: boolean;
-}
+import { POSLocation } from "@/types/pos-locations";
 
 export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Récupérer la liste des points de vente
-  const { data: posLocations = [] } = useQuery({
+  const { data: locations = [], isLoading: isLocationsLoading } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       const { data, error } = await createTableQuery('pos_locations')
@@ -44,20 +35,29 @@ export default function POSStock() {
           address: item.address,
           status: item.status,
           is_active: item.is_active,
-          manager: item.manager
+          manager: item.manager,
+          capacity: item.capacity,
+          occupied: item.occupied,
+          surface: item.surface,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          email: item.email
         })) as POSLocation[];
     }
   });
 
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedLocation, true);
 
-  // Filtrer les articles en fonction de la recherche
+  // Filter stock items based on search query
   const filteredItems = stockItems.filter(item => {
     if (isSelectQueryError(item.product)) return false;
     
+    const productName = item.product?.name || "";
+    const productRef = item.product?.reference || "";
+    
     return (
-      (item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
+      productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      productRef.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
@@ -72,8 +72,11 @@ export default function POSStock() {
         <POSStockHeader />
 
         <POSStockLocations 
-          onLocationChange={handleLocationChange}
+          locations={locations} 
           selectedLocation={selectedLocation}
+          onSelectLocation={handleLocationChange}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
         <div className="space-y-4">
@@ -83,7 +86,7 @@ export default function POSStock() {
             setSearchQuery={setSearchQuery}
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
-            posLocations={posLocations}
+            posLocations={locations}
           />
 
           <StockItemsTable 

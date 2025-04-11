@@ -1,101 +1,111 @@
 
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PreorderCart } from '@/components/preorder/PreorderCart';
-import { PreorderClient } from '@/components/preorder/PreorderClient';
-import { PreorderProductList } from '@/components/preorder/PreorderProductList';
-import { usePreorderCart } from '@/components/preorder/hooks/usePreorderCart';
+import PreorderCart from '@/components/preorder/PreorderCart';
+import PreorderClient from '@/components/preorder/PreorderClient';
+import PreorderProductList from '@/components/preorder/PreorderProductList';
+import { Client } from '@/types/client';
+import { CartItem } from '@/types/pos';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import InvoicePreview from '@/components/preorder/InvoicePreview';
 import { usePreorderActions } from '@/components/preorder/hooks/usePreorderActions';
-import { usePreorderPayment } from '@/components/preorder/hooks/usePreorderPayment';
-import { PaymentDialog } from '@/components/pos/PaymentDialog';
-import { InvoicePreview } from '@/components/preorder/InvoicePreview';
+import { usePreorderCart } from '@/components/preorder/hooks/usePreorderCart';
+import { useNavigate } from 'react-router-dom';
 
 export default function Preorders() {
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
-  const [currentPreorder, setCurrentPreorder] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Get preorder cart data (if editing)
-  const preorderCartData = usePreorderCart();
-  
-  // Get preorder actions for cart management 
-  const preorderActions = usePreorderActions(preorderCartData.client, preorderCartData.cart);
-  
-  // Combine the data and actions for use in components
-  const combinedPreorderData = {
-    ...preorderCartData,
-    ...preorderActions
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [notes, setNotes] = useState("");
+  const [activeTab, setActiveTab] = useState("products");
+  const navigate = useNavigate();
+
+  const {
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    updateDiscount,
+    clearCart,
+    setCartItemQuantity,
+    validatePreorder,
+    isSubmitting,
+  } = usePreorderActions();
+
+  const handleClientChange = (client: Client | null) => {
+    setSelectedClient(client);
   };
 
-  // Handle payment processing
-  const { handleCheckout, handlePayment } = usePreorderPayment(
-    combinedPreorderData.client,
-    combinedPreorderData.cart,
-    combinedPreorderData.clearCart,
-    setShowPaymentDialog,
-    setCurrentPreorder,
-    setShowInvoiceDialog,
-    false,
-    null,
-    setIsLoading
-  );
+  const handleAddToCart = (product: any, quantity: number = 1) => {
+    addToCart(cart, setCart, product, quantity);
+  };
+
+  const handleRemoveFromCart = (productId: string) => {
+    removeFromCart(cart, setCart, productId);
+  };
+
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    updateQuantity(cart, setCart, productId, quantity);
+  };
+
+  const handleUpdateDiscount = (productId: string, discount: number) => {
+    updateDiscount(cart, setCart, productId, discount);
+  };
+
+  const handleValidatePreorder = async () => {
+    const result = await validatePreorder(selectedClient, cart, notes);
+    if (result) {
+      clearCart(setCart);
+      setSelectedClient(null);
+      setNotes("");
+      navigate('/preorders/list');
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">Précommandes</h1>
-          <p className="text-muted-foreground">
-            Créez et gérez les précommandes de vos clients
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            <PreorderClient client={combinedPreorderData.client} setClient={combinedPreorderData.setClient} />
-            <PreorderProductList 
-              selectedClient={combinedPreorderData.client}
-              addToCart={combinedPreorderData.addToCart}
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-bold mb-6">Gestion des Précommandes</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <PreorderClient 
+              selectedClient={selectedClient}
+              onClientChange={handleClientChange}
             />
-          </div>
-
-          <div className="lg:col-span-4">
+            
             <PreorderCart 
-              cart={combinedPreorderData.cart}
-              updateQuantity={combinedPreorderData.updateQuantity}
-              removeFromCart={combinedPreorderData.removeFromCart}
-              updateDiscount={combinedPreorderData.updateDiscount} 
-              calculateTotal={combinedPreorderData.calculateTotal}
-              calculateSubtotal={combinedPreorderData.calculateSubtotal}
-              calculateTotalDiscount={combinedPreorderData.calculateTotalDiscount}
-              onCheckout={() => handleCheckout(combinedPreorderData.validatePreorder)}
-              isLoading={isLoading}
+              cart={cart}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveFromCart}
+              onUpdateDiscount={handleUpdateDiscount}
             />
           </div>
+          
+          <div className="md:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="products">Produits</TabsTrigger>
+                <TabsTrigger value="preview">Aperçu</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="products" className="h-full">
+                <PreorderProductList 
+                  onAddToCart={handleAddToCart}
+                />
+              </TabsContent>
+              
+              <TabsContent value="preview" className="h-full">
+                <InvoicePreview 
+                  client={selectedClient}
+                  cart={cart}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  onValidate={handleValidatePreorder}
+                  isSubmitting={isSubmitting}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-
-        {showPaymentDialog && (
-          <PaymentDialog
-            isOpen={showPaymentDialog}
-            onClose={() => setShowPaymentDialog(false)}
-            totalAmount={combinedPreorderData.calculateTotal()}
-            onSubmitPayment={handlePayment}
-            items={combinedPreorderData.cart.map((item) => ({
-              id: item.id,
-              name: item.name,
-              quantity: item.quantity
-            }))}
-          />
-        )}
-
-        {showInvoiceDialog && currentPreorder && (
-          <InvoicePreview
-            isOpen={showInvoiceDialog}
-            onClose={() => setShowInvoiceDialog(false)}
-            preorder={currentPreorder}
-          />
-        )}
       </div>
     </DashboardLayout>
   );

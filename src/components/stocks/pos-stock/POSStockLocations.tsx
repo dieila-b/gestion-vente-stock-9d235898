@@ -1,110 +1,116 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { toast } from 'sonner';
-import { createTableQuery } from '@/hooks/use-supabase-table-extension';
+import React from 'react';
+import { POSLocation } from '@/types/pos-locations';
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { isSelectQueryError } from '@/utils/supabase-helpers';
 
-interface POSLocation {
-  id: string;
-  name: string;
-  phone?: string;
-  address?: string;
-  manager?: string;
-  status?: string;
-  is_active?: boolean;
-}
-
 interface POSStockLocationsProps {
-  onLocationChange: (locationId: string) => void;
+  locations: POSLocation[];
   selectedLocation: string;
+  onSelectLocation: (locationId: string) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
-export function POSStockLocations({ onLocationChange, selectedLocation }: POSStockLocationsProps) {
-  const [locations, setLocations] = useState<POSLocation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        setIsLoading(true);
-        // Use createTableQuery instead of direct supabase client
-        const response = await createTableQuery('pos_locations')
-          .select('id, name, phone, address, status, is_active')
-          .order('name');
-
-        const { data, error } = response;
-        if (error) throw error;
-        
-        // Transform the data into the POSLocation format
-        const locationData = (data || []).map(item => {
-          // Check if item is a SelectQueryError before accessing properties
-          if (isSelectQueryError(item)) {
-            return {
-              id: "unknown",
-              name: "Unknown location",
-              status: "unknown",
-              is_active: false
-            } as POSLocation;
-          }
-          
-          return {
-            id: item.id || "unknown",
-            name: item.name || 'Unnamed location',
-            phone: item.phone,
-            address: item.address,
-            status: item.status,
-            is_active: item.is_active
-          } as POSLocation;
-        });
-        
-        setLocations(locationData);
-        
-        // If no location is selected and we have locations, select the first one
-        if (!selectedLocation && locationData && locationData.length > 0) {
-          onLocationChange(locationData[0].id);
-        }
-      } catch (error) {
-        console.error('Error fetching POS locations:', error);
-        toast.error("Erreur lors du chargement des points de vente");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLocations();
-  }, [onLocationChange, selectedLocation]);
+export const POSStockLocations = ({
+  locations,
+  selectedLocation,
+  onSelectLocation,
+  searchQuery,
+  setSearchQuery
+}: POSStockLocationsProps) => {
+  // Filter locations by search query
+  const filteredLocations = locations.filter(location => {
+    // Handle potential SelectQueryError
+    if (isSelectQueryError(location)) {
+      return false;
+    }
+    
+    const name = location.name?.toLowerCase() || '';
+    const address = location.address?.toLowerCase() || '';
+    const phone = location.phone?.toLowerCase() || '';
+    
+    return (
+      name.includes(searchQuery.toLowerCase()) ||
+      address.includes(searchQuery.toLowerCase()) ||
+      phone.includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle>Point de Vente</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Select
-          value={selectedLocation}
-          onValueChange={onLocationChange}
-          disabled={isLoading || locations.length === 0}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={isLoading ? "Chargement..." : "Sélectionner un point de vente"} />
-          </SelectTrigger>
-          <SelectContent>
-            {locations.map((location) => (
-              <SelectItem key={location.id} value={location.id}>
-                {location.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Rechercher un point de vente..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8"
+        />
+      </div>
+
+      <ScrollArea className="whitespace-nowrap rounded-md border">
+        <div className="flex w-max space-x-4 p-4">
+          <Card
+            className={cn(
+              "flex flex-col items-center justify-center w-[160px] h-[100px] rounded-lg overflow-hidden cursor-pointer transition-all",
+              selectedLocation === "_all"
+                ? "ring-2 ring-primary"
+                : "ring-1 ring-transparent hover:ring-primary/50"
+            )}
+            onClick={() => onSelectLocation("_all")}
+          >
+            <CardContent className="flex flex-col items-center justify-center p-4">
+              <div className="font-semibold">Tous les PDV</div>
+              <div className="text-sm text-muted-foreground">Voir tous les stocks</div>
+            </CardContent>
+          </Card>
+
+          {filteredLocations.map((location) => {
+            // Skip any SelectQueryError entries
+            if (isSelectQueryError(location)) {
+              return null;
+            }
+            
+            const isActive = location.is_active ?? true;
+            
+            return (
+              <Card
+                key={location.id}
+                className={cn(
+                  "flex flex-col items-center justify-center w-[160px] h-[100px] rounded-lg overflow-hidden cursor-pointer transition-all",
+                  selectedLocation === location.id
+                    ? "ring-2 ring-primary"
+                    : "ring-1 ring-transparent hover:ring-primary/50",
+                  !isActive && "opacity-60"
+                )}
+                onClick={() => onSelectLocation(location.id)}
+              >
+                <CardContent className="flex flex-col items-center justify-center p-4">
+                  <div className="font-semibold line-clamp-1">{location.name}</div>
+                  <div className="text-xs text-muted-foreground text-center line-clamp-1">
+                    {location.address || "Adresse non spécifiée"}
+                  </div>
+                  <div className={cn(
+                    "text-xs mt-1 px-2 py-0.5 rounded-full",
+                    location.status === "active" ? "bg-green-100 text-green-800" : 
+                    location.status === "closed" ? "bg-red-100 text-red-800" : 
+                    "bg-yellow-100 text-yellow-800"
+                  )}>
+                    {location.status || (isActive ? "Actif" : "Inactif")}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
   );
-}
+};

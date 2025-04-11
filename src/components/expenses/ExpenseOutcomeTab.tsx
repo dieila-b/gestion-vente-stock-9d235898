@@ -53,10 +53,11 @@ export function ExpenseOutcomeTab() {
 
         // Handle potential SelectQueryError for category
         let entryCategory: Category;
+        
         if (isSelectQueryError(entry.category)) {
           entryCategory = defaultCategory;
         } else {
-          entryCategory = entry.category || defaultCategory;
+          entryCategory = entry.category as Category || defaultCategory;
         }
 
         return {
