@@ -35,6 +35,14 @@ export interface Database {
           description?: string | null
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "cash_register_transactions_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       cash_registers: {
         Row: {
@@ -70,6 +78,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       catalog: {
         Row: {
@@ -111,6 +120,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       clients: {
         Row: {
@@ -127,7 +137,7 @@ export interface Database {
           notes: string | null
           created_at: string | null
           updated_at: string | null
-          status?: 'particulier' | 'entreprise'
+          status: 'particulier' | 'entreprise' | null
         }
         Insert: {
           id?: string
@@ -143,7 +153,7 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
-          status?: 'particulier' | 'entreprise'
+          status?: 'particulier' | 'entreprise' | null
         }
         Update: {
           id?: string
@@ -159,8 +169,9 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
-          status?: 'particulier' | 'entreprise'
+          status?: 'particulier' | 'entreprise' | null
         }
+        Relationships: []
       }
       internal_users: {
         Row: {
@@ -202,6 +213,14 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "internal_users_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       orders: {
         Row: {
@@ -249,6 +268,14 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       order_items: {
         Row: {
@@ -261,7 +288,7 @@ export interface Database {
           total: number
           delivered_quantity: number
           created_at: string | null
-          delivery_status?: string | null
+          delivery_status: string | null
         }
         Insert: {
           id?: string
@@ -287,6 +314,20 @@ export interface Database {
           created_at?: string | null
           delivery_status?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       order_payments: {
         Row: {
@@ -313,6 +354,14 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       preorders: {
         Row: {
@@ -348,6 +397,14 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "preorders_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       preorder_items: {
         Row: {
@@ -383,6 +440,20 @@ export interface Database {
           discount?: number
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "preorder_items_preorder_id_fkey"
+            columns: ["preorder_id"]
+            referencedRelation: "preorders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preorder_items_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       payments: {
         Row: {
@@ -409,6 +480,14 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       customer_returns: {
         Row: {
@@ -450,6 +529,20 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "customer_returns_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       customer_return_items: {
         Row: {
@@ -473,6 +566,20 @@ export interface Database {
           quantity?: number
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "customer_return_items_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_return_items_return_id_fkey"
+            columns: ["return_id"]
+            referencedRelation: "customer_returns"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       expense_categories: {
         Row: {
@@ -493,6 +600,7 @@ export interface Database {
           type?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       income_entries: {
         Row: {
@@ -516,6 +624,14 @@ export interface Database {
           category_id?: string | null
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "income_entries_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       expense_entries: {
         Row: {
@@ -539,6 +655,14 @@ export interface Database {
           expense_category_id?: string | null
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "expense_entries_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       warehouse_stock_movements: {
         Row: {
@@ -565,6 +689,20 @@ export interface Database {
           type?: string
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       stock_transfers: {
         Row: {
@@ -591,6 +729,26 @@ export interface Database {
           quantity?: number
           created_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       warehouses: {
         Row: {
@@ -614,6 +772,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       warehouse_stock: {
         Row: {
@@ -649,6 +808,26 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_stock_pos_location_id_fkey"
+            columns: ["pos_location_id"]
+            referencedRelation: "pos_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       pos_locations: {
         Row: {
@@ -672,6 +851,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       product_units: {
         Row: {
@@ -692,6 +872,7 @@ export interface Database {
           abbreviation?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
     }
     Views: {
@@ -732,3 +913,6 @@ export type Warehouse = Database['public']['Tables']['warehouses']['Row']
 export type WarehouseStock = Database['public']['Tables']['warehouse_stock']['Row']
 export type POSLocation = Database['public']['Tables']['pos_locations']['Row']
 export type ProductUnit = Database['public']['Tables']['product_units']['Row']
+
+// Add type for fixing the nested relationship issues
+export type SupabaseNested<T> = T | null;

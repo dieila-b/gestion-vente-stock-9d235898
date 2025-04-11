@@ -12,6 +12,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({
@@ -34,13 +35,15 @@ export function ProductsChart() {
 
       // Agréger les quantités par produit
       const combinedStock = stockData.reduce((acc, item) => {
-        if (!item.product?.name) return acc;
-        const existingProduct = acc.find(p => p.name === item.product.name);
+        const product = unwrapSupabaseObject(item.product);
+        if (!product?.name) return acc;
+        
+        const existingProduct = acc.find(p => p.name === product.name);
         if (existingProduct) {
           existingProduct.value += item.quantity;
         } else {
           acc.push({
-            name: item.product.name,
+            name: product.name,
             value: item.quantity
           });
         }

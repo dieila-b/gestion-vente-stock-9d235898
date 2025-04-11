@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
 
 export const useWarehouseDistribution = () => {
   return useQuery({
@@ -11,7 +12,7 @@ export const useWarehouseDistribution = () => {
         .from('warehouse_stock')
         .select(`
           warehouse_id,
-          warehouses:warehouses!warehouse_stock_warehouse_id_fkey (name),
+          warehouses!warehouse_stock_warehouse_id_fkey (name),
           pos_location_id,
           pos_locations:pos_location_id (name),
           quantity
@@ -27,7 +28,8 @@ export const useWarehouseDistribution = () => {
       const distribution = warehouseData.reduce((acc, item) => {
         // Si c'est un entrepôt
         if (item.warehouse_id) {
-          const warehouseName = item.warehouses?.name || 'Entrepôt inconnu';
+          const warehouse = unwrapSupabaseObject(item.warehouses);
+          const warehouseName = warehouse?.name || 'Entrepôt inconnu';
           if (!acc[warehouseName]) {
             acc[warehouseName] = 0;
           }
@@ -35,7 +37,8 @@ export const useWarehouseDistribution = () => {
         } 
         // Si c'est un point de vente
         else if (item.pos_location_id) {
-          const posName = item.pos_locations?.name || 'PDV inconnu';
+          const posLocation = unwrapSupabaseObject(item.pos_locations);
+          const posName = posLocation?.name || 'PDV inconnu';
           if (!acc[posName]) {
             acc[posName] = 0;
           }

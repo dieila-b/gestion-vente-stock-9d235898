@@ -1,5 +1,5 @@
 
-import { Database } from "@/integrations/supabase/types";
+import { Database } from "@/types/supabase";
 
 export type OrderRow = Database['public']['Tables']['orders']['Row'];
 export type CatalogRow = Database['public']['Tables']['catalog']['Row'];
@@ -27,4 +27,3 @@ export const isCatalogRow = (payload: any): payload is CatalogRow => {
 export const isTransferRow = (payload: any): payload is TransferRow => {
   return payload && typeof payload.id === 'string' && typeof payload.created_at === 'string';
 };
-

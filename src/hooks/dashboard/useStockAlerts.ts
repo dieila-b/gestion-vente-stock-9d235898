@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
 
 export type StockAlert = {
   id: string;
@@ -75,16 +76,20 @@ export const useStockAlerts = () => {
         })
         .map(item => {
           const locationType = item.warehouse_id ? 'warehouse' : 'pos';
+          const warehouses = unwrapSupabaseObject(item.warehouses);
+          const posLocations = unwrapSupabaseObject(item.pos_locations);
+          const catalog = unwrapSupabaseObject(item.catalog);
+          
           const locationName = item.warehouse_id 
-            ? (item.warehouses?.name || 'Dépôt inconnu')
-            : (item.pos_locations?.name || 'PDV inconnu');
+            ? (warehouses?.name || 'Dépôt inconnu')
+            : (posLocations?.name || 'PDV inconnu');
           
           return {
             id: `${item.product_id}-${item.id}`,
-            name: item.catalog?.name || 'Produit inconnu',
+            name: catalog?.name || 'Produit inconnu',
             stock: item.quantity,
-            category: item.catalog?.category,
-            price: item.catalog?.price || 0,
+            category: catalog?.category,
+            price: catalog?.price || 0,
             min_stock_level: DEFAULT_MIN_STOCK,
             alert_type: item.quantity === 0 ? 'out_of_stock' : 'low_stock',
             location: locationName,
