@@ -46,23 +46,28 @@ export function usePurchaseOrderQueries(
           name: "Unknown Warehouse",
         };
 
-        const supplier = isSelectQueryError(order.supplier)
-          ? defaultSupplier
-          : order.supplier || defaultSupplier;
+        // Safely handle supplier
+        let supplier = defaultSupplier;
+        if (order.supplier && !isSelectQueryError(order.supplier)) {
+          supplier = {
+            id: order.supplier.id || "",
+            name: order.supplier.name || "Unknown Supplier",
+            phone: order.supplier.phone || "",
+            email: order.supplier.email || "",
+          };
+        }
 
+        // Safely handle warehouse
         const warehouse = isSelectQueryError(order.warehouse)
           ? defaultWarehouse
           : order.warehouse || defaultWarehouse;
 
+        // Return the processed order with an empty items array
         return {
           ...order,
-          supplier: {
-            id: supplier.id,
-            name: safeGetProperty(supplier, 'name', 'Unknown Supplier'),
-            phone: safeGetProperty(supplier, 'phone', ''),
-            email: safeGetProperty(supplier, 'email', ''),
-          },
-          warehouse: warehouse,
+          supplier,
+          warehouse,
+          items: []
         } as PurchaseOrder;
       });
 
@@ -108,24 +113,27 @@ export function usePurchaseOrderQueries(
         name: "Unknown Warehouse",
       };
 
-      const supplier = isSelectQueryError(data.supplier)
-        ? defaultSupplier
-        : data.supplier || defaultSupplier;
+      // Safely handle supplier
+      let supplier = defaultSupplier;
+      if (data.supplier && !isSelectQueryError(data.supplier)) {
+        supplier = {
+          id: data.supplier.id || "",
+          name: data.supplier.name || "Unknown Supplier",
+          phone: data.supplier.phone || "",
+          email: data.supplier.email || "",
+        };
+      }
 
+      // Safely handle warehouse
       const warehouse = isSelectQueryError(data.warehouse)
         ? defaultWarehouse
         : data.warehouse || defaultWarehouse;
 
       return {
         ...data,
-        supplier: {
-          id: supplier.id,
-          name: safeGetProperty(supplier, 'name', 'Unknown Supplier'),
-          phone: safeGetProperty(supplier, 'phone', ''),
-          email: safeGetProperty(supplier, 'email', ''),
-        },
-        warehouse: warehouse,
-        items: Array.isArray(data.items) ? data.items : [],
+        supplier,
+        warehouse,
+        items: Array.isArray(data.items) ? data.items : []
       } as PurchaseOrder;
     } catch (error) {
       console.error(`Error fetching purchase order ${id}:`, error);

@@ -32,8 +32,6 @@ export function usePurchaseOrders() {
   return {
     orders: purchaseOrders,
     isLoading,
-    currentOrder: null, // This is now handled via fetchPurchaseOrder
-    isLoadingOrder: false,
     handleCreate,
     handleUpdate,
     handleApprove,

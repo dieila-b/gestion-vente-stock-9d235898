@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for handling Supabase responses, errors, and data transformation
  */

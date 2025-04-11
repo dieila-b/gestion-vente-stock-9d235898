@@ -12,7 +12,7 @@ export function useCreatePurchaseOrder() {
     try {
       // Ensure we have all required fields
       const newOrderData = {
-        supplier_id: purchaseOrderData.supplier_id || purchaseOrderData.supplier?.id,
+        supplier_id: purchaseOrderData.supplier_id || (purchaseOrderData.supplier?.id ?? ""),
         order_number: purchaseOrderData.order_number || `PO-${Date.now().toString().slice(-6)}`,
         expected_delivery_date: purchaseOrderData.expected_delivery_date,
         warehouse_id: purchaseOrderData.warehouse_id,
@@ -53,19 +53,22 @@ export function useCreatePurchaseOrder() {
         email: ""
       };
 
-      const supplier = isSelectQueryError(data.supplier)
-        ? defaultSupplier
-        : data.supplier || defaultSupplier;
+      // Safely handle supplier data
+      let supplier = defaultSupplier;
+
+      if (data.supplier && !isSelectQueryError(data.supplier)) {
+        supplier = {
+          id: data.supplier.id || "",
+          name: data.supplier.name || "Unknown Supplier",
+          phone: data.supplier.phone || "",
+          email: data.supplier.email || ""
+        };
+      }
 
       // Return processed purchase order
       return {
         ...data,
-        supplier: {
-          id: supplier.id,
-          name: safeGetProperty(supplier, 'name', 'Unknown Supplier'),
-          phone: safeGetProperty(supplier, 'phone', ''),
-          email: safeGetProperty(supplier, 'email', '')
-        },
+        supplier,
         items: []
       } as PurchaseOrder;
     } catch (error) {

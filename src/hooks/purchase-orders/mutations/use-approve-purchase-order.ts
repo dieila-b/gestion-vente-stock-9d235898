@@ -63,11 +63,13 @@ export function useApprovePurchaseOrder() {
       }
 
       // Create the purchase order object to return, including the supplier
+      const supplier = isSelectQueryError(updatedOrder.supplier) 
+        ? { id: '', name: 'Unknown', phone: '', email: '' } 
+        : updatedOrder.supplier || { id: '', name: 'Unknown', phone: '', email: '' };
+
       const purchaseOrder: PurchaseOrder = {
         ...updatedOrder,
-        supplier: isSelectQueryError(updatedOrder.supplier) 
-          ? { name: 'Unknown', phone: '', email: '' } 
-          : updatedOrder.supplier,
+        supplier,
         items: orderItems
       };
 

@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -102,9 +103,12 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
       const clientData = isSelectQueryError(editOrder.client)
         ? defaultClient
         : {
-            ...defaultClient,
-            ...editOrder.client,
-            status: safeGetProperty(editOrder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier'
+            id: editOrder.client.id || defaultClient.id,
+            company_name: editOrder.client.company_name || defaultClient.company_name,
+            contact_name: editOrder.client.contact_name || defaultClient.contact_name,
+            status: safeGetProperty(editOrder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier',
+            email: editOrder.client.email || defaultClient.email,
+            phone: editOrder.client.phone || defaultClient.phone
           };
       
       setSelectedClient(clientData);

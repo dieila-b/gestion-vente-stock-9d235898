@@ -9,7 +9,7 @@ export function createTableQuery<T extends keyof SupabaseTables>(
   tableName: T
 ) {
   // Use a typecast to avoid type issues with string-based table names
-  return supabase.from(tableName as string);
+  return supabase.from(tableName as unknown as string);
 }
 
 /**
