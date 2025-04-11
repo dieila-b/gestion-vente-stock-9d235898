@@ -23,7 +23,7 @@ export const TestingModeToggle = ({
   
   return (
     <div className="mt-4">
-      <Alert variant={testingMode ? "default" : "outline"} className="border-yellow-400/50 bg-yellow-50/50">
+      <Alert variant={testingMode ? "default" : "destructive"} className="border-yellow-400/50 bg-yellow-50/50">
         <AlertCircle className="h-4 w-4 text-yellow-600" />
         <AlertTitle className="text-yellow-800">Mode test en production</AlertTitle>
         <AlertDescription className="text-yellow-700 mt-1">

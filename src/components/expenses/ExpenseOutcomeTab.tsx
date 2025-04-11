@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,17 @@ import { Plus, X } from "lucide-react";
 import { ExpenseIncomePrintDialog } from "./ExpenseIncomePrintDialog";
 import { addCashRegisterTransaction } from "@/api/cash-register-api";
 
+// Define the type for an outcome entry
+interface OutcomeEntry {
+  id: string;
+  amount: number;
+  description: string;
+  category: {
+    name: string;
+  };
+  created_at: string;
+}
+
 export function ExpenseOutcomeTab() {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [newOutcome, setNewOutcome] = useState({
@@ -48,25 +60,43 @@ export function ExpenseOutcomeTab() {
     }
   });
 
-  const { data: outcomes = [], refetch } = useQuery({
+  const { data: outcomes = [], refetch } = useQuery<OutcomeEntry[]>({
     queryKey: ['outcome-entries'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('outcome_entries')
-        .select(`
-          *,
-          expense_categories!outcome_entries_expense_category_id_fkey (
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('outcome_entries')
+          .select(`
+            id,
+            amount,
+            description,
+            created_at,
+            expense_category_id,
+            expense_categories:expense_category_id(
+              name
+            )
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error("Erreur lors du chargement des sorties");
-        throw error;
+        if (error) {
+          toast.error("Erreur lors du chargement des sorties");
+          throw error;
+        }
+
+        // Transform the data to match the OutcomeEntry interface
+        return (data || []).map(item => ({
+          id: item.id,
+          amount: item.amount,
+          description: item.description,
+          created_at: item.created_at,
+          category: {
+            name: item.expense_categories?.name || "Non catégorisé"
+          }
+        }));
+      } catch (error) {
+        console.error('Error fetching outcome entries:', error);
+        return [];
       }
-
-      return data;
     }
   });
 
@@ -132,7 +162,7 @@ export function ExpenseOutcomeTab() {
   const printableOutcomes = outcomes.map(outcome => ({
     id: outcome.id,
     date: outcome.created_at,
-    category: { name: outcome.expense_categories?.name || "Non catégorisé" },
+    category: { name: outcome.category.name || "Non catégorisé" },
     description: outcome.description,
     amount: outcome.amount
   }));
@@ -230,7 +260,7 @@ export function ExpenseOutcomeTab() {
                     {new Date(outcome.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>{outcome.description}</TableCell>
-                  <TableCell>{outcome.expense_categories?.name || "Non catégorisé"}</TableCell>
+                  <TableCell>{outcome.category.name || "Non catégorisé"}</TableCell>
                   <TableCell className="text-right font-medium text-red-600">
                     {formatGNF(outcome.amount)}
                   </TableCell>
