@@ -1,127 +1,82 @@
 
-import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
-import { POSLocation } from "@/types/pos-locations";
-import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface POSStockLocationsProps {
-  posLocations: POSLocation[];
-  posSearchQuery: string;
-  setPosSearchQuery: (value: string) => void;
-  onSelectLocation?: (location: POSLocation) => void;
+interface POSLocation {
+  id: string;
+  name: string;
 }
 
-export function POSStockLocations({ 
-  posLocations, 
-  posSearchQuery, 
-  setPosSearchQuery,
-  onSelectLocation
-}: POSStockLocationsProps) {
-  // Get latest occupation data for each location
-  const { data: updatedLocations, refetch } = useQuery({
-    queryKey: ['pos-locations-with-occupation'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pos_locations')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      console.log("Fetched updated POS locations:", data);
-      return data as POSLocation[];
-    },
-    // Refresh more frequently to keep occupation data current
-    refetchInterval: 5000, // refresh every 5 seconds
-    staleTime: 2000 // consider data stale after 2 seconds
-  });
+interface POSStockLocationsProps {
+  onLocationChange: (locationId: string) => void;
+  selectedLocation: string;
+}
 
-  // Automatically refetch on mount and when visible
+export function POSStockLocations({ onLocationChange, selectedLocation }: POSStockLocationsProps) {
+  const [locations, setLocations] = useState<POSLocation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    refetch();
-    // Set up interval to refetch periodically
-    const intervalId = setInterval(() => {
-      refetch();
-    }, 5000);
-    
-    return () => clearInterval(intervalId);
-  }, [refetch]);
+    const fetchLocations = async () => {
+      try {
+        setIsLoading(true);
+        // Use direct query instead of useExtendedTables to avoid type errors
+        const { data, error } = await supabase
+          .from('pos_locations')
+          .select('id, name')
+          .order('name');
 
-  // Merge updated occupation data with locations to ensure we have the latest data
-  const locationsWithUpdatedOccupation = posLocations.map(location => {
-    const updatedLocation = updatedLocations?.find(u => u.id === location.id);
-    return updatedLocation || location;
-  });
-
-  // Filter locations based on the search query
-  const filteredPOSLocations = locationsWithUpdatedOccupation.filter(location =>
-    location.name.toLowerCase().includes(posSearchQuery.toLowerCase()) ||
-    location.address.toLowerCase().includes(posSearchQuery.toLowerCase()) ||
-    (location.manager && location.manager.toLowerCase().includes(posSearchQuery.toLowerCase()))
-  );
-
-  // Create a click handler for table rows to select a location
-  const handleRowClick = (location: POSLocation) => {
-    if (onSelectLocation) {
-      onSelectLocation(location);
-    }
-  };
-
-  // Reference to the table component
-  const tableRef = useRef<HTMLDivElement>(null);
-
-  // Add click event handlers to table rows
-  useEffect(() => {
-    if (tableRef.current && onSelectLocation) {
-      const tableElement = tableRef.current.querySelector('table');
-      if (!tableElement) return;
-      
-      const rows = tableElement.querySelectorAll('tbody tr');
-      
-      rows.forEach((row, index) => {
-        if (index < filteredPOSLocations.length) {
-          // Add cursor pointer style
-          row.classList.add('cursor-pointer');
-          
-          // Add hover style
-          row.classList.add('hover:bg-opacity-10', 'hover:bg-purple-500');
-          
-          // Add click event
-          row.addEventListener('click', () => {
-            handleRowClick(filteredPOSLocations[index]);
-          });
-        }
-      });
-    }
-    
-    // Cleanup event listeners on unmount
-    return () => {
-      if (tableRef.current) {
-        const tableElement = tableRef.current.querySelector('table');
-        if (!tableElement) return;
+        if (error) throw error;
         
-        const rows = tableElement.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-          row.removeEventListener('click', () => {});
-        });
+        setLocations(data || []);
+        
+        // If no location is selected and we have locations, select the first one
+        if (!selectedLocation && data && data.length > 0) {
+          onLocationChange(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching POS locations:', error);
+        toast.error("Erreur lors du chargement des points de vente");
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [filteredPOSLocations, onSelectLocation]);
+
+    fetchLocations();
+  }, [onLocationChange, selectedLocation]);
 
   return (
-    <div className="space-y-6" ref={tableRef}>
-      <POSLocationsTable 
-        posLocations={filteredPOSLocations} 
-        searchQuery={posSearchQuery}
-        setSearchQuery={setPosSearchQuery}
-        // Removed the onDelete prop to hide delete buttons
-      />
-      
-      {onSelectLocation && (
-        <div className="text-sm text-gray-400 mt-2">
-          Cliquez sur une ligne pour sélectionner un PDV
-        </div>
-      )}
-    </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle>Point de Vente</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Select
+          value={selectedLocation}
+          onValueChange={onLocationChange}
+          disabled={isLoading || locations.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={isLoading ? "Chargement..." : "Sélectionner un point de vente"} />
+          </SelectTrigger>
+          <SelectContent>
+            {locations.map((location) => (
+              <SelectItem key={location.id} value={location.id}>
+                {location.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardContent>
+    </Card>
   );
 }

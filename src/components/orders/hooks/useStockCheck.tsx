@@ -34,41 +34,50 @@ export function useStockCheck(
       let updatedItems = 0;
       
       // Safely process the items array
-      const items = isSelectQueryError(order.items) ? [] : order.items || [];
+      const items = !isSelectQueryError(order.items) ? order.items || [] : [];
       
       // Check each product
       for (const item of items) {
+        if (!item || typeof item !== 'object') continue;
+        
+        const productId = item.product_id;
+        if (!productId) continue;
+        
         // Check available stock
         const { data: productData } = await supabase
           .from('catalog')
           .select('stock')
-          .eq('id', item.product_id)
+          .eq('id', productId)
           .single();
           
-        if (productData && productData.stock >= item.quantity) {
+        const itemQuantity = item.quantity || 0;
+        const itemStatus = item.status || 'pending';
+        const itemId = item.id;
+          
+        if (productData && productData.stock >= itemQuantity) {
           // Stock available, update item status
-          if (item.status !== 'available') {
+          if (itemStatus !== 'available') {
             const { error } = await supabase
               .from('preorder_items')
               .update({ status: 'available' })
-              .eq('id', item.id);
+              .eq('id', itemId);
               
             if (!error) updatedItems++;
           }
         } else {
           // Update status if product is out of stock
-          let newStatus = item.status;
+          let newStatus = itemStatus;
           if (!productData || productData.stock === 0) {
             newStatus = 'out_of_stock';
-          } else if (productData.stock < item.quantity) {
+          } else if (productData.stock < itemQuantity) {
             newStatus = 'pending';
           }
           
-          if (newStatus !== item.status) {
+          if (newStatus !== itemStatus) {
             await supabase
               .from('preorder_items')
               .update({ status: newStatus })
-              .eq('id', item.id);
+              .eq('id', itemId);
           }
           
           if (newStatus !== 'available') {

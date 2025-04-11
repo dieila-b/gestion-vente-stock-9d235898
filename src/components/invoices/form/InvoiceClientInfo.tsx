@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useExtendedTables } from "@/hooks/use-supabase-table-extension";
-import { safeMap, isSelectQueryError } from "@/utils/supabase-helpers";
+import { safeMap, isSelectQueryError } from '@/utils/supabase-helpers';
 
 interface InvoiceClientInfoProps {
   formData: {
@@ -25,22 +26,25 @@ interface InvoiceClientInfoProps {
   onPosLocationChange?: (value: string) => void;
 }
 
-export const InvoiceClientInfo = ({ 
+export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({ 
   formData, 
   onInputChange,
   onPosLocationChange 
-}: InvoiceClientInfoProps) => {
-  const { posLocations } = useExtendedTables();
-  
-  const { data: posLocationList } = useQuery({
+}) => {
+  const { data: posLocationList = [], isLoading } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       try {
-        const { data, error } = await posLocations
+        // Using the DatabaseTables approach doesn't work correctly with the current setup
+        // Let's use a direct fetch instead
+        const { data, error } = await supabase
+          .from('pos_locations')
           .select('*')
           .order('name');
           
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         
         return data || [];
       } catch (err) {

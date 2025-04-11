@@ -1,205 +1,185 @@
-import { useState } from 'react';
-import { Card } from "@/components/ui/card";
-import { toast } from "sonner";
-import { CatalogProduct } from "@/types/catalog";
-import { supabase } from "@/integrations/supabase/client";
-import { generateQuotePDF } from "@/lib/generateQuotePDF";
-import { QuoteHeader } from "./form/QuoteHeader";
-import { QuoteProducts } from "./form/QuoteProducts";
-import { QuoteNotes } from "./form/QuoteNotes";
-import { QuoteActions } from "./form/QuoteActions";
-import { InvoiceProductModal } from "@/components/invoices/form/InvoiceProductModal";
-import { useProducts } from "@/hooks/use-products";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
-import { Search, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { formatGNF } from '@/lib/currency';
 
-interface QuoteFormData {
-  quoteNumber: string;
-  clientName: string;
-  clientEmail: string;
-  validityDate: string;
-  notes: string;
-  products: Array<{
-    product: CatalogProduct;
-    quantity: number;
-  }>;
-}
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface QuoteFormProps {
-  formData: QuoteFormData;
-  setFormData: (data: QuoteFormData) => void;
+  selectedClient?: {
+    id: string;
+    company_name?: string;
+    contact_name?: string;
+  };
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function QuoteForm({ formData, setFormData, onClose }: QuoteFormProps) {
-  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const { products } = useProducts();
+export const QuoteForm: React.FC<QuoteFormProps> = ({ 
+  selectedClient, 
+  onClose,
+  onSuccess
+}) => {
+  const [formData, setFormData] = useState({
+    clientId: selectedClient?.id || '',
+    clientName: selectedClient?.company_name || selectedClient?.contact_name || '',
+    issueDate: format(new Date(), 'yyyy-MM-dd'),
+    expiryDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+    totalAmount: '',
+    notes: ''
+  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const calculateTotal = () => {
-    return formData.products.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
-    }, 0);
-  };
-
-  const handleQuantityChange = (index: number, quantity: number) => {
-    const newProducts = [...formData.products];
-    newProducts[index].quantity = quantity;
-    setFormData({ ...formData, products: newProducts });
-  };
-
-  const handleProductRemove = (index: number) => {
-    const newProducts = formData.products.filter((_, i) => i !== index);
-    setFormData({ ...formData, products: newProducts });
-  };
-
-  const handleAddProduct = (product: CatalogProduct) => {
-    const existingProductIndex = formData.products.findIndex(
-      (item) => item.product.id === product.id
-    );
-
-    if (existingProductIndex !== -1) {
-      const newProducts = [...formData.products];
-      newProducts[existingProductIndex].quantity += 1;
-      setFormData({ ...formData, products: newProducts });
-    } else {
-      setFormData({
-        ...formData,
-        products: [...formData.products, { product, quantity: 1 }]
-      });
-    }
-    setIsProductSelectorOpen(false);
-  };
-
-  const handleGeneratePDF = () => {
+  const formatDate = (dateString: string) => {
     try {
-      const doc = generateQuotePDF(formData);
-      doc.save(`devis-${formData.quoteNumber}.pdf`);
-      toast.success("Devis généré avec succès !");
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error("Erreur lors de la génération du PDF");
+      return new Date(dateString).toISOString();
+    } catch (e) {
+      return new Date().toISOString();
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.clientId) {
+      toast.error("Veuillez sélectionner un client");
+      return;
+    }
+
+    if (!formData.totalAmount) {
+      toast.error("Veuillez entrer un montant");
+      return;
+    }
+
     try {
-      const amount = calculateTotal();
+      setIsSubmitting(true);
+      
+      // Generate a quote number
+      const quoteNumber = `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+      
+      // Insert the quote
       const { data, error } = await supabase
         .from('quotes')
         .insert({
-          client_id: selectedClient,
-          issue_date: formatDate(issueDate),
-          expiry_date: formatDate(expiryDate),
-          total_amount: amount,
+          client_id: formData.clientId,
+          issue_date: formatDate(formData.issueDate),
+          expiry_date: formatDate(formData.expiryDate),
+          total_amount: parseFloat(formData.totalAmount),
+          notes: formData.notes,
           status: 'pending',
-          notes: notes
+          quote_number: quoteNumber
         })
-        .select();
-
-      if (error) throw error;
-
-      toast.success("Devis créé avec succès !");
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Devis créé avec succès");
+      if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error creating quote:', error);
       toast.error("Erreur lors de la création du devis");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.reference.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
   return (
-    <Card className="enhanced-glass p-8 space-y-6 animate-fade-in">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <QuoteHeader
-          quoteNumber={formData.quoteNumber}
-          clientName={formData.clientName}
-          clientEmail={formData.clientEmail}
-          validityDate={formData.validityDate}
-          onChange={handleInputChange}
-        />
-
-        <QuoteProducts
-          products={formData.products}
-          onQuantityChange={handleQuantityChange}
-          onProductRemove={handleProductRemove}
-          onAddProduct={() => setIsProductSelectorOpen(true)}
-        />
-
-        <QuoteNotes
-          notes={formData.notes}
-          onChange={handleInputChange}
-        />
-
-        <QuoteActions
-          total={calculateTotal()}
-          onSave={handleSubmit}
-          onGeneratePDF={handleGeneratePDF}
-          onSend={() => toast.info("Envoi par email en cours...")}
-        />
-      </form>
-
-      <Sheet open={isProductSelectorOpen} onOpenChange={setIsProductSelectorOpen}>
-        <SheetContent side="right" className="w-full sm:w-[540px]">
-          <SheetHeader className="mb-5">
-            <SheetTitle>Sélectionner des produits</SheetTitle>
-          </SheetHeader>
-          
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+    <Card>
+      <CardHeader>
+        <CardTitle>Créer un nouveau devis</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="clientName" className="text-sm font-medium">
+                Client
+              </label>
               <Input
-                placeholder="Rechercher par nom ou référence..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                id="clientName"
+                name="clientName"
+                value={formData.clientName}
+                readOnly
+                className="bg-muted"
               />
             </div>
-
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between p-4 rounded-lg enhanced-glass hover:bg-accent/50 transition-colors"
-                >
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatGNF(product.price)} - Réf: {product.reference}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddProduct(product)}
-                    className="enhanced-glass"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter
-                  </Button>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <label htmlFor="issueDate" className="text-sm font-medium">
+                Date d'émission
+              </label>
+              <Input
+                id="issueDate"
+                name="issueDate"
+                type="date"
+                value={formData.issueDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="expiryDate" className="text-sm font-medium">
+                Date d'expiration
+              </label>
+              <Input
+                id="expiryDate"
+                name="expiryDate"
+                type="date"
+                value={formData.expiryDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="totalAmount" className="text-sm font-medium">
+                Montant total
+              </label>
+              <Input
+                id="totalAmount"
+                name="totalAmount"
+                type="number"
+                placeholder="0.00"
+                value={formData.totalAmount}
+                onChange={handleChange}
+              />
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+
+          <div className="space-y-2">
+            <label htmlFor="notes" className="text-sm font-medium">
+              Notes
+            </label>
+            <Textarea
+              id="notes"
+              name="notes"
+              placeholder="Entrez des notes ou informations complémentaires..."
+              value={formData.notes}
+              onChange={handleChange}
+              rows={4}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Création...' : 'Créer le devis'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
     </Card>
   );
-}
+};

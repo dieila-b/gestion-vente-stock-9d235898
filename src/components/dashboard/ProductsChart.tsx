@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card } from "@/components/ui/card";
 import {
   BarChart,
@@ -17,7 +18,7 @@ import {
   transformSupabaseResponse, 
   isSelectQueryError, 
   safeGetProperty 
-} from "@/utils/supabase-helpers";
+} from '@/utils/supabase-helpers';
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({
@@ -39,11 +40,14 @@ export function ProductsChart() {
       if (error) throw error;
 
       // Aggregate quantities by product
-      const combinedStock = stockData.reduce((acc, item) => {
-        const product = unwrapSupabaseObject(item.product);
+      const combinedStock = stockData.reduce((acc: Array<{name: string, value: number}>, item: any) => {
+        // Skip if product is a SelectQueryError
+        if (isSelectQueryError(item.product)) {
+          return acc;
+        }
         
-        // Skip if product is null or a SelectQueryError
-        if (!product || isSelectQueryError(product)) return acc;
+        const product = unwrapSupabaseObject(item.product);
+        if (!product) return acc;
         
         const productName = safeGetProperty(product, 'name', 'Unknown product');
         if (productName === 'Unknown product') return acc;
@@ -58,7 +62,7 @@ export function ProductsChart() {
           });
         }
         return acc;
-      }, [] as { name: string; value: number }[]);
+      }, []);
 
       // Sort by total quantity and take the top 5
       const topProducts = combinedStock
