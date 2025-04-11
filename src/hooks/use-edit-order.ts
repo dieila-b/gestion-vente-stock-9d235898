@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +6,14 @@ import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { isSelectQueryError, safeArray, safeGetObject } from "@/utils/supabase-helpers";
+
+// We'll use a simple helper function for safeGetProperty
+const safeGetProperty = (obj: any, propName: string, defaultValue: any) => {
+  if (!obj || typeof obj !== 'object' || obj.error === true) {
+    return defaultValue;
+  }
+  return obj[propName] !== undefined ? obj[propName] : defaultValue;
+};
 
 export function useEditOrder(setSelectedClient: (client: Client | null) => void, setCart: (items: any[]) => void) {
   const [searchParams] = useSearchParams();

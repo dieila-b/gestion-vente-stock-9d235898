@@ -13,7 +13,8 @@ export function useDeliveryNotePrint(note: DeliveryNote | null) {
     
     return note.items.reduce((total, item) => {
       const itemPrice = item.unit_price || 0;
-      return total + (itemPrice * item.quantity_ordered);
+      const quantity = item.expected_quantity || item.quantity_ordered || 0;
+      return total + (itemPrice * quantity);
     }, 0);
   };
 

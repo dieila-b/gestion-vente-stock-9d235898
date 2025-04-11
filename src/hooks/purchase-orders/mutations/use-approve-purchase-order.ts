@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchaseOrder";
 import { toast } from "sonner";
 import { DeliveryNote } from "@/types/delivery-note";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -15,7 +16,10 @@ export function useApprovePurchaseOrder() {
         .from("purchase_orders")
         .update({ status: "approved" })
         .eq("id", id)
-        .select("*")
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
         .single();
 
       if (updateError) throw updateError;
@@ -58,7 +62,16 @@ export function useApprovePurchaseOrder() {
         if (deliveryItemsError) throw deliveryItemsError;
       }
 
-      return updatedOrder;
+      // Create the purchase order object to return, including the supplier
+      const purchaseOrder: PurchaseOrder = {
+        ...updatedOrder,
+        supplier: isSelectQueryError(updatedOrder.supplier) 
+          ? { name: 'Unknown', phone: '', email: '' } 
+          : updatedOrder.supplier,
+        items: orderItems
+      };
+
+      return purchaseOrder;
     } catch (error) {
       console.error("Error approving purchase order:", error);
       throw error;

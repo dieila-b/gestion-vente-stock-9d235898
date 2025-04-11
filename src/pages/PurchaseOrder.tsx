@@ -1,59 +1,53 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { PurchaseOrderReceipt } from "@/components/purchases/PurchaseOrderReceipt";
-import { PurchaseOrderHeader } from "@/components/purchases/PurchaseOrderHeader";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PurchaseHeader } from "@/components/purchases/PurchaseHeader";
 import { PurchaseOrderTable } from "@/components/purchases/PurchaseOrderTable";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
-import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
-import type { Supplier } from "@/types/supplier";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 
 const PurchaseOrderPage = () => {
-  const { orders, isLoading, handleApprove, handleDelete, handleEdit } = usePurchaseOrders();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const [showReceipt, setShowReceipt] = useState(false);
-
-  const filteredOrders = orders?.filter(order => 
-    order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.supplier.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const handlePrint = (order: PurchaseOrder) => {
-    // Set the selected order and show the receipt dialog
-    setSelectedOrder(order);
-    setShowReceipt(true);
-  };
+  const navigate = useNavigate();
+  const {
+    orders,
+    isLoading,
+    handleApprove,
+    handleDelete,
+    handleEdit,
+  } = usePurchaseOrders();
 
   return (
-    <div className="p-6 space-y-6">
-      <PurchaseOrderHeader 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+    <DashboardLayout>
+      <div className="container mx-auto py-10">
+        <div className="flex justify-between items-center mb-6">
+          <PurchaseHeader
+            title="Bons de commande"
+            description="Gérez vos bons de commande fournisseurs"
+          />
+          <Button
+            onClick={() => navigate("/purchase-orders/new")}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Nouveau bon de commande
+          </Button>
+        </div>
 
-      <PurchaseOrderTable
-        orders={filteredOrders}
-        isLoading={isLoading}
-        onApprove={handleApprove}
-        onDelete={handleDelete}
-        onEdit={handleEdit}
-        onPrint={handlePrint}
-      />
-
-      {/* Dialog for displaying receipt */}
-      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedOrder && (
-            <PurchaseOrderReceipt 
-              order={selectedOrder} 
-              showPrintButton={true}
-              showShareButtons={true}
+        <Card>
+          <CardContent className="p-0">
+            <PurchaseOrderTable
+              orders={orders}
+              isLoading={isLoading}
+              onApprove={(id) => handleApprove(id)}
+              onDelete={handleDelete}
+              onEdit={(id) => navigate(`/purchase-orders/edit/${id}`)}
+              onView={(id) => navigate(`/purchase-orders/view/${id}`)}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 };
 

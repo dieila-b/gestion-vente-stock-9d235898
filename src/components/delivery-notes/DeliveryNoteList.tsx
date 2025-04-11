@@ -1,9 +1,10 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DeliveryNote } from "@/types/delivery-note";
 import { DeliveryNoteActions } from "./DeliveryNoteActions";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
@@ -55,7 +56,7 @@ export function DeliveryNoteList({
           </TableCell>
           <TableCell>{note.supplier.name}</TableCell>
           <TableCell>
-            {note.items.reduce((acc, item) => acc + (item.quantity_received || 0), 0)} / {note.items.reduce((acc, item) => acc + item.quantity_ordered, 0)}
+            {note.items.reduce((acc, item) => acc + (item.received_quantity || item.quantity_received || 0), 0)} / {note.items.reduce((acc, item) => acc + (item.expected_quantity || item.quantity_ordered || 0), 0)}
             <div className="text-xs text-gray-500">
               {note.items.map(item => item.product?.name).join(', ')}
             </div>

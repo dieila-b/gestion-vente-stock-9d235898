@@ -83,12 +83,13 @@ export function DeliveryNotePrintContent({
         <tbody>
           {note.items.map((item) => {
             const unitPrice = item.unit_price || 0;
-            const total = unitPrice * item.quantity_ordered;
+            const quantity = item.expected_quantity || item.quantity_ordered || 0;
+            const total = unitPrice * quantity;
             return (
               <tr key={item.id}>
-                <td className="p-2 border border-black">{item.product.reference}</td>
-                <td className="p-2 border border-black">{item.product.name}</td>
-                <td className="p-2 border border-black text-center">{item.quantity_ordered}</td>
+                <td className="p-2 border border-black">{item.product?.reference}</td>
+                <td className="p-2 border border-black">{item.product?.name}</td>
+                <td className="p-2 border border-black text-center">{quantity}</td>
                 <td className="p-2 border border-black text-right">{formatGNF(unitPrice)}</td>
                 <td className="p-2 border border-black text-center">0</td>
                 <td className="p-2 border border-black text-right">{formatGNF(total)}</td>

@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseTables } from "@/types/supabase-tables";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type
@@ -9,8 +8,8 @@ import { isSelectQueryError } from "@/utils/supabase-helpers";
 export function createTableQuery<T extends keyof SupabaseTables>(
   tableName: T
 ) {
-  // Cast to any to avoid type issues
-  return supabase.from(tableName);
+  // Use a typecast to avoid type issues with string-based table names
+  return supabase.from(tableName as string);
 }
 
 /**

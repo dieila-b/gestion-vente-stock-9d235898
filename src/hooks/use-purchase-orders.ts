@@ -10,32 +10,38 @@ import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purch
 export function usePurchaseOrders() {
   // Get all queries
   const { 
-    orders, 
+    purchaseOrders, 
     isLoading, 
-    currentOrder, 
-    isLoadingOrder 
+    fetchPurchaseOrder,
+    getStatusCounts,
+    error
   } = usePurchaseOrderQueries();
   
   // Get all mutations as direct hooks
-  const handleApprove = useApprovePurchaseOrder();
+  const approvePurchaseOrderMutation = useApprovePurchaseOrder();
   const handleCreate = useCreatePurchaseOrder();
   const handleUpdate = useUpdatePurchaseOrder();
   const handleDelete = useDeletePurchaseOrder();
   const handleEdit = useEditPurchaseOrder();
   
-  // Get the approve mutation directly for access to its state
-  const approvePurchaseOrderMutation = useApprovePurchaseOrder();
+  // Handle approve with the mutation function
+  const handleApprove = (id: string) => {
+    approvePurchaseOrderMutation.mutate(id);
+  };
 
   return {
-    orders,
+    orders: purchaseOrders,
     isLoading,
-    currentOrder,
-    isLoadingOrder,
+    currentOrder: null, // This is now handled via fetchPurchaseOrder
+    isLoadingOrder: false,
     handleCreate,
     handleUpdate,
     handleApprove,
     handleDelete,
     handleEdit,
-    approvePurchaseOrderMutation
+    approvePurchaseOrderMutation,
+    fetchPurchaseOrder,
+    getStatusCounts,
+    error
   };
 }

@@ -20,6 +20,8 @@ export interface DeliveryNote {
     product_id: string;
     expected_quantity: number;
     received_quantity?: number;
+    quantity_ordered?: number;
+    quantity_received?: number;
     unit_price: number;
     status?: string;
     product?: {

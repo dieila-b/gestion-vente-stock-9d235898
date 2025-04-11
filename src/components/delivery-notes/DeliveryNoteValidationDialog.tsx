@@ -46,10 +46,12 @@ export function DeliveryNoteValidationDialog({
     note?.items.forEach(item => {
       const receivedQty = quantities[item.id] || 0;
       if (receivedQty === 0) {
-        newErrors.push(`La quantité reçue pour ${item.product.name} doit être spécifiée`);
+        newErrors.push(`La quantité reçue pour ${item.product?.name} doit être spécifiée`);
       }
-      if (receivedQty > item.quantity_ordered) {
-        newErrors.push(`La quantité reçue pour ${item.product.name} ne peut pas dépasser la quantité commandée`);
+      
+      const orderedQty = item.expected_quantity || item.quantity_ordered || 0;
+      if (receivedQty > orderedQty) {
+        newErrors.push(`La quantité reçue pour ${item.product?.name} ne peut pas dépasser la quantité commandée`);
       }
     });
 
@@ -120,14 +122,14 @@ export function DeliveryNoteValidationDialog({
             <TableBody>
               {note?.items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.product.name}</TableCell>
-                  <TableCell>{item.product.reference}</TableCell>
-                  <TableCell>{item.quantity_ordered}</TableCell>
+                  <TableCell>{item.product?.name}</TableCell>
+                  <TableCell>{item.product?.reference}</TableCell>
+                  <TableCell>{item.expected_quantity || item.quantity_ordered || 0}</TableCell>
                   <TableCell>
                     <Input
                       type="number"
                       min="0"
-                      max={item.quantity_ordered}
+                      max={item.expected_quantity || item.quantity_ordered || 0}
                       value={quantities[item.id] || ""}
                       onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                       className="w-24"
