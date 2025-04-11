@@ -48,7 +48,7 @@ export function ExpenseIncomeTab() {
           type: "income"
         };
 
-        // Handle potential SelectQueryError for category by creating a safe category
+        // Handle potential SelectQueryError for category
         let entryCategory: Category;
         
         if (isSelectQueryError(entry.category)) {

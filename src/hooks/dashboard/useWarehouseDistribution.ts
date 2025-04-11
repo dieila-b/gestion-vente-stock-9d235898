@@ -1,57 +1,86 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { createTableQuery } from "@/hooks/use-supabase-table-extension";
 
 export const useWarehouseDistribution = () => {
   return useQuery({
     queryKey: ['warehouse-distribution'],
     queryFn: async () => {
-      // Récupérer la somme des quantités par entrepôt
-      const { data: warehouseData, error: warehouseError } = await supabase
+      // Fetch warehouse stock with related data
+      const { data: warehouseStockData, error: warehouseStockError } = await supabase
         .from('warehouse_stock')
         .select(`
+          id,
+          quantity,
           warehouse_id,
-          warehouses!warehouse_stock_warehouse_id_fkey (name),
           pos_location_id,
-          pos_locations:pos_location_id (name),
-          quantity
-        `)
-        .not('quantity', 'eq', 0);
+          warehouses!warehouse_id(id, name),
+          pos_locations!pos_location_id(id, name)
+        `);
 
-      if (warehouseError) {
-        console.error('Error fetching warehouse distribution:', warehouseError);
-        throw warehouseError;
+      if (warehouseStockError) {
+        console.error('Error fetching warehouse distribution:', warehouseStockError);
+        throw warehouseStockError;
       }
 
-      // Regrouper par entrepôt et calculer le total
-      const distribution = warehouseData.reduce((acc, item) => {
-        // Si c'est un entrepôt
-        if (item.warehouse_id) {
-          const warehouse = unwrapSupabaseObject(item.warehouses);
-          const warehouseName = warehouse?.name || 'Entrepôt inconnu';
-          if (!acc[warehouseName]) {
-            acc[warehouseName] = 0;
-          }
-          acc[warehouseName] += item.quantity;
-        } 
-        // Si c'est un point de vente
-        else if (item.pos_location_id) {
-          const posLocation = unwrapSupabaseObject(item.pos_locations);
-          const posName = posLocation?.name || 'PDV inconnu';
-          if (!acc[posName]) {
-            acc[posName] = 0;
-          }
-          acc[posName] += item.quantity;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      // Fetch all warehouses to include even those with no stock
+      const { data: allWarehouses, error: warehousesError } = await supabase
+        .from('warehouses')
+        .select('id, name');
 
-      // Convertir en format pour le graphique
-      return Object.entries(distribution).map(([name, value]) => ({
-        name,
-        value
-      }));
+      if (warehousesError) {
+        console.error('Error fetching warehouses:', warehousesError);
+        throw warehousesError;
+      }
+
+      // Fetch all POS locations to include even those with no stock
+      const { data: allPosLocations, error: posLocationsError } = await createTableQuery('pos_locations')
+        .select('id, name');
+
+      if (posLocationsError) {
+        console.error('Error fetching POS locations:', posLocationsError);
+        throw posLocationsError;
+      }
+
+      // Process warehouse data, handling potential SelectQueryErrors
+      const warehouseData = allWarehouses.map(warehouse => {
+        const stockItems = warehouseStockData.filter(item => item.warehouse_id === warehouse.id);
+        const totalItems = stockItems.reduce((sum, item) => sum + item.quantity, 0);
+        
+        return {
+          id: warehouse.id,
+          name: warehouse.name || 'Unnamed Warehouse',
+          itemCount: totalItems,
+          type: 'warehouse'
+        };
+      });
+
+      // Process POS location data, handling potential SelectQueryErrors
+      const posData = (allPosLocations || []).map((pos: any) => {
+        if (!pos || typeof pos !== 'object') {
+          return {
+            id: 'unknown',
+            name: 'Unknown POS',
+            itemCount: 0,
+            type: 'pos'
+          };
+        }
+        
+        const stockItems = warehouseStockData.filter(item => item.pos_location_id === pos.id);
+        const totalItems = stockItems.reduce((sum, item) => sum + item.quantity, 0);
+        
+        return {
+          id: pos.id,
+          name: pos.name || 'Unnamed POS',
+          itemCount: totalItems,
+          type: 'pos'
+        };
+      });
+
+      // Combine data
+      return [...warehouseData, ...posData];
     }
   });
 };

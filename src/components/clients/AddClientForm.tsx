@@ -27,11 +27,14 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     email: "",
     phone: "",
     address: "",
-    tax_number: "",
-    payment_terms: "",
-    credit_limit: 0,
     status: "particulier",
-    client_type: "occasionnel"
+    client_type: "occasionnel",
+    // All other fields are optional
+    whatsapp: "",
+    mobile_1: "",
+    mobile_2: "",
+    credit_limit: 0,
+    tax_number: ""
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export type StockAlert = {
   id: string;
@@ -76,20 +76,30 @@ export const useStockAlerts = () => {
         })
         .map(item => {
           const locationType = item.warehouse_id ? 'warehouse' : 'pos';
-          const warehouses = unwrapSupabaseObject(item.warehouses);
-          const posLocations = unwrapSupabaseObject(item.pos_locations);
-          const catalog = unwrapSupabaseObject(item.catalog);
           
-          const locationName = item.warehouse_id 
-            ? (warehouses?.name || 'Dépôt inconnu')
-            : (posLocations?.name || 'PDV inconnu');
+          // Handle potentially undefined or SelectQueryError values
+          const warehouseName = !isSelectQueryError(item.warehouses) && item.warehouses ? 
+            (typeof item.warehouses === 'object' ? (item.warehouses as any).name : 'Dépôt inconnu') : 
+            'Dépôt inconnu';
+            
+          const posLocationName = !isSelectQueryError(item.pos_locations) && item.pos_locations ? 
+            (typeof item.pos_locations === 'object' ? (item.pos_locations as any).name : 'PDV inconnu') : 
+            'PDV inconnu';
+            
+          const catalogItem = !isSelectQueryError(item.catalog) && item.catalog ? 
+            item.catalog : 
+            { name: 'Produit inconnu', category: 'Inconnu', price: 0 };
+          
+          const locationName = item.warehouse_id ? 
+            warehouseName : 
+            posLocationName;
           
           return {
             id: `${item.product_id}-${item.id}`,
-            name: catalog?.name || 'Produit inconnu',
+            name: (catalogItem as any).name || 'Produit inconnu',
             stock: item.quantity,
-            category: catalog?.category,
-            price: catalog?.price || 0,
+            category: (catalogItem as any).category,
+            price: (catalogItem as any).price || 0,
             min_stock_level: DEFAULT_MIN_STOCK,
             alert_type: item.quantity === 0 ? 'out_of_stock' : 'low_stock',
             location: locationName,

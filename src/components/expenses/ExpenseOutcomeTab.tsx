@@ -2,24 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 import { Card, CardContent } from "@/components/ui/card";
-
-export interface Category {
-  id: string;
-  name: string;
-  type: string;
-}
+import { Category } from "./ExpenseIncomeTab";
 
 export interface OutcomeEntry {
   id: string;
   amount: number;
   date: string;
   description: string;
+  category: Category;
   receipt_number?: string;
   payment_method?: string;
   status?: string;
-  category: Category;
 }
 
 export function ExpenseOutcomeTab() {
@@ -65,10 +60,10 @@ export function ExpenseOutcomeTab() {
           amount: entry.amount,
           date: entry.created_at,
           description: entry.description,
+          category: entryCategory,
           receipt_number: entry.receipt_number,
           payment_method: entry.payment_method,
-          status: entry.status,
-          category: entryCategory
+          status: entry.status
         };
       });
       
@@ -91,10 +86,13 @@ export function ExpenseOutcomeTab() {
               <p><strong>Amount:</strong> {entry.amount}</p>
               <p><strong>Category:</strong> {entry.category.name}</p>
               <p><strong>Description:</strong> {entry.description}</p>
-              <p><strong>Payment Method:</strong> {entry.payment_method || 'N/A'}</p>
-              <p><strong>Receipt Number:</strong> {entry.receipt_number || 'N/A'}</p>
-              <p><strong>Status:</strong> {entry.status || 'N/A'}</p>
               <p><strong>Date:</strong> {new Date(entry.date).toLocaleDateString()}</p>
+              {entry.payment_method && (
+                <p><strong>Payment Method:</strong> {entry.payment_method}</p>
+              )}
+              {entry.status && (
+                <p><strong>Status:</strong> {entry.status}</p>
+              )}
             </div>
           ))}
         </div>

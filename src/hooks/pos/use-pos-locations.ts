@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { createTableQuery } from "@/hooks/use-supabase-table-extension";
 
 export function usePOSLocations() {
   const [selectedPDV, setSelectedPDV] = useState<string>("_all");
@@ -9,8 +10,8 @@ export function usePOSLocations() {
   const { data: posLocations = [], refetch: refetchPOSLocations } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pos_locations')
+      // Use createTableQuery instead of direct access
+      const { data, error } = await createTableQuery('pos_locations')
         .select('*')
         .order('name');
       

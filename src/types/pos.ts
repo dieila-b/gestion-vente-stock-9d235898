@@ -1,5 +1,5 @@
 
-// Adding/updating the CartItem interface to include unit_price, total, and image_url
+// CartItem interface with all necessary properties
 export interface CartItem {
   id: string;
   name: string;
