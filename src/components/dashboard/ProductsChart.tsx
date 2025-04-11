@@ -12,7 +12,12 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { unwrapSupabaseObject, transformSupabaseResponse } from "@/utils/supabase-helpers";
+import { 
+  unwrapSupabaseObject, 
+  transformSupabaseResponse, 
+  isSelectQueryError, 
+  safeGetProperty 
+} from "@/utils/supabase-helpers";
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({
@@ -20,7 +25,7 @@ export function ProductsChart() {
     queryFn: async () => {
       console.log("Fetching combined stock data...");
       
-      // Récupérer tous les stocks (entrepôts et points de vente)
+      // Get all stocks (warehouses and points of sale)
       const { data: stockData, error } = await supabase
         .from('warehouse_stock')
         .select(`
@@ -33,14 +38,15 @@ export function ProductsChart() {
 
       if (error) throw error;
 
-      // Agréger les quantités par produit
+      // Aggregate quantities by product
       const combinedStock = stockData.reduce((acc, item) => {
         const product = unwrapSupabaseObject(item.product);
-        // Check if product is not null and has error property (which means it's a SelectQueryError)
-        if (!product || (product as any).error) return acc;
         
-        const productName = product?.name;
-        if (!productName) return acc;
+        // Skip if product is null or a SelectQueryError
+        if (!product || isSelectQueryError(product)) return acc;
+        
+        const productName = safeGetProperty(product, 'name', 'Unknown product');
+        if (productName === 'Unknown product') return acc;
         
         const existingProduct = acc.find(p => p.name === productName);
         if (existingProduct) {
@@ -54,7 +60,7 @@ export function ProductsChart() {
         return acc;
       }, [] as { name: string; value: number }[]);
 
-      // Trier par quantité totale et prendre les 5 premiers
+      // Sort by total quantity and take the top 5
       const topProducts = combinedStock
         .sort((a, b) => b.value - a.value)
         .slice(0, 5);

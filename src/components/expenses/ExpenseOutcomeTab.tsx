@@ -25,6 +25,7 @@ import { formatGNF } from "@/lib/currency";
 import { Plus, X } from "lucide-react";
 import { ExpenseIncomePrintDialog } from "./ExpenseIncomePrintDialog";
 import { addCashRegisterTransaction } from "@/api/cash-register-api";
+import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
 
 // Define the type for an outcome entry
 interface OutcomeEntry {
@@ -104,10 +105,10 @@ export function ExpenseOutcomeTab() {
 
         // Transform the data to match the OutcomeEntry interface
         return (data || []).map(item => {
-          // Handle case when expense_categories might be a SelectQueryError
-          const categoryName = item.expense_categories && typeof item.expense_categories === 'object' && !('error' in item.expense_categories)
-            ? (item.expense_categories.name || "Non catégorisé")
-            : "Non catégorisé";
+          // Get category name safely
+          const categoryName = isSelectQueryError(item.expense_categories) 
+            ? "Non catégorisé" 
+            : safeGetProperty(item.expense_categories, 'name', "Non catégorisé");
             
           return {
             id: item.id,

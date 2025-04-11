@@ -25,6 +25,7 @@ import { formatGNF } from "@/lib/currency";
 import { Plus, X } from "lucide-react";
 import { ExpenseIncomePrintDialog } from "./ExpenseIncomePrintDialog";
 import { addCashRegisterTransaction } from "@/api/cash-register-api";
+import { safeGetProperty, isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function ExpenseIncomeTab() {
   const [isFormVisible, setIsFormVisible] = useState(false);
@@ -35,7 +36,7 @@ export function ExpenseIncomeTab() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  // Query pour récupérer la caisse active
+  // Query to get the active cash register
   const { data: activeCashRegister } = useQuery({
     queryKey: ['active-cash-register'],
     queryFn: async () => {
@@ -97,8 +98,8 @@ export function ExpenseIncomeTab() {
     }
 
     try {
-      // Commencer une transaction Supabase
-      // 1. Ajouter l'entrée
+      // Start a Supabase transaction
+      // 1. Add the entry
       const { data: incomeEntry, error: incomeError } = await supabase
         .from('income_entries')
         .insert({ 
@@ -112,7 +113,7 @@ export function ExpenseIncomeTab() {
 
       if (incomeError) throw incomeError;
 
-      // 2. Créer la transaction de caisse
+      // 2. Create a cash register transaction
       await addCashRegisterTransaction(
         activeCashRegister.id,
         'deposit',
@@ -130,12 +131,12 @@ export function ExpenseIncomeTab() {
     }
   };
 
-  // Formater les données pour l'impression
+  // Format data for printing
   const printableIncomes = incomes.map(income => {
-    // Handle case when expense_categories might be a SelectQueryError
-    const categoryName = income.expense_categories && typeof income.expense_categories === 'object' && !('error' in income.expense_categories)
-      ? (income.expense_categories.name || "Non catégorisé")
-      : "Non catégorisé";
+    // Get category name safely
+    const categoryName = isSelectQueryError(income.expense_categories) 
+      ? "Non catégorisé" 
+      : safeGetProperty(income.expense_categories, 'name', "Non catégorisé");
     
     return {
       id: income.id,
@@ -239,10 +240,10 @@ export function ExpenseIncomeTab() {
             </TableHeader>
             <TableBody>
               {incomes.map((income) => {
-                // Handle case when expense_categories might be a SelectQueryError
-                const categoryName = income.expense_categories && typeof income.expense_categories === 'object' && !('error' in income.expense_categories)
-                  ? (income.expense_categories.name || "Non catégorisé")
-                  : "Non catégorisé";
+                // Get category name safely
+                const categoryName = isSelectQueryError(income.expense_categories) 
+                  ? "Non catégorisé" 
+                  : safeGetProperty(income.expense_categories, 'name', "Non catégorisé");
                 
                 return (
                   <TableRow key={income.id}>

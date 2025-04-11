@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { isSelectQueryError, safeGetProperty, safeArrayOperation } from "@/utils/supabase-helpers";
 
 export function useStockCheck(
   setIsUpdating: (value: boolean) => void,
@@ -32,9 +33,12 @@ export function useStockCheck(
       let allItemsAvailable = true;
       let updatedItems = 0;
       
-      // Vérifier chaque produit
-      for (const item of order.items) {
-        // Vérifier stock disponible
+      // Safely process the items array
+      const items = isSelectQueryError(order.items) ? [] : order.items || [];
+      
+      // Check each product
+      for (const item of items) {
+        // Check available stock
         const { data: productData } = await supabase
           .from('catalog')
           .select('stock')
@@ -42,7 +46,7 @@ export function useStockCheck(
           .single();
           
         if (productData && productData.stock >= item.quantity) {
-          // Stock disponible, mettre à jour le statut de l'article
+          // Stock available, update item status
           if (item.status !== 'available') {
             const { error } = await supabase
               .from('preorder_items')
@@ -52,7 +56,7 @@ export function useStockCheck(
             if (!error) updatedItems++;
           }
         } else {
-          // Mettre à jour le statut si le produit est en rupture
+          // Update status if product is out of stock
           let newStatus = item.status;
           if (!productData || productData.stock === 0) {
             newStatus = 'out_of_stock';
@@ -73,7 +77,7 @@ export function useStockCheck(
         }
       }
       
-      // Si tous les produits sont disponibles, mettre à jour le statut de la commande
+      // If all products are available, update order status
       if (allItemsAvailable && order.status !== 'delivered' && order.status !== 'paid') {
         await supabase
           .from('preorders')

@@ -1,4 +1,3 @@
-
 /**
  * Unwraps a potentially nested object from Supabase query responses.
  * Supabase sometimes returns nested objects as arrays with a single element when using joins.
@@ -9,13 +8,38 @@
 export function unwrapSupabaseObject<T>(obj: T | T[] | null | undefined): T | null {
   if (!obj) return null;
   
-  // Si c'est un tableau avec un ou plusieurs éléments, retourner le premier élément
+  // If it's an array with one or more elements, return the first element
   if (Array.isArray(obj) && obj.length > 0) {
     return obj[0];
   }
   
-  // Sinon retourner l'objet lui-même
+  // Otherwise return the object itself
   return obj as T;
+}
+
+/**
+ * Check if an object is a SelectQueryError from Supabase
+ */
+export function isSelectQueryError(obj: any): boolean {
+  return obj && typeof obj === 'object' && 'error' in obj && obj.error === true;
+}
+
+/**
+ * Safely access a property from an object that might be a SelectQueryError
+ */
+export function safeGet<T>(obj: any, defaultValue: T): T {
+  if (isSelectQueryError(obj)) return defaultValue;
+  return obj as T;
+}
+
+/**
+ * Safely access a property from an object that might be a SelectQueryError
+ */
+export function safeGetProperty<T>(obj: any, property: string, defaultValue: T): T {
+  if (isSelectQueryError(obj) || !obj || typeof obj !== 'object' || !(property in obj)) {
+    return defaultValue;
+  }
+  return obj[property] as T;
 }
 
 /**
@@ -45,29 +69,44 @@ export function mapSupabaseData<T, R>(
 export function transformSupabaseResponse<T extends Record<string, any>>(obj: T): any {
   if (!obj || typeof obj !== 'object') return obj;
   
-  // Créer un nouvel objet pour stocker le résultat
+  // Check if it's a SelectQueryError
+  if (isSelectQueryError(obj)) {
+    return null;
+  }
+  
+  // Create a new object to store the result
   const result: Record<string, any> = {};
   
-  // Parcourir toutes les propriétés de l'objet
+  // Iterate through all properties of the object
   for (const [key, value] of Object.entries(obj)) {
-    // Si la valeur est un tableau avec un seul élément et contient des objets (relation)
+    // If the value is an array with a single element and contains objects (relation)
     if (Array.isArray(value) && value.length === 1 && typeof value[0] === 'object') {
-      // Transformer récursivement l'élément unique du tableau
+      // Recursively transform the single element of the array
       result[key] = transformSupabaseResponse(value[0]);
     } 
-    // Si c'est un tableau avec plusieurs éléments
+    // If it's an array with multiple elements
     else if (Array.isArray(value) && value.length > 0) {
-      // Transformer chaque élément du tableau
-      result[key] = value.map(item => 
-        typeof item === 'object' ? transformSupabaseResponse(item) : item
-      );
+      // Check if all items are potentially SelectQueryErrors
+      if (isSelectQueryError(value[0])) {
+        result[key] = [];
+      } else {
+        // Transform each element of the array
+        result[key] = value.map(item => 
+          typeof item === 'object' ? transformSupabaseResponse(item) : item
+        );
+      }
     } 
-    // Si c'est un objet (mais pas un tableau ni null)
+    // If it's an object (but not an array or null)
     else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      // Transformer récursivement l'objet
-      result[key] = transformSupabaseResponse(value);
+      // Check if it's a SelectQueryError
+      if (isSelectQueryError(value)) {
+        result[key] = null;
+      } else {
+        // Recursively transform the object
+        result[key] = transformSupabaseResponse(value);
+      }
     } 
-    // Sinon, conserver la valeur telle quelle
+    // Otherwise, keep the value as is
     else {
       result[key] = value;
     }
@@ -88,4 +127,28 @@ export function getNestedProperty<T>(obj: any, key: string): T | null {
   
   const value = obj[key];
   return unwrapSupabaseObject<T>(value);
+}
+
+/**
+ * Safely access array methods on a response that might be a SelectQueryError or a valid array
+ */
+export function safeArrayOperation<T, R>(
+  array: any,
+  operation: (arr: T[]) => R,
+  defaultValue: R
+): R {
+  if (!array) return defaultValue;
+  if (isSelectQueryError(array)) return defaultValue;
+  if (!Array.isArray(array)) return defaultValue;
+  
+  return operation(array as T[]);
+}
+
+/**
+ * Safely cast a Supabase response to a specific type, handling SelectQueryErrors
+ */
+export function safeTypeConversion<T>(value: any, defaultValue: T): T {
+  if (isSelectQueryError(value)) return defaultValue;
+  if (value === null || value === undefined) return defaultValue;
+  return value as T;
 }
