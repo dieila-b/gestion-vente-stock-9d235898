@@ -47,7 +47,7 @@ export default function Login() {
             testingMode={testingMode}
           />
           
-          {showTestingControls && !isDevelopmentMode && (
+          {(showTestingControls || testingMode) && (
             <TestingModeToggle 
               testingMode={testingMode}
               enableTestingMode={enableTestingMode}

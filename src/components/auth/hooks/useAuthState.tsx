@@ -75,19 +75,34 @@ export function useAuthState() {
       console.log("[Auth] Vérification de l'authentification standard (mode production)");
       
       // Vérifier l'état d'authentification initial en mode production
-      useInitialAuthCheck({
-        isDevelopmentMode,
-        testingMode,
-        setIsAuthenticated,
-        setLoading
-      });
+      const checkInitialAuth = async () => {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+          setLoading(false);
+        } catch (error) {
+          console.error("Erreur lors de la vérification de la session:", error);
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
+      };
+      
+      checkInitialAuth();
       
       // Configurer l'écouteur de changement d'état d'authentification
-      useAuthStateListener({
-        isDevelopmentMode,
-        testingMode,
-        setIsAuthenticated
-      });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setIsAuthenticated(!!session);
+        }
+      );
+      
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [isDevelopmentMode, testingMode]);
 

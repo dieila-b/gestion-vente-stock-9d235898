@@ -1,53 +1,33 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
-const TESTING_MODE_KEY = 'auth_testing_mode';
-
-/**
- * Hook pour gérer le mode de test d'authentification
- */
 export function useTestingMode() {
-  const [testingMode, setTestingMode] = useState(false);
+  const [testingMode, setTestingMode] = useState<boolean>(false);
 
-  // Vérifie si le mode test était précédemment activé
+  // Charger l'état du mode test depuis localStorage au démarrage
   useEffect(() => {
-    const savedTestingMode = localStorage.getItem(TESTING_MODE_KEY);
-    if (savedTestingMode === 'enabled') {
-      console.log("[Auth] Restauration du mode test depuis la session précédente");
+    const savedMode = localStorage.getItem('auth_testing_mode');
+    if (savedMode === 'enabled') {
+      console.log("Mode test chargé depuis localStorage: activé");
       setTestingMode(true);
-      toast.info("Mode test restauré - Authentification contournée", {
-        id: "restore-testing-mode",
-        duration: 3000
-      });
+    } else {
+      console.log("Mode test chargé depuis localStorage: désactivé ou non défini");
     }
   }, []);
 
-  // Active le mode test
-  const enableTestingMode = useCallback(() => {
-    console.log("[Auth] Activation du mode test - authentification contournée");
+  // Activer le mode test
+  const enableTestingMode = () => {
+    console.log("Activation du mode test");
+    localStorage.setItem('auth_testing_mode', 'enabled');
     setTestingMode(true);
-    localStorage.setItem(TESTING_MODE_KEY, 'enabled');
-    toast.success("Mode test activé - Authentification contournée", {
-      id: "enable-testing-mode",
-      duration: 3000
-    });
-  }, []);
-
-  // Désactive le mode test
-  const disableTestingMode = useCallback(() => {
-    console.log("[Auth] Désactivation du mode test - authentification standard restaurée");
-    setTestingMode(false);
-    localStorage.removeItem(TESTING_MODE_KEY);
-    toast.info("Mode test désactivé - Authentification standard restaurée", {
-      id: "disable-testing-mode",
-      duration: 3000
-    });
-  }, []);
-
-  return {
-    testingMode,
-    enableTestingMode,
-    disableTestingMode
   };
+
+  // Désactiver le mode test
+  const disableTestingMode = () => {
+    console.log("Désactivation du mode test");
+    localStorage.removeItem('auth_testing_mode');
+    setTestingMode(false);
+  };
+
+  return { testingMode, enableTestingMode, disableTestingMode };
 }
