@@ -3,43 +3,67 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
-import { supabase } from "@/integrations/supabase/client";
+import { createTableQuery } from "@/hooks/use-supabase-table-extension";
 import { StockItemsTable } from "@/components/stocks/stock-table/StockItemsTable";
 import { POSStockHeader } from "@/components/stocks/pos-stock/POSStockHeader";
 import { POSStockLocations } from "@/components/stocks/pos-stock/POSStockLocations";
 import { StockItemsFilter } from "@/components/stocks/pos-stock/StockItemsFilter";
-import { POSLocation } from "@/types/pos-locations";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
+
+export interface POSLocation {
+  id: string;
+  name: string;
+  phone?: string;
+  address?: string;
+  manager?: string;
+  status?: string;
+  is_active?: boolean;
+}
 
 export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [posSearchQuery, setPosSearchQuery] = useState("");
 
   // Récupérer la liste des points de vente
   const { data: posLocations = [] } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pos_locations')
+      const { data, error } = await createTableQuery('pos_locations')
         .select('*')
         .order('name');
       
       if (error) throw error;
-      return data;
+      
+      // Transform and filter out any SelectQueryErrors
+      return (data || [])
+        .filter(item => !isSelectQueryError(item))
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+          address: item.address,
+          status: item.status,
+          is_active: item.is_active,
+          manager: item.manager
+        })) as POSLocation[];
     }
   });
 
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedLocation, true);
 
   // Filtrer les articles en fonction de la recherche
-  const filteredItems = stockItems.filter(item => 
-    (item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredItems = stockItems.filter(item => {
+    if (isSelectQueryError(item.product)) return false;
+    
+    return (
+      (item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   // Handle selecting a location
-  const handleSelectLocation = (location: POSLocation) => {
-    setSelectedLocation(location.id);
+  const handleLocationChange = (locationId: string) => {
+    setSelectedLocation(locationId);
   };
 
   return (
@@ -48,10 +72,8 @@ export default function POSStock() {
         <POSStockHeader />
 
         <POSStockLocations 
-          posLocations={posLocations}
-          posSearchQuery={posSearchQuery}
-          setPosSearchQuery={setPosSearchQuery}
-          onSelectLocation={handleSelectLocation}
+          onLocationChange={handleLocationChange}
+          selectedLocation={selectedLocation}
         />
 
         <div className="space-y-4">

@@ -69,10 +69,17 @@ export function usePreorderCart() {
           clientData = defaultClient;
         } else {
           // If we have client data, cast the status to ensure it's either 'particulier' or 'entreprise'
-          const status = (data.client?.status === 'entreprise') ? 'entreprise' : 'particulier';
+          const clientStatus = (data.client?.status === 'entreprise') ? 'entreprise' : 'particulier';
+          
+          // Use a type assertion to access properties safely
           clientData = {
-            ...safeSpread(data.client, defaultClient),
-            status: status
+            ...defaultClient,
+            id: data.client?.id || defaultClient.id,
+            company_name: data.client?.company_name || defaultClient.company_name,
+            contact_name: data.client?.contact_name || defaultClient.contact_name,
+            email: data.client?.email || defaultClient.email,
+            phone: data.client?.phone || defaultClient.phone,
+            status: clientStatus
           };
         }
         
@@ -81,35 +88,36 @@ export function usePreorderCart() {
         // Convert preorder items to cart items
         const cartItems: CartItem[] = [];
         
-        safeMap(data.items, (item: any) => {
-          if (isSelectQueryError(item.product)) return;
-          
-          const product = item.product;
-          const cartItem: CartItem = {
-            id: item.id,
-            product_id: item.product_id,
-            name: product.name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            price: item.unit_price,
-            total: item.total_price,
-            category: product.category || '',
-            reference: product.reference || '',
-            discount: 0, // Assuming discount is not stored for preorder items
-            discounted_price: item.unit_price,
-            original_price: product.price || item.unit_price,
-            stock: product.stock || 0
-          };
-          
-          cartItems.push(cartItem);
-        });
+        if (Array.isArray(data.items)) {
+          data.items.forEach((item: any) => {
+            if (isSelectQueryError(item.product)) return;
+            
+            const product = item.product;
+            const cartItem: CartItem = {
+              id: product.id,
+              name: product.name,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              price: item.unit_price,
+              total: item.total_price,
+              category: product.category || '',
+              reference: product.reference || '',
+              discount: 0, // Assuming discount is not stored for preorder items
+              discounted_price: item.unit_price,
+              original_price: product.price || item.unit_price,
+              stock: product.stock || 0
+            };
+            
+            cartItems.push(cartItem);
+          });
+        }
         
         setCart(cartItems);
         
         // Set preorder state
         setPreorderState({
           id: data.id,
-          status: data.status,
+          status: data.status || '',
           notes: data.notes || '',
           totalAmount: data.total_amount,
           paidAmount: data.paid_amount,

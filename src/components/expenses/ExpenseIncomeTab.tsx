@@ -4,7 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
+
+export interface Category {
+  id: string;
+  name: string;
+  type: string;
+}
 
 export interface IncomeEntry {
   id: string;
@@ -14,16 +19,10 @@ export interface IncomeEntry {
   category: Category;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  type: string;
-}
-
 export function ExpenseIncomeTab() {
   const [incomeEntries, setIncomeEntries] = useState<IncomeEntry[]>([]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data: entriesData, isLoading, error } = useQuery({
     queryKey: ['income-entries'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -32,7 +31,6 @@ export function ExpenseIncomeTab() {
           *,
           category: expense_categories(*)
         `)
-        .eq('type', 'income')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -41,8 +39,8 @@ export function ExpenseIncomeTab() {
   });
 
   useEffect(() => {
-    if (data) {
-      const mappedEntries = data.map((entry) => {
+    if (entriesData) {
+      const mappedEntries: IncomeEntry[] = entriesData.map((entry) => {
         // Create a default category in case we get a SelectQueryError
         const defaultCategory: Category = {
           id: "unknown",
@@ -51,32 +49,33 @@ export function ExpenseIncomeTab() {
         };
 
         // Handle potential SelectQueryError for category
-        const category = isSelectQueryError(entry.category) 
-          ? defaultCategory 
-          : entry.category || defaultCategory;
+        let entryCategory: Category;
+        if (isSelectQueryError(entry.category)) {
+          entryCategory = defaultCategory;
+        } else {
+          entryCategory = entry.category || defaultCategory;
+        }
 
         return {
           id: entry.id,
           amount: entry.amount,
           date: entry.created_at,
           description: entry.description,
-          category: category
-        } as IncomeEntry;
+          category: entryCategory
+        };
       });
       
       setIncomeEntries(mappedEntries);
     }
-  }, [data]);
+  }, [entriesData]);
 
-  // The rest of your component logic
-  
   return (
     <Card>
       <CardContent className="p-6">
         {/* Your income entries UI */}
         <div>
           {isLoading && <p>Loading income entries...</p>}
-          {error && <p>Error loading income entries: {error.message}</p>}
+          {error && <p>Error loading income entries: {(error as Error).message}</p>}
           {!isLoading && !error && incomeEntries.length === 0 && (
             <p>No income entries found</p>
           )}

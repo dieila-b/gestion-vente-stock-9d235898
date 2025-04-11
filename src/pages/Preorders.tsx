@@ -1,107 +1,102 @@
 
-import { PaymentDialog } from "@/components/pos/PaymentDialog";
-import { usePreorderState } from "@/components/preorder/hooks/usePreorderState";
-import { usePreorderCart } from "@/components/preorder/hooks/usePreorderCart";
-import { usePreorderPayment } from "@/components/preorder/hooks/usePreorderPayment";
-import { usePreorderPrinting } from "@/components/preorder/hooks/usePreorderPrinting";
-import { PreorderHeader } from "@/components/preorder/PreorderHeader";
-import { PreorderContent } from "@/components/preorder/PreorderContent";
-import { PreorderInvoiceView } from "@/components/preorder/PreorderInvoiceView";
+import React, { useState } from 'react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PreorderCart } from '@/components/preorder/PreorderCart';
+import { PreorderClient } from '@/components/preorder/PreorderClient';
+import { PreorderProductList } from '@/components/preorder/PreorderProductList';
+import { usePreorderCart } from '@/components/preorder/hooks/usePreorderCart';
+import { usePreorderActions } from '@/components/preorder/hooks/usePreorderActions';
+import { usePreorderPayment } from '@/components/preorder/hooks/usePreorderPayment';
+import { PaymentDialog } from '@/components/pos/PaymentDialog';
+import { InvoicePreview } from '@/components/preorder/InvoicePreview';
 
 export default function Preorders() {
-  // State management
-  const {
-    selectedClient,
-    setSelectedClient,
-    isLoading,
-    setIsLoading,
-    showPaymentDialog,
-    setShowPaymentDialog,
-    showInvoiceDialog,
-    setShowInvoiceDialog,
-    currentPreorder,
-    setCurrentPreorder,
-    editId,
-    isEditing,
-    setIsEditing,
-    handleCancel,
-    handleCloseInvoice,
-  } = usePreorderState();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [currentPreorder, setCurrentPreorder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Get preorder cart data (if editing)
+  const preorderCartData = usePreorderCart();
+  
+  // Get preorder actions for cart management 
+  const preorderActions = usePreorderActions(preorderCartData.client, preorderCartData.cart);
+  
+  // Combine the data and actions for use in components
+  const combinedPreorderData = {
+    ...preorderCartData,
+    ...preorderActions
+  };
 
-  // Cart management
-  const {
-    cart,
-    updateQuantity,
-    removeFromCart,
-    updateDiscount,
-    clearCart,
-    addToCart,
-    setCartItemQuantity,
-    validatePreorder
-  } = usePreorderCart(
-    editId,
-    setIsEditing,
-    setSelectedClient,
-    setIsLoading
-  );
-
-  // Payment handling
-  const {
-    handleCheckout,
-    handlePayment
-  } = usePreorderPayment(
-    selectedClient,
-    cart,
-    clearCart,
+  // Handle payment processing
+  const { handleCheckout, handlePayment } = usePreorderPayment(
+    combinedPreorderData.client,
+    combinedPreorderData.cart,
+    combinedPreorderData.clearCart,
     setShowPaymentDialog,
     setCurrentPreorder,
     setShowInvoiceDialog,
-    isEditing,
-    editId,
+    false,
+    null,
     setIsLoading
   );
-
-  // Printing functionality
-  const { handlePrintInvoice } = usePreorderPrinting();
 
   return (
-    <div className="p-8">
-      <PreorderHeader isEditing={isEditing} />
+    <DashboardLayout>
+      <div className="p-4 md:p-6 flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold">Précommandes</h1>
+          <p className="text-muted-foreground">
+            Créez et gérez les précommandes de vos clients
+          </p>
+        </div>
 
-      <PreorderContent
-        selectedClient={selectedClient}
-        onSelectClient={setSelectedClient}
-        cart={cart}
-        onUpdateQuantity={updateQuantity}
-        onRemove={removeFromCart}
-        onUpdateDiscount={updateDiscount}
-        onCheckout={() => handleCheckout(validatePreorder)}
-        isLoading={isLoading}
-        clearCart={handleCancel}
-        onSetQuantity={setCartItemQuantity}
-        onAddToCart={addToCart}
-      />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            <PreorderClient client={combinedPreorderData.client} setClient={combinedPreorderData.setClient} />
+            <PreorderProductList 
+              selectedClient={combinedPreorderData.client}
+              addToCart={combinedPreorderData.addToCart}
+            />
+          </div>
 
-      <PaymentDialog 
-        isOpen={showPaymentDialog}
-        onClose={() => setShowPaymentDialog(false)}
-        totalAmount={cart.reduce((acc, item) => acc + ((item.price - (item.discount || 0)) * item.quantity), 0)}
-        onSubmitPayment={handlePayment}
-        items={cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity
-        }))}
-      />
+          <div className="lg:col-span-4">
+            <PreorderCart 
+              cart={combinedPreorderData.cart}
+              updateQuantity={combinedPreorderData.updateQuantity}
+              removeFromCart={combinedPreorderData.removeFromCart}
+              updateDiscount={combinedPreorderData.updateDiscount} 
+              calculateTotal={combinedPreorderData.calculateTotal}
+              calculateSubtotal={combinedPreorderData.calculateSubtotal}
+              calculateTotalDiscount={combinedPreorderData.calculateTotalDiscount}
+              onCheckout={() => handleCheckout(combinedPreorderData.validatePreorder)}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
 
-      {currentPreorder && (
-        <PreorderInvoiceView
-          showInvoiceDialog={showInvoiceDialog}
-          handleCloseInvoice={handleCloseInvoice}
-          currentPreorder={currentPreorder}
-          handlePrintInvoice={handlePrintInvoice}
-        />
-      )}
-    </div>
+        {showPaymentDialog && (
+          <PaymentDialog
+            isOpen={showPaymentDialog}
+            onClose={() => setShowPaymentDialog(false)}
+            totalAmount={combinedPreorderData.calculateTotal()}
+            onSubmitPayment={handlePayment}
+            items={combinedPreorderData.cart.map((item) => ({
+              id: item.id,
+              name: item.name,
+              quantity: item.quantity
+            }))}
+          />
+        )}
+
+        {showInvoiceDialog && currentPreorder && (
+          <InvoicePreview
+            isOpen={showInvoiceDialog}
+            onClose={() => setShowInvoiceDialog(false)}
+            preorder={currentPreorder}
+          />
+        )}
+      </div>
+    </DashboardLayout>
   );
 }

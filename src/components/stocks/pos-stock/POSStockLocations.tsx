@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { createTableQuery } from '@/hooks/use-supabase-table-extension';
+import { isSelectQueryError } from '@/utils/supabase-helpers';
 
 interface POSLocation {
   id: string;
@@ -43,14 +44,26 @@ export function POSStockLocations({ onLocationChange, selectedLocation }: POSSto
         if (error) throw error;
         
         // Transform the data into the POSLocation format
-        const locationData = (data || []).map(item => ({
-          id: item.id,
-          name: item.name || 'Unnamed location',
-          phone: item.phone,
-          address: item.address,
-          status: item.status,
-          is_active: item.is_active
-        }));
+        const locationData = (data || []).map(item => {
+          // Check if item is a SelectQueryError before accessing properties
+          if (isSelectQueryError(item)) {
+            return {
+              id: "unknown",
+              name: "Unknown location",
+              status: "unknown",
+              is_active: false
+            } as POSLocation;
+          }
+          
+          return {
+            id: item.id || "unknown",
+            name: item.name || 'Unnamed location',
+            phone: item.phone,
+            address: item.address,
+            status: item.status,
+            is_active: item.is_active
+          } as POSLocation;
+        });
         
         setLocations(locationData);
         

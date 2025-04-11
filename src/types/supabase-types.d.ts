@@ -1,5 +1,6 @@
 
 import { SelectQueryError } from './supabase-extensions';
+import { PostgrestQueryBuilder } from '@supabase/supabase-js';
 
 /**
  * This file defines common types for Supabase table relationships
@@ -74,7 +75,6 @@ export interface DatabaseTables {
     updated_at?: string;
   }
   
-  // Add other tables as needed
   geographic_zones: {
     id: string;
     name: string;
@@ -85,3 +85,6 @@ export interface DatabaseTables {
   
   // Add more tables as needed
 }
+
+// Export the PostgrestQueryBuilder type for use elsewhere
+export type SafePostgrestQueryBuilder<T> = PostgrestQueryBuilder<any, any, T>;

@@ -13,8 +13,8 @@ export function createTableQuery<T extends string>(
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
-  // Use explicit casting to work around type restrictions
-  return getClient().from(tableName as any);
+  // Use type assertions to bypass type restrictions
+  return getClient().from(tableName) as PostgrestQueryBuilder<any, any, any>;
 }
 
 /**
