@@ -5,13 +5,14 @@ export interface ProductUnit {
   symbol: string;
   description: string;
   created_at?: string;
+  abbreviation: string;
 }
 
 export interface NewProductUnit {
   name: string;
   symbol: string;
   description?: string;
-  abbreviation?: string;
+  abbreviation: string;
 }
 
 export interface Product {
@@ -44,7 +45,7 @@ export interface CatalogState {
   isFormVisible: boolean;
 }
 
-// Add CatalogProduct interface that was missing
+// CatalogProduct interface for catalog and other components
 export interface CatalogProduct {
   id: string;
   name: string;

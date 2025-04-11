@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ export function ExpenseIncomeTab() {
     amount: "",
     description: "",
     category_id: "",
+    date: new Date().toISOString().split('T')[0],
   });
 
   // Query pour récupérer la caisse active
@@ -84,7 +86,7 @@ export function ExpenseIncomeTab() {
   });
 
   const handleAddIncome = async () => {
-    if (!newIncome.amount || !newIncome.category_id) {
+    if (!newIncome.amount || !newIncome.category_id || !newIncome.date) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -102,7 +104,8 @@ export function ExpenseIncomeTab() {
         .insert({ 
           amount: parseFloat(newIncome.amount),
           description: newIncome.description || null,
-          category_id: newIncome.category_id
+          category_id: newIncome.category_id,
+          date: newIncome.date
         })
         .select()
         .single();
@@ -118,7 +121,7 @@ export function ExpenseIncomeTab() {
       );
 
       toast.success("Entrée ajoutée avec succès");
-      setNewIncome({ amount: "", description: "", category_id: "" });
+      setNewIncome({ amount: "", description: "", category_id: "", date: new Date().toISOString().split('T')[0] });
       setIsFormVisible(false);
       refetch();
     } catch (error) {
@@ -128,13 +131,20 @@ export function ExpenseIncomeTab() {
   };
 
   // Formater les données pour l'impression
-  const printableIncomes = incomes.map(income => ({
-    id: income.id,
-    date: income.created_at,
-    category: { name: income.expense_categories?.name || "Non catégorisé" },
-    description: income.description,
-    amount: income.amount
-  }));
+  const printableIncomes = incomes.map(income => {
+    // Handle case when expense_categories might be a SelectQueryError
+    const categoryName = typeof income.expense_categories === 'object' && income.expense_categories !== null
+      ? (income.expense_categories.name || "Non catégorisé")
+      : "Non catégorisé";
+    
+    return {
+      id: income.id,
+      date: income.created_at,
+      category: { name: categoryName },
+      description: income.description,
+      amount: income.amount
+    };
+  });
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
@@ -191,6 +201,11 @@ export function ExpenseIncomeTab() {
                   ))}
                 </select>
               </div>
+              <Input
+                type="date"
+                value={newIncome.date}
+                onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
+              />
               <Textarea
                 placeholder="Description (optionnel)"
                 value={newIncome.description}
@@ -223,18 +238,25 @@ export function ExpenseIncomeTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {incomes.map((income) => (
-                <TableRow key={income.id}>
-                  <TableCell>
-                    {new Date(income.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{income.description}</TableCell>
-                  <TableCell>{income.expense_categories?.name}</TableCell>
-                  <TableCell className="text-right font-medium text-green-600">
-                    {formatGNF(income.amount)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {incomes.map((income) => {
+                // Handle case when expense_categories might be a SelectQueryError
+                const categoryName = typeof income.expense_categories === 'object' && income.expense_categories !== null
+                  ? (income.expense_categories.name || "Non catégorisé")
+                  : "Non catégorisé";
+                
+                return (
+                  <TableRow key={income.id}>
+                    <TableCell>
+                      {new Date(income.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{income.description}</TableCell>
+                    <TableCell>{categoryName}</TableCell>
+                    <TableCell className="text-right font-medium text-green-600">
+                      {formatGNF(income.amount)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

@@ -50,7 +50,8 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
       if (item) {
         addItemToReturn({
           product_id: item.product_id,
-          quantity: 1
+          quantity: 1,
+          price: item.price
         });
       }
     } else {
@@ -105,6 +106,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
             <ReturnClientSelect 
               clientId={form.getValues("client_id") || ""} 
               onClientChange={handleClientChange} 
+              clients={clients}
             />
 
             <ReturnInvoiceSelect 
@@ -132,7 +134,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
               items={selectedItems}
               products={[]} // Empty array since we're not implementing this feature yet
               invoiceItems={invoiceItems}
-              onManualProductChange={() => {
+              onManualProductChange={(index: number, productId: string) => {
                 // Not implemented in this version
               }}
               onRemoveManualProduct={(index: number) => {

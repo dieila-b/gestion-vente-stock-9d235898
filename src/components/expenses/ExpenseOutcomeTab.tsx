@@ -35,6 +35,10 @@ interface OutcomeEntry {
     name: string;
   };
   created_at: string;
+  date: string;
+  receipt_number: string;
+  payment_method: string;
+  status: string;
 }
 
 export function ExpenseOutcomeTab() {
@@ -42,7 +46,11 @@ export function ExpenseOutcomeTab() {
   const [newOutcome, setNewOutcome] = useState({
     amount: "",
     description: "",
-    category_id: "",
+    expense_category_id: "",
+    date: new Date().toISOString().split('T')[0],
+    payment_method: "cash",
+    receipt_number: "",
+    status: "completed"
   });
 
   // Query pour récupérer la caisse active
@@ -72,6 +80,10 @@ export function ExpenseOutcomeTab() {
             description,
             created_at,
             expense_category_id,
+            date,
+            payment_method,
+            receipt_number,
+            status,
             expense_categories:expense_category_id(
               name
             )
@@ -84,15 +96,26 @@ export function ExpenseOutcomeTab() {
         }
 
         // Transform the data to match the OutcomeEntry interface
-        return (data || []).map(item => ({
-          id: item.id,
-          amount: item.amount,
-          description: item.description,
-          created_at: item.created_at,
-          category: {
-            name: item.expense_categories?.name || "Non catégorisé"
-          }
-        }));
+        return (data || []).map(item => {
+          // Handle case when expense_categories might be a SelectQueryError
+          const categoryName = typeof item.expense_categories === 'object' && item.expense_categories !== null
+            ? (item.expense_categories.name || "Non catégorisé")
+            : "Non catégorisé";
+            
+          return {
+            id: item.id,
+            amount: item.amount || 0,
+            description: item.description || "",
+            created_at: item.created_at,
+            date: item.date || item.created_at,
+            payment_method: item.payment_method || "cash",
+            receipt_number: item.receipt_number || "",
+            status: item.status || "completed",
+            category: {
+              name: categoryName
+            }
+          };
+        });
       } catch (error) {
         console.error('Error fetching outcome entries:', error);
         return [];
@@ -115,7 +138,7 @@ export function ExpenseOutcomeTab() {
   });
 
   const handleAddOutcome = async () => {
-    if (!newOutcome.amount || !newOutcome.category_id) {
+    if (!newOutcome.amount || !newOutcome.expense_category_id || !newOutcome.date) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -133,7 +156,11 @@ export function ExpenseOutcomeTab() {
         .insert({ 
           amount: parseFloat(newOutcome.amount),
           description: newOutcome.description || null,
-          expense_category_id: newOutcome.category_id
+          expense_category_id: newOutcome.expense_category_id,
+          date: newOutcome.date,
+          payment_method: newOutcome.payment_method,
+          receipt_number: newOutcome.receipt_number || `REC-${Date.now().toString().slice(-6)}`,
+          status: newOutcome.status
         })
         .select()
         .single();
@@ -149,7 +176,15 @@ export function ExpenseOutcomeTab() {
       );
 
       toast.success("Sortie ajoutée avec succès");
-      setNewOutcome({ amount: "", description: "", category_id: "" });
+      setNewOutcome({ 
+        amount: "", 
+        description: "", 
+        expense_category_id: "", 
+        date: new Date().toISOString().split('T')[0],
+        payment_method: "cash",
+        receipt_number: "",
+        status: "completed"
+      });
       setIsFormVisible(false);
       refetch();
     } catch (error) {
@@ -211,8 +246,8 @@ export function ExpenseOutcomeTab() {
                 />
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={newOutcome.category_id}
-                  onChange={(e) => setNewOutcome({ ...newOutcome, category_id: e.target.value })}
+                  value={newOutcome.expense_category_id}
+                  onChange={(e) => setNewOutcome({ ...newOutcome, expense_category_id: e.target.value })}
                 >
                   <option value="">Sélectionner une catégorie</option>
                   {categories.map((category) => (
@@ -222,6 +257,30 @@ export function ExpenseOutcomeTab() {
                   ))}
                 </select>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  type="date"
+                  value={newOutcome.date}
+                  onChange={(e) => setNewOutcome({ ...newOutcome, date: e.target.value })}
+                />
+                <Input
+                  type="text"
+                  placeholder="Numéro de reçu (optionnel)"
+                  value={newOutcome.receipt_number}
+                  onChange={(e) => setNewOutcome({ ...newOutcome, receipt_number: e.target.value })}
+                />
+              </div>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={newOutcome.payment_method}
+                onChange={(e) => setNewOutcome({ ...newOutcome, payment_method: e.target.value })}
+              >
+                <option value="cash">Espèces</option>
+                <option value="bank">Virement bancaire</option>
+                <option value="mobile">Mobile Money</option>
+                <option value="check">Chèque</option>
+                <option value="other">Autre</option>
+              </select>
               <Textarea
                 placeholder="Description (optionnel)"
                 value={newOutcome.description}
