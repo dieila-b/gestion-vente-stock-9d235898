@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import {
   BarChart,
@@ -35,14 +36,18 @@ export function ProductsChart() {
       // Agréger les quantités par produit
       const combinedStock = stockData.reduce((acc, item) => {
         const product = unwrapSupabaseObject(item.product);
-        if (!product?.name) return acc;
+        // Check if product is not null and has error property (which means it's a SelectQueryError)
+        if (!product || (product as any).error) return acc;
         
-        const existingProduct = acc.find(p => p.name === product.name);
+        const productName = product?.name;
+        if (!productName) return acc;
+        
+        const existingProduct = acc.find(p => p.name === productName);
         if (existingProduct) {
           existingProduct.value += item.quantity;
         } else {
           acc.push({
-            name: product.name,
+            name: productName,
             value: item.quantity
           });
         }

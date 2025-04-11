@@ -106,6 +106,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
             <ReturnClientSelect 
               clientId={form.getValues("client_id") || ""} 
               onClientChange={handleClientChange}
+              clients={clients}
             />
 
             <ReturnInvoiceSelect 

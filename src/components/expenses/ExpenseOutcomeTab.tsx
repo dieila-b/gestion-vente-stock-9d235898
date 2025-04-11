@@ -41,6 +41,13 @@ interface OutcomeEntry {
   status: string;
 }
 
+// Define a type for the category
+interface Category {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export function ExpenseOutcomeTab() {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [newOutcome, setNewOutcome] = useState({
@@ -98,7 +105,7 @@ export function ExpenseOutcomeTab() {
         // Transform the data to match the OutcomeEntry interface
         return (data || []).map(item => {
           // Handle case when expense_categories might be a SelectQueryError
-          const categoryName = typeof item.expense_categories === 'object' && item.expense_categories !== null
+          const categoryName = item.expense_categories && typeof item.expense_categories === 'object' && !('error' in item.expense_categories)
             ? (item.expense_categories.name || "Non catégorisé")
             : "Non catégorisé";
             
@@ -123,7 +130,7 @@ export function ExpenseOutcomeTab() {
     }
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['expense-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -197,7 +204,7 @@ export function ExpenseOutcomeTab() {
   const printableOutcomes = outcomes.map(outcome => ({
     id: outcome.id,
     date: outcome.created_at,
-    category: { name: outcome.category.name || "Non catégorisé" },
+    category: { name: outcome.category?.name || "Non catégorisé" },
     description: outcome.description,
     amount: outcome.amount
   }));
@@ -319,7 +326,7 @@ export function ExpenseOutcomeTab() {
                     {new Date(outcome.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>{outcome.description}</TableCell>
-                  <TableCell>{outcome.category.name || "Non catégorisé"}</TableCell>
+                  <TableCell>{outcome.category?.name || "Non catégorisé"}</TableCell>
                   <TableCell className="text-right font-medium text-red-600">
                     {formatGNF(outcome.amount)}
                   </TableCell>

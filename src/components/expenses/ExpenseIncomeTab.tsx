@@ -133,7 +133,7 @@ export function ExpenseIncomeTab() {
   // Formater les données pour l'impression
   const printableIncomes = incomes.map(income => {
     // Handle case when expense_categories might be a SelectQueryError
-    const categoryName = typeof income.expense_categories === 'object' && income.expense_categories !== null
+    const categoryName = income.expense_categories && typeof income.expense_categories === 'object' && !('error' in income.expense_categories)
       ? (income.expense_categories.name || "Non catégorisé")
       : "Non catégorisé";
     
@@ -240,7 +240,7 @@ export function ExpenseIncomeTab() {
             <TableBody>
               {incomes.map((income) => {
                 // Handle case when expense_categories might be a SelectQueryError
-                const categoryName = typeof income.expense_categories === 'object' && income.expense_categories !== null
+                const categoryName = income.expense_categories && typeof income.expense_categories === 'object' && !('error' in income.expense_categories)
                   ? (income.expense_categories.name || "Non catégorisé")
                   : "Non catégorisé";
                 

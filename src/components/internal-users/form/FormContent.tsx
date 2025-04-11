@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Form } from "@/components/ui/form";
 import { 
   NameFields,
@@ -12,7 +13,7 @@ import {
 } from "./FormFields";
 import { FormActions } from "./FormActions";
 import { UserFormValues } from "../validation/user-form-schema";
-import { useUserForm } from "./hooks/useUserForm";
+import { useForm } from "react-hook-form";
 import { InternalUser } from "@/types/internal-user";
 
 interface FormContentProps {
@@ -26,10 +27,32 @@ export const FormContent = ({
   onCancel, 
   selectedUser 
 }: FormContentProps) => {
-  const { form, isSubmitting, handleSubmit, isEditMode } = useUserForm({
-    onSubmit,
-    selectedUser
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!selectedUser;
+  
+  const form = useForm<UserFormValues>({
+    defaultValues: {
+      first_name: selectedUser?.first_name || "",
+      last_name: selectedUser?.last_name || "",
+      email: selectedUser?.email || "",
+      phone: selectedUser?.phone || "",
+      address: selectedUser?.address || "",
+      role: selectedUser?.role as "admin" | "manager" | "employee" || "employee",
+      password: "",
+      confirm_password: "",
+      is_active: selectedUser?.is_active ?? true,
+      photo_url: selectedUser?.photo_url || null,
+    }
   });
+
+  const handleSubmit = async (data: UserFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit(data);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Form {...form}>
