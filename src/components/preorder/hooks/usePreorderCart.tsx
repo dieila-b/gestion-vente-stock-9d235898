@@ -1,10 +1,16 @@
+
 import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { Client } from "@/types/client";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Product } from "@/types/pos";
-import { safeSpread, safeArrayOperation, isSelectQueryError } from "@/utils/supabase-helpers";
+import { 
+  isSelectQueryError, 
+  safeGetProperty, 
+  safeMap, 
+  safeForEach 
+} from "@/utils/supabase-helpers";
 import { useSupabaseErrorHandler } from "@/hooks/use-supabase-error-handler";
 
 export function usePreorderCart(
@@ -23,7 +29,18 @@ export function usePreorderCart(
     setQuantity 
   } = useCart();
 
-  const { safeMap } = useSupabaseErrorHandler();
+  const { safeSpread } = useSupabaseErrorHandler();
+  const [preorderState, setPreorderState] = useState<{
+    id: string | null;
+    status: string;
+    notes: string;
+    paidAmount: number;
+  }>({
+    id: null,
+    status: 'draft',
+    notes: '',
+    paidAmount: 0,
+  });
 
   useEffect(() => {
     const loadPreorderForEditing = async () => {
@@ -58,15 +75,15 @@ export function usePreorderCart(
           return;
         }
         
-        if (preorder.client) {
+        if (preorder.client && !isSelectQueryError(preorder.client)) {
           const clientData = {
             ...preorder.client,
-            status: (preorder.client.status === 'entreprise' ? 'entreprise' : 'particulier') as 'particulier' | 'entreprise'
+            status: (safeGetProperty(preorder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier') as 'particulier' | 'entreprise'
           };
           setSelectedClient(clientData);
         }
         
-        const productIds = preorder.items.map((item: any) => item.product_id);
+        const productIds = safeMap(preorder.items, (item: any) => item.product_id, []);
         
         if (productIds.length > 0) {
           const { data: products, error: productsError } = await supabase
@@ -78,8 +95,8 @@ export function usePreorderCart(
           
           clearCart();
           
-          preorder.items.forEach((item: any) => {
-            const product = products.find((p: any) => p.id === item.product_id);
+          safeForEach(preorder.items, (item: any) => {
+            const product = products?.find((p: any) => p.id === item.product_id);
             if (product) {
               const cartItem = {
                 ...product as Product,
@@ -92,6 +109,15 @@ export function usePreorderCart(
           
           toast.success("Précommande chargée pour modification");
         }
+
+        // Set preorder state
+        setPreorderState({
+          id: preorder.id,
+          status: preorder.status || 'draft',
+          notes: preorder.notes || '',
+          paidAmount: preorder.paid_amount || 0,
+        });
+
       } catch (error) {
         console.error('Error loading preorder:', error);
         toast.error("Erreur lors du chargement de la précommande");
@@ -109,12 +135,7 @@ export function usePreorderCart(
   };
 
   const validatePreorder = () => {
-    console.log("Validating preorder:", { hasClient: !!setSelectedClient, cartLength: cart.length });
-    
-    if (!setSelectedClient) {
-      toast.warning("Veuillez sélectionner un client pour finaliser la précommande");
-      return false;
-    }
+    console.log("Validating preorder:", { cartLength: cart.length });
     
     if (cart.length === 0) {
       toast.error("Veuillez ajouter des produits à la précommande");
@@ -122,88 +143,6 @@ export function usePreorderCart(
     }
     
     return true;
-  };
-
-  const editPreorder = async (preorderId: string) => {
-    if (!preorderId) return;
-    
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('preorders')
-        .select(`
-          *,
-          client:clients(*),
-          items:preorder_items(
-            id,
-            product_id,
-            quantity,
-            unit_price,
-            total_price,
-            discount,
-            status
-          )
-        `)
-        .eq('id', preorderId)
-        .single();
-      
-      if (error) throw error;
-      
-      if (!data) {
-        toast.error("Précommande non trouvée");
-        return;
-      }
-      
-      if (data.client) {
-        const clientData = isSelectQueryError(data.client) 
-          ? null 
-          : data.client;
-          
-        const formattedClient = clientData 
-          ? {
-              ...clientData,
-              status: safeGetProperty(clientData, 'status', 'particulier')
-            } 
-          : null;
-
-        if (formattedClient) {
-          setClient(formattedClient);
-        }
-
-        const items = isSelectQueryError(data.items) 
-          ? [] 
-          : (data.items || []);
-            
-        if (items.length > 0) {
-          const cartItems = items.map((item) => ({
-            id: item.product_id,
-            quantity: item.quantity,
-            price: item.unit_price,
-            name: safeGetProperty(item.product, 'name', 'Produit inconnu'),
-            image: safeGetProperty(item.product, 'image_url', null),
-            discount: item.discount || 0,
-            status: item.status || 'pending'
-          }));
-          
-          if (cartItems.length > 0) {
-            setCart(cartItems);
-          }
-        }
-
-        setPreorderState({
-          id: preorderId,
-          status: data.status || 'draft',
-          notes: data.notes || '',
-          paidAmount: data.paid_amount || 0,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading preorder:', error);
-      toast.error("Erreur lors du chargement de la précommande");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return {
@@ -215,6 +154,7 @@ export function usePreorderCart(
     addToCart,
     setCartItemQuantity,
     validatePreorder,
-    editPreorder
+    preorderState,
+    setPreorderState
   };
 }

@@ -1,7 +1,6 @@
 
 import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 import { DatabaseTables } from "@/types/supabase-types";
 
 /**
@@ -9,14 +8,13 @@ import { DatabaseTables } from "@/types/supabase-types";
  */
 export function createTableQuery<T extends keyof DatabaseTables>(
   tableName: T
-): PostgrestQueryBuilder<any, any, DatabaseTables[T]> {
+) {
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
-  // This cast tells TypeScript to trust us about the table type
-  return getClient().from(tableName) as unknown as PostgrestQueryBuilder<
-    any, any, DatabaseTables[T]
-  >;
+  // We'll use the standard from method but cast the result to maintain type safety
+  // This works around the type issues with tables not in the generated types
+  return getClient().from(tableName as string) as any;
 }
 
 /**

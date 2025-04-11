@@ -98,17 +98,17 @@ export function QuoteForm({ formData, setFormData, onClose }: QuoteFormProps) {
     
     try {
       const amount = calculateTotal();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('quotes')
         .insert({
-          quote_number: formData.quoteNumber,
-          client_name: formData.clientName,
-          client_email: formData.clientEmail,
-          validity_date: new Date(formData.validityDate).toISOString(),
-          description: formData.notes,
-          amount: amount,
-          status: 'draft'
-        });
+          client_id: selectedClient,
+          issue_date: formatDate(issueDate),
+          expiry_date: formatDate(expiryDate),
+          total_amount: amount,
+          status: 'pending',
+          notes: notes
+        })
+        .select();
 
       if (error) throw error;
 

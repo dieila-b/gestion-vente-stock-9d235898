@@ -33,3 +33,14 @@ export type OptionalQueryError<T> = T | SelectQueryError | null | undefined;
  * A utility type for handling arrays that might be query errors
  */
 export type ArrayOrQueryError<T> = T[] | SelectQueryError | null | undefined;
+
+/**
+ * Type representing a safe table row that handles potential query errors
+ */
+export type SafeRow<T> = {
+  [K in keyof T]: T[K] extends object 
+    ? MaybeQueryError<T[K]> 
+    : T[K] extends Array<infer U> 
+      ? ArrayOrQueryError<U> 
+      : T[K];
+};

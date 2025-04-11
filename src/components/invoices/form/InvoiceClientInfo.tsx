@@ -1,6 +1,8 @@
+
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
   Select,
   SelectContent,
@@ -9,7 +11,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useExtendedTables } from "@/hooks/use-supabase-table-extension";
-import { safeGetProperty, isSelectQueryError } from "@/utils/supabase-helpers";
+import { safeMap, isSelectQueryError } from "@/utils/supabase-helpers";
 
 interface InvoiceClientInfoProps {
   formData: {
@@ -30,7 +32,7 @@ export const InvoiceClientInfo = ({
 }: InvoiceClientInfoProps) => {
   const { posLocations } = useExtendedTables();
   
-  const { data: posLocationList, setPosLocationList } = useQuery({
+  const { data: posLocationList } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       try {
@@ -40,14 +42,11 @@ export const InvoiceClientInfo = ({
           
         if (error) throw error;
         
-        setPosLocationList(data || []);
+        return data || [];
       } catch (err) {
         console.error('Error fetching POS locations:', err);
-        toast({
-          title: "Error",
-          description: "Failed to load POS locations",
-          variant: "destructive",
-        });
+        toast.error("Failed to load POS locations");
+        return [];
       }
     }
   });
@@ -73,11 +72,11 @@ export const InvoiceClientInfo = ({
             <SelectValue placeholder="Sélectionner un point de vente" />
           </SelectTrigger>
           <SelectContent>
-            {posLocationList?.map((location) => (
+            {safeMap(posLocationList, (location: any) => (
               <SelectItem key={location.id} value={location.id}>
                 {location.name || 'Unnamed location'}
               </SelectItem>
-            ))}
+            ), [])}
           </SelectContent>
         </Select>
       </div>
