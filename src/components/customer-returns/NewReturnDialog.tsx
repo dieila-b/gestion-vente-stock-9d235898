@@ -86,7 +86,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
     }
   }, [isOpen]);
 
-  const handleSubmit = async () => {
+  const handleSubmitForm = async () => {
     await onSubmit();
     onSuccess();
   };
@@ -105,15 +105,14 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
           <div className="grid grid-cols-1 gap-4">
             <ReturnClientSelect 
               clientId={form.getValues("client_id") || ""} 
-              onClientChange={handleClientChange} 
-              clients={clients}
+              onClientChange={handleClientChange}
             />
 
             <ReturnInvoiceSelect 
               clientId={form.getValues("client_id") || ""}
               invoiceId={form.getValues("invoice_id") || ""}
-              filteredInvoices={invoices}
               onInvoiceChange={handleInvoiceChange}
+              filteredInvoices={invoices}
             />
 
             <ReturnReasonField 
@@ -162,7 +161,7 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmitForm} disabled={isSubmitting}>
             {isSubmitting ? "Création..." : "Créer le retour"}
           </Button>
         </DialogFooter>

@@ -3,7 +3,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { PackageX, Package } from "lucide-react";
 import { CustomerReturn } from "@/types/customer-return";
-import { CustomerReturnItem } from "./CustomerReturnItem";
+import CustomerReturnListItem from "./CustomerReturnListItem";
 
 interface ReturnTableProps {
   returns: CustomerReturn[];
@@ -57,7 +57,7 @@ export function ReturnTable({ returns, searchTerm, onOpenNewReturn, onRefresh }:
           </TableRow>
         ) : (
           filteredReturns.map((ret) => (
-            <CustomerReturnItem key={ret.id} customerReturn={ret} onRefresh={onRefresh} />
+            <CustomerReturnListItem key={ret.id} customerReturn={ret} onRefresh={onRefresh} />
           ))
         )}
       </TableBody>
