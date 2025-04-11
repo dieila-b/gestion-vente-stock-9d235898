@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import {
   BarChart,
@@ -12,7 +11,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
+import { unwrapSupabaseObject, transformSupabaseResponse } from "@/utils/supabase-helpers";
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({

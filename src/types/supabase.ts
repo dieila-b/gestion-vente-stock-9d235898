@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -874,6 +873,168 @@ export interface Database {
         }
         Relationships: []
       }
+      geographic_zones: {
+        Row: {
+          id: string
+          name: string
+          type: string
+          parent_id: string | null
+          description: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          type: string
+          parent_id?: string | null
+          description?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: string
+          parent_id?: string | null
+          description?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geographic_zones_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "geographic_zones"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          id: string
+          supplier_id: string | null
+          order_number: string | null
+          expected_delivery_date: string | null
+          warehouse_id: string | null
+          notes: string | null
+          status: string | null
+          total_amount: number
+          payment_status: string | null
+          paid_amount: number
+          logistics_cost: number
+          transit_cost: number
+          tax_rate: number
+          subtotal: number
+          tax_amount: number
+          total_ttc: number
+          shipping_cost: number
+          discount: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          supplier_id?: string | null
+          order_number?: string | null
+          expected_delivery_date?: string | null
+          warehouse_id?: string | null
+          notes?: string | null
+          status?: string | null
+          total_amount?: number
+          payment_status?: string | null
+          paid_amount?: number
+          logistics_cost?: number
+          transit_cost?: number
+          tax_rate?: number
+          subtotal?: number
+          tax_amount?: number
+          total_ttc?: number
+          shipping_cost?: number
+          discount?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          supplier_id?: string | null
+          order_number?: string | null
+          expected_delivery_date?: string | null
+          warehouse_id?: string | null
+          notes?: string | null
+          status?: string | null
+          total_amount?: number
+          payment_status?: string | null
+          paid_amount?: number
+          logistics_cost?: number
+          transit_cost?: number
+          tax_rate?: number
+          subtotal?: number
+          tax_amount?: number
+          total_ttc?: number
+          shipping_cost?: number
+          discount?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      purchase_order_items: {
+        Row: {
+          id: string
+          purchase_order_id: string | null
+          product_id: string | null
+          quantity: number
+          unit_price: number
+          selling_price: number
+          total_price: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          purchase_order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          unit_price?: number
+          selling_price?: number
+          total_price?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          purchase_order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          unit_price?: number
+          selling_price?: number
+          total_price?: number
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -909,6 +1070,9 @@ export type IncomeEntry = Database['public']['Tables']['income_entries']['Row']
 export type ExpenseEntry = Database['public']['Tables']['expense_entries']['Row']
 export type WarehouseStockMovement = Database['public']['Tables']['warehouse_stock_movements']['Row']
 export type StockTransfer = Database['public']['Tables']['stock_transfers']['Row']
+export type GeographicZone = Database['public']['Tables']['geographic_zones']['Row']
+export type PurchaseOrder = Database['public']['Tables']['purchase_orders']['Row']
+export type PurchaseOrderItem = Database['public']['Tables']['purchase_order_items']['Row']
 export type Warehouse = Database['public']['Tables']['warehouses']['Row']
 export type WarehouseStock = Database['public']['Tables']['warehouse_stock']['Row']
 export type POSLocation = Database['public']['Tables']['pos_locations']['Row']

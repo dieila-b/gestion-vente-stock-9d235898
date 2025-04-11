@@ -126,6 +126,8 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          client_code: string | null
+          client_type: string | null
           company_name: string | null
           contact_name: string | null
           country: string | null
@@ -141,6 +143,8 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          client_code?: string | null
+          client_type?: string | null
           company_name?: string | null
           contact_name?: string | null
           country?: string | null
@@ -156,6 +160,8 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          client_code?: string | null
+          client_type?: string | null
           company_name?: string | null
           contact_name?: string | null
           country?: string | null
@@ -315,6 +321,41 @@ export type Database = {
             columns: ["expense_category_id"]
             isOneToOne: false
             referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      geographic_zones: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geographic_zones_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "geographic_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -573,23 +614,47 @@ export type Database = {
       pos_locations: {
         Row: {
           address: string | null
+          capacity: number | null
           created_at: string | null
+          email: string | null
           id: string
+          is_active: boolean | null
+          manager: string | null
           name: string
+          occupied: number | null
+          phone: string | null
+          status: string | null
+          surface: number | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          capacity?: number | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          is_active?: boolean | null
+          manager?: string | null
           name: string
+          occupied?: number | null
+          phone?: string | null
+          status?: string | null
+          surface?: number | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          capacity?: number | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          is_active?: boolean | null
+          manager?: string | null
           name?: string
+          occupied?: number | null
+          phone?: string | null
+          status?: string | null
+          surface?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -710,6 +775,187 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string | null
+          purchase_order_id: string | null
+          quantity: number | null
+          selling_price: number | null
+          total_price: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          purchase_order_id?: string | null
+          quantity?: number | null
+          selling_price?: number | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          purchase_order_id?: string | null
+          quantity?: number | null
+          selling_price?: number | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string | null
+          discount: number | null
+          expected_delivery_date: string | null
+          id: string
+          logistics_cost: number | null
+          notes: string | null
+          order_number: string | null
+          paid_amount: number | null
+          payment_status: string | null
+          shipping_cost: number | null
+          status: string | null
+          subtotal: number | null
+          supplier_id: string | null
+          tax_amount: number | null
+          tax_rate: number | null
+          total_amount: number | null
+          total_ttc: number | null
+          transit_cost: number | null
+          updated_at: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discount?: number | null
+          expected_delivery_date?: string | null
+          id?: string
+          logistics_cost?: number | null
+          notes?: string | null
+          order_number?: string | null
+          paid_amount?: number | null
+          payment_status?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount?: number | null
+          total_ttc?: number | null
+          transit_cost?: number | null
+          updated_at?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discount?: number | null
+          expected_delivery_date?: string | null
+          id?: string
+          logistics_cost?: number | null
+          notes?: string | null
+          order_number?: string | null
+          paid_amount?: number | null
+          payment_status?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount?: number | null
+          total_ttc?: number | null
+          transit_cost?: number | null
+          updated_at?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string | null
+          from_warehouse_id: string | null
+          id: string
+          product_id: string | null
+          quantity: number
+          to_warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          from_warehouse_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          to_warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          from_warehouse_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          to_warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouse_stock: {
         Row: {
           created_at: string | null
@@ -768,26 +1014,89 @@ export type Database = {
           },
         ]
       }
+      warehouse_stock_movements: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string | null
+          quantity: number
+          type: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity: number
+          type: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          type?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           address: string | null
+          capacity: number | null
           created_at: string | null
           id: string
+          is_active: boolean | null
+          location: string | null
+          manager: string | null
           name: string
+          occupied: number | null
+          status: string | null
+          surface: number | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          capacity?: number | null
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
+          location?: string | null
+          manager?: string | null
           name: string
+          occupied?: number | null
+          status?: string | null
+          surface?: number | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          capacity?: number | null
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
+          location?: string | null
+          manager?: string | null
           name?: string
+          occupied?: number | null
+          status?: string | null
+          surface?: number | null
           updated_at?: string | null
         }
         Relationships: []

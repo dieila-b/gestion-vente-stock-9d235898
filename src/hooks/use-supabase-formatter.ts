@@ -1,14 +1,14 @@
 
-import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
+import { unwrapSupabaseObject, transformSupabaseResponse } from "@/utils/supabase-helpers";
 
 /**
- * A hook that provides functions for formatting Supabase responses.
- * Helps handle nested objects and arrays that Supabase returns.
+ * Un hook qui fournit des fonctions pour formater les réponses Supabase.
+ * Aide à gérer les objets imbriqués et les tableaux que Supabase renvoie.
  */
 export function useSupabaseFormatter() {
   /**
-   * Safely accesses a nested property from a potentially nested Supabase response.
-   * Handles cases where the property might be an array or a direct object.
+   * Accède en toute sécurité à une propriété imbriquée d'une réponse Supabase potentiellement imbriquée.
+   * Gère les cas où la propriété peut être un tableau ou un objet direct.
    */
   function getNestedProperty<T>(obj: any, key: string): T | null {
     if (!obj) return null;
@@ -18,8 +18,8 @@ export function useSupabaseFormatter() {
   }
 
   /**
-   * Safely gets a property value from an object that might be nested as an array.
-   * This is useful for accessing properties from joined tables in Supabase responses.
+   * Obtient en toute sécurité la valeur d'une propriété d'un objet qui pourrait être imbriqué sous forme de tableau.
+   * C'est utile pour accéder aux propriétés des tables jointes dans les réponses Supabase.
    */
   function getPropertyValue<T>(obj: any, key: string, nestedKey?: string): T | null {
     const unwrappedObj = unwrapSupabaseObject(obj);
@@ -33,9 +33,18 @@ export function useSupabaseFormatter() {
     return unwrappedObj[key] as T;
   }
   
+  /**
+   * Transforme une réponse Supabase complète en une structure plus facile à utiliser
+   * en convertissant les tableaux d'objets imbriqués en objets directs.
+   */
+  function formatSupabaseResponse<T extends Record<string, any>>(response: T): T {
+    return transformSupabaseResponse(response);
+  }
+  
   return {
     getNestedProperty,
     getPropertyValue,
-    unwrapSupabaseObject
+    unwrapSupabaseObject,
+    formatSupabaseResponse
   };
 }

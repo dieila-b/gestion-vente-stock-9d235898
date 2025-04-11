@@ -1,370 +1,315 @@
-
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { NewReturnForm, InvoiceItem } from "@/types/customer-return";
-import { unwrapSupabaseObject } from "@/utils/supabase-helpers";
+import { toast } from "sonner";
+import { unwrapSupabaseObject, transformSupabaseResponse } from "@/utils/supabase-helpers";
 
-export function useReturnDialog(onSuccess: () => void, onClose: () => void) {
-  const [clients, setClients] = useState<{id: string, company_name: string}[]>([]);
-  const [invoices, setInvoices] = useState<{id: string, invoice_number: string, client_id: string}[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<{id: string, invoice_number: string}[]>([]);
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
-  const [products, setProducts] = useState<{id: string, name: string}[]>([]);
-  const [selectedItems, setSelectedItems] = useState<{[key: string]: boolean}>({});
-  const [newReturn, setNewReturn] = useState<NewReturnForm>({
-    client_id: "",
-    invoice_id: "",
-    reason: "",
-    notes: "",
-    items: []
+// Schéma de validation pour le formulaire de retour
+const returnSchema = z.object({
+  client_id: z.string().min(1, "Le client est requis"),
+  invoice_id: z.string().min(1, "La facture est requise"),
+  reason: z.string().min(1, "La raison du retour est requise"),
+  notes: z.string().optional(),
+  return_date: z.string().min(1, "La date de retour est requise"),
+  items: z.array(
+    z.object({
+      product_id: z.string().min(1, "Le produit est requis"),
+      quantity: z.number().min(1, "La quantité doit être supérieure à 0"),
+      original_quantity: z.number().optional(),
+      price: z.number().optional(),
+    })
+  ).min(1, "Au moins un article doit être ajouté"),
+});
+
+export type ReturnFormValues = z.infer<typeof returnSchema>;
+
+export const useReturnDialog = () => {
+  const [open, setOpen] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<ReturnFormValues>({
+    resolver: zodResolver(returnSchema),
+    defaultValues: {
+      client_id: "",
+      invoice_id: "",
+      reason: "",
+      notes: "",
+      return_date: new Date().toISOString().split("T")[0],
+      items: [],
+    },
   });
-  const { toast } = useToast();
 
-  // Fetch invoices data
-  const fetchInvoices = async () => {
-    try {
-      console.log('Fetching invoices...');
+  // Charger les clients
+  useEffect(() => {
+    const fetchClients = async () => {
       const { data, error } = await supabase
-        .from('orders')
-        .select('id, client_id')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      const transformedData = data.map(order => ({
-        id: order.id,
-        invoice_number: `FAC-${order.id.substring(0, 8).toUpperCase()}`,
-        client_id: order.client_id
-      }));
-      
-      console.log('Fetched invoices:', transformedData);
-      setInvoices(transformedData || []);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-    }
-  };
+        .from("clients")
+        .select("id, contact_name, company_name")
+        .order("company_name", { ascending: true });
 
-  // Fetch products
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('id, name')
-        .order('name');
-      
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-
-  // Fetch invoice items when invoice ID changes
-  const fetchInvoiceItems = async (invoiceId: string) => {
-    try {
-      if (!invoiceId || invoiceId === "no_invoice") {
-        setInvoiceItems([]);
+      if (error) {
+        console.error("Error fetching clients:", error);
+        toast.error("Erreur lors du chargement des clients");
         return;
       }
 
-      console.log('Fetching invoice items for invoice:', invoiceId);
+      setClients(data || []);
+    };
+
+    fetchClients();
+  }, []);
+
+  // Charger les factures lorsqu'un client est sélectionné
+  const handleClientChange = async (clientId: string) => {
+    form.setValue("client_id", clientId);
+    form.setValue("invoice_id", "");
+    setInvoiceItems([]);
+    setSelectedItems([]);
+
+    if (!clientId) {
+      setInvoices([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
       const { data, error } = await supabase
-        .from('order_items')
+        .from("orders")
+        .select("id, created_at, final_total")
+        .eq("client_id", clientId)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching invoices:", error);
+        toast.error("Erreur lors du chargement des factures");
+        return;
+      }
+
+      setInvoices(data || []);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Charger les articles de la facture sélectionnée
+  const handleInvoiceChange = async (invoiceId: string) => {
+    form.setValue("invoice_id", invoiceId);
+    setSelectedItems([]);
+
+    if (!invoiceId) {
+      setInvoiceItems([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("order_items")
         .select(`
-          id,
-          quantity,
+          id, 
+          product_id, 
+          quantity, 
           price,
-          product_id,
-          product:catalog(id, name)
+          product:catalog(
+            id, 
+            name
+          )
         `)
-        .eq('order_id', invoiceId);
-      
-      if (error) throw error;
-      
-      const items = data.map(item => {
-        const product = unwrapSupabaseObject(item.product);
+        .eq("order_id", invoiceId);
+
+      if (error) {
+        console.error("Error fetching invoice items:", error);
+        toast.error("Erreur lors du chargement des articles");
+        return;
+      }
+
+      // Transformer les résultats
+      const formattedItems = data.map(item => {
+        const productObj = unwrapSupabaseObject(item.product);
         return {
+          id: item.id,
           product_id: item.product_id,
-          product_name: product?.name || 'Produit inconnu',
+          productName: productObj?.name || 'Produit inconnu',
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          original_quantity: item.quantity,
         };
       });
-      
-      console.log('Fetched invoice items:', items);
-      setInvoiceItems(items);
-      
-      const initialSelectedItems: {[key: string]: boolean} = {};
-      items.forEach(item => {
-        initialSelectedItems[item.product_id] = false;
-      });
-      setSelectedItems(initialSelectedItems);
+
+      setInvoiceItems(formattedItems || []);
     } catch (error) {
-      console.error('Error fetching invoice items:', error);
+      console.error("Error:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Filter invoices when client changes
-  useEffect(() => {
-    if (newReturn.client_id) {
-      console.log('Filtering invoices for client:', newReturn.client_id);
-      
-      const clientInvoices = invoices.filter(invoice => invoice.client_id === newReturn.client_id);
-      console.log('Filtered invoices:', clientInvoices);
-      
-      setFilteredInvoices(clientInvoices);
-      
-      if (newReturn.invoice_id !== "no_invoice" && !clientInvoices.some(inv => inv.id === newReturn.invoice_id)) {
-        setNewReturn(prev => ({
-          ...prev,
-          invoice_id: ""
-        }));
-        setInvoiceItems([]);
-      }
+  // Ajouter un article au retour
+  const addItemToReturn = (item: any, quantity: number) => {
+    if (quantity <= 0 || quantity > item.original_quantity) {
+      toast.error("Quantité invalide");
+      return;
+    }
+
+    // Vérifier si l'article est déjà dans la liste
+    const existingItemIndex = selectedItems.findIndex(
+      (i) => i.product_id === item.product_id
+    );
+
+    if (existingItemIndex >= 0) {
+      // Mettre à jour la quantité si l'article existe déjà
+      const updatedItems = [...selectedItems];
+      updatedItems[existingItemIndex].quantity = quantity;
+      setSelectedItems(updatedItems);
     } else {
-      setFilteredInvoices([]);
-      setInvoiceItems([]);
+      // Ajouter un nouvel article
+      setSelectedItems([
+        ...selectedItems,
+        {
+          product_id: item.product_id,
+          productName: item.productName,
+          quantity: quantity,
+          original_quantity: item.original_quantity,
+          price: item.price,
+        },
+      ]);
     }
-  }, [newReturn.client_id, invoices]);
 
-  // Fetch invoice items when invoice changes
-  useEffect(() => {
-    if (newReturn.invoice_id) {
-      fetchInvoiceItems(newReturn.invoice_id);
-    } else {
-      setInvoiceItems([]);
-    }
-  }, [newReturn.invoice_id]);
-
-  // Handle input changes for text fields
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewReturn(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    // Mettre à jour le formulaire
+    form.setValue(
+      "items",
+      selectedItems.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        original_quantity: item.original_quantity,
+        price: item.price,
+      }))
+    );
   };
 
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setNewReturn(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (name === 'invoice_id') {
-      setNewReturn(prev => ({
-        ...prev,
-        items: []
-      }));
-    }
+  // Supprimer un article du retour
+  const removeItemFromReturn = (productId: string) => {
+    const updatedItems = selectedItems.filter(
+      (item) => item.product_id !== productId
+    );
+    setSelectedItems(updatedItems);
+
+    // Mettre à jour le formulaire
+    form.setValue(
+      "items",
+      updatedItems.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        original_quantity: item.original_quantity,
+        price: item.price,
+      }))
+    );
   };
 
-  // Handle item checkbox changes
-  const handleItemCheckboxChange = (productId: string, checked: boolean) => {
-    setSelectedItems(prev => ({
-      ...prev,
-      [productId]: checked
-    }));
-    
-    if (checked) {
-      const item = invoiceItems.find(item => item.product_id === productId);
-      if (item) {
-        setNewReturn(prev => ({
-          ...prev,
-          items: [...prev.items.filter(i => i.product_id !== productId), {
-            product_id: productId,
-            quantity: 1
-          }]
-        }));
-      }
-    } else {
-      setNewReturn(prev => ({
-        ...prev,
-        items: prev.items.filter(item => item.product_id !== productId)
-      }));
-    }
-  };
-
-  // Handle quantity changes
-  const handleQuantityChange = (productId: string, quantity: number) => {
-    const invoiceItem = invoiceItems.find(item => item.product_id === productId);
-    const maxQuantity = invoiceItem ? invoiceItem.quantity : 1;
-    
-    const validQuantity = Math.min(Math.max(1, quantity), maxQuantity);
-    
-    setNewReturn(prev => ({
-      ...prev,
-      items: prev.items.map(item => 
-        item.product_id === productId 
-          ? { ...item, quantity: validQuantity } 
-          : item
-      )
-    }));
-  };
-
-  // Handle adding manual products
-  const handleAddManualProduct = () => {
-    setNewReturn(prev => ({
-      ...prev,
-      items: [...prev.items, {product_id: "", quantity: 1}]
-    }));
-  };
-
-  // Handle removing manual products
-  const handleRemoveManualProduct = (index: number) => {
-    setNewReturn(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index)
-    }));
-  };
-
-  // Handle manual product changes
-  const handleManualProductChange = (index: number, field: 'product_id' | 'quantity', value: string | number) => {
-    setNewReturn(prev => {
-      const newItems = [...prev.items];
-      newItems[index] = {
-        ...newItems[index],
-        [field]: value
-      };
-      return {
-        ...prev,
-        items: newItems
-      };
-    });
-  };
-
-  // Get item quantity
-  const getItemQuantity = (productId: string) => {
-    const item = newReturn.items.find(item => item.product_id === productId);
-    return item ? item.quantity : 1;
-  };
-
-  // Get invoice item quantity
-  const getInvoiceItemQuantity = (productId: string) => {
-    const item = invoiceItems.find(item => item.product_id === productId);
-    return item ? item.quantity : 0;
-  };
-
-  // Submit the new return
-  const handleSubmitNewReturn = async () => {
+  // Soumettre le formulaire
+  const onSubmit = async (data: ReturnFormValues) => {
+    setIsSubmitting(true);
     try {
-      if (!newReturn.client_id) {
-        toast({
-          title: "Erreur",
-          description: "Veuillez sélectionner un client",
-          variant: "destructive"
-        });
-        return;
-      }
+      // Calculer le montant total du retour
+      const totalAmount = data.items.reduce((total, item) => {
+        const foundItem = invoiceItems.find(
+          (i) => i.product_id === item.product_id
+        );
+        return total + (foundItem?.price || 0) * item.quantity;
+      }, 0);
 
-      if (newReturn.items.length === 0) {
-        toast({
-          title: "Erreur",
-          description: "Veuillez sélectionner au moins un article à retourner",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      let totalAmount = 0;
-      for (const item of newReturn.items) {
-        const invoiceItem = invoiceItems.find(i => i.product_id === item.product_id);
-        if (invoiceItem) {
-          totalAmount += invoiceItem.price * item.quantity;
-        } else {
-          totalAmount += 1000 * item.quantity;
-        }
-      }
-      
-      const actualInvoiceId = newReturn.invoice_id === "no_invoice" ? null : newReturn.invoice_id || null;
-      console.log('Creating return with invoice_id:', actualInvoiceId);
-      
+      // Créer le retour
       const { data: returnData, error: returnError } = await supabase
-        .from('customer_returns')
+        .from("customer_returns")
         .insert({
-          return_number: `RET-${Date.now().toString().substring(6)}`,
-          client_id: newReturn.client_id,
-          invoice_id: actualInvoiceId,
-          return_date: new Date().toISOString(),
+          client_id: data.client_id,
+          invoice_id: data.invoice_id,
+          return_date: data.return_date,
+          reason: data.reason,
+          notes: data.notes,
           total_amount: totalAmount,
-          status: 'pending',
-          reason: newReturn.reason,
-          notes: newReturn.notes
+          status: "pending",
+          return_number: `RET-${Date.now().toString().slice(-6)}`,
         })
-        .select('id')
+        .select()
         .single();
 
       if (returnError) {
-        console.error('Error creating return:', returnError);
-        throw returnError;
+        console.error("Error creating return:", returnError);
+        toast.error("Erreur lors de la création du retour");
+        return;
       }
 
-      const returnItems = newReturn.items
-        .filter(item => item.product_id && item.quantity > 0)
-        .map(item => ({
-          return_id: returnData.id,
-          product_id: item.product_id,
-          quantity: Number(item.quantity)
-        }));
+      // Ajouter les articles du retour
+      const returnItems = data.items.map((item) => ({
+        return_id: returnData.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+      }));
 
-      if (returnItems.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('customer_return_items')
-          .insert(returnItems);
+      const { error: itemsError } = await supabase
+        .from("customer_return_items")
+        .insert(returnItems);
 
-        if (itemsError) {
-          console.error('Error creating return items:', itemsError);
-          throw itemsError;
-        }
+      if (itemsError) {
+        console.error("Error adding return items:", itemsError);
+        toast.error("Erreur lors de l'ajout des articles du retour");
+        return;
       }
 
-      toast({
-        title: "Succès",
-        description: "Le retour client a été créé avec succès",
-      });
-
-      setNewReturn({
-        client_id: "",
-        invoice_id: "",
-        reason: "",
-        notes: "",
-        items: []
-      });
-      setSelectedItems({});
-      setInvoiceItems([]);
-      onSuccess();
-      onClose();
+      toast.success("Retour créé avec succès");
+      setOpen(false);
+      resetForm();
     } catch (error) {
-      console.error('Error creating return:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le retour client",
-        variant: "destructive"
-      });
+      console.error("Error:", error);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return {
-    clients,
-    filteredInvoices,
-    invoiceItems,
-    products,
-    selectedItems,
-    newReturn,
-    setClients,
-    fetchInvoices,
-    fetchProducts,
-    handleInputChange,
-    handleSelectChange,
-    handleItemCheckboxChange,
-    handleQuantityChange,
-    handleAddManualProduct,
-    handleRemoveManualProduct,
-    handleManualProductChange,
-    handleSubmitNewReturn,
-    getItemQuantity,
-    getInvoiceItemQuantity
+  // Réinitialiser le formulaire
+  const resetForm = () => {
+    form.reset({
+      client_id: "",
+      invoice_id: "",
+      reason: "",
+      notes: "",
+      return_date: new Date().toISOString().split("T")[0],
+      items: [],
+    });
+    setInvoices([]);
+    setInvoiceItems([]);
+    setSelectedItems([]);
   };
-}
+
+  return {
+    open,
+    setOpen,
+    form,
+    clients,
+    invoices,
+    invoiceItems,
+    selectedItems,
+    isLoading,
+    isSubmitting,
+    handleClientChange,
+    handleInvoiceChange,
+    addItemToReturn,
+    removeItemFromReturn,
+    onSubmit,
+    resetForm,
+  };
+};
