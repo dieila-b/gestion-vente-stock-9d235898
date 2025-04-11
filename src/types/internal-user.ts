@@ -1,12 +1,26 @@
 
-export type InternalUser = {
+export interface InternalUser {
   id: string;
+  email: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string | null;
+  phone: string;
+  address: string;
   role: "admin" | "manager" | "employee";
-  address: string | null;
+  photo_url?: string | null;
   is_active: boolean;
-  photo_url: string | null;
-};
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface NewInternalUser {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  address: string;
+  role: "admin" | "manager" | "employee";
+  password: string;
+  is_active?: boolean;
+  photo_url?: string | null;
+}

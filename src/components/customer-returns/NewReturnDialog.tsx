@@ -29,8 +29,6 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
     selectedItems,
     handleClientChange,
     handleInvoiceChange,
-    handleItemCheckboxChange,
-    handleQuantityChange,
     addItemToReturn,
     removeItemFromReturn,
     onSubmit,
@@ -39,6 +37,46 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
   } = returnDialogHook;
 
   const [selectedInvoiceItems, setSelectedInvoiceItems] = useState<{ [key: string]: boolean }>({});
+
+  // Custom handlers to bridge between the component and the hook
+  const handleItemCheckboxChange = (productId: string, checked: boolean) => {
+    const newSelectedItems = { ...selectedInvoiceItems };
+    newSelectedItems[productId] = checked;
+    setSelectedInvoiceItems(newSelectedItems);
+    
+    // If checked, add to selected items, otherwise remove
+    if (checked) {
+      const item = invoiceItems.find(item => item.product_id === productId);
+      if (item) {
+        addItemToReturn({
+          product_id: item.product_id,
+          quantity: 1
+        });
+      }
+    } else {
+      removeItemFromReturn(productId);
+    }
+  };
+
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    const existingItemIndex = selectedItems.findIndex(item => item.product_id === productId);
+    if (existingItemIndex !== -1) {
+      const updatedItems = [...selectedItems];
+      updatedItems[existingItemIndex].quantity = quantity;
+      // Here we would update the form value
+      form.setValue("items", updatedItems);
+    }
+  };
+
+  const getItemQuantity = (productId: string) => {
+    const item = selectedItems.find(item => item.product_id === productId);
+    return item ? item.quantity : 0;
+  };
+
+  const getInvoiceItemQuantity = (productId: string) => {
+    const item = invoiceItems.find(item => item.product_id === productId);
+    return item ? item.original_quantity : 0;
+  };
 
   // Load data when dialog opens
   useEffect(() => {
@@ -86,21 +124,15 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
               selectedItems={selectedInvoiceItems}
               onItemCheckboxChange={handleItemCheckboxChange}
               onQuantityChange={handleQuantityChange}
-              getItemQuantity={(productId) => {
-                const item = selectedItems.find(item => item.product_id === productId);
-                return item ? item.quantity : 0;
-              }}
-              getInvoiceItemQuantity={(productId) => {
-                const item = invoiceItems.find(item => item.product_id === productId);
-                return item ? item.original_quantity : 0;
-              }}
+              getItemQuantity={getItemQuantity}
+              getInvoiceItemQuantity={getInvoiceItemQuantity}
             />
 
             <ManualItemsList 
               items={selectedItems}
-              products={[]} // We'll pass an empty array for now as we're not implementing this feature yet
+              products={[]} // Empty array since we're not implementing this feature yet
               invoiceItems={invoiceItems}
-              onManualProductChange={(index, field, value) => {
+              onManualProductChange={() => {
                 // Not implemented in this version
               }}
               onRemoveManualProduct={removeItemFromReturn}

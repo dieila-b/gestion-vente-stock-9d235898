@@ -1,9 +1,8 @@
 
-import { toast } from "sonner";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 
 interface TestingModeToggleProps {
   testingMode: boolean;
@@ -12,49 +11,90 @@ interface TestingModeToggleProps {
   isDevelopmentMode: boolean;
 }
 
-export const TestingModeToggle = ({ 
-  testingMode, 
-  enableTestingMode, 
+export function TestingModeToggle({
+  testingMode,
+  enableTestingMode,
   disableTestingMode,
   isDevelopmentMode
-}: TestingModeToggleProps) => {
-  // Ne pas afficher en mode développement (déjà en bypass automatique)
-  if (isDevelopmentMode) return null;
-  
+}: TestingModeToggleProps) {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleToggle = (checked: boolean) => {
+    if (checked) {
+      if (!showConfirmation) {
+        setShowConfirmation(true);
+      } else {
+        enableTestingMode();
+        setShowConfirmation(false);
+      }
+    } else {
+      disableTestingMode();
+      setShowConfirmation(false);
+    }
+  };
+
   return (
-    <div className="mt-4">
-      <Alert variant={testingMode ? "default" : "destructive"} className="border-yellow-400/50 bg-yellow-50/50">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-800">Mode test en production</AlertTitle>
-        <AlertDescription className="text-yellow-700 mt-1">
-          {testingMode 
-            ? "Le mode test est activé. L'authentification est contournée."
-            : "Activer ce mode pour contourner l'authentification en production."}
-        </AlertDescription>
-        
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-yellow-200">
-          <Label htmlFor="testing-mode" className={`font-medium text-sm ${testingMode ? 'text-yellow-800' : 'text-muted-foreground'}`}>
-            {testingMode ? "Mode test actif" : "Activer le mode test"}
-          </Label>
-          <Switch 
-            id="testing-mode" 
-            checked={testingMode}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                enableTestingMode();
-                toast.success("Mode test activé", {
-                  description: "L'authentification est maintenant contournée"
-                });
-              } else {
-                disableTestingMode();
-                toast.info("Mode test désactivé", {
-                  description: "L'authentification normale est restaurée"
-                });
-              }
-            }}
-          />
+    <div className="mt-4 border border-yellow-400/20 bg-yellow-400/5 rounded-md p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {isDevelopmentMode ? (
+            <ShieldCheck className="h-5 w-5 text-emerald-500" />
+          ) : testingMode ? (
+            <ShieldAlert className="h-5 w-5 text-yellow-500" />
+          ) : (
+            <Shield className="h-5 w-5 text-muted-foreground" />
+          )}
+          
+          <span className="text-sm font-medium">
+            {isDevelopmentMode 
+              ? "Mode développement actif"
+              : "Activer le mode test"
+            }
+          </span>
         </div>
-      </Alert>
+        
+        {!isDevelopmentMode && (
+          <Switch 
+            checked={testingMode || showConfirmation}
+            onCheckedChange={handleToggle}
+          />
+        )}
+      </div>
+      
+      {showConfirmation && !testingMode && !isDevelopmentMode && (
+        <div className="border-t border-yellow-400/20 pt-2 mt-2 text-sm">
+          <p className="mb-2 text-yellow-600">
+            Confirmez-vous l'activation du mode test ? 
+            Ce mode est réservé aux administrateurs système.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfirmation(false)}
+              className="text-xs h-7"
+            >
+              Annuler
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                enableTestingMode();
+                setShowConfirmation(false);
+              }}
+              className="text-xs h-7 bg-yellow-500 hover:bg-yellow-600"
+            >
+              Confirmer
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {testingMode && !isDevelopmentMode && (
+        <p className="text-xs text-yellow-600">
+          Mode test activé. L'authentification sera contournée en production.
+        </p>
+      )}
     </div>
   );
-};
+}
