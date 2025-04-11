@@ -58,6 +58,16 @@ export function safe<T>(
 }
 
 /**
+ * Cast with a default value if the object is a SelectQueryError
+ */
+export function castOrDefault<T>(obj: any, defaultValue: T): T {
+  if (isSelectQueryError(obj)) {
+    return defaultValue;
+  }
+  return obj as T;
+}
+
+/**
  * Type guard for checking if array is not a SelectQueryError
  */
 export function isValidArray<T>(arr: any): arr is T[] {
@@ -67,9 +77,9 @@ export function isValidArray<T>(arr: any): arr is T[] {
 /**
  * Safe property access for potentially SelectQueryError objects
  */
-export function safeProperty<P extends string, T>(
+export function safeProperty<T>(
   obj: any,
-  prop: P,
+  prop: string,
   defaultValue: T
 ): T {
   if (!obj || isSelectQueryError(obj)) {

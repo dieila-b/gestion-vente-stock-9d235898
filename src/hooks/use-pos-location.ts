@@ -1,109 +1,168 @@
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { createTableQuery } from "./use-supabase-table-extension";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 import { toast } from "sonner";
-
-export type POSLocation = {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  surface?: number;
-  capacity?: number;
-  occupied?: number;
-  manager?: string;
-  status?: string;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
+import { POSLocation } from "@/types/pos-locations";
 
 export function usePOSLocation() {
   const queryClient = useQueryClient();
-  const posLocationsQuery = createTableQuery('pos_locations');
+  const [selectedLocation, setSelectedLocation] = useState<POSLocation | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  // Fetch all POS locations
-  const { data: locations = [], isLoading } = useQuery({
-    queryKey: ['pos-locations'],
+  // Fetch POS locations
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["pos-locations"],
     queryFn: async () => {
-      const { data, error } = await posLocationsQuery
-        .select('*')
-        .order('name', { ascending: true });
+      const { data, error } = await createTableQuery("pos_locations")
+        .select("*")
+        .order("name");
 
       if (error) throw error;
-      return data as POSLocation[] || [];
-    }
+
+      // Filter out any SelectQueryError instances
+      return Array.isArray(data) 
+        ? data.filter(location => !isSelectQueryError(location)).map(location => {
+            return {
+              id: location.id || '',
+              name: location.name || '',
+              phone: location.phone || '',
+              email: location.email || '',
+              address: location.address || '',
+              status: location.status || 'active',
+              is_active: location.is_active || true,
+              manager: location.manager || '',
+              capacity: location.capacity || 0,
+              occupied: location.occupied || 0,
+              surface: location.surface || 0
+            } as POSLocation;
+          })
+        : [];
+    },
   });
 
-  // Create a new POS location
+  // Create mutation
   const createPOSLocation = useMutation({
-    mutationFn: async (locationData: Omit<POSLocation, 'id'>) => {
-      const { data, error } = await posLocationsQuery
-        .insert(locationData)
-        .select()
+    mutationFn: async (newLocation: Omit<POSLocation, "id">) => {
+      const { data, error } = await createTableQuery("pos_locations")
+        .insert([newLocation])
+        .select("*")
         .single();
 
       if (error) throw error;
-      return data as POSLocation;
+
+      // Transform the data to match POSLocation
+      return {
+        id: data?.id || '',
+        name: data?.name || '',
+        phone: data?.phone || '',
+        email: data?.email || '',
+        address: data?.address || '',
+        status: data?.status || 'active',
+        is_active: data?.is_active || true,
+        manager: data?.manager || '',
+        capacity: data?.capacity || 0,
+        occupied: data?.occupied || 0,
+        surface: data?.surface || 0
+      } as POSLocation;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pos-locations'] });
-      toast.success('Point de vente créé avec succès');
+      toast.success("Location added successfully");
+      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
+      setIsAddDialogOpen(false);
     },
-    onError: (error: Error) => {
-      console.error('Error creating POS location:', error);
-      toast.error(`Erreur lors de la création: ${error.message}`);
-    }
+    onError: (error) => {
+      toast.error(`Error adding location: ${error.message}`);
+    },
   });
 
-  // Update a POS location
+  // Update mutation
   const updatePOSLocation = useMutation({
-    mutationFn: async ({ id, ...locationData }: POSLocation) => {
-      const { data, error } = await posLocationsQuery
-        .update(locationData)
-        .eq('id', id)
-        .select()
+    mutationFn: async ({ id, ...updateData }: POSLocation) => {
+      const { data, error } = await createTableQuery("pos_locations")
+        .update(updateData)
+        .eq("id", id)
+        .select("*")
         .single();
 
       if (error) throw error;
-      return data as POSLocation;
+
+      // Transform the data to match POSLocation
+      return {
+        id: data?.id || '',
+        name: data?.name || '',
+        phone: data?.phone || '',
+        email: data?.email || '',
+        address: data?.address || '',
+        status: data?.status || 'active',
+        is_active: data?.is_active || true,
+        manager: data?.manager || '',
+        capacity: data?.capacity || 0,
+        occupied: data?.occupied || 0,
+        surface: data?.surface || 0
+      } as POSLocation;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pos-locations'] });
-      toast.success('Point de vente mis à jour avec succès');
+      toast.success("Location updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
     },
-    onError: (error: Error) => {
-      console.error('Error updating POS location:', error);
-      toast.error(`Erreur lors de la mise à jour: ${error.message}`);
-    }
+    onError: (error) => {
+      toast.error(`Error updating location: ${error.message}`);
+    },
   });
 
-  // Delete a POS location
+  // Delete mutation
   const deletePOSLocation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await posLocationsQuery
+      const { error } = await createTableQuery("pos_locations")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pos-locations'] });
-      toast.success('Point de vente supprimé avec succès');
+      toast.success("Location deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
     },
-    onError: (error: Error) => {
-      console.error('Error deleting POS location:', error);
-      toast.error(`Erreur lors de la suppression: ${error.message}`);
-    }
+    onError: (error) => {
+      toast.error(`Error deleting location: ${error.message}`);
+    },
   });
 
+  const handleSubmit = async (formData: Omit<POSLocation, "id">) => {
+    if (selectedLocation) {
+      // Update existing location
+      await updatePOSLocation.mutateAsync({
+        ...formData,
+        id: selectedLocation.id,
+      });
+    } else {
+      // Create new location
+      await createPOSLocation.mutateAsync(formData);
+    }
+    setSelectedLocation(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this location?")) {
+      await deletePOSLocation.mutateAsync(id);
+    }
+  };
+
   return {
-    locations,
+    locations: data,
     isLoading,
     createPOSLocation,
     updatePOSLocation,
-    deletePOSLocation
+    deletePOSLocation,
+    selectedLocation,
+    setSelectedLocation,
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    handleSubmit,
+    handleDelete,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ["pos-locations"] }),
   };
 }

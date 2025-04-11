@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { formatCurrency } from "@/utils/formatters";
@@ -8,10 +8,8 @@ import { ChartSales } from "@/components/dashboard/ChartSales";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { DashboardReports } from "@/components/dashboard/DashboardReports";
-import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
-  const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState("year");
   const { clientCount, totalSales, totalSupplierOrders, isLoading } = useClientStats();
 
@@ -22,7 +20,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {t("dashboard.totalClients")}
+                Total Clients
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -35,7 +33,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {t("dashboard.totalSales")}
+                Total Sales
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -48,7 +46,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {t("dashboard.totalPurchases")}
+                Total Purchases
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -62,7 +60,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>{t("dashboard.salesOverview")}</CardTitle>
+              <CardTitle>Sales Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartSales />
@@ -71,7 +69,7 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("dashboard.recentActivity")}</CardTitle>
+              <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
               <RecentActivity />

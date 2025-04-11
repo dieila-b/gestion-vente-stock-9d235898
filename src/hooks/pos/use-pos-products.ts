@@ -38,15 +38,15 @@ export function usePOSProducts(posLocationId: string, selectedCategory: string |
     const productData = item.product;
     
     // Set defaults for product data if it's a SelectQueryError
-    const safeProduct = isSelectQueryError(productData) 
-      ? { 
-          id: item.product_id || "unknown", 
-          name: "Unknown Product", 
-          reference: "", 
-          category: "", 
-          image_url: "" 
-        }
-      : productData;
+    const defaultProduct = { 
+      id: item.product_id || "unknown", 
+      name: "Unknown Product", 
+      reference: "", 
+      category: "", 
+      image_url: "" 
+    };
+    
+    const safeProduct = isSelectQueryError(productData) ? defaultProduct : productData;
     
     return {
       id: item.product_id,

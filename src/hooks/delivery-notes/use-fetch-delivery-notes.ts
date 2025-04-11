@@ -55,21 +55,22 @@ export function useFetchDeliveryNotes() {
         const defaultPurchaseOrder = { order_number: 'Unknown', total_amount: 0 };
         
         // Safely handle items which may be a SelectQueryError
-        const items = isSelectQueryError(note.items) 
-          ? [] 
-          : (note.items || []).map(item => {
-              const defaultProduct = { name: 'Unknown Product', reference: '', category: '' };
-              const product = isSelectQueryError(item.product) ? defaultProduct : item.product || defaultProduct;
-              
-              return {
-                id: item.id,
-                product_id: item.product_id,
-                expected_quantity: item.expected_quantity,
-                received_quantity: item.received_quantity,
-                unit_price: item.unit_price,
-                product
-              };
-            });
+        let items = [];
+        if (!isSelectQueryError(note.items)) {
+          items = Array.isArray(note.items) ? note.items.map(item => {
+            const defaultProduct = { name: 'Unknown Product', reference: '', category: '' };
+            const product = isSelectQueryError(item.product) ? defaultProduct : (item.product || defaultProduct);
+            
+            return {
+              id: item.id,
+              product_id: item.product_id,
+              expected_quantity: item.expected_quantity,
+              received_quantity: item.received_quantity,
+              unit_price: item.unit_price,
+              product
+            };
+          }) : [];
+        }
         
         // Handle supplier which may be a SelectQueryError
         const supplier = safelyUnwrapObject(note.supplier, defaultSupplier);

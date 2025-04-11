@@ -87,18 +87,21 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
         id: "unknown",
         company_name: "Unknown Company",
         contact_name: "Unknown Contact",
-        status: "particulier"
+        status: "particulier",
+        email: "",
+        phone: ""
       };
       
       // Safely unwrap client data
-      const clientData = safelyUnwrapObject(editOrder.client, defaultClient);
+      const clientData = isSelectQueryError(editOrder.client) 
+        ? defaultClient
+        : {
+            ...defaultClient,
+            ...editOrder.client,
+            status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+          };
       
-      const client = {
-        ...clientData,
-        status: clientData.status === 'entreprise' ? 'entreprise' : 'particulier'
-      } as Client;
-      
-      setSelectedClient(client);
+      setSelectedClient(clientData);
       
       // Safely map order items or use empty array
       const items = isSelectQueryError(editOrder.items) ? [] : (editOrder.items || []);

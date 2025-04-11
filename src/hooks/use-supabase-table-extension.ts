@@ -2,16 +2,16 @@
 import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseTables } from "@/types/supabase-tables";
-import type { PostgrestQueryBuilder } from "@supabase/postgrest-js";
+import { PostgrestQueryBuilder } from "@supabase/postgrest-js";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type
  */
 export function createTableQuery<T extends keyof SupabaseTables>(
   tableName: T
-): PostgrestQueryBuilder<Database, any, SupabaseTables[T]> {
-  // Access the supabase client directly
-  return supabase.from(tableName as string) as PostgrestQueryBuilder<Database, any, SupabaseTables[T]>;
+): any {
+  // Cast as any to avoid type issues
+  return supabase.from(tableName as string);
 }
 
 /**
