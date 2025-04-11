@@ -5,6 +5,7 @@ import { useTestingMode } from "./useTestingMode";
 import { useInitialAuthCheck } from "./utils/useInitialAuthCheck";
 import { useAuthStateListener } from "./utils/useAuthStateListener";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function useAuthState() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,9 +13,25 @@ export function useAuthState() {
   const { isDevelopmentMode } = useDevMode();
   const { testingMode } = useTestingMode();
 
-  console.log("Mode de test:", testingMode ? "Oui" : "Non");
-  console.log("Mode de développement:", isDevelopmentMode ? "Oui" : "Non");
-  console.log("État d'authentification actuel:", isAuthenticated ? "Authentifié" : "Non authentifié");
+  console.log("[Auth] Mode de test:", testingMode ? "Activé" : "Désactivé");
+  console.log("[Auth] Mode de développement:", isDevelopmentMode ? "Activé" : "Désactivé");
+  console.log("[Auth] État d'authentification actuel:", isAuthenticated ? "Authentifié" : "Non authentifié");
+
+  // Bypass automatique en mode développement ou test
+  useEffect(() => {
+    if (isDevelopmentMode || testingMode) {
+      console.log(`[Auth] Bypass d'authentification en mode ${isDevelopmentMode ? 'développement' : 'test'}`);
+      setIsAuthenticated(true);
+      setLoading(false);
+      
+      // Notification visuelle du bypass
+      const modeLabel = isDevelopmentMode ? "développement" : "test";
+      toast.success(`Mode ${modeLabel} actif - Authentification contournée`, {
+        id: "auth-bypass-toast",
+        duration: 4000
+      });
+    }
+  }, [isDevelopmentMode, testingMode]);
 
   // Vérifier tous les utilisateurs internes au démarrage (pour débogage)
   useEffect(() => {
@@ -52,24 +69,31 @@ export function useAuthState() {
     fetchAllInternalUsers();
   }, [isDevelopmentMode, testingMode]);
 
-  // Vérifier l'état d'authentification initial
-  useInitialAuthCheck({
-    isDevelopmentMode,
-    testingMode,
-    setIsAuthenticated,
-    setLoading
-  });
-
-  // Configurer l'écouteur de changement d'état d'authentification
-  useAuthStateListener({
-    isDevelopmentMode,
-    testingMode,
-    setIsAuthenticated
-  });
+  // Vérifier l'état d'authentification initial (seulement pour le mode production standard)
+  useEffect(() => {
+    if (!isDevelopmentMode && !testingMode) {
+      console.log("[Auth] Vérification de l'authentification standard (mode production)");
+      
+      // Vérifier l'état d'authentification initial en mode production
+      useInitialAuthCheck({
+        isDevelopmentMode,
+        testingMode,
+        setIsAuthenticated,
+        setLoading
+      });
+      
+      // Configurer l'écouteur de changement d'état d'authentification
+      useAuthStateListener({
+        isDevelopmentMode,
+        testingMode,
+        setIsAuthenticated
+      });
+    }
+  }, [isDevelopmentMode, testingMode]);
 
   // Log d'état pour déboggage
   useEffect(() => {
-    console.log("État d'authentification mis à jour:", { 
+    console.log("[Auth] État d'authentification mis à jour:", { 
       isAuthenticated, 
       loading, 
       isDevelopmentMode, 

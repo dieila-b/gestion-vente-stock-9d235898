@@ -1,33 +1,48 @@
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+
+const TESTING_MODE_KEY = 'auth_testing_mode';
 
 /**
- * Hook to manage testing mode state
+ * Hook pour gérer le mode de test d'authentification
  */
 export function useTestingMode() {
   const [testingMode, setTestingMode] = useState(false);
 
-  // Check if testing mode was previously enabled
+  // Vérifie si le mode test était précédemment activé
   useEffect(() => {
-    const savedTestingMode = localStorage.getItem('auth_testing_mode');
+    const savedTestingMode = localStorage.getItem(TESTING_MODE_KEY);
     if (savedTestingMode === 'enabled') {
-      console.log("Restoring testing mode from previous session");
+      console.log("[Auth] Restauration du mode test depuis la session précédente");
       setTestingMode(true);
+      toast.info("Mode test restauré - Authentification contournée", {
+        id: "restore-testing-mode",
+        duration: 3000
+      });
     }
   }, []);
 
-  // Enable testing mode
+  // Active le mode test
   const enableTestingMode = useCallback(() => {
-    console.log("Enabling testing mode - authentication bypassed");
+    console.log("[Auth] Activation du mode test - authentification contournée");
     setTestingMode(true);
-    localStorage.setItem('auth_testing_mode', 'enabled');
+    localStorage.setItem(TESTING_MODE_KEY, 'enabled');
+    toast.success("Mode test activé - Authentification contournée", {
+      id: "enable-testing-mode",
+      duration: 3000
+    });
   }, []);
 
-  // Disable testing mode
+  // Désactive le mode test
   const disableTestingMode = useCallback(() => {
-    console.log("Disabling testing mode - normal authentication restored");
+    console.log("[Auth] Désactivation du mode test - authentification standard restaurée");
     setTestingMode(false);
-    localStorage.removeItem('auth_testing_mode');
+    localStorage.removeItem(TESTING_MODE_KEY);
+    toast.info("Mode test désactivé - Authentification standard restaurée", {
+      id: "disable-testing-mode",
+      duration: 3000
+    });
   }, []);
 
   return {

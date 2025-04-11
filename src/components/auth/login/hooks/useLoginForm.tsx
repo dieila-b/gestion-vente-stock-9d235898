@@ -20,27 +20,24 @@ export function useLoginForm() {
     try {
       setIsSubmitting(true);
       
-      // In development or test mode, auto-authenticate
+      // En mode développement ou test, authentification automatique
       if (isDevelopmentMode || testingMode) {
-        console.log(isDevelopmentMode 
-          ? "Development mode: Auto-authenticating user" 
-          : "Testing mode: Auto-authenticating user");
+        console.log(`[Auth] Auto-authentification en mode ${isDevelopmentMode ? 'développement' : 'test'}`);
         
-        const result = await login(email, password);
+        // Pas besoin de vérifier les identifiants en mode bypass
+        const modeLabel = isDevelopmentMode ? "Mode développement" : "Mode test";
+        toast.success(`Connexion réussie (${modeLabel})`);
         
-        if (result.success) {
-          const modeMessage = isDevelopmentMode ? "Mode développement" : "Mode test";
-          toast.success(`Connexion réussie (${modeMessage})`);
+        // Courte temporisation pour permettre aux toasts de s'afficher
+        setTimeout(() => {
           navigate("/dashboard", { replace: true });
-        } else if (result.error) {
-          setLoginError(result.error);
-          toast.error(result.error);
-        }
+        }, 300);
+        
         setIsSubmitting(false);
         return;
       }
       
-      // Field validation in production mode
+      // Validation des champs en mode production
       if (!email.trim()) {
         setLoginError("Veuillez saisir votre email");
         toast.error("Veuillez saisir votre email");
@@ -58,7 +55,7 @@ export function useLoginForm() {
       const normalizedEmail = email.trim().toLowerCase();
       console.log("Tentative de connexion avec:", normalizedEmail);
 
-      // Check if user exists in database directly
+      // Vérifier si l'utilisateur existe dans la base de données
       const { data: internalUsers, error: internalError } = await supabase
         .from('internal_users')
         .select('id, email, is_active')
