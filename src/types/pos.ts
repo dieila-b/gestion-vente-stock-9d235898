@@ -14,6 +14,7 @@ export interface CartItem {
   unit_price?: number;  // Added to match usage in components
   total?: number;       // Added to match usage in components
   image_url?: string;   // Added to fix image rendering issues
+  priceRequested?: boolean; // Added for price request form
 }
 
 export interface Product {

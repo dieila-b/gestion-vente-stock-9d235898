@@ -2,7 +2,7 @@
 import { Database } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseTables } from "@/types/supabase-types";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 
 /**
  * A utility to create a type-safe table query builder for tables not yet in the Database type
@@ -13,9 +13,8 @@ export function createTableQuery<T extends string>(
   // Access the supabase client through a getter to avoid type issues
   const getClient = () => supabase;
   
-  // Use type assertions to bypass type restrictions
-  // The `any` type here is deliberate to handle tables not in the Database type
-  return getClient().from(tableName as any) as any;
+  // Use the from method with the table name, and cast the result to any to bypass type restrictions
+  return getClient().from(tableName) as PostgrestQueryBuilder<any, any, any>;
 }
 
 /**
@@ -30,11 +29,16 @@ export function useExtendedTables() {
     return createTableQuery('geographic_zones');
   };
   
+  const getPriceRequests = () => {
+    return createTableQuery('price_requests');
+  };
+  
   // Add more tables as needed
   
   return {
     posLocations: getPosLocations(),
     geographicZones: getGeographicZones(),
+    priceRequests: getPriceRequests(),
     // Add more tables as they're needed
   };
 }

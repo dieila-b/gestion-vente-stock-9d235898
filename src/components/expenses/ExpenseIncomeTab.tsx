@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { getSafeCategory } from "@/utils/error-handlers";
 import { Card, CardContent } from "@/components/ui/card";
 
 export interface Category {
@@ -48,14 +49,8 @@ export function ExpenseIncomeTab() {
           type: "income"
         };
 
-        // Handle potential SelectQueryError for category
-        let entryCategory: Category;
-        
-        if (isSelectQueryError(entry.category)) {
-          entryCategory = defaultCategory;
-        } else {
-          entryCategory = (entry.category as Category) || defaultCategory;
-        }
+        // Handle potential SelectQueryError for category using our utility function
+        const entryCategory = getSafeCategory(entry.category);
 
         return {
           id: entry.id,

@@ -41,6 +41,11 @@ export const SupplierModals = ({
             <PriceRequestForm
               supplier={selectedSupplier}
               onClose={onClosePriceForm}
+              isOpen={isPriceRequestFormOpen}
+              onSuccess={() => {
+                // You might want to refresh supplier data or show a success message
+                onClosePriceForm();
+              }}
             />
           </div>
         </div>

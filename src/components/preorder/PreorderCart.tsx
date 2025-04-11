@@ -1,147 +1,115 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CartItem } from '@/types/pos';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Minus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Trash2, Minus, Plus } from 'lucide-react';
 
 interface PreorderCartProps {
   cart: CartItem[];
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemoveItem: (productId: string) => void;
-  onUpdateDiscount: (productId: string, discount: number) => void;
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  onRemoveItem: (id: string) => void;
+  onValidate: () => Promise<void>;
+  isSubmitting: boolean;
 }
 
-export const PreorderCart: React.FC<PreorderCartProps> = ({
-  cart,
-  onUpdateQuantity,
+export const PreorderCart = ({ 
+  cart, 
+  onUpdateQuantity, 
   onRemoveItem,
-  onUpdateDiscount,
-}) => {
-  const calculateTotal = () => {
-    return cart.reduce(
-      (total, item) => total + item.quantity * (item.discounted_price || item.price),
-      0
-    );
+  onValidate,
+  isSubmitting
+}: PreorderCartProps) => {
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  const handleQuantityChange = (id: string, value: string) => {
+    const quantity = parseInt(value, 10);
+    if (!isNaN(quantity) && quantity > 0) {
+      onUpdateQuantity(id, quantity);
+    }
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle>Panier ({cart.length} articles)</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>Panier</CardTitle>
       </CardHeader>
       <CardContent>
         {cart.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            Le panier est vide
+            Aucun produit dans le panier
           </div>
         ) : (
-          <>
-            <div className="space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto mb-4">
-              {cart.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col p-3 bg-background rounded-lg border"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Réf: {item.reference || "N/A"} | {item.category || "Non catégorisé"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveItem(item.id)}
-                      className="h-8 w-8 text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+          <div className="space-y-4">
+            {cart.map(item => (
+              <div key={item.id} className="flex items-center space-x-4 p-3 border rounded-md">
+                <div className="flex-1">
+                  <h4 className="font-medium">{item.name}</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {item.reference ? `Réf: ${item.reference}` : ''}
+                    {item.category ? (item.reference ? ` | ${item.category}` : item.category) : ''}
                   </div>
-
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) =>
-                          onUpdateQuantity(item.id, parseInt(e.target.value) || 1)
-                        }
-                        className="w-14 h-8 text-center"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-2">
-                        {item.discount && item.discount > 0 ? (
-                          <>
-                            <span className="text-muted-foreground line-through text-xs">
-                              {item.price.toLocaleString('fr-FR')} GNF
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              -{item.discount}%
-                            </Badge>
-                          </>
-                        ) : null}
-                      </div>
-                      <span className="font-medium">
-                        {((item.discounted_price || item.price) * item.quantity).toLocaleString(
-                          'fr-FR'
-                        )}{' '}
-                        GNF
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm">Remise (%)</label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={item.discount || 0}
-                        onChange={(e) =>
-                          onUpdateDiscount(item.id, parseFloat(e.target.value) || 0)
-                        }
-                        className="w-20 h-7 text-right text-sm"
-                      />
-                    </div>
-                  </div>
+                  <div className="font-bold mt-1">{item.price} DH</div>
                 </div>
-              ))}
-            </div>
-
-            <div className="pt-4 border-t">
-              <div className="flex items-center justify-between font-semibold">
-                <span>Total</span>
-                <span>{calculateTotal().toLocaleString('fr-FR')} GNF</span>
+                <div className="flex items-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                    disabled={item.quantity <= 1 || isSubmitting}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                    className="w-16 mx-2 text-center"
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                    disabled={isSubmitting}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => onRemoveItem(item.id)}
+                  disabled={isSubmitting}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-            </div>
-          </>
+            ))}
+          </div>
         )}
       </CardContent>
+      {cart.length > 0 && (
+        <CardFooter className="flex-col">
+          <div className="w-full flex justify-between py-4 border-t">
+            <span className="font-bold">Total:</span>
+            <span className="font-bold">{subtotal.toFixed(2)} DH</span>
+          </div>
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={onValidate}
+            disabled={cart.length === 0 || isSubmitting}
+          >
+            {isSubmitting ? 'Enregistrement...' : 'Valider la précommande'}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };
-
-export default PreorderCart;

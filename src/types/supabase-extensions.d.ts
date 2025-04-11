@@ -51,3 +51,56 @@ export type SafeRow<T> = {
  * Custom type for PostgrestQueryBuilder with explicit typing
  */
 export type SafePostgrestQueryBuilder<T> = PostgrestQueryBuilder<any, any, T>;
+
+/**
+ * Default fallback object for Category
+ */
+export const DEFAULT_CATEGORY = {
+  id: "unknown",
+  name: "Unknown Category",
+  type: "unknown"
+};
+
+/**
+ * Default fallback object for Client
+ */
+export const DEFAULT_CLIENT = {
+  company_name: "Unknown Company",
+  contact_name: "Unknown Contact",
+  id: "unknown"
+};
+
+/**
+ * Default fallback object for Supplier
+ */
+export const DEFAULT_SUPPLIER = {
+  name: "Unknown Supplier",
+  phone: "",
+  email: ""
+};
+
+/**
+ * Default fallback object for Warehouse
+ */
+export const DEFAULT_WAREHOUSE = {
+  name: "Unknown Warehouse",
+  id: "unknown"
+};
+
+/**
+ * Default fallback object for POSLocation
+ */
+export const DEFAULT_POS_LOCATION = {
+  name: "Unknown Location",
+  id: "unknown"
+};
+
+/**
+ * Default fallback object for Product
+ */
+export const DEFAULT_PRODUCT = {
+  name: "Unknown Product",
+  reference: "",
+  category: "Unknown",
+  id: "unknown"
+};

@@ -1,28 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types/client';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, PlusCircle } from "lucide-react";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ClientSelectorProps {
-  value: Client | null;
-  onChange: (client: Client | null) => void;
+  value: string;
+  onChange: (clientId: string) => void;
+  disabled?: boolean;
 }
 
-export function ClientSelector({ value, onChange }: ClientSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
-
+export const ClientSelector = ({ value, onChange, disabled = false }: ClientSelectorProps) => {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
@@ -30,71 +20,35 @@ export function ClientSelector({ value, onChange }: ClientSelectorProps) {
         .from('clients')
         .select('*')
         .order('company_name', { ascending: true });
-
+        
       if (error) throw error;
       return data as Client[];
     }
   });
 
-  const filteredClients = clients.filter(client => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      (client.company_name && client.company_name.toLowerCase().includes(query)) ||
-      (client.contact_name && client.contact_name.toLowerCase().includes(query)) ||
-      (client.phone && client.phone.toLowerCase().includes(query)) ||
-      (client.email && client.email.toLowerCase().includes(query))
-    );
-  });
-
   return (
     <div className="space-y-2">
-      {showSearch ? (
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Rechercher un client..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1"
-          />
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setShowSearch(false)}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <div className="flex space-x-2">
-          <Select
-            value={value?.id || ''}
-            onValueChange={(val) => {
-              const selectedClient = clients.find(c => c.id === val) || null;
-              onChange(selectedClient);
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sélectionner un client" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredClients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.company_name || client.contact_name || 'Client sans nom'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setShowSearch(true)}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      <Label htmlFor="client">Client</Label>
+      <Select 
+        value={value} 
+        onValueChange={onChange} 
+        disabled={disabled || isLoading}
+      >
+        <SelectTrigger className="w-full" id="client">
+          <SelectValue placeholder="Sélectionner un client" />
+        </SelectTrigger>
+        <SelectContent>
+          {isLoading ? (
+            <SelectItem value="loading" disabled>Chargement...</SelectItem>
+          ) : (
+            clients.map(client => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.company_name || client.contact_name || `Client #${client.id}`}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
     </div>
   );
-}
+};

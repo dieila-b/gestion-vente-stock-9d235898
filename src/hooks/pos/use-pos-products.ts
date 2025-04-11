@@ -1,96 +1,54 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Product } from "@/types/pos";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { CartItem, Product } from '@/types/pos';
+import { getSafeProduct } from '@/utils/error-handlers';
+import { isSelectQueryError } from '@/utils/supabase-helpers';
 
-export function usePOSProducts(selectedPDV: string, selectedCategory: string | null, searchTerm: string) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16;
-
-  // Get stock items for the selected POS location
-  const { data: stockItems = [], refetch: refetchStock, isLoading } = useQuery({
-    queryKey: ['pos-stock', selectedPDV, selectedCategory, searchTerm],
+export function usePOSProducts(posLocationId: string) {
+  const { data: products = [], isLoading, error } = useQuery({
+    queryKey: ['pos-products', posLocationId],
+    enabled: !!posLocationId && posLocationId !== '_all',
     queryFn: async () => {
-      let query = supabase
+      if (!posLocationId || posLocationId === '_all') {
+        return [];
+      }
+
+      const { data, error } = await supabase
         .from('warehouse_stock')
         .select(`
           *,
           product:catalog(*),
           pos_location:pos_locations(*)
         `)
-        .is('warehouse_id', null);
+        .eq('pos_location_id', posLocationId)
+        .gt('quantity', 0);
 
-      if (selectedPDV !== "_all") {
-        query = query.eq('pos_location_id', selectedPDV);
-      }
-
-      const { data, error } = await query;
-      
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
-  // Convert stock items to products for the UI, properly handling SelectQueryError
-  const products = stockItems.map(item => {
-    // Create default product values
-    const defaultProduct = {
-      id: item.product_id,
-      name: "Unknown Product",
-      stock: item.quantity,
-      price: item.unit_price || 0
-    };
-
-    // Check if product is a SelectQueryError
-    if (isSelectQueryError(item.product)) {
-      return defaultProduct;
-    }
-
-    // Return the product with fallbacks
+  // Format products for use in the POS system
+  const formattedProducts: CartItem[] = products.map(item => {
+    // Use safe product accessor
+    const safeProduct = getSafeProduct(item.product);
+    
     return {
-      ...(item.product || {}),
+      id: item.product_id,
+      name: safeProduct.name,
+      quantity: 1, // Default quantity for cart
+      price: item.unit_price, // Use unit_price from warehouse_stock
       stock: item.quantity,
-      price: (item.product && !isSelectQueryError(item.product) && item.product.price) || item.unit_price || 0
+      category: safeProduct.category,
+      reference: safeProduct.reference,
+      image_url: safeProduct.image_url,
     };
   });
-
-  // Filter products based on search term and category
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-  
-  // Extract categories
-  const categories = Array.from(new Set(products.map(product => product.category))).filter(Boolean);
-
-  // Pagination controls
-  const goToNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const goToPrevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
 
   return {
-    products,
-    stockItems,
-    refetchStock,
-    currentProducts,
-    categories,
-    currentPage,
-    totalPages,
+    products: formattedProducts,
     isLoading,
-    goToNextPage,
-    goToPrevPage,
+    error
   };
 }

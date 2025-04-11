@@ -1,45 +1,40 @@
 
 export interface SupplierOrderProduct {
-  id: string;
+  id?: string;
   name: string;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
-  category: string;
-  reference: string;
-  status: "pending" | "validated" | "rejected";
-  qualityCheck: boolean;
+  totalPrice?: number;
+  category?: string;
+  reference?: string;
+  status?: "pending" | "validated" | "rejected";
+  qualityCheck?: boolean;
+  priceRequested?: boolean;
 }
 
-export interface SupplierOrder {
+export interface SupplierOrderWithItems {
   id: string;
-  supplier_id: string;
   order_number: string;
-  status: "draft" | "pending" | "approved" | "delivered" | "cancelled";
+  supplier_id: string;
+  expected_delivery_date?: string;
+  status: "pending" | "delivered" | "draft" | "approved";
   payment_status: "pending" | "partial" | "paid";
-  order_status: "pending" | "delivered";
-  expected_delivery_date: string;
+  notes?: string;
   total_amount: number;
   paid_amount: number;
-  remaining_amount: number;
-  notes?: string;
-  delivery_address?: string;
-  discount: number;
-  shipping_cost: number;
-  logistics_cost: number;
-  transit_cost: number;
-  tax_rate: number;
-  subtotal: number;
-  tax_amount: number;
-  total_ttc: number;
-  supplier?: {
-    id: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-  };
-  items?: SupplierOrderProduct[];
-  created_at?: string;
+  discount?: number;
+  shipping_cost?: number;
+  logistics_cost?: number;
+  transit_cost?: number;
+  tax_rate?: number;
+  tax_amount?: number;
+  subtotal?: number;
+  created_at: string;
   updated_at?: string;
+  supplier?: {
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+  };
+  items: SupplierOrderProduct[];
 }

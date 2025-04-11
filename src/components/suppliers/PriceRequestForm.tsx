@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SupplierOrderProduct } from "@/types/supplierOrder";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
+import { createTableQuery } from '@/hooks/use-supabase-table-extension';
 
 interface PriceRequestFormProps {
   isOpen: boolean;
@@ -94,14 +95,16 @@ Cordialement,
 L'équipe commerciale
       `;
       
+      // Use createTableQuery to access the price_requests table
+      const priceRequestsTable = createTableQuery('price_requests');
+      
       // Save the price request in the database
-      const { error } = await supabase
-        .from('price_requests')
+      const { error } = await priceRequestsTable
         .insert({
           supplier_id: supplier.id,
           subject,
           message: emailContent,
-          products: products,
+          products,
           status: 'pending',
           created_at: new Date().toISOString()
         });
