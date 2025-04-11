@@ -68,16 +68,14 @@ export function usePreorderCart() {
         if (isSelectQueryError(data.client)) {
           clientData = defaultClient;
         } else {
-          // Extract client data safely
-          const clientStatus = data.client?.status === 'entreprise' ? 'entreprise' : 'particulier';
-          
+          // Safely extract client properties with fallbacks to default values
           clientData = {
-            id: data.client?.id || defaultClient.id,
-            company_name: data.client?.company_name || defaultClient.company_name,
-            contact_name: data.client?.contact_name || defaultClient.contact_name,
-            email: data.client?.email || defaultClient.email,
-            phone: data.client?.phone || defaultClient.phone,
-            status: clientStatus as "particulier" | "entreprise"
+            id: safeGetProperty(data.client, 'id', defaultClient.id),
+            company_name: safeGetProperty(data.client, 'company_name', defaultClient.company_name),
+            contact_name: safeGetProperty(data.client, 'contact_name', defaultClient.contact_name),
+            email: safeGetProperty(data.client, 'email', defaultClient.email),
+            phone: safeGetProperty(data.client, 'phone', defaultClient.phone),
+            status: safeGetProperty(data.client, 'status', defaultClient.status) as "particulier" | "entreprise"
           };
         }
         
@@ -103,7 +101,8 @@ export function usePreorderCart() {
               discount: 0, // Assuming discount is not stored for preorder items
               discounted_price: item.unit_price,
               original_price: product.price || item.unit_price,
-              stock: product.stock || 0
+              stock: product.stock || 0,
+              image_url: product.image_url
             };
             
             cartItems.push(cartItem);

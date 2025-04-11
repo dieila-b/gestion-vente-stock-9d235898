@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import type { Supplier } from "@/types/supplier";
 import type { SupplierOrderProduct } from "@/types/supplierOrder";
@@ -124,12 +125,12 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
         product_id: product.id,
         name: product.name,
         quantity: product.quantity,
-        unit_price: product.unit_price,
-        total_price: product.total_price,
+        unit_price: product.unitPrice,
+        total_price: product.totalPrice,
         category: product.category,
         reference: product.reference,
         status: product.status,
-        quality_check: product.quality_check
+        quality_check: product.qualityCheck
       }));
 
       const { error: productsError } = await supabase

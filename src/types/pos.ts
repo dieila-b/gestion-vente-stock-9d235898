@@ -1,5 +1,5 @@
 
-// Adding/updating the CartItem interface to include unit_price and total
+// Adding/updating the CartItem interface to include unit_price, total, and image_url
 export interface CartItem {
   id: string;
   name: string;
@@ -13,6 +13,7 @@ export interface CartItem {
   stock?: number;
   unit_price?: number;  // Added to match usage in components
   total?: number;       // Added to match usage in components
+  image_url?: string;   // Added to fix image rendering issues
 }
 
 export interface Product {

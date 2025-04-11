@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
 import { Card, CardContent } from "@/components/ui/card";
 
 export interface Category {
@@ -57,7 +57,7 @@ export function ExpenseOutcomeTab() {
         if (isSelectQueryError(entry.category)) {
           entryCategory = defaultCategory;
         } else {
-          entryCategory = entry.category as Category || defaultCategory;
+          entryCategory = (entry.category as Category) || defaultCategory;
         }
 
         return {
