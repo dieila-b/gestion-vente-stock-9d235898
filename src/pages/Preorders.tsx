@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, XCircle } from "lucide-react";
-import { useCart } from "@/store/cart";
+import { useCart } from "@/hooks/use-cart"; // Updated import path
 import { ProductCard } from "@/components/pos/ProductCard";
 import { Product } from "@/types/pos";
 import { toast } from "sonner";
-import { PreorderCart } from "@/components/pos/PreorderCart";
+import { PreorderCart } from "@/components/preorders/PreorderCart"; // Updated the import path
 import { Client } from "@/types/client_unified";
 import { PreorderInvoiceView } from "@/components/preorder/PreorderInvoiceView";
 import useEditOrder from "@/hooks/use-edit-order";
@@ -131,16 +132,8 @@ export default function Preorders() {
     setCart(convertedCart);
   };
 
-  // Update the onUpdateDiscount handler to match expected parameter count
-  const handleUpdateDiscount = (discount: number) => {
-    // This is a wrapper to adapt signature
-    // You might need implementation based on your actual requirements
-    console.log("Update discount called with:", discount);
-  };
-
-  // For specific functions that require the wrong signature, create adapters
+  // Create adapter for updateDiscount to match expected function signature
   const adaptedUpdateDiscount = (id: string, discount: number) => {
-    // Original function that takes both parameters
     updateDiscount(id, discount);
   };
 
@@ -160,8 +153,10 @@ export default function Preorders() {
               <Select
                 value={currentClient?.id}
                 onValueChange={(value) => {
-                  const selectedClient = editOrderData?.orderData?.client || null;
-                  setCurrentClient(selectedClient);
+                  // Safely handle client selection
+                  if (editOrderData?.selectedClient) {
+                    setCurrentClient(editOrderData.selectedClient as any);
+                  }
                 }}
               >
                 <SelectTrigger id="client">
@@ -201,8 +196,8 @@ export default function Preorders() {
 
           <PreorderCart
             items={cart}
-            onRemoveItem={removeFromCart}
-            onQuantityChange={updateQuantity}
+            onRemove={removeFromCart}
+            onUpdateQuantity={updateQuantity}
             onSubmit={() => handleCheckout(validatePreorder)}
             onNotesChange={setNotes}
             notes={notes}
