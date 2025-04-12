@@ -26,7 +26,7 @@ export default function YearlyReport() {
   const [selectedType, setSelectedType] = useState("Par mois");
 
   // Récupérer la liste des points de vente
-  const { data: posLocations = [] } = useQuery<POSLocation[]>({
+  const posLocationsQuery = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,12 +35,14 @@ export default function YearlyReport() {
         .order('name');
 
       if (error) throw error;
-      return data;
+      return data as POSLocation[];
     }
   });
+  
+  const posLocations = posLocationsQuery.data || [];
 
-  // Fix the type instantiation issue by explicitly typing the query result
-  const { data: salesData = [], isLoading } = useQuery<SalesData[]>({
+  // Fix the type instantiation issue by avoiding nested generic types
+  const salesDataQuery = useQuery({
     queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
     queryFn: async () => {
       const startDate = startOfYear(new Date(parseInt(selectedYear)));
@@ -85,6 +87,9 @@ export default function YearlyReport() {
       return monthlyData;
     }
   });
+  
+  const salesData = salesDataQuery.data || [];
+  const isLoading = salesDataQuery.isLoading;
 
   const years = Array.from(
     { length: 5 },
