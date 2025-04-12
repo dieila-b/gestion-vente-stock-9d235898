@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -242,14 +241,17 @@ export const usePurchaseOrders = () => {
   };
 
   return {
+    // Return functions for querying and accessing data
     usePurchaseOrdersQuery,
     usePurchaseOrderQuery,
     usePurchaseOrdersBySupplierQuery,
     usePurchaseOrderItemsQuery,
+    // Return handlers for CRUD operations
     handleCreate,
     handleApprove,
     handleDelete,
     handleEdit,
+    // Return data and loading state
     orders,
     isLoading,
     currentOrder,
