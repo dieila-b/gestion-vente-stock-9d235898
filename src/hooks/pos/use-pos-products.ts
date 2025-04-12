@@ -1,79 +1,68 @@
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Product } from "@/types/pos";
+import { toast } from "sonner";
 
-export function usePOSProducts(selectedPDV: string, selectedCategory: string | null, searchTerm: string) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16;
+// Ensure the product data includes price
+type WarehouseStockWithProduct = {
+  created_at: string;
+  id: string;
+  pos_location_id: string;
+  product_id: string;
+  quantity: number;
+  total_value: number;
+  unit_price: number;
+  updated_at: string;
+  warehouse_id: string;
+  product: {
+    category: string;
+    created_at: string;
+    description: string;
+    id: string;
+    image_url: string;
+    name: string;
+    price: number; // Make sure this exists
+    purchase_price: number;
+    reference: string;
+    stock: number;
+    updated_at: string;
+  };
+  pos_location: any;
+};
 
-  // Get stock items for the selected POS location
-  const { data: stockItems = [], refetch: refetchStock, isLoading } = useQuery({
-    queryKey: ['pos-stock', selectedPDV, selectedCategory, searchTerm],
+export function usePOSProducts(locationId: string | undefined) {
+  return useQuery({
+    queryKey: ['pos-products', locationId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('warehouse_stock')
         .select(`
           *,
-          product:catalog(*),
-          pos_location:pos_locations(*)
+          product:product_id(*),
+          pos_location:pos_location_id(*)
         `)
-        .is('warehouse_id', null);
+        .order('created_at', { ascending: false });
 
-      if (selectedPDV !== "_all") {
-        query = query.eq('pos_location_id', selectedPDV);
+      if (error) {
+        console.error('Error fetching POS products:', error);
+        toast.error("Erreur lors du chargement des produits");
+        throw error;
       }
 
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data;
+      // Filter for the location if provided
+      const items = locationId && locationId !== "_all" 
+        ? data.filter((item: WarehouseStockWithProduct) => item.pos_location_id === locationId)
+        : data;
+
+      // Map products with price from product data or unit_price as fallback
+      return items.map((item: WarehouseStockWithProduct) => ({
+        ...item,
+        // Ensure product has price or use unit_price as fallback
+        product: {
+          ...item.product,
+          price: item.product?.price || item.unit_price || 0
+        }
+      }));
     }
   });
-
-  // Convert stock items to products for the UI
-  const products = stockItems.map(item => ({
-    ...item.product,
-    stock: item.quantity,
-    price: item.price || item.product.price
-  }));
-
-  // Filter products based on search term and category
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-  
-  // Extract categories
-  const categories = Array.from(new Set(products.map(product => product.category))).filter(Boolean);
-
-  // Pagination controls
-  const goToNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const goToPrevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
-
-  return {
-    products,
-    stockItems,
-    refetchStock,
-    currentProducts,
-    categories,
-    currentPage,
-    totalPages,
-    isLoading,
-    goToNextPage,
-    goToPrevPage,
-  };
 }

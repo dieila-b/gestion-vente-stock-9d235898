@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 import { useToast } from "@/components/ui/use-toast";
 
 export type TransferFormData = {
@@ -44,9 +44,9 @@ export function useTransferForm() {
   const createTransferMutation = useMutation({
     mutationFn: async (data: TransferFormData) => {
       // First, create the transfer header
-      const { data: transfer, error } = await supabase
-        .from("transfers")
-        .insert({
+      const transfer = await db.insert(
+        'transfers',
+        {
           source_warehouse_id: data.source_warehouse_id,
           destination_warehouse_id: data.destination_warehouse_id,
           source_pos_id: data.source_pos_id,
@@ -56,25 +56,21 @@ export function useTransferForm() {
           status: data.status,
           transfer_date: data.transfer_date,
           quantity: data.products.reduce((sum, product) => sum + product.quantity, 0), // Add quantity field
-        })
-        .select("id")
-        .single();
+        }
+      );
 
-      if (error) throw error;
+      if (!transfer) throw new Error("Failed to create transfer");
 
       // Then create transfer items
       if (data.products.length > 0) {
-        const { error: itemsError } = await supabase
-          .from("transfer_items")
-          .insert(
-            data.products.map((product) => ({
-              transfer_id: transfer.id,
-              product_id: product.product_id,
-              quantity: product.quantity,
-            }))
-          );
+        const itemsToInsert = data.products.map((product) => ({
+          transfer_id: transfer.id,
+          product_id: product.product_id,
+          quantity: product.quantity,
+        }));
 
-        if (itemsError) throw itemsError;
+        const items = await db.insert('transfer_items', itemsToInsert);
+        if (!items) throw new Error("Failed to create transfer items");
       }
 
       return transfer;
@@ -100,9 +96,9 @@ export function useTransferForm() {
   const updateTransferMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: TransferFormData }) => {
       // Update transfer header
-      const { error } = await supabase
-        .from("transfers")
-        .update({
+      const updated = await db.update(
+        'transfers',
+        {
           source_warehouse_id: data.source_warehouse_id,
           destination_warehouse_id: data.destination_warehouse_id,
           source_pos_id: data.source_pos_id,
@@ -112,32 +108,26 @@ export function useTransferForm() {
           status: data.status as "pending" | "completed" | "cancelled",
           transfer_date: data.transfer_date,
           quantity: data.products.reduce((sum, product) => sum + product.quantity, 0), // Add quantity field
-        })
-        .eq("id", id);
+        },
+        'id',
+        id
+      );
 
-      if (error) throw error;
+      if (!updated) throw new Error("Failed to update transfer");
 
       // Delete existing items
-      const { error: deleteError } = await supabase
-        .from("transfer_items")
-        .delete()
-        .eq("transfer_id", id);
-
-      if (deleteError) throw deleteError;
+      await db.delete('transfer_items', 'transfer_id', id);
 
       // Insert new items
       if (data.products.length > 0) {
-        const { error: itemsError } = await supabase
-          .from("transfer_items")
-          .insert(
-            data.products.map((product) => ({
-              transfer_id: id,
-              product_id: product.product_id,
-              quantity: product.quantity,
-            }))
-          );
+        const itemsToInsert = data.products.map((product) => ({
+          transfer_id: id,
+          product_id: product.product_id,
+          quantity: product.quantity,
+        }));
 
-        if (itemsError) throw itemsError;
+        const items = await db.insert('transfer_items', itemsToInsert);
+        if (!items) throw new Error("Failed to create transfer items");
       }
 
       return { id };

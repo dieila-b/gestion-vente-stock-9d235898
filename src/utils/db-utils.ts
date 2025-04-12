@@ -1,25 +1,21 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 import { safeGet } from "@/utils/supabase-safe-query";
 
 // A utility function to check if a table exists in the database
 export async function checkTableExists(tableName: string): Promise<boolean> {
   try {
-    // Query the information_schema to check if the table exists
-    const { data, error } = await supabase
-      .from('pg_tables')
-      .select('tablename')
-      .eq('schemaname', 'public')
-      .eq('tablename', tableName);
+    // Query the information_schema via our safe db adapter
+    const result = await db.query(
+      'pg_tables',
+      query => query.select('tablename')
+        .eq('schemaname', 'public')
+        .eq('tablename', tableName)
+    );
     
-    if (error) {
-      console.error(`Error checking if table ${tableName} exists:`, error);
-      return false;
-    }
-    
-    return Array.isArray(data) && data.length > 0;
+    return Array.isArray(result) && result.length > 0;
   } catch (error) {
-    console.error(`Exception checking if table ${tableName} exists:`, error);
+    console.error(`Error checking if table ${tableName} exists:`, error);
     return false;
   }
 }
@@ -74,8 +70,12 @@ export async function safeTableQuery<T>(
   }
   
   try {
-    const result = await queryBuilder(supabase.from(tableName as any));
-    return result;
+    // Use our db adapter instead of direct supabase calls
+    const result = await db.query(tableName, queryBuilder, fallbackData);
+    return {
+      data: result,
+      error: null
+    };
   } catch (error) {
     console.error(`Error querying ${tableName}:`, error);
     return {

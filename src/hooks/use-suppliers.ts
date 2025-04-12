@@ -9,13 +9,28 @@ export function useSuppliers() {
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
-        // Use our safe db-adapter
-        const data = await db.query<Supplier[]>(
+        // Use our safe db-adapter instead of direct supabase query
+        const data = await db.query(
           'suppliers',
           query => query.select('*').order('name', { ascending: true })
         );
         
-        return Array.isArray(data) ? data : [];
+        // Make sure we have a valid array of suppliers
+        if (Array.isArray(data)) {
+          return data.map(supplier => ({
+            id: supplier.id || '',
+            name: supplier.name || 'Unknown Supplier',
+            contact: supplier.contact || '',
+            email: supplier.email || '',
+            phone: supplier.phone || '',
+            address: supplier.address || '',
+            website: supplier.website || '',
+            created_at: supplier.created_at || new Date().toISOString(),
+            // Add any other fields you need here
+          })) as Supplier[];
+        }
+        
+        return [] as Supplier[];
       } catch (error) {
         console.error("Error fetching suppliers:", error);
         toast.error("Erreur lors du chargement des fournisseurs");

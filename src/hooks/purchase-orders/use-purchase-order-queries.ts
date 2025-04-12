@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
+import { safeSupplier } from "@/utils/supabase-safe-query";
 
 // Type guard function to validate order status
 function isValidOrderStatus(status: string): status is PurchaseOrder['status'] {
@@ -38,14 +39,17 @@ export const usePurchaseOrderQueries = (id?: string) => {
         
         // Transform the data to match the PurchaseOrder type
         return data.map((order: any) => {
+          // Use safeSupplier to handle supplier data safely
+          const supplierData = safeSupplier(order.supplier);
+          
           // Create a base order object with default values
           const transformedOrder: PurchaseOrder = {
             id: order.id,
             order_number: order.order_number,
             supplier: {
-              name: order.supplier?.name || '',
-              phone: order.supplier?.phone || null,
-              email: order.supplier?.email || null
+              name: supplierData.name || '',
+              phone: supplierData.phone || null,
+              email: supplierData.email || null
             },
             supplier_id: order.supplier_id,
             created_at: order.created_at,
@@ -75,7 +79,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
             notes: order.notes || '',
             expected_delivery_date: order.expected_delivery_date || '',
             warehouse_id: order.warehouse_id || '',
-            deleted: order.deleted || false
+            deleted: Boolean(order.deleted) || false
           };
           
           // Override with actual values if they exist
@@ -133,14 +137,17 @@ export const usePurchaseOrderQueries = (id?: string) => {
         if (error) throw error;
         if (!order) return null;
         
+        // Use safeSupplier to handle supplier data safely
+        const supplierData = safeSupplier(order.supplier);
+        
         // Create a base order object with default values
         const transformedOrder: PurchaseOrder = {
           id: order.id,
           order_number: order.order_number,
           supplier: {
-            name: order.supplier?.name || '',
-            phone: order.supplier?.phone || null,
-            email: order.supplier?.email || null
+            name: supplierData.name || '',
+            phone: supplierData.phone || null,
+            email: supplierData.email || null
           },
           supplier_id: order.supplier_id,
           created_at: order.created_at,
@@ -170,7 +177,7 @@ export const usePurchaseOrderQueries = (id?: string) => {
           notes: order.notes || '',
           expected_delivery_date: order.expected_delivery_date || '',
           warehouse_id: order.warehouse_id || '',
-          deleted: order.deleted || false
+          deleted: Boolean(order.deleted) || false
         };
         
         // Override with actual values if they exist
@@ -186,11 +193,11 @@ export const usePurchaseOrderQueries = (id?: string) => {
         
         // Add optional properties if they exist in the data
         if ('customs_duty' in order) {
-          transformedOrder.customs_duty = order.customs_duty;
+          transformedOrder.customs_duty = Number(order.customs_duty) || 0;
         }
         
         if ('delivery_note_id' in order) {
-          transformedOrder.delivery_note_id = order.delivery_note_id;
+          transformedOrder.delivery_note_id = String(order.delivery_note_id) || '';
         }
         
         return transformedOrder;

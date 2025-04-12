@@ -9,7 +9,7 @@ export const useClientStats = () => {
     queryFn: async () => {
       try {
         // Use our safe db-adapter
-        const result = await db.query<{ count: number }>(
+        const result = await db.query(
           'clients',
           query => query.select('id', { count: 'exact', head: true })
         );
@@ -28,14 +28,16 @@ export const useClientStats = () => {
     queryFn: async () => {
       try {
         // Use our safe db-adapter
-        const payments = await db.query<{ paid_amount: number }[]>(
+        const payments = await db.query(
           'supplier_orders',
           query => query.select('paid_amount').eq('payment_status', 'paid')
         );
         
-        return Array.isArray(payments) 
-          ? payments.reduce((sum, order) => sum + (order.paid_amount || 0), 0) 
-          : 0;
+        // If payments is an array, calculate the sum
+        if (Array.isArray(payments)) {
+          return payments.reduce((sum, order) => sum + (order.paid_amount || 0), 0);
+        }
+        return 0;
       } catch (error) {
         console.error("Error fetching supplier payments:", error);
         return 0;

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DatabaseQueryBuilder } from "@/types/db-adapter";
 
 /**
  * A universal database adapter to safely access any table in Supabase,

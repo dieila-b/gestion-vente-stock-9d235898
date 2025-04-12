@@ -2,17 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { db } from "./db-adapter";
-
-/**
- * Type for SelectQueryError to match what Supabase returns when queries fail
- */
-export interface SelectQueryError {
-  error: true;
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}
+import { BankAccount, DeliveryNote, Supplier, SelectQueryError } from "@/types/db-adapter";
 
 /**
  * Type guard to check if an object is a SelectQueryError
@@ -89,21 +79,23 @@ export function safeArray<T>(items: T[] | SelectQueryError): T[] {
 /**
  * Safely handle supplier properties
  */
-export function safeSupplier(supplier: any): {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-} {
+export function safeSupplier(supplier: any): Supplier {
   if (isSelectQueryError(supplier)) {
     return {
       id: '',
       name: 'Erreur de chargement',
       phone: '',
-      email: ''
+      email: '',
+      created_at: new Date().toISOString()
     };
   }
-  return supplier || { id: '', name: 'Fournisseur inconnu', phone: '', email: '' };
+  return supplier || { 
+    id: '', 
+    name: 'Fournisseur inconnu', 
+    phone: '', 
+    email: '',
+    created_at: new Date().toISOString()
+  };
 }
 
 /**
@@ -114,16 +106,24 @@ export function safeProduct(product: any): {
   name?: string;
   reference?: string;
   category?: string;
+  price?: number;
 } {
   if (isSelectQueryError(product)) {
     return {
       id: '',
       name: 'Produit non disponible',
       reference: '',
-      category: ''
+      category: '',
+      price: 0
     };
   }
-  return product || { id: '', name: 'Produit inconnu', reference: '', category: '' };
+  return product || { 
+    id: '', 
+    name: 'Produit inconnu', 
+    reference: '', 
+    category: '',
+    price: 0 
+  };
 }
 
 /**
@@ -187,14 +187,7 @@ export function safeInvoice(invoice: any): {
 /**
  * Safely handle bank account properties
  */
-export function safeBankAccount(account: any): {
-  id: string;
-  name: string;
-  bank_name: string;
-  account_type: string;
-  current_balance: number;
-  initial_balance: number;
-} {
+export function safeBankAccount(account: any): BankAccount {
   if (isSelectQueryError(account)) {
     return {
       id: '',
@@ -202,7 +195,8 @@ export function safeBankAccount(account: any): {
       bank_name: '',
       account_type: 'checking',
       current_balance: 0,
-      initial_balance: 0
+      initial_balance: 0,
+      created_at: new Date().toISOString()
     };
   }
   return account || { 
@@ -211,7 +205,40 @@ export function safeBankAccount(account: any): {
     bank_name: '', 
     account_type: 'checking', 
     current_balance: 0, 
-    initial_balance: 0 
+    initial_balance: 0,
+    created_at: new Date().toISOString()
+  };
+}
+
+/**
+ * Safely handle delivery note properties
+ */
+export function safeDeliveryNote(deliveryNote: any): DeliveryNote {
+  if (isSelectQueryError(deliveryNote)) {
+    return {
+      id: '',
+      delivery_number: 'BL-0000',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      supplier: safeSupplier(null),
+      purchase_order: {
+        order_number: '',
+        total_amount: 0
+      },
+      items: []
+    };
+  }
+  return deliveryNote || {
+    id: '',
+    delivery_number: 'BL-0000',
+    status: 'pending',
+    created_at: new Date().toISOString(),
+    supplier: safeSupplier(null),
+    purchase_order: {
+      order_number: '',
+      total_amount: 0
+    },
+    items: []
   };
 }
 

@@ -1,8 +1,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { castToTransfers } from "@/utils/select-query-helper";
+import { db } from "@/utils/db-adapter"; 
+import { castToTransfers } from "@/utils/supabase-safe-query";
 
 export function useTransfersData() {
   const { toast } = useToast();
@@ -16,39 +16,45 @@ export function useTransfersData() {
   } = useQuery({
     queryKey: ["transfers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transfers")
-        .select(`
-          *,
-          source_warehouse:source_warehouse_id(*),
-          destination_warehouse:destination_warehouse_id(*),
-          source_pos:source_pos_id(*),
-          destination_pos:destination_pos_id(*),
-          items:transfer_items(*)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      
-      // Use helper function to handle SelectQueryError
-      return castToTransfers(data || []);
+      try {
+        const data = await db.query(
+          "transfers",
+          query => query.select(`
+            *,
+            source_warehouse:source_warehouse_id(*),
+            destination_warehouse:destination_warehouse_id(*),
+            source_pos:source_pos_id(*),
+            destination_pos:destination_pos_id(*),
+            items:transfer_items(*)
+          `)
+          .order("created_at", { ascending: false })
+        );
+        
+        // Use helper function to handle SelectQueryError
+        return castToTransfers(data || []);
+      } catch (error) {
+        console.error("Error fetching transfers:", error);
+        return [];
+      }
     },
   });
 
   const deleteTransferMutation = useMutation({
     mutationFn: async (id: string) => {
       // First delete the items
-      const { error: itemsError } = await supabase
-        .from("transfer_items")
-        .delete()
-        .eq("transfer_id", id);
+      const itemsDeleted = await db.delete("transfer_items", "transfer_id", id);
 
-      if (itemsError) throw itemsError;
+      if (!itemsDeleted) {
+        throw new Error("Failed to delete transfer items");
+      }
 
       // Then delete the transfer
-      const { error } = await supabase.from("transfers").delete().eq("id", id);
+      const transferDeleted = await db.delete("transfers", "id", id);
 
-      if (error) throw error;
+      if (!transferDeleted) {
+        throw new Error("Failed to delete transfer");
+      }
+
       return { success: true };
     },
     onSuccess: () => {
@@ -71,9 +77,9 @@ export function useTransfersData() {
   // Function to fetch a specific transfer by ID
   const fetchTransferById = async (id: string) => {
     try {
-      const { data, error } = await supabase
-        .from("transfers")
-        .select(`
+      const data = await db.query(
+        "transfers",
+        query => query.select(`
           *,
           source_warehouse:source_warehouse_id(*),
           destination_warehouse:destination_warehouse_id(*),
@@ -85,9 +91,10 @@ export function useTransfersData() {
           )
         `)
         .eq("id", id)
-        .single();
+        .single()
+      );
 
-      if (error) throw error;
+      if (!data) throw new Error("Transfer not found");
       return data;
     } catch (error) {
       console.error("Error fetching transfer:", error);
@@ -99,27 +106,35 @@ export function useTransfersData() {
   const { data: posLocations = [] } = useQuery({
     queryKey: ["pos-locations-for-dropdown"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pos_locations")
-        .select("id, name")
-        .eq("is_active", true);
-
-      if (error) throw error;
-      return data;
+      try {
+        const data = await db.query(
+          "pos_locations",
+          query => query.select("id, name").eq("is_active", true)
+        );
+        
+        return data || [];
+      } catch (error) {
+        console.error("Error fetching POS locations:", error);
+        return [];
+      }
     },
   });
 
   // Fetch warehouses for dropdowns
-  const { data: warehouses = [] } = useQuery({
+  const { data: warehouses = [] }  = useQuery({
     queryKey: ["warehouses-for-dropdown"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("id, name")
-        .eq("is_active", true);
-
-      if (error) throw error;
-      return data;
+      try {
+        const data = await db.query(
+          "warehouses",
+          query => query.select("id, name").eq("is_active", true)
+        );
+        
+        return data || [];
+      } catch (error) {
+        console.error("Error fetching warehouses:", error);
+        return [];
+      }
     },
   });
 

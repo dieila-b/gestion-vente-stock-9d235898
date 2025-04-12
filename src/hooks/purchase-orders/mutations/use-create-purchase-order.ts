@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { PurchaseOrder } from "@/types/purchaseOrder";
+import { safeSupplier } from "@/utils/supabase-safe-query";
 
 // Type guard function to validate order status
 function isValidOrderStatus(status: string): status is PurchaseOrder['status'] {
@@ -45,14 +46,17 @@ export function useCreatePurchaseOrder() {
     if (error) throw error;
     if (!data) throw new Error('No data returned from insert');
 
+    // Safely handle supplier data using safeSupplier
+    const supplierData = safeSupplier(data.supplier);
+
     // Map the returned data to the PurchaseOrder type
     const transformedOrder: PurchaseOrder = {
       id: data.id,
       order_number: data.order_number,
       supplier: {
-        name: data.supplier?.name || '',
-        phone: data.supplier?.phone || null,
-        email: data.supplier?.email || null
+        name: supplierData.name || '',
+        phone: supplierData.phone || null,
+        email: supplierData.email || null
       },
       supplier_id: data.supplier_id,
       created_at: data.created_at,
@@ -73,7 +77,7 @@ export function useCreatePurchaseOrder() {
       notes: data.notes || '',
       expected_delivery_date: data.expected_delivery_date || '',
       warehouse_id: data.warehouse_id || '',
-      deleted: data.deleted || false
+      deleted: Boolean(data.deleted) || false
     };
     
     // Override with actual values if they exist
@@ -89,11 +93,11 @@ export function useCreatePurchaseOrder() {
     
     // Add optional properties if they exist in the data
     if ('customs_duty' in data) {
-      transformedOrder.customs_duty = data.customs_duty;
+      transformedOrder.customs_duty = Number(data.customs_duty) || 0;
     }
     
     if ('delivery_note_id' in data) {
-      transformedOrder.delivery_note_id = data.delivery_note_id;
+      transformedOrder.delivery_note_id = String(data.delivery_note_id) || '';
     }
     
     return transformedOrder;
