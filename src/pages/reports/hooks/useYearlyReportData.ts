@@ -26,26 +26,32 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    let query = supabase.from('orders').select('created_at, final_total');
+    // Create a base query object and apply filters step by step
+    // We'll use explicit type annotations to prevent excessive type inference
+    const baseQuery = supabase.from('orders');
     
-    // Add date range filters
-    query = query
+    // First get a typed select query
+    const selectQuery = baseQuery.select<'created_at, final_total', OrderData>('created_at, final_total');
+    
+    // Apply date range filters
+    const dateFilteredQuery = selectQuery
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString());
     
-    // Add POS filter if needed
+    // Apply POS filter if needed (conditional)
+    let finalQuery = dateFilteredQuery;
     if (selectedPOS !== "all") {
-      query = query.eq('depot', selectedPOS);
+      finalQuery = dateFilteredQuery.eq('depot', selectedPOS);
     }
     
+    // Order the results
+    const orderedQuery = finalQuery.order('created_at');
+    
     // Execute the query
-    const { data, error } = await query.order('created_at');
+    const { data, error } = await orderedQuery;
     
     if (error) throw error;
     if (!data) return [];
-
-    // Type-cast the data explicitly
-    const typedData = data as OrderData[];
 
     // Generate all months of the year
     const months = eachMonthOfInterval({
@@ -60,7 +66,7 @@ async function fetchSalesData(
     }));
 
     // Aggregate sales by month
-    typedData.forEach((order: OrderData) => {
+    data.forEach((order) => {
       const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
       const index = monthlyData.findIndex((data) => data.month === orderMonth);
       if (index !== -1) {
