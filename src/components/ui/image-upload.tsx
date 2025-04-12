@@ -35,7 +35,7 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
       return false;
     }
     
-    // Check file size - increased to 20MB
+    // Check file size - 20MB
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
     if (file.size > MAX_FILE_SIZE) {
       setError(`La taille du fichier dépasse la limite de 20MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);

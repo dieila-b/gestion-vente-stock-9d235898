@@ -39,13 +39,9 @@ export const useUserMutations = (queryClient: QueryClient) => {
           role: userData.role || 'employee',
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
           phone: userData.phone || '',
-          address: userData.address || ''
+          address: userData.address || '',
+          photo_url: userData.photo_url || null
         };
-
-        // Only add photo_url if it's provided to avoid schema issues
-        if (userData.photo_url) {
-          return { ...userDbObject, photo_url: userData.photo_url };
-        }
 
         return userDbObject;
       });

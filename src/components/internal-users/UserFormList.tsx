@@ -34,7 +34,7 @@ export const UserFormList = ({
   
   const handleImageUpload = async (index: number, file: File) => {
     try {
-      // Check file size - increased to 20MB
+      // Check file size - 20MB
       const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
       if (file.size > MAX_FILE_SIZE) {
         console.error("File size exceeds limit", file.size);

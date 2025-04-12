@@ -26,46 +26,15 @@ export const useBucketCheck = () => {
         
         if (!lovableBucket) {
           console.warn("Le bucket 'lovable-uploads' n'existe pas ou n'est pas accessible");
-          
-          try {
-            // Try to create the bucket if it doesn't exist
-            const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
-              public: true,
-              fileSizeLimit: 20971520 // 20MB in bytes
-            });
-            
-            if (createError) {
-              console.error("Error creating bucket:", createError);
-              setBucketExists(false);
-            } else {
-              console.log("Bucket 'lovable-uploads' created successfully");
-              
-              // Update the public access policy for the bucket
-              const { error: policyError } = await supabase.storage.from('lovable-uploads')
-                .createSignedUrl('test-policy.txt', 60);
-              
-              if (policyError && policyError.message.includes('not found')) {
-                // Create a temporary file to make sure the bucket is properly initialized
-                const testContent = new Blob(['test'], { type: 'text/plain' });
-                const testFile = new File([testContent], 'test-policy.txt', { type: 'text/plain' });
-                
-                await supabase.storage.from('lovable-uploads').upload('test-policy.txt', testFile);
-                console.log("Created test file to initialize bucket");
-              }
-              
-              setBucketExists(true);
-              toast.success("Stockage d'images configuré avec succès");
-            }
-          } catch (createErr) {
-            console.error("Exception creating bucket:", createErr);
-            setBucketExists(false);
-          }
+          setBucketExists(false);
+          toast.error("Le stockage d'images n'est pas configuré. Contactez l'administrateur.");
         } else {
           console.log("Bucket 'lovable-uploads' exists");
           setBucketExists(true);
         }
       } catch (err) {
         console.error("Exception checking bucket:", err);
+        setBucketExists(false);
       } finally {
         setIsBucketCheckLoading(false);
       }
