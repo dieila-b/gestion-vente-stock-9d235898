@@ -26,14 +26,23 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Simplify query structure to avoid deep type instantiation
-    const { data, error } = await supabase
+    // Use a more basic query approach to avoid complex type inference
+    const queryResponse = await supabase
       .from('orders')
       .select('created_at, final_total')
       .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .eq(selectedPOS !== "all" ? 'depot' : 'id', selectedPOS !== "all" ? selectedPOS : 'id')
-      .order('created_at');
+      .lte('created_at', endDate.toISOString());
+      
+    // Add the filter condition separately based on selectedPOS
+    if (selectedPOS !== "all") {
+      queryResponse.eq('depot', selectedPOS);
+    }
+    
+    // Finally add the order
+    queryResponse.order('created_at');
+    
+    // Get the data and error from the final query
+    const { data, error } = await queryResponse;
     
     if (error) throw error;
     
