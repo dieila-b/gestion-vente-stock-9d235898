@@ -78,9 +78,17 @@ const useEditOrder = () => {
             return;
           }
 
-          // First check if order is a SelectQueryError before accessing properties
-          const clientData = order.client && !isSelectQueryError(order.client) ? order.client : null;
-          const itemsData = order.items && !isSelectQueryError(order.items) ? order.items : [];
+          // Type assertion to help TypeScript understand the data structure
+          const typedOrder = order as any;
+          
+          // First check if the client and items properties exist and are not errors
+          const clientData = typedOrder.client && !isSelectQueryError(typedOrder.client) 
+            ? typedOrder.client 
+            : null;
+            
+          const itemsData = typedOrder.items && !isSelectQueryError(typedOrder.items) 
+            ? typedOrder.items 
+            : [];
 
           // Handle client data with optional properties
           const formattedClient = clientData ? {
@@ -116,17 +124,17 @@ const useEditOrder = () => {
 
           setCart(formattedCart);
 
-          // Create a safe order data object
+          // Create a safe order data object with type assertion
           const safeOrderData: OrderData = {
-            id: order.id || '',
-            client_id: order.client_id || '',
-            total_amount: order.total_amount || 0,
-            paid_amount: order.paid_amount || 0,
-            remaining_amount: order.remaining_amount || 0,
-            status: order.status || 'pending',
-            notes: order.notes || '',
-            created_at: order.created_at || new Date().toISOString(),
-            updated_at: order.updated_at || new Date().toISOString(),
+            id: typedOrder.id || '',
+            client_id: typedOrder.client_id || '',
+            total_amount: typedOrder.total_amount || 0,
+            paid_amount: typedOrder.paid_amount || 0,
+            remaining_amount: typedOrder.remaining_amount || 0,
+            status: typedOrder.status || 'pending',
+            notes: typedOrder.notes || '',
+            created_at: typedOrder.created_at || new Date().toISOString(),
+            updated_at: typedOrder.updated_at || new Date().toISOString(),
             client: formattedClient,
             items: formattedCart,
           };
