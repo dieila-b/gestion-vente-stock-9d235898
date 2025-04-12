@@ -53,6 +53,7 @@ export const UserFormList = ({
       }
       
       // Télécharger le fichier
+      console.log("Uploading file to path:", filePath);
       const { error: uploadError } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file);
@@ -68,6 +69,7 @@ export const UserFormList = ({
         .from('lovable-uploads')
         .getPublicUrl(filePath);
       
+      console.log("Image uploaded successfully, public URL:", data.publicUrl);
       onInputChange(index, "photo_url", data.publicUrl);
       toast.success("Image téléchargée avec succès");
     } catch (error) {

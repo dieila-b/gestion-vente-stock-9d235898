@@ -509,6 +509,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_name: string | null
+          password: string | null
           phone: string | null
           photo_url: string | null
           role: string | null
@@ -522,6 +523,7 @@ export type Database = {
           id: string
           is_active?: boolean | null
           last_name?: string | null
+          password?: string | null
           phone?: string | null
           photo_url?: string | null
           role?: string | null
@@ -535,6 +537,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_name?: string | null
+          password?: string | null
           phone?: string | null
           photo_url?: string | null
           role?: string | null

@@ -26,8 +26,6 @@ export const useInternalUsers = () => {
         
         if (!bucketExists) {
           console.log("Bucket 'lovable-uploads' does not exist, attempting to create it via API");
-          // Le bucket n'existe pas, nous ne pouvons pas le créer directement via l'API
-          // Nous allons simplement informer l'utilisateur
           toast.error("Le bucket de stockage 'lovable-uploads' n'existe pas. Contactez l'administrateur.");
         } else {
           console.log("Bucket 'lovable-uploads' exists");
@@ -123,14 +121,24 @@ export const useInternalUsers = () => {
     return true;
   };
 
+  const validateRequiredFields = () => {
+    for (const [index, user] of newUserData.entries()) {
+      if (!user.first_name || !user.last_name || !user.email) {
+        toast.error(`L'utilisateur ${index + 1} doit avoir un prénom, nom et email`);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleBulkInsert = async () => {
     if (newUserData.length === 0) {
       toast.error("Aucun utilisateur à ajouter");
       return;
     }
     
-    // Validate passwords match before submitting
-    if (!validatePasswords()) {
+    // Validate passwords and required fields
+    if (!validatePasswords() || !validateRequiredFields()) {
       return;
     }
     
@@ -141,19 +149,25 @@ export const useInternalUsers = () => {
         id: crypto.randomUUID() // Generate a UUID for each user
       }));
       
-      const { error } = await supabase
+      console.log("Inserting users:", usersWithIds);
+      
+      const { data, error } = await supabase
         .from('internal_users')
         .insert(usersWithIds);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding users:", error);
+        toast.error(`Erreur lors de l'ajout des utilisateurs: ${error.message}`);
+        return;
+      }
       
       toast.success("Utilisateurs ajoutés avec succès");
       await fetchUsers();
       setNewUserData([]);
       setPasswordConfirmation({});
-    } catch (error) {
-      console.error("Error adding users:", error);
-      toast.error("Erreur lors de l'ajout des utilisateurs");
+    } catch (error: any) {
+      console.error("Exception adding users:", error);
+      toast.error(`Exception lors de l'ajout des utilisateurs: ${error.message || error}`);
     }
   };
 
