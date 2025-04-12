@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Client } from "@/types/client";
+import { Client } from "@/types/client"; // Use the correct import
+import { toast } from "sonner";
 import { formatGNF } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -352,3 +352,4 @@ export default function Payments() {
     </DashboardLayout>
   );
 }
+

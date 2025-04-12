@@ -1,10 +1,8 @@
 
 export interface Client {
   id: string;
-  company_name: string;
+  company_name: string; // Making this required to match expectations
   contact_name?: string;
-  client_code?: string;
-  client_type?: string;
   email?: string;
   phone?: string;
   mobile_1?: string;
@@ -15,6 +13,8 @@ export interface Client {
   state?: string;
   postal_code?: string;
   country?: string;
+  client_code?: string;
+  client_type?: string;
   notes?: string;
   credit_limit?: number;
   tax_number?: string;
@@ -23,5 +23,6 @@ export interface Client {
   payment_terms?: string;
   created_at: string;
   updated_at: string;
-  status?: string;
+  status?: 'particulier' | 'entreprise' | string;
+  balance?: number;
 }

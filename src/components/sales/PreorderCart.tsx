@@ -1,109 +1,118 @@
 
 import { Card } from "@/components/ui/card";
-import { CartItem as CartItemType } from "@/types/pos";
-import { Client } from "@/types/client";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { formatGNF } from "@/lib/currency";
 
-import { CartHeader } from "./cart/CartHeader";
-import { CartItems } from "./cart/CartItems";
-import { CartSummary } from "./cart/CartSummary";
-import { CartActions } from "./cart/CartActions";
+interface SalesCartItem {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
 
 interface PreorderCartProps {
-  items: CartItemType[];
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemove: (productId: string) => void;
-  onUpdateDiscount: (productId: string, discount: number) => void;
-  onCheckout: () => void;
+  items: SalesCartItem[];
+  onRemoveItem: (id: string) => void;
+  onQuantityChange: (id: string, quantity: number) => void;
+  onSubmit: () => void;
+  onNotesChange: (notes: string) => void;
+  notes: string;
   isLoading: boolean;
-  selectedClient: Client | null;
-  clearCart: () => void;
-  onSetQuantity?: (productId: string, quantity: number) => void;
 }
 
 export function PreorderCart({
   items,
-  onUpdateQuantity,
-  onRemove,
-  onUpdateDiscount,
-  onCheckout,
-  isLoading,
-  selectedClient,
-  clearCart,
-  onSetQuantity
+  onRemoveItem,
+  onQuantityChange,
+  onSubmit,
+  onNotesChange,
+  notes,
+  isLoading
 }: PreorderCartProps) {
-  const [subtotal, setSubtotal] = useState(0);
-  const [totalDiscount, setTotalDiscount] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [searchParams] = useSearchParams();
-  const isEditing = !!searchParams.get('edit');
-
-  // Recalculate totals whenever items array changes
-  useEffect(() => {
-    const newSubtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const newTotalDiscount = items.reduce((total, item) => total + ((item.discount || 0) * item.quantity), 0);
-    const newTotal = newSubtotal - newTotalDiscount;
-    
-    setSubtotal(newSubtotal);
-    setTotalDiscount(newTotalDiscount);
-    setTotal(newTotal);
-
-    console.log("Recalculating totals:", { newSubtotal, newTotalDiscount, newTotal, items });
-  }, [items]);
-
-  const hasOutOfStockItems = items.some(item => !item.stock || item.stock === 0);
-  const hasLowStockItems = items.some(item => item.stock && item.stock < item.quantity);
-
-  console.log("PreorderCart state:", { 
-    itemsLength: items.length, 
-    isLoading, 
-    hasSelectedClient: !!selectedClient,
-    buttonDisabled: isLoading || items.length === 0 || !selectedClient,
-    subtotal,
-    totalDiscount,
-    total
-  });
-
-  const handleCheckoutClick = () => {
-    console.log("PreorderCart: handleCheckoutClick called");
-    if (onCheckout) {
-      onCheckout();
-    }
-  };
+  const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   return (
-    <Card className="w-full glass-panel flex flex-col h-full">
-      <CartHeader itemCount={items.length} />
-
-      <div className="flex-1 p-4">
-        <CartItems
-          items={items}
-          onUpdateQuantity={onUpdateQuantity}
-          onRemove={onRemove}
-          onUpdateDiscount={onUpdateDiscount}
-          onSetQuantity={onSetQuantity}
-          hasOutOfStockItems={hasOutOfStockItems}
-          hasLowStockItems={hasLowStockItems}
-        />
+    <Card className="rounded-lg shadow-md">
+      <div className="p-4 border-b">
+        <div className="flex items-center gap-2 text-lg font-semibold">
+          <ShoppingCart className="h-5 w-5" />
+          Vente ({items.length})
+        </div>
       </div>
 
-      <div className="sticky bottom-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
-        <CartSummary
-          subtotal={subtotal}
-          totalDiscount={totalDiscount}
-          total={total}
-          selectedClient={selectedClient}
-        />
+      <div className="p-4">
+        <ScrollArea className="h-[250px] mb-4">
+          <div className="space-y-3">
+            {items.length === 0 ? (
+              <div className="text-center text-muted-foreground p-4">
+                Aucun produit dans le panier
+              </div>
+            ) : (
+              items.map((item) => (
+                <div key={item.id} className="flex justify-between items-center border-b pb-2">
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-muted-foreground">{formatGNF(item.price)}</div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => onQuantityChange(item.id, Math.max(1, item.quantity - 1))}
+                    >
+                      -
+                    </Button>
+                    <span className="w-8 text-center">{item.quantity}</span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => onQuantityChange(item.id, item.quantity + 1)}
+                    >
+                      +
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => onRemoveItem(item.id)}
+                      className="text-red-500"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
 
-        <CartActions
-          onClear={clearCart}
-          onCheckout={handleCheckoutClick}
-          isLoading={isLoading}
-          itemCount={items.length}
-          selectedClient={!!selectedClient}
-          isEditing={isEditing}
-        />
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Notes</label>
+          <Textarea
+            placeholder="Ajouter des notes pour cette vente..."
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            className="h-24"
+          />
+        </div>
+
+        <div className="flex justify-between font-semibold text-lg mb-4">
+          <span>Total</span>
+          <span>{formatGNF(subtotal)}</span>
+        </div>
+
+        <Button 
+          className="w-full"
+          onClick={onSubmit}
+          disabled={items.length === 0 || isLoading}
+        >
+          {isLoading ? "Traitement..." : "Finaliser la vente"}
+        </Button>
       </div>
     </Card>
   );

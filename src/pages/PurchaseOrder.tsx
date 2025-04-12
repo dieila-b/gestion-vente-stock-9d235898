@@ -1,59 +1,43 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { PurchaseOrderReceipt } from "@/components/purchases/PurchaseOrderReceipt";
-import { PurchaseOrderHeader } from "@/components/purchases/PurchaseOrderHeader";
-import { PurchaseOrderTable } from "@/components/purchases/PurchaseOrderTable";
+import { Button } from "@/components/ui/button";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
-import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
-import type { Supplier } from "@/types/supplier";
+import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 
 const PurchaseOrderPage = () => {
-  const { orders, isLoading, handleApprove, handleDelete, handleEdit } = usePurchaseOrders();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const [showReceipt, setShowReceipt] = useState(false);
-
-  const filteredOrders = orders?.filter(order => 
-    order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.supplier.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const handlePrint = (order: PurchaseOrder) => {
-    // Set the selected order and show the receipt dialog
-    setSelectedOrder(order);
-    setShowReceipt(true);
-  };
+  // Get order data from the hook
+  const { 
+    orders, 
+    isLoading, 
+    handleApprove,
+    handleDelete,
+    handleEdit
+  } = usePurchaseOrders();
 
   return (
-    <div className="p-6 space-y-6">
-      <PurchaseOrderHeader 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+    <DashboardLayout>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Bons de commande</h1>
+          <Link to="/purchase-orders/new">
+            <Button className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau bon de commande
+            </Button>
+          </Link>
+        </div>
 
-      <PurchaseOrderTable
-        orders={filteredOrders}
-        isLoading={isLoading}
-        onApprove={handleApprove}
-        onDelete={handleDelete}
-        onEdit={handleEdit}
-        onPrint={handlePrint}
-      />
-
-      {/* Dialog for displaying receipt */}
-      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedOrder && (
-            <PurchaseOrderReceipt 
-              order={selectedOrder} 
-              showPrintButton={true}
-              showShareButtons={true}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        <PurchaseOrderList 
+          orders={orders} 
+          isLoading={isLoading}
+          onApprove={handleApprove}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+        />
+      </div>
+    </DashboardLayout>
   );
 };
 

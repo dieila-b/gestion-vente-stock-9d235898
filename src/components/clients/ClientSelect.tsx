@@ -5,7 +5,7 @@ import { PlusCircle, Search, User, UserPlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/types/Client";
+import { Client } from "@/types/client";
 import { Dispatch, SetStateAction } from "react";
 
 export interface ClientSelectProps {

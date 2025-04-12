@@ -1,146 +1,132 @@
-import React, { useState } from "react";
+
+import { useState } from "react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ClientSelect } from "@/components/clients/ClientSelect";
-import { Client } from "@/types/Client";
-import { useCart } from "@/hooks/use-cart";
-import { toast } from "sonner";
+import { ProductSelector } from "@/components/sales/ProductSelector"; // Import the ProductSelector
+import { PreorderCart } from "@/components/sales/PreorderCart"; // Import the PreorderCart
+import { Client } from "@/types/client";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { usePreorderStatus } from "@/hooks/use-preorder-status";
 
-export default function Sales() {
+const Sales = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const { cart, updateQuantity, removeFromCart, updateDiscount, clearCart, addToCart, setQuantity } = useCart();
-  const [isLoading, setIsLoading] = useState(false);
+  const [cart, setCart] = useState<any[]>([]);
   
-  const { pendingPreorders } = usePreorderStatus();
-
-  const handleCheckout = async () => {
+  // Add your other state and functions here
+  
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalog')
+        .select('*');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+  
+  // Add product to cart
+  const handleAddToCart = (product: any) => {
+    // Check if product is already in cart
+    const existingItem = cart.find(item => item.product_id === product.id);
+    
+    if (existingItem) {
+      // Update quantity
+      const updatedCart = cart.map(item => 
+        item.product_id === product.id 
+          ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price } 
+          : item
+      );
+      setCart(updatedCart);
+    } else {
+      // Add new item
+      const newItem = {
+        id: Date.now().toString(), // Temporary ID
+        product_id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        subtotal: product.price
+      };
+      setCart([...cart, newItem]);
+    }
+  };
+  
+  // Remove item from cart
+  const handleRemoveItem = (id: string) => {
+    setCart(cart.filter(item => item.id !== id));
+  };
+  
+  // Update item quantity
+  const handleQuantityChange = (id: string, quantity: number) => {
+    const updatedCart = cart.map(item => 
+      item.id === id 
+        ? { ...item, quantity, subtotal: quantity * item.price } 
+        : item
+    );
+    setCart(updatedCart);
+  };
+  
+  // Handle notes change
+  const [notes, setNotes] = useState("");
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+  };
+  
+  // Handle submit
+  const handleSubmit = () => {
     if (!selectedClient) {
       toast.error("Veuillez sélectionner un client");
       return;
     }
-
-    setIsLoading(true);
-    try {
-      const preorderItems = cart.map(item => {
-        let status = 'available';
-        if (!item.stock || item.stock === 0) {
-          status = 'pending';
-        } else if (item.stock < item.quantity) {
-          status = 'pending';
-        }
-        
-        const unitPriceAfterDiscount = item.price - (item.discount || 0);
-        
-        return {
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: unitPriceAfterDiscount,
-          total_price: unitPriceAfterDiscount * item.quantity,
-          status,
-          discount: item.discount || 0
-        };
-      });
-      
-      const allItemsAvailable = preorderItems.every(item => item.status === 'available');
-      const preorderStatus = allItemsAvailable ? 'available' : 'pending';
-      
-      const totalAmount = cart.reduce((acc, item) => {
-        const unitPriceAfterDiscount = item.price - (item.discount || 0);
-        return acc + (unitPriceAfterDiscount * item.quantity);
-      }, 0);
-
-      const { data: preorder, error } = await supabase
-        .from('preorders')
-        .insert([{
-          client_id: selectedClient.id,
-          total_amount: totalAmount,
-          status: preorderStatus,
-          paid_amount: 0,
-          remaining_amount: totalAmount
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const preorderItemsWithId = preorderItems.map(item => ({
-        ...item,
-        preorder_id: preorder.id
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('preorder_items')
-        .insert(preorderItemsWithId);
-
-      if (itemsError) throw itemsError;
-
-      for (const item of cart) {
-        if (item.stock && item.stock >= item.quantity) {
-          const { error: stockError } = await supabase
-            .from('catalog')
-            .update({ stock: item.stock - item.quantity })
-            .eq('id', item.id);
-            
-          if (stockError) {
-            console.error('Error updating stock:', stockError);
-          }
-        }
-      }
-
-      if (preorderStatus === 'pending') {
-        toast.success("Précommande enregistrée avec succès. Vous serez notifié lorsque tous les produits seront disponibles.");
-      } else {
-        toast.success("Précommande enregistrée avec succès.");
-      }
-      
-      clearCart();
-      setSelectedClient(null);
-    } catch (error) {
-      console.error('Error creating preorder:', error);
-      toast.error("Erreur lors de l'enregistrement de la précommande");
-    } finally {
-      setIsLoading(false);
+    
+    if (cart.length === 0) {
+      toast.error("Votre panier est vide");
+      return;
     }
+    
+    // Process sale logic would go here
+    console.log("Processing sale", { client: selectedClient, cart, notes });
   };
-
-  const handleSetCartItemQuantity = (productId: string, quantity: number) => {
-    setQuantity(productId, quantity);
-  };
-
+  
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Ventes & Précommandes</h1>
-        <p className="text-muted-foreground">
-          Gérez les ventes et précommandes des clients
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-8">
-          <ClientSelect 
-            selectedClient={selectedClient}
-            onClientSelect={setSelectedClient}
-          />
-          <ProductSelector 
-            onProductSelect={addToCart}
-            onAddToCart={addToCart}
-            showOutOfStock
-          />
+    <DashboardLayout>
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">Ventes</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-4">Client</h2>
+              <ClientSelect 
+                selectedClient={selectedClient} 
+                onClientSelect={setSelectedClient}
+              />
+            </div>
+            
+            <ProductSelector 
+              products={products} 
+              isLoading={isLoadingProducts} 
+              onAddToCart={handleAddToCart} 
+            />
+          </div>
+          
+          <div>
+            <PreorderCart 
+              items={cart}
+              onRemoveItem={handleRemoveItem}
+              onQuantityChange={handleQuantityChange}
+              onSubmit={handleSubmit}
+              onNotesChange={handleNotesChange}
+              notes={notes}
+              isLoading={false}
+            />
+          </div>
         </div>
-
-        <PreorderCart 
-          items={cart}
-          onUpdateQuantity={updateQuantity}
-          onRemove={removeFromCart}
-          onUpdateDiscount={updateDiscount}
-          onCheckout={handleCheckout}
-          isLoading={isLoading}
-          selectedClient={selectedClient}
-          clearCart={clearCart}
-          onSetQuantity={handleSetCartItemQuantity}
-        />
       </div>
-    </div>
+    </DashboardLayout>
   );
-}
+};
+
+export default Sales;

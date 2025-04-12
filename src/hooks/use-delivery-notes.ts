@@ -1,20 +1,135 @@
 
-import { useFetchDeliveryNotes } from "./delivery-notes/use-fetch-delivery-notes";
-import { useFetchWarehouses } from "./delivery-notes/use-fetch-warehouses";
-import { useDeliveryNoteMutations } from "./delivery-notes/use-delivery-note-mutations";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function useDeliveryNotes() {
-  const { data: deliveryNotes, isLoading, refetch } = useFetchDeliveryNotes();
-  const { data: warehouses = [] } = useFetchWarehouses();
-  const { handleDelete, handleApprove, handleEdit } = useDeliveryNoteMutations();
+  const queryClient = useQueryClient();
+
+  // Add implementation for the missing handlers
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('delivery_notes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success("Note de livraison supprimée avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    } catch (error) {
+      console.error("Error deleting delivery note:", error);
+      toast.error("Erreur lors de la suppression de la note de livraison");
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('delivery_notes')
+        .update({ status: 'approved' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success("Note de livraison approuvée avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    } catch (error) {
+      console.error("Error approving delivery note:", error);
+      toast.error("Erreur lors de l'approbation de la note de livraison");
+    }
+  };
+
+  const handleEdit = async (id: string, data: any) => {
+    try {
+      const { error } = await supabase
+        .from('delivery_notes')
+        .update(data)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success("Note de livraison modifiée avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    } catch (error) {
+      console.error("Error editing delivery note:", error);
+      toast.error("Erreur lors de la modification de la note de livraison");
+    }
+  };
+
+  // Create delivery note
+  const createDeliveryNote = useMutation({
+    mutationFn: async (data: any) => {
+      const { data: result, error } = await supabase
+        .from('delivery_notes')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Note de livraison créée avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error: any) => {
+      toast.error("Erreur lors de la création de la note de livraison");
+      console.error("Create error:", error);
+    }
+  });
+
+  // Update delivery note
+  const updateDeliveryNote = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) => {
+      const { data: result, error } = await supabase
+        .from('delivery_notes')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Note de livraison mise à jour avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error: any) => {
+      toast.error("Erreur lors de la mise à jour de la note de livraison");
+      console.error("Update error:", error);
+    }
+  });
+
+  // Delete delivery note
+  const deleteDeliveryNote = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('delivery_notes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      toast.success("Note de livraison supprimée avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error: any) => {
+      toast.error("Erreur lors de la suppression de la note de livraison");
+      console.error("Delete error:", error);
+    }
+  });
 
   return {
-    deliveryNotes,
-    isLoading,
-    warehouses,
+    createDeliveryNote,
+    updateDeliveryNote,
+    deleteDeliveryNote,
     handleDelete,
     handleApprove,
-    handleEdit,
-    refetch
+    handleEdit
   };
 }

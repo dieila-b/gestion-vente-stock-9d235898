@@ -1,9 +1,6 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { OrderForm } from '@/components/orders/OrderForm';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,31 +8,24 @@ import { useNavigate } from 'react-router-dom';
 import { ClientSelect } from '@/components/clients/ClientSelect';
 import { PreorderCart } from '@/components/preorders/PreorderCart';
 import { PreorderInvoiceView } from '@/components/preorders/PreorderInvoiceView';
-import { CartItem, CartState } from '@/types/CartState';
 
 export default function Preorders() {
   const navigate = useNavigate();
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
-  const [currentPreorder, setCurrentPreorder] = useState<any>(null);
+  const [currentPreorder, setCurrentPreorder] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
   // Get the cart state and methods
-  const { 
-    cart, 
-    addItem, 
-    removeItem, 
-    updateQuantity, 
-    addClient, 
-    removeClient, 
-    clearCart, 
-    updateNotes 
-  } = useCartStore();
-
+  const { cart, addItem, removeItem, updateQuantity, addClient, removeClient, clearCart, updateNotes, updateDiscount } = useCartStore();
+  
   // Map cart methods to component methods
   const removeFromCart = removeItem;
-  const updateDiscount = (discount: number) => {
-    // Update discount logic would go here
+  
+  // Wrapper for updateDiscount to match expected signature
+  const handleUpdateDiscount = (id: string, discount: number) => {
+    updateDiscount(discount);
   };
+  
   const addToCart = addItem;
   const setCartItemQuantity = updateQuantity;
   
@@ -45,15 +35,13 @@ export default function Preorders() {
       toast.error("Veuillez ajouter au moins un produit à la précommande");
       return false;
     }
-    
     if (!cart.client) {
       toast.error("Veuillez sélectionner un client");
       return false;
     }
-    
     return true;
   };
-
+  
   // Handle preorder submission
   const handleSubmitPreorder = async () => {
     if (!validatePreorder()) return;
@@ -118,7 +106,7 @@ export default function Preorders() {
     // Print invoice logic would go here
     toast.success(isReceipt ? "Reçu imprimé" : "Facture imprimée");
   };
-
+  
   // Props for the invoice dialog
   const invoiceProps = {
     showInvoiceDialog,
@@ -126,7 +114,7 @@ export default function Preorders() {
     currentPreorder,
     handlePrintInvoice
   };
-
+  
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Gestion des Précommandes</h1>
@@ -134,22 +122,22 @@ export default function Preorders() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <OrderForm 
-            onAddToCart={addToCart} 
-            isLoading={isLoading} 
+            onAddToCart={addToCart}
+            isLoading={isLoading}
           />
         </div>
         
         <div className="lg:col-span-1">
           <div className="bg-card rounded-lg shadow-md p-4 mb-4">
             <h2 className="text-lg font-semibold mb-4">Client</h2>
-            <ClientSelect 
+            <ClientSelect
               selectedClient={cart.client}
               onClientSelect={addClient}
               onClearClient={removeClient}
             />
           </div>
           
-          <PreorderCart 
+          <PreorderCart
             items={cart.items || []}
             onRemoveItem={removeFromCart}
             onQuantityChange={setCartItemQuantity}
@@ -164,7 +152,7 @@ export default function Preorders() {
       {showInvoiceDialog && currentPreorder && (
         <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
           <DialogContent className="max-w-4xl">
-            <PreorderInvoiceView 
+            <PreorderInvoiceView
               cart={cart}
               client={cart.client}
               onRemoveItem={removeFromCart}
@@ -175,7 +163,7 @@ export default function Preorders() {
               onSubmit={handleSubmitPreorder}
               onSelectClient={addClient}
               onSetDiscount={updateDiscount}
-              onUpdateDiscount={updateDiscount}
+              onUpdateDiscount={handleUpdateDiscount}
               isLoading={isLoading}
               isEditMode={false}
               showInvoiceDialog={showInvoiceDialog}

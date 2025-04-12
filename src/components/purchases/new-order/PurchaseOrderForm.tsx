@@ -14,7 +14,8 @@ import { PurchaseFormContent } from "./PurchaseFormContent";
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { handleCreate } = usePurchaseOrders();
+  const purchaseOrdersHook = usePurchaseOrders();
+  const handleCreate = purchaseOrdersHook.handleCreate;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state from custom hook
