@@ -4,16 +4,16 @@ export interface DeliveryNote {
   delivery_number: string;
   created_at: string;
   updated_at: string;
-  notes?: string;
-  status?: string;
+  notes: string;
+  status: string;
   supplier: {
     name: string;
     phone?: string;
     email?: string;
   };
   purchase_order: {
-    order_number: string;
-    total_amount: number;
+    order_number?: string;
+    total_amount?: number;
   };
   items: Array<{
     id: string;

@@ -69,13 +69,18 @@ export default function useEditOrder(
       if (orderData.items && Array.isArray(orderData.items)) {
         const cartItems: CartItem[] = orderData.items.map((item: any) => ({
           id: item.product_id,
+          product_id: item.product_id,
           name: item.product?.name || 'Unknown Product',
           price: item.price,
           quantity: item.quantity,
           discount: item.discount || 0,
           stock: item.product?.stock || 0,
           category: item.product?.category || '',
-          image: item.product?.image_url || '',
+          image_url: item.product?.image_url || '',
+          reference: item.product?.reference || '',
+          created_at: item.product?.created_at || '',
+          updated_at: item.product?.updated_at || '',
+          subtotal: item.price * item.quantity
         }));
         setCart(cartItems);
         if (setCartFn) {

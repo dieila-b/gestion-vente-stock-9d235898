@@ -55,8 +55,10 @@ export function useCart() {
         ...product, 
         quantity: 1, 
         discount: 0,
-        image_url: product.image_url
-      }];
+        image_url: product.image_url,
+        product_id: product.id || product.product_id || '', // Ensure product_id is set
+        subtotal: product.price,
+      } as CartItem];
     });
   };
 

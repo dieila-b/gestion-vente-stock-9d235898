@@ -23,25 +23,28 @@ interface PurchaseInvoice {
   invoice_number: string;
   supplier_id: string;
   total_amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
   tax_amount: number;
   payment_status: string;
   due_date: string;
-  created_at: string;
   paid_amount: number;
-  remaining_amount: number;
-  approved_at: string | null;
+  discount: number;
+  notes: string;
   shipping_cost: number;
   supplier: {
     name: string;
-    contact: string;
-    email: string;
-    phone: string;
+    phone?: string;
+    email?: string;
   };
   purchase_order: {
-    order_number: string;
+    id?: string;
+    order_number?: string;
   };
   delivery_note: {
-    delivery_number: string;
+    id?: string;
+    delivery_number?: string;
   };
 }
 
@@ -291,6 +294,145 @@ const PurchaseInvoicePage = () => {
       category: "default",
       discount: 0
     }];
+  };
+
+  const handleCreate = async (formData: any) => {
+    try {
+      setIsCreating(true);
+      const invoiceData = {
+        supplier_id: formData.supplier_id,
+        invoice_number: formData.invoice_number,
+        status: "pending",
+        total_amount: formData.total_amount,
+        tax_amount: formData.tax_amount || 0,
+        payment_status: formData.payment_status || "pending",
+        due_date: formData.due_date || null,
+        paid_amount: formData.paid_amount || 0,
+        discount: formData.discount || 0,
+        notes: formData.notes || "",
+        shipping_cost: formData.shipping_cost || 0
+      };
+
+      const { data, error } = await supabase
+        .from("purchase_invoices")
+        .insert([invoiceData])
+        .select();
+
+      if (error) throw error;
+      toast.success("Facture créée avec succès");
+      setIsVisible(false);
+      refetch();
+      
+      return data[0];
+    } catch (error: any) {
+      console.error("Error creating invoice:", error);
+      toast.error(`Erreur: ${error.message}`);
+      return null;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("purchase_invoices")
+        .select(`
+          *,
+          supplier:suppliers(name, phone, email),
+          purchase_order:purchase_orders(id, order_number),
+          delivery_note:delivery_notes(id, delivery_number)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      const typedInvoices: PurchaseInvoice[] = (data || []).map(item => ({
+        id: item.id,
+        invoice_number: item.invoice_number || '',
+        supplier_id: item.supplier_id || '',
+        total_amount: item.total_amount || 0,
+        status: item.status || 'pending',
+        created_at: item.created_at || '',
+        updated_at: item.updated_at || '',
+        tax_amount: item.tax_amount || 0,
+        payment_status: item.payment_status || 'pending',
+        due_date: item.due_date || '',
+        paid_amount: item.paid_amount || 0,
+        discount: item.discount || 0,
+        notes: item.notes || '',
+        shipping_cost: item.shipping_cost || 0,
+        supplier: {
+          name: item.supplier?.name || 'Unknown Supplier',
+          phone: item.supplier?.phone || '',
+          email: item.supplier?.email || ''
+        },
+        purchase_order: {
+          id: item.purchase_order?.id || '',
+          order_number: item.purchase_order?.order_number || ''
+        },
+        delivery_note: {
+          id: item.delivery_note?.id || '',
+          delivery_number: item.delivery_note?.delivery_number || ''
+        }
+      }));
+      
+      return typedInvoices;
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return [];
+    }
+  };
+
+  const handleUpdate = async (id: string, formData: any) => {
+    try {
+      setIsUpdating(true);
+      const invoiceData = {
+        supplier_id: formData.supplier_id,
+        invoice_number: formData.invoice_number,
+        status: formData.status,
+        total_amount: formData.total_amount,
+        tax_amount: formData.tax_amount || 0,
+        payment_status: formData.payment_status || "pending",
+        due_date: formData.due_date || null,
+        paid_amount: formData.paid_amount || 0,
+        discount: formData.discount || 0,
+        notes: formData.notes || "",
+        shipping_cost: formData.shipping_cost || 0
+      };
+
+      const { error } = await supabase
+        .from("purchase_invoices")
+        .update(invoiceData)
+        .eq("id", id);
+
+      if (error) throw error;
+      toast.success("Facture mise à jour avec succès");
+      setIsVisible(false);
+      refetch();
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error updating invoice:", error);
+      toast.error(`Erreur: ${error.message}`);
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleItemsToCart = (items: any[]) => {
+    if (!items || !Array.isArray(items)) return [];
+    
+    return items.map(item => ({
+      id: item.id || '',
+      product_id: item.product_id || item.id || '',
+      name: item.product?.name || item.name || 'Unknown Product',
+      quantity: item.quantity || 1,
+      price: item.unit_price || item.price || 0,
+      category: item.product?.category || item.category || 'default',
+      discount: item.discount || 0
+    }));
   };
 
   const filteredInvoices = invoices?.filter(invoice => 

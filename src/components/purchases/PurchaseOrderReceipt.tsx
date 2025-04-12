@@ -33,7 +33,8 @@ export const PurchaseOrderReceipt = ({
     price: item.unit_price || 0,
     total: item.total_price || 0,
     discount: 0,
-    category: "default"
+    category: "default",
+    product_id: item.product_id || item.id, // Ensure product_id is always assigned
   }));
 
   return (

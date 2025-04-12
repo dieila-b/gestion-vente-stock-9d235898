@@ -1,14 +1,8 @@
 
-export interface CartItem {
-  id: string;
-  product_id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  discount?: number;
-  subtotal: number;
-  barcode?: string;
-  category?: string;
+import { CartItem as PosCartItem } from "./pos";
+
+export interface CartItem extends PosCartItem {
+  subtotal: number; // Make this required instead of optional
 }
 
 export interface CartState {

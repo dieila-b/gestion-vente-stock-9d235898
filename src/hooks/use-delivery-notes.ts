@@ -27,7 +27,15 @@ export function useDeliveryNotes() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as DeliveryNote[];
+      
+      // Handle possible null/missing values by providing defaults
+      return (data || []).map(note => ({
+        ...note,
+        status: note.status || 'pending',
+        supplier: note.supplier || { name: 'Unknown Supplier' },
+        purchase_order: note.purchase_order || {},
+        items: note.items || []
+      }));
     }
   });
 
