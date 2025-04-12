@@ -65,7 +65,7 @@ export const ProfilePhotoSection = ({
       
       <Card className="w-full max-w-xs">
         <CardContent className="pt-4">
-          <Alert variant="warning" className="mb-3">
+          <Alert variant="destructive" className="mb-3">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>Téléchargement d'images temporairement désactivé</AlertDescription>
           </Alert>
