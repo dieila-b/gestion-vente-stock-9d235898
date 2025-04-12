@@ -39,7 +39,8 @@ export default function YearlyReport() {
     }
   });
 
-  const { data: salesData, isLoading } = useQuery({
+  // Fix the type instantiation issue by explicitly typing the query result
+  const { data: salesData = [], isLoading } = useQuery<SalesData[]>({
     queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
     queryFn: async () => {
       const startDate = startOfYear(new Date(parseInt(selectedYear)));
