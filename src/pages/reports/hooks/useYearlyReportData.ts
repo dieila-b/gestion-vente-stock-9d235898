@@ -26,28 +26,20 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Prepare query parameters
-    const baseQuery = {
-      created_at: {
-        gte: startDate.toISOString(),
-        lte: endDate.toISOString()
-      }
-    };
-    
-    // Add depot filter if a specific POS is selected
-    const query = selectedPOS === "all" 
-      ? baseQuery
-      : { ...baseQuery, depot: selectedPOS };
-
-    // Execute the query using a simplified approach to avoid deep type inference
-    const { data: orders, error } = await supabase
+    // Build the base query
+    let query = supabase
       .from('orders')
       .select('created_at, final_total')
       .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .eq(selectedPOS !== "all" ? 'depot' : 'created_at', 
-          selectedPOS !== "all" ? selectedPOS : startDate.toISOString())
-      .order('created_at');
+      .lte('created_at', endDate.toISOString());
+    
+    // Only add depot filter if a specific POS is selected
+    if (selectedPOS !== "all") {
+      query = query.eq('depot', selectedPOS);
+    }
+    
+    // Order the results and execute query
+    const { data: orders, error } = await query.order('created_at');
     
     if (error) throw error;
     
