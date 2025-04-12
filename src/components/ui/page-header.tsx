@@ -16,7 +16,7 @@ interface PageHeaderDescriptionProps {
   className?: string;
 }
 
-export const PageHeader = ({ 
+export const PageHeader: React.FC<PageHeaderProps> = ({ 
   children, 
   className = ""
 }: PageHeaderProps) => {
@@ -27,8 +27,8 @@ export const PageHeader = ({
   );
 };
 
-// Define subcomponents as properties on PageHeader
-PageHeader.Title = function PageHeaderTitle({ 
+// Define subcomponents
+PageHeader.Title = function Title({ 
   children, 
   className = ""
 }: PageHeaderTitleProps) {
@@ -39,7 +39,7 @@ PageHeader.Title = function PageHeaderTitle({
   );
 };
 
-PageHeader.Description = function PageHeaderDescription({ 
+PageHeader.Description = function Description({ 
   children, 
   className = ""
 }: PageHeaderDescriptionProps) {

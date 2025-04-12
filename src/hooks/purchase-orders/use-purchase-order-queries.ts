@@ -61,13 +61,18 @@ export function usePurchaseOrderQueries(
           ? defaultWarehouse
           : order.warehouse || defaultWarehouse;
 
+        // Cast status and payment_status to their respective types
+        const orderStatus = order.status as "pending" | "delivered" | "draft" | "approved";
+        const paymentStatus = order.payment_status as "pending" | "partial" | "paid";
+
         // Return the processed order with an empty items array
         return {
           ...order,
           supplier,
           warehouse,
           items: [],
-          status: order.status as "pending" | "delivered" | "draft" | "approved"
+          status: orderStatus,
+          payment_status: paymentStatus
         } as PurchaseOrder;
       });
 
@@ -128,12 +133,17 @@ export function usePurchaseOrderQueries(
         ? defaultWarehouse
         : data.warehouse || defaultWarehouse;
 
+      // Cast status and payment_status to their respective types
+      const orderStatus = data.status as "pending" | "delivered" | "draft" | "approved";
+      const paymentStatus = data.payment_status as "pending" | "partial" | "paid";
+
       return {
         ...data,
         supplier,
         warehouse,
         items: Array.isArray(data.items) ? data.items : [],
-        status: data.status as "pending" | "delivered" | "draft" | "approved"
+        status: orderStatus,
+        payment_status: paymentStatus
       } as PurchaseOrder;
     } catch (error) {
       console.error(`Error fetching purchase order ${id}:`, error);

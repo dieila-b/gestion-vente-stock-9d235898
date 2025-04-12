@@ -19,7 +19,7 @@ export function useCreatePurchaseOrder() {
         notes: purchaseOrderData.notes,
         status: (purchaseOrderData.status || "pending") as "pending" | "delivered" | "draft" | "approved",
         total_amount: purchaseOrderData.total_amount || 0,
-        payment_status: purchaseOrderData.payment_status || "pending",
+        payment_status: (purchaseOrderData.payment_status || "pending") as "pending" | "partial" | "paid",
         paid_amount: purchaseOrderData.paid_amount || 0,
         logistics_cost: purchaseOrderData.logistics_cost || 0,
         transit_cost: purchaseOrderData.transit_cost || 0,
@@ -67,7 +67,8 @@ export function useCreatePurchaseOrder() {
         ...data,
         supplier,
         items: [],
-        status: data.status as "pending" | "delivered" | "draft" | "approved"
+        status: data.status as "pending" | "delivered" | "draft" | "approved",
+        payment_status: data.payment_status as "pending" | "partial" | "paid"
       } as PurchaseOrder;
     } catch (error) {
       console.error("Error creating purchase order:", error);

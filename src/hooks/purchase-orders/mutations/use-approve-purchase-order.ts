@@ -80,11 +80,15 @@ export function useApprovePurchaseOrder() {
             email: updatedOrder.supplier?.email || defaultSupplier.email
           };
 
+      // Cast payment_status to the correct type
+      const paymentStatus = updatedOrder.payment_status as "pending" | "partial" | "paid";
+
       const purchaseOrder: PurchaseOrder = {
         ...updatedOrder,
         supplier,
         items: orderItems,
-        status: updatedOrder.status as "pending" | "delivered" | "draft" | "approved"
+        status: updatedOrder.status as "pending" | "delivered" | "draft" | "approved",
+        payment_status: paymentStatus
       };
 
       return purchaseOrder;

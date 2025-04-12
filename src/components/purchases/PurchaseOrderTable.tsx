@@ -44,9 +44,9 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
       case "pending":
         return <Badge variant="secondary">En attente</Badge>;
       case "delivered":
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Livré</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Livré</Badge>;
       case "approved":
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Approuvé</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Approuvé</Badge>;
       case "draft":
         return <Badge variant="outline">Brouillon</Badge>;
       default:
@@ -59,9 +59,9 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
       case "pending":
         return <Badge variant="outline">Non payé</Badge>;
       case "partial":
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800">Partiellement payé</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">Partiellement payé</Badge>;
       case "paid":
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Payé</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Payé</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }

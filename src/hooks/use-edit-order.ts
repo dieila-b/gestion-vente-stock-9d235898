@@ -34,7 +34,11 @@ export function useEditOrder(orderId) {
         if (error) throw error;
         
         // Process the order
-        const orderTotal = data.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Safely check if items is an array and not a SelectQueryError
+        const items = isSelectQueryError(data.items) ? [] : (Array.isArray(data.items) ? data.items : []);
+        
+        // Calculate totals from the actual items
+        const orderTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const orderDiscount = data.discount || 0;
         const orderFinalTotal = orderTotal - orderDiscount;
         
@@ -61,7 +65,7 @@ export function useEditOrder(orderId) {
         }
         
         setClient(clientData);
-        setOrderItems(data.items || []);
+        setOrderItems(items);
         setTotal(orderTotal);
         setDiscount(orderDiscount);
         setFinalTotal(orderFinalTotal);

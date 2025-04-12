@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchaseOrder';
 import { toast } from 'sonner';
+import { isSelectQueryError } from '@/utils/supabase-helpers';
 
 export function usePurchaseEdit(id?: string) {
   // State for selected products and other form data
@@ -39,7 +39,35 @@ export function usePurchaseEdit(id?: string) {
         .single();
 
       if (error) throw error;
-      return data as PurchaseOrder;
+      
+      // Create default supplier object
+      const defaultSupplier = {
+        id: "",
+        name: "Unknown Supplier",
+        phone: "",
+        email: ""
+      };
+      
+      // Safely handle supplier data
+      const supplier = isSelectQueryError(data.supplier) 
+        ? defaultSupplier
+        : {
+            id: data.supplier?.id || defaultSupplier.id,
+            name: data.supplier?.name || defaultSupplier.name,
+            phone: data.supplier?.phone || defaultSupplier.phone,
+            email: data.supplier?.email || defaultSupplier.email
+          };
+          
+      // Create safe items array
+      const items = isSelectQueryError(data.items) ? [] : (Array.isArray(data.items) ? data.items : []);
+      
+      return {
+        ...data,
+        supplier,
+        items,
+        status: data.status as "pending" | "delivered" | "draft" | "approved",
+        payment_status: data.payment_status as "pending" | "partial" | "paid"
+      } as PurchaseOrder;
     },
     enabled: !!id
   });
@@ -93,11 +121,10 @@ export function usePurchaseEdit(id?: string) {
       setDiscount(currentOrder.discount || 0);
       setTaxRate(currentOrder.tax_rate || 20);
       
-      // Set selected products
+      // Set selected products with id from existing items
       if (Array.isArray(currentOrder.items)) {
         setSelectedProducts(currentOrder.items.map(item => ({
           id: item.id,
-          purchase_order_id: item.purchase_order_id,
           product_id: item.product_id,
           quantity: item.quantity,
           unit_price: item.unit_price,
@@ -118,7 +145,6 @@ export function usePurchaseEdit(id?: string) {
       ...prev,
       {
         id: '', // Will be assigned by the database
-        purchase_order_id: id || '',
         product_id: product.id,
         quantity: 1,
         unit_price: product.purchase_price || 0,
@@ -171,8 +197,7 @@ export function usePurchaseEdit(id?: string) {
 
   // Update purchase order mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string, orderData: Partial<PurchaseOrder> }) => {
-      const { id, orderData } = data;
+    mutationFn: async ({ id, orderData }: { id: string, orderData: Partial<PurchaseOrder> }) => {
       const { error } = await supabase
         .from('purchase_orders')
         .update(orderData)
@@ -284,6 +309,7 @@ export function usePurchaseEdit(id?: string) {
     handleQuantityChange,
     handlePriceChange,
     handleSubmit,
-    isSubmitting
+    isSubmitting,
+    currentOrder
   };
 }

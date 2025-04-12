@@ -1,7 +1,7 @@
 
-import { PostgrestFilterBuilder } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseTables } from "@/types/supabase-tables";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 /**
  * Returns a typed query builder for any table in the database.
@@ -11,11 +11,7 @@ import { SupabaseTables } from "@/types/supabase-tables";
 export function createTableQuery<T extends keyof SupabaseTables>(
   tableName: T
 ) {
-  return supabase.from(tableName) as PostgrestFilterBuilder<
-    any,
-    any,
-    SupabaseTables[T][]
-  >;
+  return supabase.from(tableName);
 }
 
 /**
