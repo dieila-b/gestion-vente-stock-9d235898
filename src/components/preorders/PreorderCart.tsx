@@ -5,12 +5,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Textarea } from '@/components/ui/textarea';
 import { CartItem } from '@/types/pos';
 import { formatGNF } from '@/lib/currency';
-import { Client } from '@/types/client';
+import { Client } from '@/types/client_unified';
 
 export interface PreorderCartProps {
   items: CartItem[];
   onRemoveItem: (id: string) => void;
-  onUpdateQuantity?: (id: string, quantity: number) => void; // Made optional
+  onUpdateQuantity?: (id: string, quantity: number) => void;
+  onUpdateDiscount?: (id: string, discount: number) => void; // Added missing prop
   onSubmit: () => Promise<void>;
   onNotesChange: (notes: string) => void;
   notes: string;
@@ -19,13 +20,14 @@ export interface PreorderCartProps {
   discount: number;
   total: number;
   clearCart: () => void;
-  isLoading?: boolean; // Add isLoading as optional
+  isLoading?: boolean;
 }
 
 export const PreorderCart: React.FC<PreorderCartProps> = ({
   items,
   onRemoveItem,
   onUpdateQuantity,
+  onUpdateDiscount,
   onSubmit,
   onNotesChange,
   notes,
@@ -34,7 +36,7 @@ export const PreorderCart: React.FC<PreorderCartProps> = ({
   discount,
   total,
   clearCart,
-  isLoading = false, // Default to false
+  isLoading = false,
 }) => {
   return (
     <Card className="border-none shadow-none">

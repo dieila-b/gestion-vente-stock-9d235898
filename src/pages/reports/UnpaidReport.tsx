@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { addDays } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { DateRange } from "react-day-picker";
+import { DateRange } from "@/types/date-range";
 import { UnpaidReportHeader } from "./components/UnpaidReportHeader";
 import { UnpaidReportSummary } from "./components/UnpaidReportSummary";
 import { UnpaidInvoicesTable } from "./components/UnpaidInvoicesTable";
@@ -106,12 +105,11 @@ export default function UnpaidReport() {
   return (
     <div className="p-6 space-y-8">
       <UnpaidReportHeader
-        date={date}
-        setDate={setDate}
         selectedClient={selectedClient}
-        setSelectedClient={setSelectedClient}
-        onPrint={handlePrint}
-        onExport={handleExport}
+        onSelectClient={setSelectedClient}
+        onClearFilter={() => setSelectedClient(null)}
+        handlePrint={handlePrint}
+        handleExport={handleExport}
       />
 
       <div id="unpaid-report" className="space-y-8">

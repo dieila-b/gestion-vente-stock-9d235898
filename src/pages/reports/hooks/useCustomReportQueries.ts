@@ -1,256 +1,200 @@
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DateRange } from "react-day-picker";
-import { Client } from "@/types/client";
-import { isSelectQueryError, safeGet, safeArray } from "@/utils/type-utils";
+import { DateRange } from "@/types/date-range";
+import { safeMap, safeGet, safeAccess } from "@/utils/report-utils";
+import { Client } from "@/types/client_unified";
+import { DailyProductSales, DailyClientSales, PeriodTotals } from "./types";
 
-// Define types for the hook's return values
-export interface SalesByProduct {
-  id: string;
-  name: string;
-  total_quantity: number;
-  total_amount: number;
-  category: string;
-  product_name?: string; // Add this to make it compatible with DailyProductSales
-}
-
-export interface PeriodTotals {
-  total_sales: number;
-  total_items: number;
-  average_order: number;
-  total?: number; // Add properties to match expected type in CustomReport
-  paid?: number;
-  remaining?: number;
-}
-
-export interface ClientSale {
-  client: Client;
-  total_amount: number;
-  order_count: number;
-  paid_amount?: number; // Added to make it compatible with DailyClientSales
-  remaining_amount?: number; // Added to make it compatible with DailyClientSales
-}
-
-export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: string = "all") {
-  const [salesByProduct, setSalesByProduct] = useState<SalesByProduct[]>([]);
-  const [periodTotals, setPeriodTotals] = useState<PeriodTotals>({
-    total_sales: 0,
-    total_items: 0,
-    average_order: 0,
-    total: 0,
-    paid: 0,
-    remaining: 0
-  });
-  const [clientSales, setClientSales] = useState<ClientSale[]>([]);
-  
-  // Query for product sales data
-  const { data: rawSalesData, isLoading: isLoadingSalesProduct } = useQuery({
-    queryKey: ['sales-by-product', dateRange, selectedPOS],
-    queryFn: async () => {
-      // Skip the query if the date range is not set
-      if (!dateRange?.from || !dateRange?.to) return [];
-      
-      const { data, error } = await supabase
-        .from('order_items')
-        .select(`
-          id,
-          order_id,
-          product_id,
-          quantity,
-          price,
-          total,
-          discount,
-          products:product_id(id, name, category),
-          orders:order_id(created_at, status, pos_location_id)
-        `)
-        .gte('orders.created_at', dateRange.from.toISOString())
-        .lte('orders.created_at', dateRange.to.toISOString())
-        .eq('orders.status', 'completed');
-
-      if (error) {
-        console.error("Error fetching sales data:", error);
-        return [];
-      }
-      
-      // Safely filter data
-      return (data || []).filter(item => {
-        if (selectedPOS === "all") return true;
+export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string | null) {
+  // Query for period totals
+  const { data: periodTotals } = useQuery({
+    queryKey: ['custom-report', 'period-totals', dateRange, selectedPDV],
+    queryFn: async (): Promise<PeriodTotals> => {
+      try {
+        const startDate = dateRange.from?.toISOString();
+        const endDate = dateRange.to?.toISOString();
         
-        // Safely check pos_location_id
-        if (isSelectQueryError(item.orders)) {
-          return false;
+        if (!startDate || !endDate) {
+          return { total: 0, paid: 0, remaining: 0 };
+        }
+
+        let query = supabase
+          .from('orders')
+          .select('id, total, paid_amount, remaining_amount, created_at')
+          .gte('created_at', startDate)
+          .lte('created_at', endDate);
+        
+        // Apply PDV filter if selected
+        if (selectedPDV) {
+          query = query.eq('pos_location_id', selectedPDV);
         }
         
-        return item.orders?.pos_location_id === selectedPOS;
-      });
-    },
-    enabled: !!dateRange?.from && !!dateRange?.to,
-  });
-  
-  // Query for client sales data
-  const { data: rawClientData, isLoading: isLoadingClients } = useQuery({
-    queryKey: ['sales-by-client', dateRange, selectedPOS],
-    queryFn: async () => {
-      // Skip the query if the date range is not set
-      if (!dateRange?.from || !dateRange?.to) return [];
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          client_id,
-          status,
-          total,
-          created_at,
-          pos_location_id,
-          clients:client_id(*)
-        `)
-        .gte('created_at', dateRange.from.toISOString())
-        .lte('created_at', dateRange.to.toISOString())
-        .eq('status', 'completed');
-
-      if (error) {
-        console.error("Error fetching client sales data:", error);
-        return [];
-      }
-      
-      // Safely filter data
-      return (data || []).filter(order => {
-        if (selectedPOS === "all") return true;
+        const { data, error } = await query;
         
-        // Check for SelectQueryError
-        if (isSelectQueryError(order)) {
-          return false;
+        if (error) throw error;
+        
+        // Calculate totals safely
+        const total = data.reduce((sum, order) => sum + (order.total || 0), 0);
+        const paid = data.reduce((sum, order) => sum + (order.paid_amount || 0), 0);
+        const remaining = data.reduce((sum, order) => sum + (order.remaining_amount || 0), 0);
+        
+        return { total, paid, remaining };
+      } catch (error) {
+        console.error('Error fetching period totals:', error);
+        return { total: 0, paid: 0, remaining: 0 };
+      }
+    }
+  });
+
+  // Query for product sales
+  const { data: productSales } = useQuery({
+    queryKey: ['custom-report', 'product-sales', dateRange, selectedPDV],
+    queryFn: async (): Promise<DailyProductSales[]> => {
+      try {
+        const startDate = dateRange.from?.toISOString();
+        const endDate = dateRange.to?.toISOString();
+        
+        if (!startDate || !endDate) {
+          return [];
+        }
+
+        let query = supabase
+          .from('orders')
+          .select(`
+            id,
+            items:order_items(
+              id,
+              product_id,
+              quantity,
+              price,
+              product:catalog(id, name)
+            )
+          `)
+          .gte('created_at', startDate)
+          .lte('created_at', endDate);
+        
+        if (selectedPDV) {
+          query = query.eq('pos_location_id', selectedPDV);
         }
         
-        return order.pos_location_id === selectedPOS;
-      });
-    },
-    enabled: !!dateRange?.from && !!dateRange?.to,
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        // Process the data and aggregate by product
+        const productMap = new Map<string, DailyProductSales>();
+        
+        data.forEach(order => {
+          // Use safeMap to handle possible SelectQueryError
+          safeMap(order.items, (item: any) => {
+            const productId = item.product_id;
+            const productName = safeGet(item.product, 'name', 'Unknown Product');
+            const quantity = item.quantity || 0;
+            const salesAmount = (item.price || 0) * quantity;
+            
+            if (productMap.has(productId)) {
+              const existing = productMap.get(productId)!;
+              existing.total_quantity += quantity;
+              existing.total_sales += salesAmount;
+            } else {
+              productMap.set(productId, {
+                product_id: productId,
+                product_name: productName,
+                total_quantity: quantity,
+                total_sales: salesAmount
+              });
+            }
+          });
+        });
+        
+        return Array.from(productMap.values());
+      } catch (error) {
+        console.error('Error fetching product sales:', error);
+        return [];
+      }
+    }
   });
-  
-  // Process sales data
-  useEffect(() => {
-    if (!rawSalesData || !Array.isArray(rawSalesData)) return;
-    
-    // Map to group sales by product
-    const productSalesMap = new Map<string, SalesByProduct>();
-    
-    // Calculate totals
-    let totalSales = 0;
-    let totalItems = 0;
-    
-    rawSalesData.forEach((item) => {
-      // Skip items with missing or error product data
-      if (isSelectQueryError(item.products) || !item.products) return;
-      
-      const productId = item.product_id;
-      const productName = item.products?.name || 'Unknown Product';
-      const category = item.products?.category || 'Uncategorized';
-      const quantity = Number(item.quantity) || 0;
-      const amount = Number(item.total) || 0;
-      
-      totalSales += amount;
-      totalItems += quantity;
-      
-      if (productSalesMap.has(productId)) {
-        const existing = productSalesMap.get(productId)!;
-        existing.total_quantity += quantity;
-        existing.total_amount += amount;
-      } else {
-        productSalesMap.set(productId, {
-          id: productId,
-          name: productName,
-          product_name: productName, // Add for compatibility
-          category: category,
-          total_quantity: quantity,
-          total_amount: amount,
+
+  // Query for client sales
+  const { data: clientSales } = useQuery({
+    queryKey: ['custom-report', 'client-sales', dateRange, selectedPDV],
+    queryFn: async (): Promise<DailyClientSales[]> => {
+      try {
+        const startDate = dateRange.from?.toISOString();
+        const endDate = dateRange.to?.toISOString();
+        
+        if (!startDate || !endDate) {
+          return [];
+        }
+
+        let query = supabase
+          .from('orders')
+          .select(`
+            id,
+            client_id,
+            total,
+            paid_amount,
+            remaining_amount,
+            client:clients(*)
+          `)
+          .gte('created_at', startDate)
+          .lte('created_at', endDate);
+        
+        if (selectedPDV) {
+          query = query.eq('pos_location_id', selectedPDV);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        // Process the data and aggregate by client
+        const clientMap = new Map<string, DailyClientSales>();
+        
+        data.forEach(order => {
+          const clientId = order.client_id;
+          if (!clientId) return;
+          
+          const client = safeAccess(order.client, {
+            id: clientId,
+            company_name: 'Unknown Client',
+            status: 'particulier',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+          const total = order.total || 0;
+          const paidAmount = order.paid_amount || 0;
+          const remainingAmount = order.remaining_amount || 0;
+          
+          if (clientMap.has(clientId)) {
+            const existing = clientMap.get(clientId)!;
+            existing.total += total;
+            existing.paid_amount += paidAmount;
+            existing.remaining_amount += remainingAmount;
+          } else {
+            clientMap.set(clientId, {
+              client,
+              client_id: clientId,
+              total,
+              paid_amount: paidAmount,
+              remaining_amount: remainingAmount
+            });
+          }
         });
+        
+        return Array.from(clientMap.values());
+      } catch (error) {
+        console.error('Error fetching client sales:', error);
+        return [];
       }
-    });
-    
-    // Convert map to array and sort by total amount
-    const productSalesArray = Array.from(productSalesMap.values())
-      .sort((a, b) => b.total_amount - a.total_amount);
-    
-    setSalesByProduct(productSalesArray);
-    
-    // Calculate period totals
-    const orderCount = new Set(rawSalesData.map(item => item.order_id)).size;
-    setPeriodTotals({
-      total_sales: totalSales,
-      total_items: totalItems,
-      average_order: orderCount > 0 ? totalSales / orderCount : 0,
-      total: totalSales,
-      paid: totalSales,
-      remaining: 0
-    });
-  }, [rawSalesData]);
-  
-  // Process client data
-  useEffect(() => {
-    if (!rawClientData || !Array.isArray(rawClientData)) return;
-    
-    // Map to group sales by client
-    const clientSalesMap = new Map<string, ClientSale>();
-    
-    rawClientData.forEach((order) => {
-      // Skip orders with missing client data
-      if (isSelectQueryError(order) || !order.client_id) return;
-      
-      const clientId = order.client_id;
-      
-      // Skip if client data is missing
-      if (isSelectQueryError(order.clients) || !order.clients) return;
-      
-      // Ensure client has required properties
-      const clientData = order.clients;
-      const client: Client = {
-        id: clientData.id || '',
-        company_name: clientData.company_name || 'Unknown Company',
-        contact_name: clientData.contact_name,
-        email: clientData.email,
-        phone: clientData.phone,
-        status: clientData.status || 'unknown', // Ensure status exists
-        created_at: clientData.created_at || '',
-        updated_at: clientData.updated_at || ''
-      };
-      
-      const amount = Number(order.total) || 0;
-      
-      if (clientSalesMap.has(clientId)) {
-        const existing = clientSalesMap.get(clientId)!;
-        existing.total_amount += amount;
-        existing.order_count += 1;
-      } else {
-        clientSalesMap.set(clientId, {
-          client,
-          total_amount: amount,
-          order_count: 1,
-          paid_amount: amount, // Set for compatibility
-          remaining_amount: 0  // Set for compatibility
-        });
-      }
-    });
-    
-    // Convert map to array and sort by total amount
-    const clientSalesArray = Array.from(clientSalesMap.values())
-      .sort((a, b) => b.total_amount - a.total_amount);
-    
-    setClientSales(clientSalesArray);
-  }, [rawClientData]);
-  
-  return { 
-    salesByProduct, 
-    periodTotals, 
-    clientSales, 
-    isLoading: isLoadingSalesProduct || isLoadingClients,
-    isLoadingSalesProduct,
-    isLoadingClients 
+    }
+  });
+
+  return {
+    periodTotals: periodTotals || { total: 0, paid: 0, remaining: 0 },
+    productSales: productSales || [],
+    clientSales: clientSales || []
   };
 }
-
-// Make sure we export the hook as a named export
-export default useCustomReportQueries;

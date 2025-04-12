@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/types/client";
+import { Client } from "@/types/client_unified";
 import { CartItem } from "@/types/pos";
 import { isSelectQueryError } from "@/utils/type-utils";
 
@@ -55,9 +55,9 @@ export default function useEditOrder(
 
   useEffect(() => {
     if (!isOrderLoading && orderData) {
-      // Set the client from the order
-      if (orderData.client) {
-        // Safe client creation with guaranteed status property
+      // Set the client from the order with proper type handling
+      if (orderData.client && !isSelectQueryError(orderData.client)) {
+        // Create a safe Client object with all required properties
         const clientData = orderData.client;
         const client: Client = {
           id: clientData.id || '',
@@ -65,12 +65,12 @@ export default function useEditOrder(
           contact_name: clientData.contact_name,
           email: clientData.email,
           phone: clientData.phone,
-          mobile_1: clientData.mobile_1,
-          mobile_2: clientData.mobile_2,
-          whatsapp: clientData.whatsapp,
-          credit_limit: clientData.credit_limit,
-          rc_number: clientData.rc_number,
-          cc_number: clientData.cc_number,
+          mobile_1: clientData.mobile_1 || '',
+          mobile_2: clientData.mobile_2 || '',
+          whatsapp: clientData.whatsapp || '',
+          credit_limit: clientData.credit_limit || 0,
+          rc_number: clientData.rc_number || '',
+          cc_number: clientData.cc_number || '',
           status: clientData.status || 'particulier', // Ensure status is always set
           created_at: clientData.created_at || new Date().toISOString(),
           updated_at: clientData.updated_at || new Date().toISOString()

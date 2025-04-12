@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { ClientSelect } from "@/components/clients/ClientSelect";
-import { Client } from "@/types/client"; // Use lowercase client
+import { Client } from "@/types/client_unified"; // Updated import
 
 interface UnpaidReportHeaderProps {
   selectedClient: Client | null;

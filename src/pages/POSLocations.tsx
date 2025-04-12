@@ -19,13 +19,15 @@ export default function POSLocations() {
     handleDelete
   } = usePOSLocation();
 
-  // Helper function to convert id to location for the onEdit handler
-  const onEditLocation = (id: string) => {
-    const location = locations.find(loc => loc.id === id);
-    if (location) {
-      setSelectedLocation(location);
-      setIsAddDialogOpen(true);
-    }
+  // Adapter function to handle the location parameter
+  const onEditLocation = (location: POSLocation) => {
+    setSelectedLocation(location);
+    setIsAddDialogOpen(true);
+  };
+
+  // Adapter function to handle string id parameter
+  const onDeleteLocation = (location: POSLocation) => {
+    handleDelete(location.id);
   };
 
   // Helper function to adapt the form event to POSLocation for handleSubmit
@@ -62,9 +64,9 @@ export default function POSLocations() {
       
       <Card className="bg-white/10 backdrop-blur-xl border border-white/20">
         <POSLocationsTable
-          locations={locations}
+          locations={locations as POSLocation[]}
           onEdit={onEditLocation}
-          onDelete={handleDelete}
+          onDelete={onDeleteLocation}
         />
       </Card>
 
@@ -76,7 +78,7 @@ export default function POSLocations() {
             </DialogTitle>
           </DialogHeader>
           <POSLocationForm
-            location={selectedLocation}
+            location={selectedLocation as POSLocation}
             onSubmit={onSubmitForm}
             onCancel={() => setIsAddDialogOpen(false)}
           />

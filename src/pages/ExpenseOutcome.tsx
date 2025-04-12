@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { isSelectQueryError } from "@/utils/type-utils";
+import { Category, OutcomeEntry } from "@/types/expense";
 
 interface Category {
   id: string;
@@ -69,23 +71,23 @@ export default function ExpenseOutcome() {
   const fetchOutcomes = async () => {
     const { data, error } = await supabase
       .from('outcome_entries')
-      .select(`
-        *,
-        category:expense_categories!outcome_entries_expense_category_id_fkey (
-          id,
-          name,
-          type
-        )
-      `)
-      .order('date', { ascending: false });
-
-    if (error) {
-      console.error('Erreur lors du chargement des sorties:', error);
-      toast.error("Erreur lors du chargement des sorties");
-      return;
-    }
-
-    setOutcomes(data);
+      .select('*, category:category_id(id, name, type)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    const processedData: OutcomeEntry[] = (data || []).map(entry => {
+      const safeCategory: Category = isSelectQueryError(entry.category) 
+        ? { id: entry.category_id || '', name: 'Unknown', type: 'expense' }
+        : entry.category;
+      
+      return {
+        ...entry,
+        category: safeCategory
+      };
+    });
+    
+    setOutcomes(processedData);
   };
 
   const addCategory = async () => {
@@ -244,7 +246,7 @@ export default function ExpenseOutcome() {
               Sorties
             </h1>
             <p className="text-muted-foreground animate-fade-in delay-100">
-              Gérez vos sorties d'argent
+              G��rez vos sorties d'argent
             </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
