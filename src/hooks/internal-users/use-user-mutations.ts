@@ -22,6 +22,9 @@ export const useUserMutations = (queryClient: QueryClient) => {
     }
     
     try {
+      // Show loading toast
+      toast.loading("Enregistrement des utilisateurs en cours...");
+      
       // Add UUIDs for each new user
       const usersWithIds = users.map(user => ({
         ...user,
@@ -36,15 +39,18 @@ export const useUserMutations = (queryClient: QueryClient) => {
       
       if (error) {
         console.error("Error adding users:", error);
+        toast.dismiss();
         toast.error(`Erreur lors de l'ajout des utilisateurs: ${error.message}`);
         return;
       }
       
+      toast.dismiss();
       toast.success("Utilisateurs ajoutés avec succès");
       await queryClient.refetchQueries({ queryKey: ['internal-users'] });
       resetFormState();
     } catch (error: any) {
       console.error("Exception adding users:", error);
+      toast.dismiss();
       toast.error(`Exception lors de l'ajout des utilisateurs: ${error.message || error}`);
     }
   };

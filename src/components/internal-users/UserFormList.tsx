@@ -4,6 +4,8 @@ import { UserForm } from "./UserForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface UserFormListProps {
   newUserData: Omit<User, 'id'>[];
@@ -28,6 +30,8 @@ export const UserFormList = ({
   onRemoveUser,
   onTogglePasswordVisibility
 }: UserFormListProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const handleImageUpload = async (index: number, file: File) => {
     try {
       // Check file size - limit to 5MB
@@ -77,6 +81,15 @@ export const UserFormList = ({
     }
   };
 
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onBulkInsert();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">Ajouter de Nouveaux Utilisateurs</h2>
@@ -103,10 +116,17 @@ export const UserFormList = ({
         <Button 
           type="submit" 
           variant="default" 
-          disabled={newUserData.length === 0}
-          onClick={onBulkInsert}
+          disabled={newUserData.length === 0 || isSubmitting}
+          onClick={handleSubmit}
         >
-          Enregistrer les utilisateurs
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Enregistrement...
+            </>
+          ) : (
+            "Enregistrer les utilisateurs"
+          )}
         </Button>
       </div>
     </div>
