@@ -26,20 +26,22 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Create a query builder first without execution
-    let query = supabase.from('orders').select('created_at, final_total');
+    // Build the query in steps using explicit function calls
+    // to avoid complex type inference chains
+    const baseQuery = supabase.from('orders').select('created_at, final_total');
     
-    // Add date range conditions
-    query = query.gte('created_at', startDate.toISOString())
-    query = query.lte('created_at', endDate.toISOString());
+    // Apply date range filters
+    const dateRangeQuery = baseQuery
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
     
-    // Add filter condition if needed
-    if (selectedPOS !== "all") {
-      query = query.eq('depot', selectedPOS);
-    }
+    // Apply location filter if needed
+    const filteredQuery = selectedPOS !== "all" 
+      ? dateRangeQuery.eq('depot', selectedPOS)
+      : dateRangeQuery;
     
-    // Execute the query with ordering
-    const { data, error } = await query.order('created_at');
+    // Execute the final query
+    const { data, error } = await filteredQuery.order('created_at');
     
     if (error) throw error;
     
