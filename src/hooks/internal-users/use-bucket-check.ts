@@ -23,9 +23,24 @@ export const useBucketCheck = () => {
         
         if (!lovableBucket) {
           console.warn("Le bucket 'lovable-uploads' n'existe pas");
-          // We don't create it automatically, as it requires admin privileges
-          // Just notify the user that uploads may fail
-          toast.warning("Stockage non configuré pour les téléchargements");
+          // Try to create the bucket
+          try {
+            const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
+              public: true
+            });
+            
+            if (createError) {
+              console.error("Error creating bucket:", createError);
+              toast.warning("Impossible de créer le stockage pour les téléchargements d'images");
+            } else {
+              console.log("Bucket 'lovable-uploads' created successfully");
+              setBucketExists(true);
+              toast.success("Stockage pour les téléchargements configuré avec succès");
+            }
+          } catch (createErr) {
+            console.error("Exception creating bucket:", createErr);
+            toast.warning("Stockage non configuré pour les téléchargements");
+          }
         }
       } catch (err) {
         console.error("Exception checking bucket:", err);

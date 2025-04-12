@@ -25,11 +25,15 @@ export const useUserMutations = (queryClient: QueryClient) => {
       // Show loading toast
       toast.loading("Enregistrement des utilisateurs en cours...");
       
-      // Add UUIDs for each new user
-      const usersWithIds = users.map(user => ({
-        ...user,
-        id: crypto.randomUUID() // Generate a UUID for each user
-      }));
+      // Add UUIDs for each new user and remove password field for database storage
+      const usersWithIds = users.map(user => {
+        // Create a copy of the user without the password field
+        const { password, ...userWithoutPassword } = user;
+        return {
+          ...userWithoutPassword,
+          id: crypto.randomUUID() // Generate a UUID for each user
+        };
+      });
       
       console.log("Inserting users:", usersWithIds);
       
