@@ -21,8 +21,8 @@ export interface Client {
   rc_number?: string;
   cc_number?: string;
   payment_terms?: string;
-  created_at: string;
-  updated_at: string;
-  status: string; // Changed to simple string type - required
+  created_at?: string; // Making this optional to match client_unified
+  updated_at?: string;
+  status?: string; // Making this optional to match client_unified
   balance?: number;
 }

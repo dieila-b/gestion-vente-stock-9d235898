@@ -48,7 +48,7 @@ export function useFetchDeliveryNotes() {
           return [];
         }
         
-        const transformedData: DeliveryNote[] = deliveryNotesData.map(note => {
+        const transformedData = deliveryNotesData.map(note => {
           if (!note) return null;
           
           // Handle items safely
@@ -80,6 +80,8 @@ export function useFetchDeliveryNotes() {
             id: note.id || '',
             delivery_number: note.delivery_number || '',
             created_at: note.created_at || '',
+            updated_at: note.updated_at || '',
+            notes: note.notes || '',
             status: note.status || '',
             supplier: {
               name: supplier.name || 'Fournisseur inconnu',
@@ -90,7 +92,7 @@ export function useFetchDeliveryNotes() {
               order_number: purchaseOrder.order_number || '',
               total_amount: purchaseOrder.total_amount || 0
             },
-            items: items as any[]
+            items: items
           } as DeliveryNote;
         }).filter(Boolean) as DeliveryNote[];
       

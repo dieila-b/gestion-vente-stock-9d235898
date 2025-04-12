@@ -18,4 +18,8 @@ export interface CartState {
     [key: string]: any;
   } | null;
   notes: string;
+  // Adding these properties to match implementation
+  subtotal?: number;
+  discount?: number;
+  total?: number;
 }

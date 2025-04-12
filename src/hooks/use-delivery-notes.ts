@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +28,20 @@ export function useDeliveryNotes() {
         ...note,
         status: note.status || 'pending'
       }));
+    }
+  });
+
+  // Fetch warehouses for delivery notes
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('warehouses')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -101,6 +116,49 @@ export function useDeliveryNotes() {
     }
   });
 
+  // Add functions to handle the delivery note operations
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDeliveryNote.mutateAsync(id);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const handleApprove = async (id: string, warehouseId: string, items: Array<{ id: string; quantity_received: number }>) => {
+    try {
+      // Update delivery note items with received quantities
+      for (const item of items) {
+        await supabase
+          .from('delivery_note_items')
+          .update({ quantity_received: item.quantity_received })
+          .eq('id', item.id);
+      }
+      
+      // Update delivery note status
+      await updateDeliveryNote.mutateAsync({ 
+        id, 
+        status: 'received' 
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error approving delivery note:", error);
+      return false;
+    }
+  };
+
+  const handleEdit = async (id: string, data: Partial<DeliveryNote>) => {
+    try {
+      await updateDeliveryNote.mutateAsync({ id, ...data });
+      return true;
+    } catch (error) {
+      console.error("Error editing delivery note:", error);
+      return false;
+    }
+  };
+
   // Fetch a single delivery note by ID
   const fetchDeliveryNoteById = async (id: string) => {
     const { data, error } = await supabase
@@ -111,7 +169,7 @@ export function useDeliveryNotes() {
         purchase_order:purchase_orders(*),
         items:delivery_note_items(
           *,
-          product:product_id(*)
+          product:catalog!delivery_note_items_product_id_fkey(*)
         )
       `)
       .eq('id', id)
@@ -200,6 +258,10 @@ export function useDeliveryNotes() {
     fetchDeliveryNoteById,
     addDeliveryNoteItems,
     updateDeliveryNoteItems,
-    deleteDeliveryNoteItem
+    deleteDeliveryNoteItem,
+    handleDelete,
+    handleApprove,
+    handleEdit,
+    warehouses
   };
 }

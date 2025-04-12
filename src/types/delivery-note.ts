@@ -8,6 +8,18 @@ export interface DeliveryNote {
   status: string;
   supplier_id?: string;
   purchase_order_id?: string;
+  
+  // Adding these properties to match the implementation
+  supplier?: {
+    name: string;
+    phone?: string;
+    email?: string;
+  };
+  purchase_order?: {
+    order_number: string;
+    total_amount: number;
+  };
+  items: DeliveryNoteItem[];
 }
 
 export interface DeliveryNoteItem {
@@ -17,5 +29,9 @@ export interface DeliveryNoteItem {
   quantity_ordered: number;
   quantity_received: number;
   unit_price: number;
-  product?: any;
+  product?: {
+    name: string;
+    reference: string;
+    category?: string;
+  };
 }

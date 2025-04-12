@@ -28,10 +28,12 @@ export default function DeliveryNotePage() {
   // Filter notes based on search and status
   const filteredNotes = deliveryNotes.filter(note => {
     const matchesStatus = filterStatus === "all" || note.status === filterStatus;
+    
+    // Safe access to nested properties with optional chaining
     const matchesSearch = searchTerm === "" || 
       note.delivery_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.purchase_order.order_number.toLowerCase().includes(searchTerm.toLowerCase());
+      (note.supplier?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (note.purchase_order?.order_number || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesSearch;
   });

@@ -1,24 +1,26 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
-import { CartItem as CartItemType } from "@/types/pos";
+import { CartItem as CartItemType } from "@/types/CartState";
 import { CartItem } from "@/components/pos/CartItem";
-import { Client } from "@/types/client";
+import { Client } from "@/types/client_unified";
 import { formatGNF } from "@/lib/currency";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 
 interface PreorderCartProps {
   items: CartItemType[];
   onUpdateQuantity: (productId: string, delta: number) => void;
   onRemove: (productId: string) => void;
   onUpdateDiscount: (productId: string, discount: number) => void;
-  onCheckout: () => void;
+  onSubmit: () => void;
   isLoading: boolean;
   selectedClient: Client | null;
   clearCart: () => void;
   onSetQuantity?: (productId: string, quantity: number) => void;
+  onNotesChange?: (notes: string) => void;
+  notes?: string;
 }
 
 export function PreorderCart({
@@ -26,11 +28,13 @@ export function PreorderCart({
   onUpdateQuantity,
   onRemove,
   onUpdateDiscount,
-  onCheckout,
+  onSubmit,
   isLoading,
   selectedClient,
   clearCart,
-  onSetQuantity
+  onSetQuantity,
+  onNotesChange,
+  notes = ""
 }: PreorderCartProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [subtotal, setSubtotal] = useState(0);
@@ -71,8 +75,8 @@ export function PreorderCart({
 
   const handleCheckoutClick = () => {
     console.log("PreorderCart: handleCheckoutClick called");
-    if (onCheckout) {
-      onCheckout();
+    if (onSubmit) {
+      onSubmit();
     }
   };
 
@@ -96,68 +100,58 @@ export function PreorderCart({
           </div>
         )}
         <ScrollArea className="h-[calc(100vh-26rem)]">
-          <div className="space-y-2 pr-4">
-            {items.map((item) => (
-              <CartItem
-                key={item.id}
-                item={item}
-                onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
-                onUpdateDiscount={(productId, discount) => onUpdateDiscount(item.id, discount)}
-                onRemove={() => onRemove(item.id)}
-                onSetQuantity={onSetQuantity ? 
-                  (quantity) => onSetQuantity(item.id, quantity)
-                  : undefined}
-              />
-            ))}
-            {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (
-              <div className="mt-4 p-3 border border-amber-500/30 rounded-md bg-amber-500/10 text-amber-400 text-sm">
-                {hasOutOfStockItems ? (
-                  <p>Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
-                ) : (
-                  <p>Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
-                )}
+          <div className="space-y-2">
+            {items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-center text-muted-foreground">
+                <ShoppingCart className="h-8 w-8 mb-2 opacity-50" />
+                <p>Votre panier est vide</p>
+                <p className="text-sm">Ajoutez des produits pour créer une précommande</p>
               </div>
+            ) : (
+              items.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
+                  onRemove={() => onRemove(item.id)}
+                  onUpdateDiscount={(discount) => onUpdateDiscount(item.id, discount)}
+                  onSetQuantity={onSetQuantity ? (qty) => onSetQuantity(item.id, qty) : undefined}
+                />
+              ))
             )}
           </div>
         </ScrollArea>
       </div>
 
       <div className="sticky bottom-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
-        {selectedClient && (
-          <div className="text-sm text-muted-foreground">
-            Client: {selectedClient.company_name || selectedClient.contact_name}
-          </div>
-        )}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>Sous-total</span>
+        <div className="space-y-1">
+          <div className="flex justify-between text-sm">
+            <span>Sous-total:</span>
             <span>{formatGNF(subtotal)}</span>
           </div>
-          {totalDiscount > 0 && (
-            <div className="flex justify-between items-center text-sm text-red-400">
-              <span>Remises</span>
-              <span>-{formatGNF(totalDiscount)}</span>
-            </div>
-          )}
-          <div className="flex justify-between items-center text-lg font-semibold">
-            <span>Total</span>
-            <span className="text-gradient">{formatGNF(total)}</span>
+          <div className="flex justify-between text-sm">
+            <span>Remise:</span>
+            <span>-{formatGNF(totalDiscount)}</span>
+          </div>
+          <div className="flex justify-between font-bold pt-1 border-t border-white/10">
+            <span>Total:</span>
+            <span>{formatGNF(total)}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button 
-            variant="destructive"
-            className="bg-[#ea384c] hover:bg-[#ea384c]/90"
+          <Button
+            variant="outline"
+            className="w-full"
             onClick={clearCart}
+            disabled={isLoading || items.length === 0}
           >
-            ANNULER
+            Annuler
           </Button>
-          <Button 
-            className="bg-[#22c55e] hover:bg-[#22c55e]/90 text-white text-xs md:text-sm px-2 h-auto min-h-10 py-2 break-words"
+          <Button
+            className="w-full"
             onClick={handleCheckoutClick}
             disabled={isLoading || items.length === 0 || !selectedClient}
-            size="auto"
           >
             {getButtonText()}
           </Button>
