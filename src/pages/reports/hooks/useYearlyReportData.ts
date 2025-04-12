@@ -26,18 +26,27 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // First create the base query
-    const query = supabase.from('orders')
-      .select('created_at, final_total')
+    // Use explicit types when creating the query to avoid excessive type nesting
+    let { data: orders, error } = await supabase
+      .from('orders')
+      .select<string, OrderData>('created_at, final_total')
       .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
+      .lte('created_at', endDate.toISOString())
+      .order('created_at');
     
-    // Then add conditional filtering and ordering
-    const { data: orders, error } = await (
-      selectedPOS !== "all" 
-        ? query.eq('depot', selectedPOS).order('created_at')
-        : query.order('created_at')
-    );
+    // If a specific POS is selected, re-query with the additional filter
+    if (selectedPOS !== "all") {
+      const response = await supabase
+        .from('orders')
+        .select<string, OrderData>('created_at, final_total')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .eq('depot', selectedPOS)
+        .order('created_at');
+      
+      orders = response.data;
+      error = response.error;
+    }
 
     if (error) throw error;
     
