@@ -24,7 +24,7 @@ export default function UnpaidReport() {
   });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
-  const { invoices, isLoading } = useUnpaidInvoices(dateRange);
+  const { data: invoices = [], isLoading } = useUnpaidInvoices(dateRange, selectedClient?.id);
   
   // Filter invoices by selected client if any
   const filteredInvoices = selectedClient 
