@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +17,6 @@ export default function useEditOrder(
   const [cart, setCart] = useState<CartItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch the order details using the ID from params
   const { data: orderData, isLoading: isOrderLoading } = useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
@@ -55,9 +53,7 @@ export default function useEditOrder(
 
   useEffect(() => {
     if (!isOrderLoading && orderData) {
-      // Set the client from the order with proper type handling
       if (orderData.client && !isSelectQueryError(orderData.client)) {
-        // Create a safe Client object with all required properties
         const clientData = orderData.client;
         const client: Client = {
           id: clientData.id || '',
@@ -65,14 +61,13 @@ export default function useEditOrder(
           contact_name: clientData.contact_name || '',
           email: clientData.email || '',
           phone: clientData.phone || '',
-          // Assign these values with defaults if they don't exist
           mobile_1: clientData.mobile_1 || '',
           mobile_2: clientData.mobile_2 || '',
           whatsapp: clientData.whatsapp || '',
           credit_limit: clientData.credit_limit || 0,
           rc_number: clientData.rc_number || '',
           cc_number: clientData.cc_number || '',
-          status: clientData.status || 'active', // Ensure status is always set
+          status: clientData.status || 'active',
           address: clientData.address || '',
           city: clientData.city || '',
           state: clientData.state || '',
@@ -91,7 +86,6 @@ export default function useEditOrder(
         }
       }
 
-      // Transform order items to cart items
       if (orderData.items && Array.isArray(orderData.items)) {
         const cartItems: CartItem[] = orderData.items.map((item: any) => ({
           id: item.product_id,

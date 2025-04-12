@@ -1,9 +1,21 @@
 
-import { CartItem } from "./pos";
+export interface CartItem {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  discount: number;
+  category: string;
+  subtotal: number;
+}
 
 export interface CartState {
   items: CartItem[];
-  total: number;
-  subtotal: number;
-  discount: number;
+  client: {
+    id: string;
+    company_name: string;
+    [key: string]: any;
+  } | null;
+  notes: string;
 }

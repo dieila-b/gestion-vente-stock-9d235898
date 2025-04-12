@@ -3,6 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "@/types/date-range";
 
+export interface UnpaidInvoice {
+  id: string;
+  created_at: string;
+  client: {
+    company_name: string;
+  };
+  client_id: string;
+  invoice_number: string;
+  total_amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  payment_status: string;
+}
+
 export function useUnpaidInvoices(date: DateRange, clientId?: string) {
   return useQuery({
     queryKey: ['unpaid-invoices', date?.from, date?.to, clientId],
@@ -17,7 +31,7 @@ export function useUnpaidInvoices(date: DateRange, clientId?: string) {
           id,
           created_at,
           client_id,
-          final_total as total_amount,
+          final_total,
           paid_amount,
           remaining_amount,
           payment_status,
@@ -42,11 +56,11 @@ export function useUnpaidInvoices(date: DateRange, clientId?: string) {
         client: order.client,
         client_id: order.client_id,
         invoice_number: `FACT-${order.id.slice(0, 8)}`,
-        total_amount: order.total_amount,
+        total_amount: order.final_total,
         paid_amount: order.paid_amount,
         remaining_amount: order.remaining_amount,
         payment_status: order.payment_status
-      }));
+      })) as UnpaidInvoice[];
     }
   });
 }

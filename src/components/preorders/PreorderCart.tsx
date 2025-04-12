@@ -1,152 +1,131 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { CartItem } from '@/types/pos';
-import { formatGNF } from '@/lib/currency';
-import { Client } from '@/types/client_unified';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CartItem } from "@/types/CartState";
+import { Client } from "@/types/client_unified";
+import { Textarea } from "@/components/ui/textarea";
+import { formatGNF } from "@/lib/currency";
+import { X, Minus, Plus } from "lucide-react";
 
 export interface PreorderCartProps {
   items: CartItem[];
   onRemoveItem: (id: string) => void;
-  onUpdateQuantity?: (id: string, quantity: number) => void;
-  onUpdateDiscount?: (id: string, discount: number) => void; // Added missing prop
+  onUpdateQuantity: (id: string, quantity: number) => void;
   onSubmit: () => Promise<void>;
   onNotesChange: (notes: string) => void;
   notes: string;
-  client: Client | null;
-  subtotal: number;
-  discount: number;
-  total: number;
+  isLoading: boolean;
+  selectedClient: Client | null;
+  onUpdateDiscount: (id: string, discount: number) => void;
   clearCart: () => void;
-  isLoading?: boolean;
 }
 
-export const PreorderCart: React.FC<PreorderCartProps> = ({
+export function PreorderCart({
   items,
   onRemoveItem,
   onUpdateQuantity,
-  onUpdateDiscount,
   onSubmit,
   onNotesChange,
   notes,
-  client,
-  subtotal,
-  discount,
-  total,
-  clearCart,
-  isLoading = false,
-}) => {
+  isLoading,
+  selectedClient,
+  onUpdateDiscount,
+  clearCart
+}: PreorderCartProps) {
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity) - item.discount, 0);
+  };
+
   return (
-    <Card className="border-none shadow-none">
-      <CardHeader className="px-0">
-        <CardTitle>Précommande</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {items.length === 0 ? (
-          <div className="text-center p-6 border border-dashed rounded-lg">
-            <p className="text-muted-foreground">Aucun produit sélectionné</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="max-h-[400px] overflow-auto">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center py-2 border-b">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatGNF(item.price)} × {item.quantity}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="font-medium">{formatGNF(item.price * item.quantity)}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                        disabled={!onUpdateQuantity}
-                      >
-                        -
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={!onUpdateQuantity}
-                      >
-                        +
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => onRemoveItem(item.id)}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  </div>
+    <Card className="p-4">
+      <h2 className="text-lg font-semibold mb-4">Précommande</h2>
+      
+      {items.length === 0 ? (
+        <div className="text-center p-6 text-muted-foreground">
+          Votre panier est vide
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {items.map((item) => (
+            <div key={item.id} className="flex justify-between border-b pb-3">
+              <div>
+                <div className="font-medium">{item.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {formatGNF(item.price)} × {item.quantity}
                 </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Sous-total:</span>
-                <span>{formatGNF(subtotal)}</span>
+                {item.discount > 0 && (
+                  <div className="text-sm text-green-600">
+                    Remise: {formatGNF(item.discount)}
+                  </div>
+                )}
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Remise:</span>
-                  <span>-{formatGNF(discount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold">
-                <span>Total:</span>
-                <span>{formatGNF(total)}</span>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 w-8 p-0"
+                  onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <span className="w-8 text-center">{item.quantity}</span>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 w-8 p-0"
+                  onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 text-destructive"
+                  onClick={() => onRemoveItem(item.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium mb-1">
-                Notes
-              </label>
-              <Textarea
-                id="notes"
-                placeholder="Ajouter des notes sur la précommande..."
-                value={notes}
-                onChange={(e) => onNotesChange(e.target.value)}
-                className="resize-none"
-              />
+          ))}
+          
+          <div className="pt-2">
+            <div className="flex justify-between font-medium">
+              <span>Total:</span>
+              <span>{formatGNF(calculateSubtotal())}</span>
             </div>
           </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex-col gap-2 p-0 pt-4">
-        <Button
-          className="w-full"
-          disabled={items.length === 0 || !client || isLoading}
-          onClick={onSubmit}
-        >
-          {isLoading ? "Création en cours..." : "Créer la précommande"}
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled={items.length === 0 || isLoading}
-          onClick={clearCart}
-        >
-          Vider
-        </Button>
-      </CardFooter>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Notes</label>
+            <Textarea
+              placeholder="Notes additionnelles..."
+              value={notes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="destructive" 
+              className="w-1/3"
+              onClick={clearCart}
+              disabled={isLoading}
+            >
+              Annuler
+            </Button>
+            <Button 
+              className="w-2/3"
+              onClick={onSubmit}
+              disabled={isLoading || items.length === 0 || !selectedClient}
+            >
+              {isLoading ? "Traitement..." : "Créer la précommande"}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
-};
-
-export default PreorderCart;
+}

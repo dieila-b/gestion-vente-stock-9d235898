@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type OrderStatus = "pending" | "delivered" | "draft" | "approved";
+export type PaymentStatus = "pending" | "partial" | "paid";
+
 export function usePurchaseEdit(id?: string) {
   // Define state variables
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
@@ -14,8 +17,8 @@ export function usePurchaseEdit(id?: string) {
   const [discount, setDiscount] = useState(0);
   const [taxRate, setTaxRate] = useState(20);
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
-  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
+  const [orderStatus, setOrderStatus] = useState<OrderStatus>("pending");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("pending");
 
   // Fetch suppliers
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
@@ -85,8 +88,17 @@ export function usePurchaseEdit(id?: string) {
       setDiscount(purchaseOrder.discount || 0);
       setTaxRate(purchaseOrder.tax_rate || 20);
       setExpectedDeliveryDate(purchaseOrder.expected_delivery_date || "");
-      setOrderStatus(purchaseOrder.status || "pending");
-      setPaymentStatus(purchaseOrder.payment_status || "pending");
+      
+      // Safely cast the string to our specific type
+      if (purchaseOrder.status) {
+        const orderStatusValue = purchaseOrder.status as OrderStatus;
+        setOrderStatus(orderStatusValue);
+      }
+      
+      if (purchaseOrder.payment_status) {
+        const paymentStatusValue = purchaseOrder.payment_status as PaymentStatus;
+        setPaymentStatus(paymentStatusValue);
+      }
       
       if (purchaseOrder.items && Array.isArray(purchaseOrder.items)) {
         setSelectedProducts(purchaseOrder.items.map((item: any) => ({
@@ -101,6 +113,15 @@ export function usePurchaseEdit(id?: string) {
       }
     }
   }, [purchaseOrder]);
+
+  // Function to handle status updates with proper type safety
+  const handleOrderStatusChange = (status: OrderStatus) => {
+    setOrderStatus(status);
+  };
+
+  const handlePaymentStatusChange = (status: PaymentStatus) => {
+    setPaymentStatus(status);
+  };
 
   // Product selection handler
   const handleProductSelect = (product: any) => {
@@ -122,8 +143,36 @@ export function usePurchaseEdit(id?: string) {
   };
 
   // Add product handler
-  const handleAddProduct = (product: any) => {
-    setSelectedProducts([...selectedProducts, product]);
+  const handleAddProduct = () => {
+    // Add an empty product entry to the list
+    const newProduct = {
+      product_id: "",
+      product: null,
+      quantity: 1,
+      unit_price: 0,
+      selling_price: 0,
+      total_price: 0
+    };
+    
+    setSelectedProducts([...selectedProducts, newProduct]);
+  };
+
+  // Product selection after adding an empty product
+  const handleProductSelectForIndex = (index: number, productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      product_id: product.id,
+      product,
+      unit_price: product.purchase_price || 0,
+      selling_price: product.price || 0,
+      total_price: (updatedProducts[index].quantity || 1) * (product.purchase_price || 0)
+    };
+    
+    setSelectedProducts(updatedProducts);
   };
 
   // Quantity change handler
@@ -140,6 +189,19 @@ export function usePurchaseEdit(id?: string) {
     }));
   };
 
+  // Alternative quantity change handler that works with index
+  const handleQuantityChangeByIndex = (index: number, quantity: number) => {
+    const updatedProducts = [...selectedProducts];
+    if (updatedProducts[index]) {
+      updatedProducts[index] = {
+        ...updatedProducts[index],
+        quantity,
+        total_price: quantity * updatedProducts[index].unit_price
+      };
+      setSelectedProducts(updatedProducts);
+    }
+  };
+
   // Price change handler
   const handlePriceChange = (productId: string, price: number) => {
     setSelectedProducts(prev => prev.map(item => {
@@ -152,6 +214,19 @@ export function usePurchaseEdit(id?: string) {
       }
       return item;
     }));
+  };
+
+  // Alternative price change handler that works with index
+  const handlePriceChangeByIndex = (index: number, price: number) => {
+    const updatedProducts = [...selectedProducts];
+    if (updatedProducts[index]) {
+      updatedProducts[index] = {
+        ...updatedProducts[index],
+        unit_price: price,
+        total_price: updatedProducts[index].quantity * price
+      };
+      setSelectedProducts(updatedProducts);
+    }
   };
 
   // Calculate subtotal
@@ -267,16 +342,19 @@ export function usePurchaseEdit(id?: string) {
     expectedDeliveryDate,
     setExpectedDeliveryDate,
     orderStatus,
-    setOrderStatus,
+    setOrderStatus: handleOrderStatusChange,
     paymentStatus,
-    setPaymentStatus,
+    setPaymentStatus: handlePaymentStatusChange,
     handleProductSelect,
+    handleProductSelectForIndex,
     calculateSubtotal,
     calculateTax,
     calculateTotal,
     handleAddProduct,
     handleQuantityChange,
+    handleQuantityChangeByIndex,
     handlePriceChange,
+    handlePriceChangeByIndex,
     handleSubmit
   };
 }

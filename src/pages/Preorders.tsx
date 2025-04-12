@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
 import { OrderForm } from '@/components/orders/OrderForm';
@@ -9,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { ClientSelect } from '@/components/clients/ClientSelect';
 import { PreorderCart } from '@/components/preorders/PreorderCart';
 import { PreorderInvoiceView } from '@/components/preorders/PreorderInvoiceView';
-import { CartItem } from '@/types/pos'; // Import the unified CartItem type
+import { CartItem } from '@/types/CartState';
 
 export default function Preorders() {
   const navigate = useNavigate();
@@ -17,13 +16,10 @@ export default function Preorders() {
   const [currentPreorder, setCurrentPreorder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Get the cart state and methods
   const { cart, addItem, removeItem, updateQuantity, updateDiscount, addClient, removeClient, clearCart, updateNotes } = useCartStore();
   
-  // Map cart methods to component methods
   const removeFromCart = removeItem;
   
-  // Wrapper for updateDiscount to match expected signature
   const handleUpdateDiscount = (id: string, discount: number) => {
     updateDiscount(id, discount);
   };
@@ -33,7 +29,6 @@ export default function Preorders() {
     updateQuantity(id, quantity - cart.items.find(item => item.id === id)?.quantity || 0);
   };
   
-  // Validation function
   const validatePreorder = () => {
     if (!cart.items || cart.items.length === 0) {
       toast.error("Veuillez ajouter au moins un produit à la précommande");
@@ -46,7 +41,6 @@ export default function Preorders() {
     return true;
   };
   
-  // Handle preorder submission
   const handleSubmitPreorder = async () => {
     if (!validatePreorder()) return;
     
@@ -55,7 +49,6 @@ export default function Preorders() {
       
       const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Create preorder record
       const { data: preorderData, error: preorderError } = await supabase
         .from('preorders')
         .insert({
@@ -71,7 +64,6 @@ export default function Preorders() {
       
       if (preorderError) throw preorderError;
       
-      // Create preorder items
       const preorderItems = cart.items.map(item => ({
         preorder_id: preorderData.id,
         product_id: item.product_id || item.id,
@@ -87,7 +79,6 @@ export default function Preorders() {
       
       if (itemsError) throw itemsError;
       
-      // Show success message and reset
       toast.success("Précommande créée avec succès");
       setCurrentPreorder(preorderData);
       setShowInvoiceDialog(true);
@@ -107,7 +98,6 @@ export default function Preorders() {
   };
   
   const handlePrintInvoice = async (isReceipt = false) => {
-    // Print invoice logic would go here
     toast.success(isReceipt ? "Reçu imprimé" : "Facture imprimée");
   };
   

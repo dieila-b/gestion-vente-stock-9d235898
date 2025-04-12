@@ -37,12 +37,13 @@ const Purchase = () => {
     paymentStatus,
     setPaymentStatus,
     handleProductSelect,
+    handleProductSelectForIndex,
     calculateSubtotal,
     calculateTax,
     calculateTotal,
     handleAddProduct,
-    handleQuantityChange,
-    handlePriceChange,
+    handleQuantityChangeByIndex,
+    handlePriceChangeByIndex,
     handleSubmit
   } = usePurchaseEdit(id);
 
@@ -77,10 +78,10 @@ const Purchase = () => {
         <ProductsList
           selectedProducts={selectedProducts}
           products={products}
-          handleProductSelect={handleProductSelect}
+          handleProductSelect={handleProductSelectForIndex}
           handleAddProduct={handleAddProduct}
-          handleQuantityChange={handleQuantityChange}
-          handlePriceChange={handlePriceChange}
+          handleQuantityChange={handleQuantityChangeByIndex}
+          handlePriceChange={handlePriceChangeByIndex}
         />
 
         <AdditionalCostsSection

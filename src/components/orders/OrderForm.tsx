@@ -51,7 +51,6 @@ export function OrderForm({ onAddToCart, isLoading }: OrderFormProps) {
       subtotal: product.price,
       discount: 0,
       category: product.category || '',
-      // Remove barcode which isn't defined in CartItem type
     };
     
     onAddToCart(cartItem);

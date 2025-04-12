@@ -1,31 +1,12 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DeliveryNote } from "@/types/delivery-note";
-import { useState } from "react";
 import { toast } from "sonner";
-import { isSelectQueryError, safeSupplier, safePurchaseOrder, safeProduct } from "@/utils/type-utils";
+import { DeliveryNote } from "@/types/delivery-note";
 
-export const useDeliveryNotes = () => {
+export function useDeliveryNotes() {
   const queryClient = useQueryClient();
-  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // Fetch warehouses for delivery note validation
-  const { data: warehouses = [] } = useQuery({
-    queryKey: ['warehouses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-        
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
+  // Fetch all delivery notes
   const { data: deliveryNotes = [], isLoading } = useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
@@ -33,176 +14,192 @@ export const useDeliveryNotes = () => {
         .from('delivery_notes')
         .select(`
           *,
-          supplier:supplier_id(*),
-          purchase_order:purchase_order_id(*),
-          items:delivery_note_items(
-            id,
-            product_id,
-            quantity_ordered,
-            quantity_received,
-            unit_price,
-            product:product_id(*)
-          )
+          supplier:suppliers(*),
+          purchase_order:purchase_orders(*),
+          items:delivery_note_items(*)
         `)
         .order('created_at', { ascending: false });
-
+      
       if (error) throw error;
-
-      // Transform the data to match DeliveryNote interface and handle SelectQueryError
-      return (data || []).map(item => {
-        // Ensure status has a default value
-        const status = item.status || 'pending';
-        
-        const safeItem = {
-          id: item.id,
-          delivery_number: item.delivery_number,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          notes: item.notes,
-          status: status,
-          supplier: safeSupplier(item.supplier),
-          purchase_order: safePurchaseOrder(item.purchase_order),
-          items: (item.items || []).map((lineItem: any) => ({
-            id: lineItem.id,
-            product_id: lineItem.product_id,
-            quantity_ordered: lineItem.quantity_ordered || 0,
-            quantity_received: lineItem.quantity_received || 0,
-            unit_price: lineItem.unit_price || 0,
-            product: safeProduct(lineItem.product)
-          }))
-        };
-        return safeItem as DeliveryNote;
-      });
+      
+      // Add status property if it doesn't exist in the DB
+      return data.map((note) => ({
+        ...note,
+        status: note.status || 'pending'
+      }));
     }
   });
 
+  // Create delivery note
   const createDeliveryNote = useMutation({
     mutationFn: async (deliveryNote: Partial<DeliveryNote>) => {
-      // First create the delivery note
-      const { data: noteData, error: noteError } = await supabase
+      const { data, error } = await supabase
         .from('delivery_notes')
         .insert({
           delivery_number: deliveryNote.delivery_number,
           notes: deliveryNote.notes,
-          status: deliveryNote.status || 'pending',
-          supplier_id: deliveryNote.supplier?.id,
-          purchase_order_id: deliveryNote.purchase_order?.id
+          status: deliveryNote.status || 'pending'
         })
-        .select();
-
-      if (noteError) throw noteError;
+        .select()
+        .single();
       
-      // Then, create the items if provided
-      if (deliveryNote.items && deliveryNote.items.length > 0) {
-        const itemsToInsert = deliveryNote.items.map(item => ({
-          delivery_note_id: noteData[0].id,
-          product_id: item.product_id,
-          quantity_ordered: item.quantity_ordered,
-          quantity_received: item.quantity_received,
-          unit_price: item.unit_price
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('delivery_note_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) throw itemsError;
-      }
-
-      toast.success('Delivery note created successfully');
-
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      return noteData[0];
+      if (error) throw error;
+      return data;
     },
-    onError: (error: any) => {
-      toast.error(`Error creating delivery note: ${error.message}`);
+    onSuccess: () => {
+      toast.success("Bon de livraison créé avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error) => {
+      toast.error(`Erreur: ${error.message}`);
     }
   });
 
+  // Update delivery note
   const updateDeliveryNote = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      try {
-        // Ensure we're sending status field if it exists in the data object
-        const updateData = {
-          ...data,
-          status: data.status || 'pending' // Add status if it doesn't exist
-        };
-        
-        const { data: updatedNote, error } = await supabase
-          .from('delivery_notes')
-          .update(updateData)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        toast.success('Delivery note updated successfully');
-
-        queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-        return updatedNote;
-      } catch (error: any) {
-        toast.error(`Error updating delivery note: ${error.message}`);
-        throw error;
-      }
+    mutationFn: async ({ id, ...deliveryNote }: Partial<DeliveryNote> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('delivery_notes')
+        .update({
+          delivery_number: deliveryNote.delivery_number,
+          notes: deliveryNote.notes,
+          status: deliveryNote.status || 'pending'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Bon de livraison mis à jour avec succès");
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error) => {
+      toast.error(`Erreur: ${error.message}`);
     }
   });
 
-  const handleDelete = async (id: string) => {
-    try {
+  // Delete delivery note
+  const deleteDeliveryNote = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('delivery_notes')
         .delete()
         .eq('id', id);
-
+      
       if (error) throw error;
-
-      toast.success('Delivery note deleted successfully');
-
+      return id;
+    },
+    onSuccess: () => {
+      toast.success("Bon de livraison supprimé avec succès");
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      return true;
-    } catch (error: any) {
-      toast.error(`Error deleting delivery note: ${error.message}`);
-      return false;
+    },
+    onError: (error) => {
+      toast.error(`Erreur: ${error.message}`);
     }
+  });
+
+  // Fetch a single delivery note by ID
+  const fetchDeliveryNoteById = async (id: string) => {
+    const { data, error } = await supabase
+      .from('delivery_notes')
+      .select(`
+        *,
+        supplier:suppliers(*),
+        purchase_order:purchase_orders(*),
+        items:delivery_note_items(
+          *,
+          product:product_id(*)
+        )
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return {
+      ...data,
+      status: data.status || 'pending'
+    };
   };
 
-  const handleApprove = async (id: string) => {
+  // Add items to a delivery note
+  const addDeliveryNoteItems = async (deliveryNoteId: string, items: any[]) => {
+    const formattedItems = items.map(item => ({
+      delivery_note_id: deliveryNoteId,
+      product_id: item.product_id,
+      quantity_ordered: item.quantity_ordered,
+      quantity_received: item.quantity_received,
+      unit_price: item.unit_price
+    }));
+
+    const { data, error } = await supabase
+      .from('delivery_note_items')
+      .insert(formattedItems)
+      .select();
+    
+    if (error) throw error;
+    return data;
+  };
+
+  // Update delivery note items
+  const updateDeliveryNoteItems = async (items: any[]) => {
+    // Process each item individually to handle updates
+    const updatePromises = items.map(item => {
+      if (item.id) {
+        // Update existing item
+        return supabase
+          .from('delivery_note_items')
+          .update({
+            quantity_ordered: item.quantity_ordered,
+            quantity_received: item.quantity_received,
+            unit_price: item.unit_price
+          })
+          .eq('id', item.id);
+      } else {
+        // Insert new item
+        return supabase
+          .from('delivery_note_items')
+          .insert({
+            delivery_note_id: item.delivery_note_id,
+            product_id: item.product_id,
+            quantity_ordered: item.quantity_ordered,
+            quantity_received: item.quantity_received,
+            unit_price: item.unit_price
+          });
+      }
+    });
+
     try {
-      const { error } = await supabase
-        .from('delivery_notes')
-        .update({ status: 'approved' })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Delivery note approved successfully');
-
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      await Promise.all(updatePromises);
       return true;
-    } catch (error: any) {
-      toast.error(`Error approving delivery note: ${error.message}`);
-      return false;
+    } catch (error) {
+      console.error("Error updating delivery note items:", error);
+      throw error;
     }
   };
 
-  const handleEdit = (id: string, data: any = {}) => {
-    // This function would typically navigate to an edit page
-    console.log(`Editing delivery note ${id}`, data);
+  // Delete delivery note item
+  const deleteDeliveryNoteItem = async (itemId: string) => {
+    const { error } = await supabase
+      .from('delivery_note_items')
+      .delete()
+      .eq('id', itemId);
+    
+    if (error) throw error;
+    return itemId;
   };
 
   return {
     deliveryNotes,
     isLoading,
-    selectedDeliveryNote,
-    setSelectedDeliveryNote,
-    isDialogOpen,
-    setIsDialogOpen,
     createDeliveryNote,
     updateDeliveryNote,
-    handleDelete,
-    handleApprove,
-    handleEdit,
-    warehouses
+    deleteDeliveryNote,
+    fetchDeliveryNoteById,
+    addDeliveryNoteItems,
+    updateDeliveryNoteItems,
+    deleteDeliveryNoteItem
   };
-};
+}
