@@ -19,34 +19,37 @@ async function fetchSalesData(
   const startDate = startOfYear(new Date(parseInt(selectedYear)));
   const endDate = endOfYear(startDate);
 
-  const query = supabase
+  // Create the base query with explicit typing
+  let query = supabase
     .from('orders')
-    .select('created_at, final_total')
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString())
-    .order('created_at');
+    .select('created_at, final_total');
+    
+  // Chain conditions separately to avoid deep type instantiation
+  query = query.gte('created_at', startDate.toISOString());
+  query = query.lte('created_at', endDate.toISOString());
+  query = query.order('created_at');
 
   if (selectedPOS !== "all") {
-    query.eq('depot', selectedPOS);
+    query = query.eq('depot', selectedPOS);
   }
 
   const { data: orders, error } = await query;
 
   if (error) throw error;
 
-  // Générer tous les mois de l'année
+  // Generate all months of the year
   const months = eachMonthOfInterval({
     start: startDate,
     end: endDate
   });
 
-  // Initialiser les données avec 0 pour chaque mois
+  // Initialize data with 0 for each month
   const monthlyData: SalesData[] = months.map((month) => ({
     month: format(month, 'MMMM', { locale: fr }),
     sales: 0
   }));
 
-  // Agréger les ventes par mois
+  // Aggregate sales by month
   orders?.forEach((order) => {
     const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
     const index = monthlyData.findIndex((data) => data.month === orderMonth);
