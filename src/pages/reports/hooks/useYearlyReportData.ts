@@ -11,6 +11,12 @@ export type SalesData = {
   sales: number;
 }
 
+// Define the return type for the orders query
+type OrderData = {
+  created_at: string;
+  final_total: number;
+}
+
 // Define fetch function completely outside the hook to avoid type inference issues
 async function fetchSalesData(
   selectedYear: string,
@@ -19,21 +25,23 @@ async function fetchSalesData(
   const startDate = startOfYear(new Date(parseInt(selectedYear)));
   const endDate = endOfYear(startDate);
 
-  // Create the base query with explicit typing
-  let query = supabase
-    .from('orders')
-    .select('created_at, final_total');
-    
-  // Chain conditions separately to avoid deep type instantiation
-  query = query.gte('created_at', startDate.toISOString());
-  query = query.lte('created_at', endDate.toISOString());
-  query = query.order('created_at');
-
+  // Build the query step by step with explicit typing
+  const query = supabase.from('orders');
+  const selectQuery = query.select<'created_at, final_total', OrderData>('created_at, final_total');
+  
+  // Apply filters to the query
+  let filteredQuery = selectQuery
+    .gte('created_at', startDate.toISOString())
+    .lte('created_at', endDate.toISOString())
+    .order('created_at');
+  
+  // Apply POS filter if needed
   if (selectedPOS !== "all") {
-    query = query.eq('depot', selectedPOS);
+    filteredQuery = filteredQuery.eq('depot', selectedPOS);
   }
 
-  const { data: orders, error } = await query;
+  // Execute the query
+  const { data: orders, error } = await filteredQuery;
 
   if (error) throw error;
 
