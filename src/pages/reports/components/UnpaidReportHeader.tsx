@@ -56,7 +56,7 @@ export function UnpaidReportHeader({
           <div className="flex-1">
             <ClientSelect 
               selectedClient={selectedClient} 
-              onClientSelect={onSelectClient}
+              onClientSelect={(client: any) => onSelectClient(client)}
               onClearClient={onClearFilter}
             />
           </div>

@@ -7,7 +7,7 @@ export interface BankAccount {
   account_type?: string;
   initial_balance?: number;
   current_balance?: number;
-  currency?: string;
+  currency: string;
   created_at?: string;
   updated_at?: string;
 }

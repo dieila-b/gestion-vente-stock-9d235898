@@ -65,14 +65,14 @@ export default function useEditOrder(
           contact_name: clientData.contact_name || '',
           email: clientData.email || '',
           phone: clientData.phone || '',
-          // Use optional chaining for properties that might not exist
+          // Assign these values with defaults if they don't exist
           mobile_1: clientData.mobile_1 || '',
           mobile_2: clientData.mobile_2 || '',
           whatsapp: clientData.whatsapp || '',
           credit_limit: clientData.credit_limit || 0,
           rc_number: clientData.rc_number || '',
           cc_number: clientData.cc_number || '',
-          status: clientData.status || 'particulier', // Ensure status is always set
+          status: clientData.status || 'active', // Ensure status is always set
           address: clientData.address || '',
           city: clientData.city || '',
           state: clientData.state || '',

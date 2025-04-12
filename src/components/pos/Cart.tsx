@@ -1,8 +1,9 @@
+
 import { Card } from "@/components/ui/card";
 import { CartItem as CartItemType } from "@/types/pos";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Client } from "@/types/client_unified";
+import { Client } from "@/types/client_unified";  // Updated import
 
 import { CartHeader } from "./cart/CartHeader";
 import { CartItems } from "./cart/CartItems";

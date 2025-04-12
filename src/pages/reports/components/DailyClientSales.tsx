@@ -45,7 +45,8 @@ export function DailyClientSales({ clientSales, isLoading }: DailyClientSalesPro
                 <TableCell className="text-right text-yellow-500">{formatGNF(clientSale.remaining_amount)}</TableCell>
                 <TableCell className="text-center">
                   <Badge 
-                    variant={clientSale.remaining_amount === 0 ? "success" : "warning"}
+                    variant={clientSale.remaining_amount === 0 ? "default" : "outline"}
+                    className={clientSale.remaining_amount === 0 ? "bg-green-600" : "bg-yellow-600"}
                   >
                     {clientSale.remaining_amount === 0 ? "Payé" : "Partiel"}
                   </Badge>

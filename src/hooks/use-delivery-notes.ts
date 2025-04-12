@@ -122,9 +122,15 @@ export const useDeliveryNotes = () => {
   const updateDeliveryNote = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       try {
+        // Ensure we're sending status field if it exists in the data object
+        const updateData = {
+          ...data,
+          status: data.status || 'pending' // Add status if it doesn't exist
+        };
+        
         const { data: updatedNote, error } = await supabase
           .from('delivery_notes')
-          .update(data)
+          .update(updateData)
           .eq('id', id)
           .select()
           .single();

@@ -10,6 +10,7 @@ import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AlertCircle } from "lucide-react";
+import { Client } from "@/types/client_unified"; // Use unified client type
 
 export default function POS() {
   const [searchParams] = useSearchParams();
@@ -66,7 +67,7 @@ export default function POS() {
   // Load data from edit order if available
   useEffect(() => {
     if (editOrderData && !editOrderData.isLoading && editOrderData.selectedClient) {
-      setSelectedClient(editOrderData.selectedClient);
+      setSelectedClient(editOrderData.selectedClient as any);
       if (editOrderData.cart && editOrderData.cart.length > 0) {
         setCart(editOrderData.cart as POSCartItem[]);
       }
@@ -127,7 +128,7 @@ export default function POS() {
               )}
               <ClientSelect
                 selectedClient={selectedClient}
-                onClientSelect={setSelectedClient}
+                onClientSelect={(client: Client) => setSelectedClient(client as any)}
               />
             </div>
             
