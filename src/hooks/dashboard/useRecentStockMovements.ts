@@ -11,12 +11,38 @@ export interface StockMovement {
   reason?: string;
   created_at: string;
   created_by?: string;
+  unit_price?: number;
+  total_value?: number;
   product: {
     id: string;
     name: string;
     reference?: string;
   } | null;
   warehouse: {
+    id: string;
+    name: string;
+  } | null;
+  pos_location?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+interface RawStockMovement {
+  id: string;
+  type: "in" | "out";
+  quantity: number;
+  reason?: string;
+  created_at: string;
+  created_by?: string;
+  unit_price?: number;
+  total_value?: number;
+  product?: {
+    id: string;
+    name: string;
+    reference?: string;
+  } | null;
+  warehouse?: {
     id: string;
     name: string;
   } | null;
@@ -38,6 +64,8 @@ export function useRecentStockMovements() {
             type,
             quantity,
             reason,
+            unit_price,
+            total_value,
             created_at,
             product:product_id(id, name, reference),
             warehouse:warehouse_id(id, name),
@@ -57,9 +85,9 @@ export function useRecentStockMovements() {
     }
   });
 
-  // Transform data to match the StockMovement interface
+  // Transform data to match the StockMovement interface, ensuring type safety
   const transformedMovements: StockMovement[] = Array.isArray(data) 
-    ? data.map((movement) => {
+    ? data.map((movement: any): StockMovement => {
         // Handle null, undefined, or malformed record
         if (!movement) {
           return {
@@ -72,24 +100,15 @@ export function useRecentStockMovements() {
           };
         }
         
-        // Handle SelectQueryError
-        if (isSelectQueryError(movement)) {
-          return {
-            id: "",
-            type: "in",
-            quantity: 0,
-            created_at: "",
-            product: null,
-            warehouse: null
-          };
-        }
-        
+        // Create a properly typed object
         return {
           id: movement.id || "",
           type: (movement.type === "in" || movement.type === "out") ? movement.type : "in",
           quantity: movement.quantity || 0,
           reason: movement.reason,
           created_at: movement.created_at || "",
+          unit_price: movement.unit_price,
+          total_value: movement.total_value,
           product: movement.product ? {
             id: movement.product.id || "",
             name: movement.product.name || "Unknown Product",

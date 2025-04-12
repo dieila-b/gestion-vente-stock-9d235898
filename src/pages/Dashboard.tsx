@@ -39,8 +39,14 @@ export default function Dashboard() {
 
       if (debitError) throw debitError;
 
-      const creditBalance = creditData.reduce((sum, order) => sum + (order.paid_amount || 0), 0);
-      const debitBalance = debitData.reduce((sum, order) => sum + (order.remaining_amount || 0), 0);
+      const creditBalance = Array.isArray(creditData) 
+        ? creditData.reduce((sum, order) => sum + (order.paid_amount || 0), 0)
+        : 0;
+        
+      const debitBalance = Array.isArray(debitData)
+        ? debitData.reduce((sum, order) => sum + (order.remaining_amount || 0), 0)
+        : 0;
+        
       const netBalance = creditBalance - debitBalance;
 
       return {

@@ -39,7 +39,7 @@ export function StockTable({ items }: StockTableProps) {
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.reference || "N/A"}</TableCell>
                 <TableCell>{product.category || "N/A"}</TableCell>
-                <TableCell className="text-right">{item.quantity}</TableCell>
+                <TableCell className="text-right">{item.quantity || 0}</TableCell>
               </TableRow>
             );
           })}
