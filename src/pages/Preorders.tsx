@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -6,7 +7,8 @@ import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { OrderCard } from "./OrderCard";
+import { OrderCard } from "@/components/orders/OrderCard";
+import { CardContent } from "@/components/ui/card";
 
 export function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -161,7 +163,3 @@ export function OrdersPage() {
     </div>
   );
 }
-
-// Import the missing CardContent component
-import { CardContent } from "@/components/ui/card";
-
