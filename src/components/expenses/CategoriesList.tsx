@@ -1,15 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Define the Category type inline to avoid import casing issues
-interface Category {
-  id: string;
-  name: string;
-  type?: 'expense' | 'income';
-  created_at?: string;
-}
+import { Category } from "@/types/Category";
 
 interface CategoriesListProps {
   categories: Category[];

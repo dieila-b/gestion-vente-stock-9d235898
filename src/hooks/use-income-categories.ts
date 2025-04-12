@@ -1,15 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// Define Category type inline to avoid import issues
-interface Category {
-  id: string;
-  name: string;
-  type: 'expense' | 'income';
-  created_at?: string;
-}
+import { Category } from "@/types/Category";
 
 export function useIncomeCategories() {
   const queryClient = useQueryClient();

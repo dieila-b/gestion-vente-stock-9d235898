@@ -5,13 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Category {
-  id: string;
-  name: string;
-  type?: 'expense' | 'income';
-  created_at?: string;
-}
+import { Category } from "@/types/Category";
 
 interface Income {
   id?: string;

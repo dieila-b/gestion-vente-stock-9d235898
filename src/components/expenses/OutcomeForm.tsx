@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,14 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Define types inline to avoid import casing issues
-interface Category {
-  id: string;
-  name: string;
-  type?: 'expense' | 'income';
-  created_at?: string;
-}
+import { Category } from "@/types/Category";
 
 interface Outcome {
   id?: string;
@@ -52,7 +44,6 @@ export function OutcomeForm({ onSubmit, categories, isLoading = false }: Outcome
           receipt_number: receiptNumber || undefined,
           date: new Date().toISOString()
         });
-        // Reset form
         setAmount(0);
         setDescription("");
         setCategoryId("");
