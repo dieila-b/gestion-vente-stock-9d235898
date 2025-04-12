@@ -77,7 +77,7 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
       // Using DatabaseAdapter to add products
       const productsResult = await db.insert('supplier_order_products', 
         products.map(product => ({
-          order_id: orderData.id,
+          order_id: orderData.id as string, // Add type assertion here
           name: product.name,
           quantity: product.quantity,
           category: product.category,

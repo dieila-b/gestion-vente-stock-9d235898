@@ -120,7 +120,7 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
       // Using DatabaseAdapter to insert order products
       const productsResult = await db.insert('supplier_order_products',
         selectedProducts.map(product => ({
-          order_id: orderData.id,
+          order_id: orderData.id as string, // Add type assertion here
           name: product.name,
           quantity: product.quantity,
           unit_price: product.unitPrice,

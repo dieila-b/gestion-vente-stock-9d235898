@@ -1,19 +1,24 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 
 export function useDeletePurchaseOrder() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('purchase_orders')
-        .update({ deleted: true })
-        .eq('id', id);
+      const result = await db.update(
+        'purchase_orders',
+        { deleted: true },
+        'id',
+        id
+      );
 
-      if (error) throw error;
+      if (!result) {
+        throw new Error('Failed to delete purchase order');
+      }
+      
       return id;
     },
     onSuccess: () => {

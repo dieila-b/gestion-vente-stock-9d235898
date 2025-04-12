@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 
 export const useDashboardStats = () => {
   // Fetch orders and order items for today's sales and margin
@@ -10,23 +10,29 @@ export const useDashboardStats = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            *,
-            product:product_id (
-              name,
-              price
-            )
-          )
-        `)
-        .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
-      
-      if (ordersError) throw ordersError;
-      return orders || [];
+      try {
+        const orders = await db.query(
+          'orders',
+          query => query
+            .select(`
+              *,
+              order_items (
+                *,
+                product:product_id (
+                  name,
+                  price
+                )
+              )
+            `)
+            .gte('created_at', today.toISOString())
+            .order('created_at', { ascending: false })
+        );
+        
+        return orders || [];
+      } catch (error) {
+        console.error("Error fetching today's orders:", error);
+        return [];
+      }
     }
   });
 
@@ -34,12 +40,17 @@ export const useDashboardStats = () => {
   const { data: catalogProducts } = useQuery({
     queryKey: ['catalog-products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('id, purchase_price, price');
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const products = await db.query(
+          'catalog',
+          query => query.select('id, purchase_price, price')
+        );
+        
+        return products || [];
+      } catch (error) {
+        console.error("Error fetching catalog products:", error);
+        return [];
+      }
     }
   });
 
@@ -47,13 +58,17 @@ export const useDashboardStats = () => {
   const { data: unpaidInvoices } = useQuery({
     queryKey: ['invoices', 'unpaid'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .in('payment_status', ['pending', 'partial']);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const invoices = await db.query(
+          'orders',
+          query => query.select('*').in('payment_status', ['pending', 'partial'])
+        );
+        
+        return invoices || [];
+      } catch (error) {
+        console.error("Error fetching unpaid invoices:", error);
+        return [];
+      }
     }
   });
 
@@ -65,13 +80,17 @@ export const useDashboardStats = () => {
       firstDayOfMonth.setDate(1);
       firstDayOfMonth.setHours(0, 0, 0, 0);
       
-      const { data, error } = await supabase
-        .from('outcome_entries')
-        .select('*')
-        .gte('date', firstDayOfMonth.toISOString());
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const expenses = await db.query(
+          'expense_entries',
+          query => query.select('*').gte('created_at', firstDayOfMonth.toISOString())
+        );
+        
+        return expenses || [];
+      } catch (error) {
+        console.error("Error fetching monthly expenses:", error);
+        return [];
+      }
     }
   });
 

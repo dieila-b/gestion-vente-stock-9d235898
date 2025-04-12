@@ -5,16 +5,17 @@ import { db } from "@/utils/db-adapter";
 import { toast } from "sonner";
 
 export function useSuppliers() {
-  const { data: suppliers, isLoading, error } = useQuery({
+  const { data: suppliers = [], isLoading, error } = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
         // Use our safe db-adapter
-        const data = await db.query<Supplier[]>('suppliers', 
+        const data = await db.query<Supplier[]>(
+          'suppliers',
           query => query.select('*').order('name', { ascending: true })
         );
         
-        return data;
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching suppliers:", error);
         toast.error("Erreur lors du chargement des fournisseurs");

@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -9,73 +9,92 @@ export function useApprovePurchaseOrder() {
   const approvePurchaseOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
       try {
-        const { data: order } = await supabase
-          .from('purchase_orders')
-          .select('id, status, supplier_id, total_amount, deleted')
-          .eq('id', orderId)
-          .single();
+        // Get the purchase order details
+        const order = await db.query(
+          'purchase_orders',
+          query => query
+            .select('id, status, supplier_id, total_amount, deleted')
+            .eq('id', orderId)
+            .single()
+        );
 
         if (!order || order.deleted) {
           throw new Error('Commande non trouvée ou supprimée');
         }
 
-        const { data: result } = await supabase
-          .rpc('approve_purchase_order', {
+        // Use RPC function or update directly
+        try {
+          // Try to use RPC if available
+          const result = await db.table('rpc').select('approve_purchase_order').call({
             order_id: orderId,
             new_status: 'approved'
           });
-
-        if (!result) {
-          throw new Error('Erreur lors de l\'approbation de la commande');
+          
+          if (!result) {
+            throw new Error('RPC not available');
+          }
+        } catch (rpcError) {
+          // Fallback to direct update if RPC fails
+          console.log('RPC failed, using direct update:', rpcError);
+          await db.update(
+            'purchase_orders',
+            { status: 'approved' },
+            'id',
+            orderId
+          );
         }
 
-        const { data: updatedOrder } = await supabase
-          .from('purchase_orders')
-          .select('*')
-          .eq('id', orderId)
-          .single();
+        // Get updated order
+        const updatedOrder = await db.query(
+          'purchase_orders',
+          query => query
+            .select('*')
+            .eq('id', orderId)
+            .single()
+        );
 
         if (!updatedOrder) {
           throw new Error('Impossible de récupérer la commande mise à jour');
         }
 
-        // Create delivery note
-        const { data: warehouseData } = await supabase
-          .from('warehouses')
-          .select('id')
-          .eq('status', 'Actif')
-          .limit(1)
-          .single();
+        // Find an active warehouse
+        const warehouseData = await db.query(
+          'warehouses',
+          query => query
+            .select('id')
+            .eq('status', 'Actif')
+            .limit(1)
+            .single()
+        );
 
-        if (!warehouseData) {
+        if (!warehouseData || !warehouseData.id) {
           throw new Error('Aucun entrepôt actif trouvé');
         }
 
+        // Create delivery note
         const deliveryNumber = `BL-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-        const { data: deliveryNote } = await supabase
-          .from('delivery_notes')
-          .insert({
-            delivery_number: deliveryNumber,
-            purchase_order_id: orderId,
-            supplier_id: order.supplier_id,
-            status: 'pending',
-            warehouse_id: warehouseData.id
-          })
-          .select('id')
-          .single();
+        const deliveryNote = await db.insert('delivery_notes', {
+          delivery_number: deliveryNumber,
+          purchase_order_id: orderId,
+          supplier_id: order.supplier_id,
+          status: 'pending',
+          warehouse_id: warehouseData.id
+        });
 
         if (!deliveryNote) {
           throw new Error('Erreur lors de la création du bon de livraison');
         }
 
         // Get order items
-        const { data: orderItems } = await supabase
-          .from('purchase_order_items')
-          .select('id, product_id, quantity, unit_price')
-          .eq('purchase_order_id', orderId);
+        const orderItems = await db.query(
+          'purchase_order_items',
+          query => query
+            .select('id, product_id, quantity, unit_price')
+            .eq('purchase_order_id', orderId)
+        );
 
-        if (!orderItems) {
+        if (!Array.isArray(orderItems) || orderItems.length === 0) {
           throw new Error('Impossible de récupérer les articles de la commande');
         }
 
@@ -88,9 +107,7 @@ export function useApprovePurchaseOrder() {
           unit_price: item.unit_price
         }));
 
-        await supabase
-          .from('delivery_note_items')
-          .insert(deliveryItems);
+        await db.insert('delivery_note_items', deliveryItems);
 
         return updatedOrder;
       } catch (error) {

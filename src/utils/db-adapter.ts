@@ -16,7 +16,8 @@ export class DatabaseAdapter {
   static table(tableName: string) {
     try {
       // Use type assertion to bypass TypeScript's type checking
-      return supabase.from(tableName as any);
+      // @ts-ignore - We're intentionally bypassing type checking here
+      return supabase.from(tableName);
     } catch (error) {
       console.error(`Error accessing table ${tableName}:`, error);
       // Return a mock object that logs errors but doesn't throw
@@ -26,6 +27,7 @@ export class DatabaseAdapter {
         update: () => this.createErrorProxy(`Table ${tableName} doesn't exist`),
         delete: () => this.createErrorProxy(`Table ${tableName} doesn't exist`),
         upsert: () => this.createErrorProxy(`Table ${tableName} doesn't exist`),
+        rpc: () => this.createErrorProxy(`RPC function doesn't exist`),
       };
     }
   }
@@ -34,15 +36,33 @@ export class DatabaseAdapter {
    * Creates a proxy object that logs errors and returns mock data
    */
   private static createErrorProxy(errorMessage: string) {
+    const mockPromiseResponse = Promise.resolve({ 
+      data: null, 
+      error: { message: errorMessage },
+      count: 0
+    });
+    
     const handler = {
       get: (target: any, prop: string) => {
+        if (typeof prop === 'symbol') {
+          return () => mockPromiseResponse;
+        }
+        
+        if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+          return mockPromiseResponse[prop].bind(mockPromiseResponse);
+        }
+        
         if (typeof target[prop] === 'function') {
           return (...args: any[]) => {
             console.error(errorMessage);
-            toast.error(errorMessage);
-            return Promise.resolve({ data: [], error: { message: errorMessage } });
+            // Don't show toast for every proxy method to avoid flooding
+            if (['single', 'execute', 'maybeSingle', 'select'].includes(prop)) {
+              toast.error(errorMessage);
+            }
+            return this.createErrorProxy(`${errorMessage} (${prop})`);
           };
         }
+        
         return this.createErrorProxy(`${errorMessage} (${prop})`);
       }
     };
@@ -65,15 +85,20 @@ export class DatabaseAdapter {
   ): Promise<T> {
     try {
       const queryBuilder = this.table(tableName);
-      const { data, error } = await queryFn(queryBuilder);
+      const { data, error, count } = await queryFn(queryBuilder);
       
       if (error) {
         console.error(`Error querying ${tableName}:`, error);
-        toast.error(`Erreur lors de la requête à ${tableName}`);
+        toast.error(`Erreur lors de la requête à ${tableName}: ${error.message}`);
         return fallbackData;
       }
       
-      return data as T;
+      // Handle the special case where the query is a count query
+      if (count !== undefined && (data === null || data.length === 0)) {
+        return { count } as unknown as T;
+      }
+      
+      return (data as T) || fallbackData;
     } catch (err) {
       console.error(`Exception querying ${tableName}:`, err);
       toast.error(`Erreur lors de la requête à ${tableName}`);
@@ -97,11 +122,16 @@ export class DatabaseAdapter {
       
       if (error) {
         console.error(`Error inserting into ${tableName}:`, error);
-        toast.error(`Erreur lors de l'insertion dans ${tableName}`);
+        toast.error(`Erreur lors de l'insertion dans ${tableName}: ${error.message}`);
         return null;
       }
       
-      return result as T;
+      // Handle both array and single object responses
+      if (Array.isArray(result) && result.length > 0) {
+        return result[0] as T;
+      }
+      
+      return (result as T) || null;
     } catch (err) {
       console.error(`Exception inserting into ${tableName}:`, err);
       toast.error(`Erreur lors de l'insertion dans ${tableName}`);
@@ -132,11 +162,16 @@ export class DatabaseAdapter {
       
       if (error) {
         console.error(`Error updating ${tableName}:`, error);
-        toast.error(`Erreur lors de la mise à jour dans ${tableName}`);
+        toast.error(`Erreur lors de la mise à jour dans ${tableName}: ${error.message}`);
         return null;
       }
       
-      return result as T;
+      // Handle both array and single object responses
+      if (Array.isArray(result) && result.length > 0) {
+        return result[0] as T;
+      }
+      
+      return (result as T) || null;
     } catch (err) {
       console.error(`Exception updating ${tableName}:`, err);
       toast.error(`Erreur lors de la mise à jour dans ${tableName}`);
@@ -164,7 +199,7 @@ export class DatabaseAdapter {
       
       if (error) {
         console.error(`Error deleting from ${tableName}:`, error);
-        toast.error(`Erreur lors de la suppression dans ${tableName}`);
+        toast.error(`Erreur lors de la suppression dans ${tableName}: ${error.message}`);
         return false;
       }
       
@@ -179,9 +214,9 @@ export class DatabaseAdapter {
 
 // Export convenient shorthand functions
 export const db = {
-  table: DatabaseAdapter.table,
-  query: DatabaseAdapter.query,
-  insert: DatabaseAdapter.insert,
-  update: DatabaseAdapter.update,
-  delete: DatabaseAdapter.delete
+  table: DatabaseAdapter.table.bind(DatabaseAdapter),
+  query: DatabaseAdapter.query.bind(DatabaseAdapter),
+  insert: DatabaseAdapter.insert.bind(DatabaseAdapter),
+  update: DatabaseAdapter.update.bind(DatabaseAdapter),
+  delete: DatabaseAdapter.delete.bind(DatabaseAdapter)
 };

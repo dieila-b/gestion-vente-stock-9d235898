@@ -1,6 +1,6 @@
 
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -11,31 +11,42 @@ export function useDeliveryNoteMutations() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { data: deliveryNote, error: fetchError } = await supabase
-        .from('delivery_notes')
-        .select('purchase_order_id')
-        .eq('id', id)
-        .single();
+      // Get delivery note purchase order ID first
+      const deliveryNote = await db.query<{ purchase_order_id: string }>(
+        'delivery_notes',
+        query => query
+          .select('purchase_order_id')
+          .eq('id', id)
+          .single()
+      );
 
-      if (fetchError) throw fetchError;
+      if (!deliveryNote) {
+        throw new Error("Delivery note not found");
+      }
 
-      const { error: deleteError } = await supabase
-        .from('delivery_notes')
-        .update({ deleted: true })
-        .eq('id', id);
+      // Soft delete the delivery note
+      const updateResult = await db.update(
+        'delivery_notes',
+        { deleted: true },
+        'id',
+        id
+      );
 
-      if (deleteError) throw deleteError;
+      if (!updateResult) {
+        throw new Error("Failed to delete delivery note");
+      }
 
-      if (deliveryNote?.purchase_order_id) {
-        const { error: updateError } = await supabase
-          .from('purchase_orders')
-          .update({ 
+      // If there's a purchase order, update its status
+      if (deliveryNote.purchase_order_id) {
+        await db.update(
+          'purchase_orders',
+          { 
             status: 'pending',
             delivery_note_id: null
-          })
-          .eq('id', deliveryNote.purchase_order_id);
-
-        if (updateError) throw updateError;
+          },
+          'id',
+          deliveryNote.purchase_order_id
+        );
       }
 
       toast({
@@ -57,25 +68,27 @@ export function useDeliveryNoteMutations() {
 
   const handleApprove = async (noteId: string, warehouseId: string, items: Array<{ id: string; quantity_received: number }>) => {
     try {
+      // Update each item's quantity_received
       for (const item of items) {
-        const { error: itemError } = await supabase
-          .from('delivery_note_items')
-          .update({ quantity_received: item.quantity_received })
-          .eq('id', item.id);
-
-        if (itemError) throw itemError;
+        await db.update(
+          'delivery_note_items',
+          { quantity_received: item.quantity_received },
+          'id',
+          item.id
+        );
       }
 
-      const { error: noteError } = await supabase
-        .from('delivery_notes')
-        .update({ 
+      // Update the delivery note status
+      await db.update(
+        'delivery_notes',
+        { 
           status: 'received',
           warehouse_id: warehouseId,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', noteId);
-
-      if (noteError) throw noteError;
+        },
+        'id',
+        noteId
+      );
 
       toast({
         title: "Bon de livraison approuvé",
