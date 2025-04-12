@@ -30,19 +30,27 @@ export const useUserMutations = (queryClient: QueryClient) => {
         // Remove password field as it's not stored in the database table
         const { password, ...userData } = user;
         
-        // Ensure required fields are present with appropriate types
-        return {
-          ...userData,
+        // Create a base object with required fields, ensuring they aren't nullable
+        const dbUser = {
           id: crypto.randomUUID(),
           email: userData.email || '',
           first_name: userData.first_name || '',
           last_name: userData.last_name || '',
           role: userData.role || 'employee',
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
-          photo_url: userData.photo_url || null,
           phone: userData.phone || '',
-          address: userData.address || ''
+          address: userData.address || '',
         };
+        
+        // Only add photo_url if it exists and is not empty
+        if (userData.photo_url) {
+          return {
+            ...dbUser,
+            photo_url: userData.photo_url
+          };
+        }
+        
+        return dbUser;
       });
       
       console.log("Inserting users:", usersForDb);

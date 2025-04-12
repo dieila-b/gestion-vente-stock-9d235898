@@ -42,18 +42,19 @@ export const UserFormList = ({
         return;
       }
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `internal-users/${fileName}`;
-      
       // Check if bucket exists
       const { data: buckets } = await supabase.storage.listBuckets();
       const lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
       
       if (!lovableBucket) {
-        toast.error("Le bucket de stockage n'existe pas. Veuillez contacter l'administrateur.");
+        // If bucket doesn't exist, still allow the user to create the profile without an image
+        toast.warning("Le stockage d'images n'est pas configuré. L'image de profil ne sera pas enregistrée.");
         return;
       }
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `internal-users/${fileName}`;
       
       // Télécharger le fichier
       console.log("Uploading file to path:", filePath);
@@ -77,7 +78,7 @@ export const UserFormList = ({
       toast.success("Image téléchargée avec succès");
     } catch (error: any) {
       console.error("Error in image upload process:", error);
-      toast.error(`Erreur lors du processus de téléchargement de l'image: ${error.message || error}`);
+      toast.warning("Erreur lors du processus de téléchargement de l'image. Le profil sera créé sans photo.");
     }
   };
 
