@@ -26,16 +26,10 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Explicitly separate the query construction steps and use type assertions
-    // to prevent excessive type inference
-    const query = supabase.from('orders');
-    
-    // Build a query string first
-    let queryStr = 'created_at, final_total';
-    
-    // Execute the query with explicit typing
-    let { data, error } = await query
-      .select(queryStr)
+    // Simplify query structure to avoid deep type instantiation
+    const { data, error } = await supabase
+      .from('orders')
+      .select('created_at, final_total')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
       .eq(selectedPOS !== "all" ? 'depot' : 'id', selectedPOS !== "all" ? selectedPOS : 'id')
@@ -43,8 +37,11 @@ async function fetchSalesData(
     
     if (error) throw error;
     
-    // Explicitly type the data
-    const orderData: OrderData[] = data as OrderData[] || [];
+    // Use a type guard to ensure we have data before proceeding
+    if (!data) return [];
+    
+    // Use type assertion carefully after validating data structure
+    const orderData = data as unknown as OrderData[];
     
     // Generate all months of the year
     const months = eachMonthOfInterval({
