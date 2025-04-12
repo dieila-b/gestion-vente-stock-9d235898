@@ -9,14 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatGNF } from "@/lib/currency";
-import { Client } from "@/types/client";
-
-interface DailyClientSales {
-  client: Client;
-  total_amount: number;
-  paid_amount: number;
-  remaining_amount: number;
-}
+import { Client } from "@/types/client_unified";
+import { DailyClientSales } from "../hooks/types";
 
 interface CustomClientSalesProps {
   clientSales?: DailyClientSales[];
@@ -47,8 +41,8 @@ export function CustomClientSalesTable({ clientSales, isLoading }: CustomClientS
             ) : clientSales && clientSales.length > 0 ? (
               clientSales.map((sale, index) => (
                 <TableRow key={index}>
-                  <TableCell>{sale.client.company_name || sale.client.contact_name}</TableCell>
-                  <TableCell className="text-right">{formatGNF(sale.total_amount)}</TableCell>
+                  <TableCell>{sale.client.company_name || 'Client inconnu'}</TableCell>
+                  <TableCell className="text-right">{formatGNF(sale.total)}</TableCell>
                   <TableCell className="text-right text-green-500">
                     {formatGNF(sale.paid_amount)}
                   </TableCell>

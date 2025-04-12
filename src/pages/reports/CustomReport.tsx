@@ -13,8 +13,8 @@ import { CustomReportHeader } from "./components/CustomReportHeader";
 import { CustomSalesTotals } from "./components/CustomSalesTotals";
 import { CustomProductSalesTable } from "./components/CustomProductSales";
 import { CustomClientSalesTable } from "./components/CustomClientSales";
-// Import the default export directly
-import useCustomReportQueries from "./hooks/useCustomReportQueries";
+// Change from default import to named import
+import { useCustomReportQueries } from "./hooks/useCustomReportQueries";
 
 export default function CustomReport() {
   const { toast } = useToast();

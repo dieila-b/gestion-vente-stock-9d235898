@@ -1,19 +1,20 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DateRange } from "@/types/date-range";
+import { DateRange } from "react-day-picker";
 import { safeMap, safeGet, safeAccess } from "@/utils/report-utils";
 import { Client } from "@/types/client_unified";
 import { DailyProductSales, DailyClientSales, PeriodTotals } from "./types";
 
-export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string | null) {
+// Add 'export' keyword to make this a named export
+export function useCustomReportQueries(dateRange: DateRange | undefined, selectedPDV: string | null) {
   // Query for period totals
-  const { data: periodTotals } = useQuery({
+  const { data: periodTotals, isLoading: isLoadingTotals } = useQuery({
     queryKey: ['custom-report', 'period-totals', dateRange, selectedPDV],
     queryFn: async (): Promise<PeriodTotals> => {
       try {
-        const startDate = dateRange.from?.toISOString();
-        const endDate = dateRange.to?.toISOString();
+        const startDate = dateRange?.from?.toISOString();
+        const endDate = dateRange?.to?.toISOString();
         
         if (!startDate || !endDate) {
           return { total: 0, paid: 0, remaining: 0 };
@@ -26,7 +27,7 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
           .lte('created_at', endDate);
         
         // Apply PDV filter if selected
-        if (selectedPDV) {
+        if (selectedPDV && selectedPDV !== 'all') {
           query = query.eq('pos_location_id', selectedPDV);
         }
         
@@ -48,12 +49,12 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
   });
 
   // Query for product sales
-  const { data: productSales } = useQuery({
+  const { data: salesByProduct, isLoading: isLoadingSalesProduct } = useQuery({
     queryKey: ['custom-report', 'product-sales', dateRange, selectedPDV],
     queryFn: async (): Promise<DailyProductSales[]> => {
       try {
-        const startDate = dateRange.from?.toISOString();
-        const endDate = dateRange.to?.toISOString();
+        const startDate = dateRange?.from?.toISOString();
+        const endDate = dateRange?.to?.toISOString();
         
         if (!startDate || !endDate) {
           return [];
@@ -74,7 +75,7 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
           .gte('created_at', startDate)
           .lte('created_at', endDate);
         
-        if (selectedPDV) {
+        if (selectedPDV && selectedPDV !== 'all') {
           query = query.eq('pos_location_id', selectedPDV);
         }
         
@@ -117,12 +118,12 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
   });
 
   // Query for client sales
-  const { data: clientSales } = useQuery({
+  const { data: clientSales, isLoading: isLoadingClients } = useQuery({
     queryKey: ['custom-report', 'client-sales', dateRange, selectedPDV],
     queryFn: async (): Promise<DailyClientSales[]> => {
       try {
-        const startDate = dateRange.from?.toISOString();
-        const endDate = dateRange.to?.toISOString();
+        const startDate = dateRange?.from?.toISOString();
+        const endDate = dateRange?.to?.toISOString();
         
         if (!startDate || !endDate) {
           return [];
@@ -141,7 +142,7 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
           .gte('created_at', startDate)
           .lte('created_at', endDate);
         
-        if (selectedPDV) {
+        if (selectedPDV && selectedPDV !== 'all') {
           query = query.eq('pos_location_id', selectedPDV);
         }
         
@@ -156,7 +157,7 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
           const clientId = order.client_id;
           if (!clientId) return;
           
-          const client = safeAccess(order.client, {
+          const client = safeAccess<Client>(order.client, {
             id: clientId,
             company_name: 'Unknown Client',
             status: 'particulier',
@@ -165,21 +166,21 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
           });
           
           const total = order.total || 0;
-          const paidAmount = order.paid_amount || 0;
-          const remainingAmount = order.remaining_amount || 0;
+          const paid_amount = order.paid_amount || 0;
+          const remaining_amount = order.remaining_amount || 0;
           
           if (clientMap.has(clientId)) {
             const existing = clientMap.get(clientId)!;
             existing.total += total;
-            existing.paid_amount += paidAmount;
-            existing.remaining_amount += remainingAmount;
+            existing.paid_amount += paid_amount;
+            existing.remaining_amount += remaining_amount;
           } else {
             clientMap.set(clientId, {
               client,
               client_id: clientId,
               total,
-              paid_amount: paidAmount,
-              remaining_amount: remainingAmount
+              paid_amount,
+              remaining_amount
             });
           }
         });
@@ -194,7 +195,10 @@ export function useCustomReportQueries(dateRange: DateRange, selectedPDV: string
 
   return {
     periodTotals: periodTotals || { total: 0, paid: 0, remaining: 0 },
-    productSales: productSales || [],
-    clientSales: clientSales || []
+    salesByProduct: salesByProduct || [],
+    clientSales: clientSales || [],
+    isLoading: isLoadingTotals,
+    isLoadingSalesProduct,
+    isLoadingClients
   };
 }
