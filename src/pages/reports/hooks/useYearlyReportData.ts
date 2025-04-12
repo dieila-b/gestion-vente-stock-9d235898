@@ -11,6 +11,53 @@ export type SalesData = {
   sales: number;
 }
 
+// Define fetch function completely outside the hook to avoid type inference issues
+async function fetchSalesData(
+  selectedYear: string,
+  selectedPOS: string
+): Promise<SalesData[]> {
+  const startDate = startOfYear(new Date(parseInt(selectedYear)));
+  const endDate = endOfYear(startDate);
+
+  const query = supabase
+    .from('orders')
+    .select('created_at, final_total')
+    .gte('created_at', startDate.toISOString())
+    .lte('created_at', endDate.toISOString())
+    .order('created_at');
+
+  if (selectedPOS !== "all") {
+    query.eq('depot', selectedPOS);
+  }
+
+  const { data: orders, error } = await query;
+
+  if (error) throw error;
+
+  // Générer tous les mois de l'année
+  const months = eachMonthOfInterval({
+    start: startDate,
+    end: endDate
+  });
+
+  // Initialiser les données avec 0 pour chaque mois
+  const monthlyData: SalesData[] = months.map((month) => ({
+    month: format(month, 'MMMM', { locale: fr }),
+    sales: 0
+  }));
+
+  // Agréger les ventes par mois
+  orders?.forEach((order) => {
+    const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
+    const index = monthlyData.findIndex((data) => data.month === orderMonth);
+    if (index !== -1) {
+      monthlyData[index].sales += order.final_total;
+    }
+  });
+
+  return monthlyData;
+}
+
 export function useYearlyReportData() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
@@ -31,54 +78,10 @@ export function useYearlyReportData() {
     }
   });
 
-  // Define the fetch function outside useQuery to help with type inference
-  const fetchSalesData = async (): Promise<SalesData[]> => {
-    const startDate = startOfYear(new Date(parseInt(selectedYear)));
-    const endDate = endOfYear(startDate);
-
-    const query = supabase
-      .from('orders')
-      .select('created_at, final_total')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at');
-
-    if (selectedPOS !== "all") {
-      query.eq('depot', selectedPOS);
-    }
-
-    const { data: orders, error } = await query;
-
-    if (error) throw error;
-
-    // Générer tous les mois de l'année
-    const months = eachMonthOfInterval({
-      start: startDate,
-      end: endDate
-    });
-
-    // Initialiser les données avec 0 pour chaque mois
-    const monthlyData: SalesData[] = months.map((month) => ({
-      month: format(month, 'MMMM', { locale: fr }),
-      sales: 0
-    }));
-
-    // Agréger les ventes par mois
-    orders?.forEach((order) => {
-      const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
-      const index = monthlyData.findIndex((data) => data.month === orderMonth);
-      if (index !== -1) {
-        monthlyData[index].sales += order.final_total;
-      }
-    });
-
-    return monthlyData;
-  };
-
-  // Use the explicit return type on salesData
+  // Use the explicit return type for the useQuery and pass parameters to the external fetch function
   const { data: salesData = [], isLoading } = useQuery<SalesData[], Error>({
     queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
-    queryFn: fetchSalesData
+    queryFn: () => fetchSalesData(selectedYear, selectedPOS)
   });
 
   const years = Array.from(
