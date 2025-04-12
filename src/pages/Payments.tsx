@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Client } from "@/types/client";
-import { formatCurrency } from "@/lib/formatters";
+import { formatGNF } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -115,7 +115,7 @@ export default function Payments() {
 
       toast({
         title: "Succès",
-        description: `Paiement de ${formatCurrency(parseFloat(amount))} enregistré pour ${selectedClient.company_name}`,
+        description: `Paiement de ${formatGNF(parseFloat(amount))} enregistré pour ${selectedClient.company_name}`,
       });
 
       // Reset form
@@ -166,7 +166,7 @@ export default function Payments() {
                   <div className="bg-muted p-3 rounded-md">
                     <p className="text-sm font-medium">Solde actuel</p>
                     <p className={`text-xl font-bold ${clientBalance > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                      {formatCurrency(clientBalance)}
+                      {formatGNF(clientBalance)}
                     </p>
                   </div>
 
@@ -241,7 +241,7 @@ export default function Payments() {
                       {payments.map((payment) => (
                         <div key={payment.id} className="border-b py-3">
                           <div className="flex justify-between">
-                            <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                            <span className="font-medium">{formatGNF(payment.amount)}</span>
                             <span className="text-sm text-muted-foreground">
                               {new Date(payment.date).toLocaleDateString()}
                             </span>
@@ -266,7 +266,7 @@ export default function Payments() {
                       {payments.filter((_, i) => i < 5).map((payment) => (
                         <div key={payment.id} className="border-b py-3">
                           <div className="flex justify-between">
-                            <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                            <span className="font-medium">{formatGNF(payment.amount)}</span>
                             <span className="text-sm text-muted-foreground">
                               {new Date(payment.date).toLocaleDateString()}
                             </span>
@@ -291,7 +291,7 @@ export default function Payments() {
                       {payments.filter((_, i) => i >= 5).map((payment) => (
                         <div key={payment.id} className="border-b py-3">
                           <div className="flex justify-between">
-                            <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                            <span className="font-medium">{formatGNF(payment.amount)}</span>
                             <span className="text-sm text-muted-foreground">
                               {new Date(payment.date).toLocaleDateString()}
                             </span>
