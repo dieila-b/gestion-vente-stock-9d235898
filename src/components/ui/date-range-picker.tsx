@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 
@@ -14,17 +14,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface DatePickerWithRangeProps {
+interface DateRangePickerProps {
+  value: DateRange;
+  onValueChange: (range: DateRange) => void;
   className?: string;
-  date: DateRange | undefined;
-  setDate: (date: DateRange | undefined) => void;
 }
 
-export function DatePickerWithRange({
+export function DateRangePicker({
+  value,
+  onValueChange,
   className,
-  date,
-  setDate,
-}: DatePickerWithRangeProps) {
+}: DateRangePickerProps) {
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -34,18 +34,18 @@ export function DatePickerWithRange({
             variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              !value && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
+            {value?.from ? (
+              value.to ? (
                 <>
-                  {format(date.from, "dd LLL y", { locale: fr })} -{" "}
-                  {format(date.to, "dd LLL y", { locale: fr })}
+                  {format(value.from, "dd LLL y", { locale: fr })} -{" "}
+                  {format(value.to, "dd LLL y", { locale: fr })}
                 </>
               ) : (
-                format(date.from, "dd LLL y", { locale: fr })
+                format(value.from, "dd LLL y", { locale: fr })
               )
             ) : (
               <span>Sélectionner une période</span>
@@ -56,9 +56,9 @@ export function DatePickerWithRange({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
+            defaultMonth={value?.from}
+            selected={value}
+            onSelect={onValueChange}
             numberOfMonths={2}
             locale={fr}
           />

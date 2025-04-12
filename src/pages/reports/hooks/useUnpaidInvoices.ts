@@ -1,9 +1,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DateRange } from "react-day-picker";
+import { DateRange } from "@/types/date-range";
 
-export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string) {
+export function useUnpaidInvoices(date: DateRange, clientId?: string) {
   return useQuery({
     queryKey: ['unpaid-invoices', date?.from, date?.to, clientId],
     enabled: !!date?.from && !!date?.to,
@@ -17,7 +17,7 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
           id,
           created_at,
           client_id,
-          final_total,
+          final_total as total_amount,
           paid_amount,
           remaining_amount,
           payment_status,
@@ -35,14 +35,14 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
 
       if (error) throw error;
       
-      // Transform data to match expected structure in UnpaidInvoicesTable
+      // Transform data to match expected structure
       return data.map(order => ({
         id: order.id,
         created_at: order.created_at,
         client: order.client,
         client_id: order.client_id,
         invoice_number: `FACT-${order.id.slice(0, 8)}`,
-        amount: order.final_total,
+        total_amount: order.total_amount,
         paid_amount: order.paid_amount,
         remaining_amount: order.remaining_amount,
         payment_status: order.payment_status
