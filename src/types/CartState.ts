@@ -1,9 +1,8 @@
 
 import { CartItem as PosCartItem } from "./pos";
 
-export interface CartItem extends PosCartItem {
-  subtotal: number; // Make this required instead of optional
-}
+// Redefine CartItem to be fully compatible with types/pos.ts CartItem
+export type CartItem = PosCartItem;
 
 export interface CartState {
   items: CartItem[];

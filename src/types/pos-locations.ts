@@ -2,7 +2,7 @@
 export type POSLocation = {
   id: string;
   name: string;
-  address: string;
+  address: string | null; // Change from required to nullable
   phone: string | null;
   email?: string | null;
   manager: string;

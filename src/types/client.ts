@@ -23,6 +23,6 @@ export interface Client {
   payment_terms?: string;
   created_at: string;
   updated_at: string;
-  status?: 'particulier' | 'entreprise' | string;
+  status: string; // Changed from enum type to string
   balance?: number;
 }

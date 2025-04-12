@@ -7,6 +7,7 @@ import { DeliveryNoteList } from "@/components/delivery-notes/DeliveryNoteList";
 import { DeliveryNoteFilters } from "@/components/delivery-notes/DeliveryNoteFilters";
 import { useState } from "react";
 import { DeliveryNote } from "@/types/delivery-note";
+import { isSelectQueryError } from "@/utils/supabase-safe-query";
 
 export default function DeliveryNotePage() {
   const navigate = useNavigate();
@@ -25,35 +26,53 @@ export default function DeliveryNotePage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Safely cast to DeliveryNote[] with default values for missing properties
-  const safeDeliveryNotes: DeliveryNote[] = deliveryNotes.map(note => ({
-    id: note.id,
-    delivery_number: note.delivery_number || '',
-    created_at: note.created_at || '',
-    updated_at: note.updated_at || '',
-    notes: note.notes || '',
-    status: note.status || 'pending',
-    supplier: {
-      name: note.supplier?.name || 'Unknown Supplier',
-      phone: note.supplier?.phone || '',
-      email: note.supplier?.email || ''
-    },
-    purchase_order: {
-      order_number: note.purchase_order?.order_number || '',
-      total_amount: note.purchase_order?.total_amount || 0
-    },
-    items: (note.items || []).map(item => ({
-      id: item.id || '',
-      product_id: item.product_id || '',
-      quantity_ordered: item.quantity_ordered || 0,
-      quantity_received: item.quantity_received || 0,
-      unit_price: item.unit_price || 0,
-      product: {
-        name: item.product?.name || 'Unknown Product',
-        reference: item.product?.reference || '',
-        category: item.product?.category || ''
-      }
-    }))
-  }));
+  const safeDeliveryNotes: DeliveryNote[] = deliveryNotes.map(note => {
+    // Create safe supplier object
+    const supplierObj = isSelectQueryError(note.supplier) 
+      ? { name: 'Unknown Supplier', phone: '', email: '' }
+      : note.supplier || { name: 'Unknown Supplier', phone: '', email: '' };
+    
+    // Create safe purchase_order object
+    const purchaseOrderObj = isSelectQueryError(note.purchase_order)
+      ? { order_number: '', total_amount: 0 }
+      : note.purchase_order || { order_number: '', total_amount: 0 };
+    
+    return {
+      id: note.id,
+      delivery_number: note.delivery_number || '',
+      created_at: note.created_at || '',
+      updated_at: note.updated_at || '',
+      notes: note.notes || '',
+      status: note.status || 'pending',
+      supplier: {
+        name: supplierObj.name || 'Unknown Supplier',
+        phone: supplierObj.phone || '',
+        email: supplierObj.email || ''
+      },
+      purchase_order: {
+        order_number: purchaseOrderObj.order_number || '',
+        total_amount: purchaseOrderObj.total_amount || 0
+      },
+      items: (note.items || []).map(item => {
+        const safeProduct = isSelectQueryError(item.product) 
+          ? { name: 'Unknown Product', reference: '', category: '' }
+          : item.product || { name: 'Unknown Product', reference: '', category: '' };
+          
+        return {
+          id: item.id || '',
+          product_id: item.product_id || '',
+          quantity_ordered: item.quantity_ordered || 0,
+          quantity_received: item.quantity_received || 0,
+          unit_price: item.unit_price || 0,
+          product: {
+            name: safeProduct.name || 'Unknown Product',
+            reference: safeProduct.reference || '',
+            category: safeProduct.category || ''
+          }
+        };
+      })
+    };
+  });
 
   // Handle the status filter
   const filteredNotes = safeDeliveryNotes.filter(note => {
@@ -65,6 +84,11 @@ export default function DeliveryNotePage() {
     
     return matchesStatus && matchesSearch;
   });
+
+  // Create wrapper that adapts the edit function to match the expected signature
+  const handleEditWrapper = (id: string) => {
+    handleEdit(id, {});
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -89,7 +113,7 @@ export default function DeliveryNotePage() {
           isLoading={isLoading}
           onDelete={handleDelete}
           onApprove={handleApprove}
-          onEdit={(id) => handleEdit(id, {})}
+          onEdit={handleEditWrapper}
         />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DeliveryNote } from "@/types/delivery-note";
+import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
@@ -29,13 +30,37 @@ export function useDeliveryNotes() {
       if (error) throw error;
       
       // Handle possible null/missing values by providing defaults
-      return (data || []).map(note => ({
-        ...note,
-        status: note.status || 'pending',
-        supplier: note.supplier || { name: 'Unknown Supplier' },
-        purchase_order: note.purchase_order || {},
-        items: note.items || []
-      }));
+      return (data || []).map(note => {
+        // Safely transform data to match DeliveryNote type
+        const supplierData = isSelectQueryError(note.supplier) 
+          ? { name: 'Unknown Supplier', phone: '', email: '' }
+          : note.supplier || { name: 'Unknown Supplier', phone: '', email: '' };
+        
+        const purchaseOrderData = isSelectQueryError(note.purchase_order)
+          ? { order_number: '', total_amount: 0 }
+          : note.purchase_order || { order_number: '', total_amount: 0 };
+        
+        return {
+          id: note.id || '',
+          delivery_number: note.delivery_number || '',
+          created_at: note.created_at || '',
+          updated_at: note.updated_at || '',
+          notes: note.notes || '',
+          status: note.status || 'pending',
+          supplier: supplierData,
+          purchase_order: purchaseOrderData,
+          items: Array.isArray(note.items) ? note.items.map(item => ({
+            id: item?.id || '',
+            product_id: item?.product_id || '',
+            quantity_ordered: item?.quantity_ordered || 0,
+            quantity_received: item?.quantity_received || 0,
+            unit_price: item?.unit_price || 0,
+            product: isSelectQueryError(item?.product) 
+              ? { name: 'Unknown Product', reference: '', category: '' }
+              : (item?.product || { name: 'Unknown Product', reference: '', category: '' })
+          })) : []
+        };
+      });
     }
   });
 

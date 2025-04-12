@@ -10,13 +10,14 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
   product_id?: string;
+  barcode?: string;
 }
 
 export interface CartItem extends Product {
   quantity: number;
   discount: number;
   product_id: string; // Required property
-  subtotal?: number;
+  subtotal: number; // Making this required instead of optional
   image?: string;
 }
 

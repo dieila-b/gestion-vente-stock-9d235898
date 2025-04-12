@@ -1,7 +1,6 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/types/Client";
+import { Client } from "@/types/client";
 import { safeGet } from "@/utils/supabase-safe-query";
 
 export interface DailyProductSales {
@@ -39,8 +38,7 @@ export function useDailyReportQueries() {
 
       // Agrégation des quantités par produit
       const productSales = data.reduce((acc: DailyProductSales[], item) => {
-        const productName = item.products && typeof item.products === 'object' ? 
-          (item.products.name || 'Produit inconnu') : 'Produit inconnu';
+        const productName = item.products?.map(product => product.name).join(', ') || 'No products';
         
         const existingProduct = acc.find(p => p.product_name === productName);
         
@@ -100,7 +98,7 @@ export function useDailyReportQueries() {
         
         const client: Client = {
           ...order.client,
-          status: order.client.status as 'particulier' | 'entreprise' || 'particulier'
+          status: client.status || 'unknown'
         };
         
         const existingClient = acc.find(c => c.client.id === client.id);
