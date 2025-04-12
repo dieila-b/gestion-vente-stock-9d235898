@@ -7,19 +7,33 @@ import { useOrderProcessing } from "./useOrderProcessing";
 import { usePaymentRecording } from "./usePaymentRecording";
 import { useInvoicePrinting } from "./useInvoicePrinting";
 
-export function usePOSPayment(
-  selectedClient: Client | null,
-  cart: CartItem[],
-  calculateTotal: () => number,
-  calculateSubtotal: () => number,
-  calculateTotalDiscount: () => number,
-  clearCart: () => void,
-  stockItems: any[],
-  selectedPDV: string,
-  activeRegister: any,
-  refetchStock: () => void,
-  editOrderId?: string | null
-) {
+interface POSPaymentProps {
+  selectedClient: Client | null;
+  cart: CartItem[];
+  calculateTotal: () => number;
+  calculateSubtotal: () => number;
+  calculateTotalDiscount: () => number;
+  clearCart: () => void;
+  stockItems: any[];
+  selectedPDV: string;
+  activeRegister: any;
+  refetchStock: () => void;
+  editOrderId?: string | null;
+}
+
+export function usePOSPayment({
+  selectedClient,
+  cart,
+  calculateTotal,
+  calculateSubtotal,
+  calculateTotalDiscount,
+  clearCart,
+  stockItems,
+  selectedPDV,
+  activeRegister,
+  refetchStock,
+  editOrderId
+}: POSPaymentProps) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 

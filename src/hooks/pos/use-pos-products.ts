@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 import { toast } from "sonner";
 
 // Ensure the product data includes price
@@ -30,18 +30,33 @@ type WarehouseStockWithProduct = {
   pos_location: any;
 };
 
-export function usePOSProducts(locationId: string | undefined) {
-  return useQuery({
+type POSProductsResult = {
+  data: WarehouseStockWithProduct[];
+  products: any[];
+  categories: string[];
+  stockItems: any[];
+  isLoading: boolean;
+  currentPage: number;
+  totalPages: number;
+  goToNextPage: () => void;
+  goToPrevPage: () => void;
+  refetchStock: () => void;
+}
+
+export function usePOSProducts(locationId: string | undefined): POSProductsResult {
+  const result = useQuery({
     queryKey: ['pos-products', locationId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouse_stock')
-        .select(`
-          *,
-          product:product_id(*),
-          pos_location:pos_location_id(*)
-        `)
-        .order('created_at', { ascending: false });
+      const { data, error } = await db.query<WarehouseStockWithProduct[]>(
+        'warehouse_stock',
+        query => query
+          .select(`
+            *,
+            product:product_id(*),
+            pos_location:pos_location_id(*)
+          `)
+          .order('created_at', { ascending: false })
+      );
 
       if (error) {
         console.error('Error fetching POS products:', error);
@@ -65,4 +80,29 @@ export function usePOSProducts(locationId: string | undefined) {
       }));
     }
   });
+
+  // Extract categories from products
+  const categories = Array.from(
+    new Set(
+      (result.data || []).map(item => item.product?.category).filter(Boolean)
+    )
+  );
+
+  // Additional properties for pagination and filtering
+  const currentPage = 1;
+  const totalPages = 1;
+  const goToNextPage = () => {};
+  const goToPrevPage = () => {};
+  
+  return {
+    ...result,
+    products: result.data || [],
+    categories,
+    stockItems: result.data || [],
+    currentPage,
+    totalPages,
+    goToNextPage,
+    goToPrevPage,
+    refetchStock: () => result.refetch()
+  };
 }

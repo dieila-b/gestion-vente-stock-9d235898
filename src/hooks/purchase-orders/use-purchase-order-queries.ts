@@ -1,218 +1,174 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { PurchaseOrder, PurchaseOrderItem } from "@/types/purchaseOrder";
+import { db } from "@/utils/db-adapter";
 import { safeSupplier } from "@/utils/supabase-safe-query";
 
-// Type guard function to validate order status
-function isValidOrderStatus(status: string): status is PurchaseOrder['status'] {
-  return ['pending', 'draft', 'delivered', 'approved'].includes(status);
-}
+export function usePurchaseOrderQueries() {
+  // Get all purchase orders
+  const usePurchaseOrdersQuery = () => {
+    return useQuery({
+      queryKey: ['purchase-orders'],
+      queryFn: async () => {
+        try {
+          const orders = await db.query(
+            'purchase_orders',
+            query => query
+              .select(`
+                *,
+                supplier:supplier_id(*),
+                warehouse:warehouse_id(*)
+              `)
+              .order('created_at', { ascending: false }),
+            []
+          );
 
-// Type guard function to validate payment status
-function isValidPaymentStatus(status: string): status is PurchaseOrder['payment_status'] {
-  return ['pending', 'partial', 'paid'].includes(status);
-}
+          return orders.map((order: any) => {
+            // Format supplier data using our safe accessor
+            const supplier = safeSupplier(order.supplier);
+            
+            return {
+              ...order,
+              supplier: {
+                name: supplier.name || "Unknown Supplier",
+                phone: supplier.phone || "",
+                email: supplier.email || ""
+              }
+            };
+          });
+        } catch (error) {
+          console.error("Error fetching purchase orders:", error);
+          return [];
+        }
+      }
+    });
+  };
 
-export const usePurchaseOrderQueries = (id?: string) => {
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['purchase-orders'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:suppliers (
-              name,
-              phone,
-              email
-            ),
-            items:purchase_order_items (
-              *
-            )
-          `)
-          .eq('deleted', false)
-          .order('created_at', { ascending: false });
+  // Get a purchase order by ID
+  const usePurchaseOrderQuery = (id: string) => {
+    return useQuery({
+      queryKey: ['purchase-order', id],
+      queryFn: async () => {
+        try {
+          const order = await db.query(
+            'purchase_orders',
+            query => query
+              .select(`
+                *,
+                supplier:supplier_id(*),
+                warehouse:warehouse_id(*),
+                items:purchase_order_items(
+                  *,
+                  product:product_id(*)
+                )
+              `)
+              .eq('id', id)
+              .single(),
+            null
+          );
 
-        if (error) throw error;
-        
-        // Transform the data to match the PurchaseOrder type
-        return data.map((order: any) => {
-          // Use safeSupplier to handle supplier data safely
-          const supplierData = safeSupplier(order.supplier);
+          if (!order) {
+            throw new Error("Purchase order not found");
+          }
+
+          // Format supplier data using our safe accessor
+          const supplier = safeSupplier(order.supplier);
           
-          // Create a base order object with default values
-          const transformedOrder: PurchaseOrder = {
-            id: order.id,
-            order_number: order.order_number,
+          // Add extra attributes that the UI expects
+          return {
+            ...order,
             supplier: {
-              name: supplierData.name || '',
-              phone: supplierData.phone || null,
-              email: supplierData.email || null
+              name: supplier.name || "Unknown Supplier",
+              phone: supplier.phone || "",
+              email: supplier.email || ""
             },
-            supplier_id: order.supplier_id,
-            created_at: order.created_at,
-            status: isValidOrderStatus(order.status) ? order.status : 'draft',
-            // Set default values for potentially missing properties
-            payment_status: 'pending',
-            paid_amount: 0,
-            total_amount: order.total_amount || 0,
-            items: Array.isArray(order.items) ? order.items.map((item: any) => ({
-              id: item.id || '',
-              product_id: item.product_id || '',
-              product_code: item.product_code,
-              designation: item.designation,
-              quantity: item.quantity || 0,
-              unit_price: item.unit_price || 0,
-              selling_price: item.selling_price || 0,
-              total_price: item.total_price || 0
-            })) : [],
-            logistics_cost: order.logistics_cost || 0,
-            transit_cost: order.transit_cost || 0,
-            tax_rate: order.tax_rate || 0,
-            subtotal: order.subtotal || 0,
-            tax_amount: order.tax_amount || 0,
-            total_ttc: order.total_ttc || 0,
-            shipping_cost: order.shipping_cost || 0,
-            discount: order.discount || 0,
-            notes: order.notes || '',
-            expected_delivery_date: order.expected_delivery_date || '',
-            warehouse_id: order.warehouse_id || '',
-            deleted: Boolean(order.deleted) || false
+            // Explicit cast for properties not in the database schema
+            deleted: false as boolean,
+            // Convert unknown types to proper types expected by the UI
+            logistics_cost: Number(order.logistics_cost || 0),
+            transit_cost: Number(order.transit_cost || 0)
           };
-          
-          // Override with actual values if they exist
-          if ('payment_status' in order && typeof order.payment_status === 'string') {
-            transformedOrder.payment_status = isValidPaymentStatus(order.payment_status) 
-              ? order.payment_status as PurchaseOrder['payment_status']
-              : 'pending';
-          }
-          
-          if ('paid_amount' in order && typeof order.paid_amount === 'number') {
-            transformedOrder.paid_amount = order.paid_amount;
-          }
-          
-          // Add optional properties if they exist in the data
-          if ('customs_duty' in order) {
-            transformedOrder.customs_duty = order.customs_duty;
-          }
-          
-          if ('delivery_note_id' in order) {
-            transformedOrder.delivery_note_id = order.delivery_note_id;
-          }
-          
-          return transformedOrder;
-        });
-      } catch (error) {
-        console.error("Error fetching purchase orders:", error);
-        throw error;
-      }
-    }
-  });
+        } catch (error) {
+          console.error("Error fetching purchase order:", error);
+          return null;
+        }
+      },
+      enabled: !!id
+    });
+  };
 
-  const { data: currentOrder, isLoading: isLoadingOrder } = useQuery({
-    queryKey: ['purchase-order', id || window.location.pathname.split('/').pop()],
-    queryFn: async () => {
-      try {
-        const orderId = id || window.location.pathname.split('/').pop();
-        if (!orderId) return null;
+  // Get purchase orders by supplier
+  const usePurchaseOrdersBySupplierQuery = (supplierId: string) => {
+    return useQuery({
+      queryKey: ['purchase-orders-by-supplier', supplierId],
+      queryFn: async () => {
+        try {
+          const orders = await db.query(
+            'purchase_orders',
+            query => query
+              .select(`
+                *,
+                supplier:supplier_id(*),
+                warehouse:warehouse_id(*)
+              `)
+              .eq('supplier_id', supplierId)
+              .order('created_at', { ascending: false }),
+            []
+          );
 
-        const { data: order, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:suppliers (
-              name,
-              phone,
-              email
-            ),
-            items:purchase_order_items (
-              *
-            )
-          `)
-          .eq('id', orderId)
-          .single();
+          return orders.map((order: any) => {
+            // Format supplier data using our safe accessor
+            const supplier = safeSupplier(order.supplier);
+            
+            return {
+              ...order,
+              supplier: {
+                name: supplier.name || "Unknown Supplier",
+                phone: supplier.phone || "",
+                email: supplier.email || ""
+              },
+              deleted: false
+            };
+          });
+        } catch (error) {
+          console.error("Error fetching purchase orders by supplier:", error);
+          return [];
+        }
+      },
+      enabled: !!supplierId
+    });
+  };
 
-        if (error) throw error;
-        if (!order) return null;
-        
-        // Use safeSupplier to handle supplier data safely
-        const supplierData = safeSupplier(order.supplier);
-        
-        // Create a base order object with default values
-        const transformedOrder: PurchaseOrder = {
-          id: order.id,
-          order_number: order.order_number,
-          supplier: {
-            name: supplierData.name || '',
-            phone: supplierData.phone || null,
-            email: supplierData.email || null
-          },
-          supplier_id: order.supplier_id,
-          created_at: order.created_at,
-          status: isValidOrderStatus(order.status) ? order.status : 'draft',
-          // Set default values for potentially missing properties
-          payment_status: 'pending',
-          paid_amount: 0,
-          total_amount: order.total_amount || 0,
-          items: Array.isArray(order.items) ? order.items.map((item: any) => ({
-            id: item.id || '',
-            product_id: item.product_id || '',
-            product_code: item.product_code,
-            designation: item.designation,
-            quantity: item.quantity || 0,
-            unit_price: item.unit_price || 0,
-            selling_price: item.selling_price || 0,
-            total_price: item.total_price || 0
-          })) : [],
-          logistics_cost: order.logistics_cost || 0,
-          transit_cost: order.transit_cost || 0,
-          tax_rate: order.tax_rate || 0,
-          subtotal: order.subtotal || 0,
-          tax_amount: order.tax_amount || 0,
-          total_ttc: order.total_ttc || 0,
-          shipping_cost: order.shipping_cost || 0,
-          discount: order.discount || 0,
-          notes: order.notes || '',
-          expected_delivery_date: order.expected_delivery_date || '',
-          warehouse_id: order.warehouse_id || '',
-          deleted: Boolean(order.deleted) || false
-        };
-        
-        // Override with actual values if they exist
-        if ('payment_status' in order && typeof order.payment_status === 'string') {
-          transformedOrder.payment_status = isValidPaymentStatus(order.payment_status) 
-            ? order.payment_status as PurchaseOrder['payment_status']
-            : 'pending';
+  // Get purchase order items by order ID
+  const usePurchaseOrderItemsQuery = (orderId: string) => {
+    return useQuery({
+      queryKey: ['purchase-order-items', orderId],
+      queryFn: async () => {
+        try {
+          const items = await db.query(
+            'purchase_order_items',
+            query => query
+              .select(`
+                *,
+                product:product_id(*)
+              `)
+              .eq('purchase_order_id', orderId)
+              .order('created_at', { ascending: false }),
+            []
+          );
+
+          return items;
+        } catch (error) {
+          console.error("Error fetching purchase order items:", error);
+          return [];
         }
-        
-        if ('paid_amount' in order && typeof order.paid_amount === 'number') {
-          transformedOrder.paid_amount = order.paid_amount;
-        }
-        
-        // Add optional properties if they exist in the data
-        if ('customs_duty' in order) {
-          transformedOrder.customs_duty = Number(order.customs_duty) || 0;
-        }
-        
-        if ('delivery_note_id' in order) {
-          transformedOrder.delivery_note_id = String(order.delivery_note_id) || '';
-        }
-        
-        return transformedOrder;
-      } catch (error) {
-        console.error("Error fetching purchase order:", error);
-        throw error;
-      }
-    },
-    enabled: !!id || window.location.pathname.includes('/purchase-orders/'),
-  });
+      },
+      enabled: !!orderId
+    });
+  };
 
   return {
-    orders,
-    isLoading,
-    currentOrder,
-    isLoadingOrder
+    usePurchaseOrdersQuery,
+    usePurchaseOrderQuery,
+    usePurchaseOrdersBySupplierQuery,
+    usePurchaseOrderItemsQuery
   };
-};
+}

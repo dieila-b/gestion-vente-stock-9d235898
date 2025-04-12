@@ -5,7 +5,7 @@ import { safeProduct, safeWarehouse } from "@/utils/supabase-safe-query";
 
 export interface StockMovement {
   id: string;
-  type: string;
+  type: "in" | "out";
   quantity: number;
   reason?: string;
   created_at: string;
@@ -18,10 +18,14 @@ export interface StockMovement {
     id: string;
     name: string;
   };
+  pos_location?: {
+    id: string;
+    name: string;
+  };
 }
 
 export function useRecentStockMovements() {
-  const { data: movements = [], isLoading, error } = useQuery({
+  return useQuery({
     queryKey: ['recent-stock-movements'],
     queryFn: async () => {
       try {
@@ -32,7 +36,8 @@ export function useRecentStockMovements() {
             .select(`
               *,
               product:product_id(*),
-              warehouse:warehouse_id(*)
+              warehouse:warehouse_id(*),
+              pos_location:pos_location_id(*)
             `)
             .order('created_at', { ascending: false })
             .limit(20)
@@ -43,11 +48,12 @@ export function useRecentStockMovements() {
           // Use safe accessors to handle potential errors
           const product = safeProduct(movement.product);
           const warehouse = safeWarehouse(movement.warehouse);
+          const pos_location = movement.pos_location || null;
           
           // Transform the product_id and warehouse_id relationships
           return {
             id: movement.id || '',
-            type: movement.type || 'unknown',
+            type: (movement.type || 'unknown') as "in" | "out",
             quantity: movement.quantity || 0,
             reason: movement.reason || '',
             created_at: movement.created_at || new Date().toISOString(),
@@ -59,7 +65,11 @@ export function useRecentStockMovements() {
             warehouse: {
               id: warehouse.id || '',
               name: warehouse.name || 'Unknown Warehouse'
-            }
+            },
+            pos_location: pos_location ? {
+              id: pos_location.id || '',
+              name: pos_location.name || 'Unknown Location'
+            } : undefined
           } as StockMovement;
         });
       } catch (error) {
@@ -68,10 +78,4 @@ export function useRecentStockMovements() {
       }
     }
   });
-
-  return {
-    movements,
-    isLoading,
-    error
-  };
 }

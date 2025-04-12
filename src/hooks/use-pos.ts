@@ -33,6 +33,7 @@ export function usePOS(editOrderId?: string | null) {
   } = useCart();
 
   // Use the products hook for fetching and filtering products
+  const posProductsResult = usePOSProducts(selectedPDV);
   const {
     products,
     categories,
@@ -43,7 +44,7 @@ export function usePOS(editOrderId?: string | null) {
     goToNextPage,
     goToPrevPage,
     refetchStock
-  } = usePOSProducts(selectedPDV, selectedCategory, searchTerm);
+  } = posProductsResult;
 
   // Use the locations hook for fetching POS locations
   const { posLocations, activeRegister } = usePOSLocations();
@@ -54,7 +55,7 @@ export function usePOS(editOrderId?: string | null) {
     setIsPaymentDialogOpen,
     isLoading: paymentLoading,
     handlePayment
-  } = usePOSPayment(
+  } = usePOSPayment({
     selectedClient,
     cart,
     calculateTotal,
@@ -65,8 +66,8 @@ export function usePOS(editOrderId?: string | null) {
     selectedPDV,
     activeRegister,
     refetchStock,
-    editOrderId // Pass editOrderId here
-  );
+    editOrderId
+  });
 
   // Filter products for display
   const currentProducts = usePOSRealtime(products);

@@ -42,11 +42,11 @@ export function MovementDetailsDialog({ isOpen, onClose, movement }: MovementDet
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-1">Produit</h4>
-              <p className="font-medium">{movement.product.name}</p>
+              <p className="font-medium">{movement.product?.name || "N/A"}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-1">Référence</h4>
-              <p>{movement.product.reference || "N/A"}</p>
+              <p>{movement.product?.reference || "N/A"}</p>
             </div>
           </div>
 
@@ -65,13 +65,6 @@ export function MovementDetailsDialog({ isOpen, onClose, movement }: MovementDet
               <p>{formatDateTime(movement.created_at)}</p>
             </div>
           </div>
-
-          {movement.created_by && (
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Créé par</h4>
-              <p>{movement.created_by.name}</p>
-            </div>
-          )}
 
           {movement.reason && (
             <div>

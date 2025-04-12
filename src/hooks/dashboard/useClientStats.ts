@@ -27,15 +27,20 @@ export const useClientStats = () => {
     queryKey: ['supplier-payments'],
     queryFn: async () => {
       try {
-        // Use our safe db-adapter
+        // Use our safe db-adapter for the supplier_orders table
         const payments = await db.query(
-          'supplier_orders',
-          query => query.select('paid_amount').eq('payment_status', 'paid')
+          'purchase_orders',
+          query => query.select('paid_amount').eq('payment_status', 'paid'),
+          []
         );
         
         // If payments is an array, calculate the sum
         if (Array.isArray(payments)) {
-          return payments.reduce((sum, order) => sum + (order.paid_amount || 0), 0);
+          return payments.reduce((sum, order) => {
+            // Use type assertion to handle potential undefined values
+            const paidAmount = (order as any).paid_amount || 0;
+            return sum + paidAmount;
+          }, 0);
         }
         return 0;
       } catch (error) {

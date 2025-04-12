@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-adapter";
 import { CatalogProduct } from "@/types/catalog";
 import { toast } from "sonner";
 
@@ -103,25 +103,24 @@ export function useInvoiceForm() {
 
       const finalAmount = subtotal - totalDiscount;
 
-      const { data: invoice, error } = await supabase
-        .from('invoices')
-        .insert({
-          invoice_number: formData.invoiceNumber,
-          client_name: formData.clientName,
-          client_email: formData.clientEmail,
-          amount: finalAmount,
-          description: formData.description,
-          vat_rate: parseFloat(formData.vatRate),
-          signature: formData.signature,
-          discount: totalDiscount,
-          payment_status: 'pending',
-          remaining_amount: finalAmount,
-          pos_location_id: formData.posLocationId || null
-        })
-        .select()
-        .single();
+      // Use the db adapter to insert into the invoices table
+      const invoice = await db.insert('invoices', {
+        invoice_number: formData.invoiceNumber,
+        client_name: formData.clientName,
+        client_email: formData.clientEmail,
+        amount: finalAmount,
+        description: formData.description,
+        vat_rate: parseFloat(formData.vatRate),
+        signature: formData.signature,
+        discount: totalDiscount,
+        payment_status: 'pending',
+        remaining_amount: finalAmount,
+        pos_location_id: formData.posLocationId || null
+      });
 
-      if (error) throw error;
+      if (!invoice) {
+        throw new Error("Failed to create invoice");
+      }
 
       // Insert invoice items
       const invoiceItems = selectedProducts.map(product => ({
@@ -132,11 +131,12 @@ export function useInvoiceForm() {
         discount: product.discount
       }));
 
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(invoiceItems);
+      // Use the db adapter to insert invoice items
+      const itemsResult = await db.insert('invoice_items', invoiceItems);
 
-      if (itemsError) throw itemsError;
+      if (!itemsResult) {
+        throw new Error("Failed to create invoice items");
+      }
 
       toast.success("Facture créée avec succès");
       return invoice;
