@@ -72,7 +72,7 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
         processUpload(file);
       }
     },
-    [onUpload, disabled, isUploading]
+    [disabled, isUploading, onUpload]
   );
 
   const handleChange = useCallback(
@@ -86,7 +86,7 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
         processUpload(file);
       }
     },
-    [onUpload, disabled, isUploading]
+    [disabled, isUploading, onUpload]
   );
 
   const handleButtonClick = () => {

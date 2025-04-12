@@ -27,9 +27,24 @@ export const useBucketCheck = () => {
         if (!lovableBucket) {
           console.warn("Le bucket 'lovable-uploads' n'existe pas ou n'est pas accessible");
           
-          // Even if bucket doesn't exist, don't show error to user as we created it with SQL
-          // The RLS policies may prevent direct bucket creation from JS
-          setBucketExists(false);
+          // Try to create the bucket if it doesn't exist
+          try {
+            const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
+              public: true
+            });
+            
+            if (createError) {
+              console.error("Error creating bucket:", createError);
+              setBucketExists(false);
+            } else {
+              console.log("Bucket 'lovable-uploads' created successfully");
+              setBucketExists(true);
+              toast.success("Stockage d'images configuré avec succès");
+            }
+          } catch (createErr) {
+            console.error("Exception creating bucket:", createErr);
+            setBucketExists(false);
+          }
         } else {
           console.log("Bucket 'lovable-uploads' exists");
           setBucketExists(true);

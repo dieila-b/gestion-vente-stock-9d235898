@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { User } from "@/types/user";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserRound } from "lucide-react";
+import { UserRound, Loader2 } from "lucide-react";
 
 interface ProfilePhotoSectionProps {
   user: Omit<User, 'id'>;
@@ -44,13 +44,21 @@ export const ProfilePhotoSection = ({
       
       <div className="mb-4">
         <Avatar className="h-24 w-24">
-          <AvatarImage 
-            src={user.photo_url || ""} 
-            alt={`${user.first_name} ${user.last_name}`} 
-          />
-          <AvatarFallback className="bg-primary/10">
-            {getInitials()}
-          </AvatarFallback>
+          {isUploadLoading ? (
+            <AvatarFallback className="bg-primary/10">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </AvatarFallback>
+          ) : (
+            <>
+              <AvatarImage 
+                src={user.photo_url || ""} 
+                alt={`${user.first_name} ${user.last_name}`} 
+              />
+              <AvatarFallback className="bg-primary/10">
+                {getInitials()}
+              </AvatarFallback>
+            </>
+          )}
         </Avatar>
       </div>
       

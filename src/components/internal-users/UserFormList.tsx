@@ -47,6 +47,8 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
+      toast.loading("Téléchargement de l'image en cours...");
+      
       // Upload the file directly
       console.log("Uploading file to path:", filePath);
       const { error: uploadError, data } = await supabase.storage
@@ -55,9 +57,12 @@ export const UserFormList = ({
       
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
+        toast.dismiss();
         toast.error(`Erreur lors du téléchargement de l'image: ${uploadError.message}`);
         return;
       }
+      
+      toast.dismiss();
       
       // Get the public URL
       const { data: urlData } = supabase.storage
@@ -68,6 +73,7 @@ export const UserFormList = ({
       onInputChange(index, "photo_url", urlData.publicUrl);
       toast.success("Image téléchargée avec succès");
     } catch (error: any) {
+      toast.dismiss();
       console.error("Error in image upload process:", error);
       toast.error(`Erreur lors du téléchargement de l'image: ${error.message || error}`);
     }
