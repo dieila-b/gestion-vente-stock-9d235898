@@ -78,16 +78,9 @@ const useEditOrder = () => {
             return;
           }
 
-          // Safe access with additional type checking
-          const client = order.client;
-          const items = order.items;
-          
-          // Check if client and items are SelectQueryError objects
-          const hasClientError = !client || isSelectQueryError(client);
-          const hasItemsError = !items || isSelectQueryError(items);
-
-          // Format client data if available
-          const clientData = hasClientError ? null : client;
+          // First check if order is a SelectQueryError before accessing properties
+          const clientData = order.client && !isSelectQueryError(order.client) ? order.client : null;
+          const itemsData = order.items && !isSelectQueryError(order.items) ? order.items : [];
 
           // Handle client data with optional properties
           const formattedClient = clientData ? {
@@ -108,19 +101,18 @@ const useEditOrder = () => {
           setSelectedClient(formattedClient);
 
           // Format cart items from order items if available
-          const formattedCart = hasItemsError ? [] : 
-            Array.isArray(items) ? 
-              items.map((item: any) => ({
-                id: item.product_id,
-                product_id: item.product_id,
-                name: item.product?.name || 'Unknown Product',
-                quantity: item.quantity,
-                price: item.product?.price || 0,
-                discount: 0, // Default discount
-                category: item.product?.category || 'Uncategorized',
-                reference: item.product?.reference || '',
-                image_url: item.product?.image_url || '',
-              })) : [];
+          const formattedCart = Array.isArray(itemsData) ? 
+            itemsData.map((item: any) => ({
+              id: item.product_id,
+              product_id: item.product_id,
+              name: item.product?.name || 'Unknown Product',
+              quantity: item.quantity,
+              price: item.product?.price || 0,
+              discount: 0, // Default discount
+              category: item.product?.category || 'Uncategorized',
+              reference: item.product?.reference || '',
+              image_url: item.product?.image_url || '',
+            })) : [];
 
           setCart(formattedCart);
 
@@ -153,7 +145,7 @@ const useEditOrder = () => {
   }, [orderId]);
 
   // Helper function to check if a response is a SelectQueryError
-  const isSelectQueryError = (data: any): boolean => {
+  const isSelectQueryError = (data: any): data is SelectQueryError => {
     return typeof data === 'object' && data !== null && 'code' in data && 'details' in data && 'hint' in data && 'message' in data;
   };
 
