@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User } from "@/types/user";
@@ -9,6 +9,36 @@ export const useInternalUsers = () => {
   const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([]);
   const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
   const [passwordConfirmation, setPasswordConfirmation] = useState<{ [key: number]: string }>({});
+
+  // Vérification du bucket au chargement du composant
+  useEffect(() => {
+    const checkAndCreateBucket = async () => {
+      try {
+        // Vérifier si le bucket existe
+        const { data: buckets, error } = await supabase.storage.listBuckets();
+        
+        if (error) {
+          console.error("Error checking buckets:", error);
+          return;
+        }
+        
+        const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
+        
+        if (!bucketExists) {
+          console.log("Bucket 'lovable-uploads' does not exist, attempting to create it via API");
+          // Le bucket n'existe pas, nous ne pouvons pas le créer directement via l'API
+          // Nous allons simplement informer l'utilisateur
+          toast.error("Le bucket de stockage 'lovable-uploads' n'existe pas. Contactez l'administrateur.");
+        } else {
+          console.log("Bucket 'lovable-uploads' exists");
+        }
+      } catch (err) {
+        console.error("Error in bucket check:", err);
+      }
+    };
+    
+    checkAndCreateBucket();
+  }, []);
 
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ['internal-users'],

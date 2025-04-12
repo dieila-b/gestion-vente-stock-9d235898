@@ -34,12 +34,36 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
+      // Vérifier d'abord si le bucket existe
+      const { data: buckets, error: bucketsError } = await supabase.storage
+        .listBuckets();
+      
+      if (bucketsError) {
+        console.error("Error checking buckets:", bucketsError);
+        toast.error("Erreur lors de la vérification des buckets");
+        return;
+      }
+      
+      const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
+      
+      if (!bucketExists) {
+        console.error("Bucket 'lovable-uploads' not found");
+        toast.error("Le bucket de stockage n'existe pas. Veuillez contacter l'administrateur.");
+        return;
+      }
+      
+      // Télécharger le fichier
       const { error: uploadError } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file);
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Error uploading image:", uploadError);
+        toast.error("Erreur lors du téléchargement de l'image");
+        return;
+      }
       
+      // Obtenir l'URL publique
       const { data } = supabase.storage
         .from('lovable-uploads')
         .getPublicUrl(filePath);
@@ -47,8 +71,8 @@ export const UserFormList = ({
       onInputChange(index, "photo_url", data.publicUrl);
       toast.success("Image téléchargée avec succès");
     } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Erreur lors du téléchargement de l'image");
+      console.error("Error in image upload process:", error);
+      toast.error("Erreur lors du processus de téléchargement de l'image");
     }
   };
 
