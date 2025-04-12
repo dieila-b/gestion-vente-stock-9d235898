@@ -5,7 +5,7 @@ import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
-import useEditOrder from "@/hooks/use-edit-order"; // Changed from named import to default import
+import useEditOrder from "@/hooks/use-edit-order"; // Import the default export
 import { Product } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
@@ -60,8 +60,18 @@ export default function POS() {
     stockItems,
   } = usePOS(editOrderId);
 
+  // Get edit order data
+  const editOrderData = useEditOrder();
+
   // Load data from edit order if available
-  useEditOrder(setSelectedClient, setCart);
+  useEffect(() => {
+    if (editOrderData && !editOrderData.isLoading && editOrderData.selectedClient) {
+      setSelectedClient(editOrderData.selectedClient);
+      if (editOrderData.cart && editOrderData.cart.length > 0) {
+        setCart(editOrderData.cart);
+      }
+    }
+  }, [editOrderData, setSelectedClient, setCart]);
 
   // Initialize available stock from product stock
   useEffect(() => {

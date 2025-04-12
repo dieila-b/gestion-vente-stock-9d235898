@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { safeGet } from "@/utils/supabase-safe-query";
+import { db } from "@/utils/db-adapter";
 
 // Let's add a proper type for the payment
 interface Payment {
@@ -38,19 +39,31 @@ export default function Payments() {
     if (selectedClient) {
       const fetchClientData = async () => {
         try {
-          // Get client balance
-          const balance = safeGet(selectedClient, 'balance', 0);
+          // Get client balance - handle it as a custom property
+          const balance = selectedClient.balance ? Number(selectedClient.balance) : 0;
           setClientBalance(balance);
 
-          // Get client payment history
-          const { data, error } = await supabase
-            .from('client_payments')
-            .select('*')
-            .eq('client_id', selectedClient.id)
-            .order('date', { ascending: false });
+          // Get client payment history using the database adapter
+          const clientPayments = await db.query(
+            'client_payments',
+            (query) => query
+              .select('*')
+              .eq('client_id', selectedClient.id)
+              .order('date', { ascending: false }),
+            []
+          );
 
-          if (error) throw error;
-          setPayments(data || []);
+          // Convert the raw data to our Payment type
+          const typedPayments = clientPayments.map((payment: any) => ({
+            id: payment.id || '',
+            amount: payment.amount || 0,
+            date: payment.date || new Date().toISOString(),
+            method: payment.method || 'cash',
+            reference: payment.reference || '',
+            notes: payment.notes || ''
+          }));
+
+          setPayments(typedPayments);
         } catch (error) {
           console.error("Error fetching client data:", error);
           toast({
@@ -66,7 +79,7 @@ export default function Payments() {
       setClientBalance(0);
       setPayments([]);
     }
-  }, [selectedClient]);
+  }, [selectedClient, toast]);
 
   const handleSubmitPayment = async () => {
     if (!selectedClient) {
@@ -90,29 +103,25 @@ export default function Payments() {
     setIsLoading(true);
 
     try {
-      // Save payment to database
-      const { error: paymentError } = await supabase
-        .from('client_payments')
-        .insert({
-          client_id: selectedClient.id,
-          amount: parseFloat(amount),
-          method: paymentMethod,
-          reference: reference || null,
-          notes: notes || null,
-          date: new Date().toISOString()
-        });
+      // Save payment to database using the adapter
+      const result = await db.insert('client_payments', {
+        client_id: selectedClient.id,
+        amount: parseFloat(amount),
+        method: paymentMethod,
+        reference: reference || null,
+        notes: notes || null,
+        date: new Date().toISOString()
+      });
 
-      if (paymentError) throw paymentError;
-
-      // Update client balance
+      // Calculate new balance
       const newBalance = clientBalance - parseFloat(amount);
-      const { error: clientError } = await supabase
+      
+      // Update client balance - either via dedicated field or custom extension
+      await supabase
         .from('clients')
         .update({ balance: newBalance })
         .eq('id', selectedClient.id);
-
-      if (clientError) throw clientError;
-
+      
       toast({
         title: "Succès",
         description: `Paiement de ${formatGNF(parseFloat(amount))} enregistré pour ${selectedClient.company_name}`,
@@ -125,13 +134,26 @@ export default function Payments() {
       setClientBalance(newBalance);
 
       // Refresh payment history
-      const { data } = await supabase
-        .from('client_payments')
-        .select('*')
-        .eq('client_id', selectedClient.id)
-        .order('date', { ascending: false });
+      const refreshedPayments = await db.query(
+        'client_payments',
+        (query) => query
+          .select('*')
+          .eq('client_id', selectedClient.id)
+          .order('date', { ascending: false }),
+        []
+      );
 
-      if (data) setPayments(data);
+      // Convert the raw data to our Payment type
+      const typedPayments = refreshedPayments.map((payment: any) => ({
+        id: payment.id || '',
+        amount: payment.amount || 0,
+        date: payment.date || new Date().toISOString(),
+        method: payment.method || 'cash',
+        reference: payment.reference || '',
+        notes: payment.notes || ''
+      }));
+
+      setPayments(typedPayments);
     } catch (error) {
       console.error("Error processing payment:", error);
       toast({

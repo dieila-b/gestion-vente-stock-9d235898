@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { db } from "./db-adapter";
 
 /**
  * Type for SelectQueryError to match what Supabase returns when queries fail
@@ -46,6 +47,8 @@ export function safeClient(client: any): {
   credit_limit?: number;
   rc_number?: string;
   cc_number?: string;
+  created_at: string;
+  updated_at: string;
 } {
   if (isSelectQueryError(client)) {
     return {
@@ -60,12 +63,16 @@ export function safeClient(client: any): {
       whatsapp: '',
       credit_limit: 0,
       rc_number: '',
-      cc_number: ''
+      cc_number: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
   }
   return {
     ...client,
-    status: client.status || 'particulier'
+    status: client.status || 'particulier',
+    created_at: client.created_at || new Date().toISOString(),
+    updated_at: client.updated_at || new Date().toISOString()
   };
 }
 
@@ -232,27 +239,7 @@ export async function safeFetchFromTable<T>(
   fallbackData: T[] = [] as T[],
   errorMessage: string = `Erreur lors de la requête à ${tableName}`
 ): Promise<T[]> {
-  try {
-    // Try to query the table but handle the case where it doesn't exist
-    const { data, error } = await queryBuilder(supabase.from(tableName as any));
-    
-    if (error) {
-      // If there's an error due to the table not existing, return fallback data
-      console.error(`Error querying ${tableName}:`, error);
-      if (process.env.NODE_ENV !== 'production') {
-        toast.error(errorMessage);
-      }
-      return fallbackData;
-    }
-    
-    return data as T[];
-  } catch (err) {
-    console.error(`Exception querying ${tableName}:`, err);
-    if (process.env.NODE_ENV !== 'production') {
-      toast.error(errorMessage);
-    }
-    return fallbackData;
-  }
+  return db.query(tableName, queryBuilder, fallbackData);
 }
 
 /**
@@ -266,20 +253,14 @@ export async function safeFetchRecordById<T>(
   errorMessage: string = `Erreur lors de la requête à ${tableName}`
 ): Promise<T | null> {
   try {
-    // Try to query the table but handle the case where it doesn't exist
-    const baseQuery = supabase.from(tableName as any).select('*').eq('id', id);
-    const { data, error } = await queryBuilder(baseQuery);
+    // Use the database adapter to handle this query
+    const result = await db.query(
+      tableName,
+      q => queryBuilder(q.select('*').eq('id', id)),
+      []
+    );
     
-    if (error) {
-      // If there's an error due to the table not existing, return fallback data
-      console.error(`Error querying ${tableName} record:`, error);
-      if (process.env.NODE_ENV !== 'production') {
-        toast.error(errorMessage);
-      }
-      return fallbackData;
-    }
-    
-    return (Array.isArray(data) && data.length > 0) ? data[0] as T : fallbackData;
+    return (Array.isArray(result) && result.length > 0) ? result[0] as T : fallbackData;
   } catch (err) {
     console.error(`Exception querying ${tableName} record:`, err);
     if (process.env.NODE_ENV !== 'production') {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,14 +11,37 @@ import { Info, AlertCircle } from "lucide-react";
 import { safeFetchFromTable, safeSupplier } from "@/utils/supabase-safe-query";
 
 interface OrderInfoFormProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
-  warehouses: any[];
-  isSubmitting: boolean;
-  onProceed: () => void;
+  orderNumber: string;
+  setOrderNumber: (value: string) => void;
+  supplier: string;
+  setSupplier: (value: string) => void;
+  deliveryDate: string;
+  setDeliveryDate: (value: string) => void;
+  warehouseId: string;
+  setWarehouseId: (value: string) => void;
+  
+  formData?: any;
+  onChange?: (field: string, value: any) => void;
+  warehouses?: any[];
+  isSubmitting?: boolean;
+  onProceed?: () => void;
 }
 
-export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, onProceed }: OrderInfoFormProps) => {
+export const OrderInfoForm = ({ 
+  formData = {}, 
+  onChange = () => {}, 
+  warehouses = [], 
+  isSubmitting = false, 
+  onProceed = () => {},
+  orderNumber,
+  setOrderNumber,
+  supplier,
+  setSupplier,
+  deliveryDate,
+  setDeliveryDate,
+  warehouseId,
+  setWarehouseId
+}: OrderInfoFormProps) => {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +49,6 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
     const fetchSuppliers = async () => {
       setIsLoading(true);
       try {
-        // Safely fetch suppliers from the database
         const fetchedSuppliers = await safeFetchFromTable(
           'suppliers',
           (query) => query.select('id, name').order('name'),
@@ -46,12 +67,44 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
     fetchSuppliers();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onProceed();
+  const handleOrderNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrderNumber?.(e.target.value);
+    onChange?.('order_number', e.target.value);
   };
 
-  const isValid = formData.warehouse_id && formData.supplier_id && formData.order_number;
+  const handleSupplierChange = (value: string) => {
+    setSupplier?.(value);
+    onChange?.('supplier_id', value);
+  };
+
+  const handleWarehouseChange = (value: string) => {
+    setWarehouseId?.(value);
+    onChange?.('warehouse_id', value);
+  };
+
+  const handleDeliveryDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDeliveryDate?.(date.toISOString());
+      onChange?.('expected_delivery_date', date);
+    }
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange?.('notes', e.target.value);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onProceed?.();
+  };
+
+  const orderNumberValue = orderNumber || formData.order_number || '';
+  const supplierValue = supplier || formData.supplier_id || '';
+  const warehouseValue = warehouseId || formData.warehouse_id || '';
+  const deliveryDateValue = deliveryDate ? new Date(deliveryDate) : 
+                           formData.expected_delivery_date ? new Date(formData.expected_delivery_date) : undefined;
+
+  const isValid = orderNumberValue && supplierValue && warehouseValue;
 
   return (
     <Card>
@@ -63,15 +116,15 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
               <Input
                 id="order_number"
                 placeholder="BON-1234"
-                value={formData.order_number}
-                onChange={(e) => onChange('order_number', e.target.value)}
+                value={orderNumberValue}
+                onChange={handleOrderNumberChange}
                 required
               />
             </div>
 
             <div className="space-y-3">
               <Label htmlFor="supplier">Fournisseur</Label>
-              <Select value={formData.supplier_id} onValueChange={(value) => onChange('supplier_id', value)}>
+              <Select value={supplierValue} onValueChange={handleSupplierChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un fournisseur" />
                 </SelectTrigger>
@@ -90,7 +143,7 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
 
             <div className="space-y-3">
               <Label htmlFor="warehouse">Entrepôt</Label>
-              <Select value={formData.warehouse_id} onValueChange={(value) => onChange('warehouse_id', value)}>
+              <Select value={warehouseValue} onValueChange={handleWarehouseChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un entrepôt" />
                 </SelectTrigger>
@@ -107,8 +160,8 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
             <div className="space-y-3">
               <Label>Date de livraison attendue</Label>
               <DatePicker
-                date={formData.expected_delivery_date ? new Date(formData.expected_delivery_date) : undefined}
-                onChange={(date) => onChange('expected_delivery_date', date)}
+                date={deliveryDateValue}
+                onSelect={handleDeliveryDateChange}
               />
             </div>
           </div>
@@ -118,8 +171,8 @@ export const OrderInfoForm = ({ formData, onChange, warehouses, isSubmitting, on
             <Textarea
               id="notes"
               placeholder="Notes additionnelles..."
-              value={formData.notes}
-              onChange={(e) => onChange('notes', e.target.value)}
+              value={formData.notes || ''}
+              onChange={handleNotesChange}
               rows={4}
             />
           </div>

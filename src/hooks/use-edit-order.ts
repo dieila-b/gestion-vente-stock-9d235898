@@ -7,7 +7,10 @@ import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
 import { safeClient } from "@/utils/supabase-safe-query";
 
-export default function useEditOrder() {
+export default function useEditOrder(
+  setSelectedClientFn?: React.Dispatch<React.SetStateAction<Client | null>>,
+  setCartFn?: React.Dispatch<React.SetStateAction<CartItem[]>>
+) {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +57,12 @@ export default function useEditOrder() {
     if (!isOrderLoading && orderData) {
       // Set the client from the order
       if (orderData.client) {
-        // Use safeClient to ensure the client has all necessary properties including status
+        // Use safeClient to ensure the client has all necessary properties
         const client = safeClient(orderData.client);
         setSelectedClient(client);
+        if (setSelectedClientFn) {
+          setSelectedClientFn(client);
+        }
       }
 
       // Transform order items to cart items
@@ -72,11 +78,14 @@ export default function useEditOrder() {
           image: item.product?.image_url || '',
         }));
         setCart(cartItems);
+        if (setCartFn) {
+          setCartFn(cartItems);
+        }
       }
 
       setIsLoading(false);
     }
-  }, [isOrderLoading, orderData]);
+  }, [isOrderLoading, orderData, setSelectedClientFn, setCartFn]);
 
   return {
     orderId,
