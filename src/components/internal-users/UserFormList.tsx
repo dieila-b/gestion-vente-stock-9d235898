@@ -49,11 +49,17 @@ export const UserFormList = ({
       
       toast.loading("Téléchargement de l'image en cours...");
       
-      // Upload the file directly
+      // Upload the file with debugging
       console.log("Uploading file to path:", filePath);
+      console.log("File size:", file.size, "bytes");
+      console.log("File type:", file.type);
+      
       const { error: uploadError, data } = await supabase.storage
         .from('lovable-uploads')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
