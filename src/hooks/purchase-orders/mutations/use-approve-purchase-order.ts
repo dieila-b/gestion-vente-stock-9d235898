@@ -14,7 +14,7 @@ export function useApprovePurchaseOrder() {
       // 1. Update purchase order status to approved
       const { data: updatedOrder, error: updateError } = await supabase
         .from("purchase_orders")
-        .update({ status: "approved" })
+        .update({ status: "approved" as const })
         .eq("id", id)
         .select(`
           *,
@@ -71,22 +71,20 @@ export function useApprovePurchaseOrder() {
       };
 
       // Safely handle supplier data
-      let supplier = defaultSupplier;
-      
-      // Check if supplier data is available and not a SelectQueryError
-      if (updatedOrder.supplier && !isSelectQueryError(updatedOrder.supplier)) {
-        supplier = {
-          id: updatedOrder.supplier.id || '',
-          name: updatedOrder.supplier.name || 'Unknown Supplier',
-          phone: updatedOrder.supplier.phone || '',
-          email: updatedOrder.supplier.email || ''
-        };
-      }
+      const supplier = isSelectQueryError(updatedOrder.supplier) 
+        ? defaultSupplier
+        : {
+            id: updatedOrder.supplier?.id || defaultSupplier.id,
+            name: updatedOrder.supplier?.name || defaultSupplier.name,
+            phone: updatedOrder.supplier?.phone || defaultSupplier.phone,
+            email: updatedOrder.supplier?.email || defaultSupplier.email
+          };
 
       const purchaseOrder: PurchaseOrder = {
         ...updatedOrder,
         supplier,
-        items: orderItems
+        items: orderItems,
+        status: updatedOrder.status as "pending" | "delivered" | "draft" | "approved"
       };
 
       return purchaseOrder;

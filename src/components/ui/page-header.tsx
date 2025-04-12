@@ -6,10 +6,20 @@ interface PageHeaderProps {
   className?: string;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ 
+interface PageHeaderTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface PageHeaderDescriptionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const PageHeader = ({ 
   children, 
   className = ""
-}) => {
+}: PageHeaderProps) => {
   return (
     <div className={`space-y-1 ${className}`}>
       {children}
@@ -17,13 +27,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   );
 };
 
+// Define subcomponents as properties on PageHeader
 PageHeader.Title = function PageHeaderTitle({ 
   children, 
   className = ""
-}: { 
-  children: React.ReactNode; 
-  className?: string;
-}) {
+}: PageHeaderTitleProps) {
   return (
     <h2 className={`text-2xl font-bold tracking-tight ${className}`}>
       {children}
@@ -34,10 +42,7 @@ PageHeader.Title = function PageHeaderTitle({
 PageHeader.Description = function PageHeaderDescription({ 
   children, 
   className = ""
-}: { 
-  children: React.ReactNode; 
-  className?: string;
-}) {
+}: PageHeaderDescriptionProps) {
   return (
     <p className={`text-muted-foreground ${className}`}>
       {children}

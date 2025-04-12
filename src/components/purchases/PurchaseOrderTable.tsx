@@ -16,7 +16,8 @@ import {
   CheckCircle, 
   Pencil, 
   Eye, 
-  Trash2
+  Trash2,
+  Printer
 } from "lucide-react";
 
 export interface PurchaseOrderTableProps {
@@ -26,6 +27,7 @@ export interface PurchaseOrderTableProps {
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
   onView?: (id: string) => void;
+  onPrint?: (order: PurchaseOrder) => void;
 }
 
 export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
@@ -34,14 +36,15 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
   onApprove,
   onDelete,
   onEdit,
-  onView
+  onView,
+  onPrint
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
         return <Badge variant="secondary">En attente</Badge>;
       case "delivered":
-        return <Badge variant="success">Livré</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Livré</Badge>;
       case "approved":
         return <Badge variant="outline" className="bg-green-100 text-green-800">Approuvé</Badge>;
       case "draft":
@@ -56,9 +59,9 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
       case "pending":
         return <Badge variant="outline">Non payé</Badge>;
       case "partial":
-        return <Badge variant="warning">Partiellement payé</Badge>;
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800">Partiellement payé</Badge>;
       case "paid":
-        return <Badge variant="success">Payé</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Payé</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -110,7 +113,7 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
                         <CheckCircle className="h-4 w-4" />
                       </Button>
                     )}
-                    {order.status !== "cancelled" && (
+                    {(order.status === "pending" || order.status === "draft") && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -128,6 +131,16 @@ export const PurchaseOrderTable: React.FC<PurchaseOrderTableProps> = ({
                         title="Voir"
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onPrint && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onPrint(order)}
+                        title="Imprimer"
+                      >
+                        <Printer className="h-4 w-4" />
                       </Button>
                     )}
                     <Button

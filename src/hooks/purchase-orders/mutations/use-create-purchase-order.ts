@@ -17,7 +17,7 @@ export function useCreatePurchaseOrder() {
         expected_delivery_date: purchaseOrderData.expected_delivery_date,
         warehouse_id: purchaseOrderData.warehouse_id,
         notes: purchaseOrderData.notes,
-        status: purchaseOrderData.status || "pending",
+        status: (purchaseOrderData.status || "pending") as "pending" | "delivered" | "draft" | "approved",
         total_amount: purchaseOrderData.total_amount || 0,
         payment_status: purchaseOrderData.payment_status || "pending",
         paid_amount: purchaseOrderData.paid_amount || 0,
@@ -53,22 +53,21 @@ export function useCreatePurchaseOrder() {
       };
 
       // Safely handle supplier data
-      let supplier = defaultSupplier;
-
-      if (data.supplier && !isSelectQueryError(data.supplier)) {
-        supplier = {
-          id: data.supplier.id || "",
-          name: data.supplier.name || "Unknown Supplier",
-          phone: data.supplier.phone || "",
-          email: data.supplier.email || ""
-        };
-      }
+      const supplier = isSelectQueryError(data.supplier) 
+        ? defaultSupplier
+        : {
+            id: data.supplier?.id || defaultSupplier.id,
+            name: data.supplier?.name || defaultSupplier.name,
+            phone: data.supplier?.phone || defaultSupplier.phone,
+            email: data.supplier?.email || defaultSupplier.email
+          };
 
       // Return processed purchase order
       return {
         ...data,
         supplier,
-        items: []
+        items: [],
+        status: data.status as "pending" | "delivered" | "draft" | "approved"
       } as PurchaseOrder;
     } catch (error) {
       console.error("Error creating purchase order:", error);

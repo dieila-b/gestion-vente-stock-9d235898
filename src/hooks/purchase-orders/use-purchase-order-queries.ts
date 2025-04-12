@@ -47,15 +47,14 @@ export function usePurchaseOrderQueries(
         };
 
         // Safely handle supplier
-        let supplier = defaultSupplier;
-        if (order.supplier && !isSelectQueryError(order.supplier)) {
-          supplier = {
-            id: order.supplier.id || "",
-            name: order.supplier.name || "Unknown Supplier",
-            phone: order.supplier.phone || "",
-            email: order.supplier.email || "",
-          };
-        }
+        const supplier = isSelectQueryError(order.supplier) 
+          ? defaultSupplier
+          : {
+              id: order.supplier?.id || defaultSupplier.id,
+              name: order.supplier?.name || defaultSupplier.name,
+              phone: order.supplier?.phone || defaultSupplier.phone,
+              email: order.supplier?.email || defaultSupplier.email
+            };
 
         // Safely handle warehouse
         const warehouse = isSelectQueryError(order.warehouse)
@@ -67,7 +66,8 @@ export function usePurchaseOrderQueries(
           ...order,
           supplier,
           warehouse,
-          items: []
+          items: [],
+          status: order.status as "pending" | "delivered" | "draft" | "approved"
         } as PurchaseOrder;
       });
 
@@ -114,15 +114,14 @@ export function usePurchaseOrderQueries(
       };
 
       // Safely handle supplier
-      let supplier = defaultSupplier;
-      if (data.supplier && !isSelectQueryError(data.supplier)) {
-        supplier = {
-          id: data.supplier.id || "",
-          name: data.supplier.name || "Unknown Supplier",
-          phone: data.supplier.phone || "",
-          email: data.supplier.email || "",
-        };
-      }
+      const supplier = isSelectQueryError(data.supplier) 
+        ? defaultSupplier
+        : {
+            id: data.supplier?.id || defaultSupplier.id,
+            name: data.supplier?.name || defaultSupplier.name,
+            phone: data.supplier?.phone || defaultSupplier.phone,
+            email: data.supplier?.email || defaultSupplier.email
+          };
 
       // Safely handle warehouse
       const warehouse = isSelectQueryError(data.warehouse)
@@ -133,7 +132,8 @@ export function usePurchaseOrderQueries(
         ...data,
         supplier,
         warehouse,
-        items: Array.isArray(data.items) ? data.items : []
+        items: Array.isArray(data.items) ? data.items : [],
+        status: data.status as "pending" | "delivered" | "draft" | "approved"
       } as PurchaseOrder;
     } catch (error) {
       console.error(`Error fetching purchase order ${id}:`, error);
