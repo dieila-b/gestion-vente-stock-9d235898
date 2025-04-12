@@ -17,6 +17,12 @@ type OrderData = {
   final_total: number;
 }
 
+// Define a simple interface for raw query results
+interface QueryResult {
+  data: OrderData[] | null;
+  error: any;
+}
+
 // Define fetch function completely outside the hook to avoid type inference issues
 async function fetchSalesData(
   selectedYear: string,
@@ -26,26 +32,33 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Use explicit types when creating the query to avoid excessive type nesting
-    let { data: orders, error } = await supabase
-      .from('orders')
-      .select<string, OrderData>('created_at, final_total')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at');
+    let orders: OrderData[] | null = null;
+    let error = null;
     
-    // If a specific POS is selected, re-query with the additional filter
-    if (selectedPOS !== "all") {
-      const response = await supabase
+    // Execute the appropriate query based on the POS selection
+    if (selectedPOS === "all") {
+      // Query for all POS locations
+      const result: QueryResult = await supabase
         .from('orders')
-        .select<string, OrderData>('created_at, final_total')
+        .select('created_at, final_total')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at');
+      
+      orders = result.data;
+      error = result.error;
+    } else {
+      // Query for a specific POS location
+      const result: QueryResult = await supabase
+        .from('orders')
+        .select('created_at, final_total')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .eq('depot', selectedPOS)
         .order('created_at');
       
-      orders = response.data;
-      error = response.error;
+      orders = result.data;
+      error = result.error;
     }
 
     if (error) throw error;
