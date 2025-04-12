@@ -17,7 +17,7 @@ export interface CartItem extends Product {
   quantity: number;
   discount: number;
   product_id: string; // Required property
-  subtotal?: number; // Make optional here for compatibility
+  subtotal?: number; // Make subtotal optional for pos.CartItem
   image?: string;
 }
 

@@ -1,4 +1,5 @@
 
+// Using the same implementation as pos/PreorderCart.tsx to maintain consistency
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
@@ -81,10 +82,10 @@ export function PreorderCart({
     }
   };
 
-  // Fix string to number conversion in parseFloat
+  // Fix string to number conversion
   const handleDiscountChange = (id: string, value: number) => {
-    // Make sure we're passing a number to onUpdateDiscount
-    onUpdateDiscount(id, value);
+    // Ensure we're passing a number to onUpdateDiscount
+    onUpdateDiscount(id, Number(value));
   };
 
   return (
@@ -118,10 +119,13 @@ export function PreorderCart({
               items.map((item) => (
                 <CartItem
                   key={item.id}
-                  item={item}
+                  item={{
+                    ...item,
+                    discount: item.discount || 0  // Ensure discount is always provided
+                  }}
                   onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
                   onRemove={() => onRemove(item.id)}
-                  onUpdateDiscount={(discount) => handleDiscountChange(item.id, discount)}
+                  onUpdateDiscount={(discount) => handleDiscountChange(item.id, Number(discount))}
                   onSetQuantity={onSetQuantity ? (qty) => onSetQuantity(item.id, qty) : undefined}
                 />
               ))

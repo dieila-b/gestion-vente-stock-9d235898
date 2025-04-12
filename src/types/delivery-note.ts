@@ -5,20 +5,21 @@ export interface DeliveryNote {
   created_at: string;
   updated_at: string;
   notes: string;
-  status: string;  // Added this field
+  status: string;
   supplier_id?: string;
   purchase_order_id?: string;
-  error?: boolean; // Add error property which is shown in error messages
   
-  // Adding these properties to match the implementation
+  // Adding error property which is shown in error messages
   supplier?: {
     name: string;
     phone?: string;
     email?: string;
+    error?: boolean;
   };
   purchase_order?: {
     order_number: string;
     total_amount: number;
+    error?: boolean;
   };
   items: DeliveryNoteItem[];
 }

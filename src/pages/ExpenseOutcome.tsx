@@ -1,140 +1,170 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card } from "@/components/ui/card";
-
-// Hooks
-import { useOutcomeCategories } from '@/hooks/use-outcome-categories';
-import { useOutcomes } from '@/hooks/use-outcomes';
-import { useIncomeCategories } from '@/hooks/use-income-categories';
-import { useIncomes } from '@/hooks/use-incomes';
-import { CategoryForm } from '@/components/expenses/CategoryForm';
-import { OutcomeForm } from '@/components/expenses/OutcomeForm';
-import { CategoriesList } from '@/components/expenses/CategoriesList';
-import { OutcomesList } from '@/components/expenses/OutcomesList';
-import { IncomeForm } from '@/components/expenses/IncomeForm';
-import { IncomesList } from '@/components/expenses/IncomesList';
-
-// Types
-import { Category } from '@/types/category';
-import { Outcome, Income } from '@/types/outcome';
+import { useOutcomeCategories } from "@/hooks/use-outcome-categories";
+import { toast } from "sonner";
+import { useIncomeCategories } from "@/hooks/use-income-categories";
 
 export default function ExpenseOutcome() {
-  const [activeTab, setActiveTab] = useState("expenses");
+  const [activeTab, setActiveTab] = useState("outcomes");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
   
-  // Expense categories
-  const { 
-    categories: expenseCategories, 
-    isLoading: isLoadingExpenseCategories,
-    createCategory: createExpenseCategory,
-    deleteCategory: deleteExpenseCategory
-  } = useOutcomeCategories();
+  const outcomeCategories = useOutcomeCategories();
+  const incomeCategories = useIncomeCategories();
   
-  // Expenses
-  const {
-    outcomes,
-    isLoading: isLoadingOutcomes,
-    createOutcome,
-    deleteOutcome
-  } = useOutcomes();
+  // Get the relevant categories based on active tab
+  const categories = activeTab === "outcomes" 
+    ? outcomeCategories.categories 
+    : incomeCategories.categories;
   
-  // Income categories
-  const { 
-    categories: incomeCategories, 
-    isLoading: isLoadingIncomeCategories,
-    createCategory: createIncomeCategory,
-    deleteCategory: deleteIncomeCategory
-  } = useIncomeCategories();
+  const isLoading = activeTab === "outcomes" 
+    ? outcomeCategories.isLoading 
+    : incomeCategories.isLoading;
   
-  // Incomes
-  const {
-    incomes,
-    isLoading: isLoadingIncomes,
-    createIncome,
-    deleteIncome
-  } = useIncomes();
-
-  return (
-    <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">Gestion Financière</h1>
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Veuillez saisir un nom de catégorie");
+      return;
+    }
+    
+    setIsAddingCategory(true);
+    
+    try {
+      const result = activeTab === "outcomes" 
+        ? await outcomeCategories.addCategory(newCategoryName)
+        : await incomeCategories.addCategory(newCategoryName);
+      
+      if (result) {
+        setNewCategoryName("");
+        toast.success(`Catégorie ajoutée avec succès`);
+      }
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+  
+  const handleDeleteCategory = async (id: string) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
+      try {
+        const result = activeTab === "outcomes" 
+          ? await outcomeCategories.deleteCategory(id)
+          : await incomeCategories.deleteCategory(id);
         
-        <Tabs defaultValue="expenses" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="expenses">Dépenses</TabsTrigger>
-            <TabsTrigger value="incomes">Revenus</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="expenses" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-6">
-                <CategoryForm 
-                  onSubmit={createExpenseCategory.mutateAsync} 
-                  isLoading={createExpenseCategory.isPending}
-                  type="expense"
-                />
-                <CategoriesList 
-                  categories={expenseCategories} 
-                  onDelete={deleteExpenseCategory.mutateAsync}
-                  isLoading={isLoadingExpenseCategories}
-                  title="Catégories de dépenses"
-                />
+        if (result) {
+          toast.success(`Catégorie supprimée avec succès`);
+        }
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        toast.error("Erreur lors de la suppression de la catégorie");
+      }
+    }
+  };
+  
+  return (
+    <div className="container mx-auto py-8">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Gestion des Dépenses et Revenus</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="outcomes" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="outcomes">Dépenses</TabsTrigger>
+              <TabsTrigger value="incomes">Revenus</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="outcomes" className="space-y-6">
+              <h2 className="text-xl font-semibold">Catégories de Dépenses</h2>
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Nom de la catégorie"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleAddCategory} 
+                  disabled={isAddingCategory || !newCategoryName.trim()}
+                >
+                  {isAddingCategory ? "Ajout..." : "Ajouter"}
+                </Button>
               </div>
               
-              <div>
-                <OutcomeForm 
-                  onSubmit={createOutcome.mutateAsync}
-                  categories={expenseCategories}
-                  isLoading={createOutcome.isPending}
-                />
+              {isLoading ? (
+                <div>Chargement des catégories...</div>
+              ) : (
+                <div className="space-y-2">
+                  {categories.length === 0 ? (
+                    <div className="text-muted-foreground">Aucune catégorie trouvée</div>
+                  ) : (
+                    categories.map((category) => (
+                      <div key={category.id} className="flex justify-between items-center p-3 border rounded-md">
+                        <span>{category.name}</span>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="incomes" className="space-y-6">
+              <h2 className="text-xl font-semibold">Catégories de Revenus</h2>
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Nom de la catégorie"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleAddCategory} 
+                  disabled={isAddingCategory || !newCategoryName.trim()}
+                >
+                  {isAddingCategory ? "Ajout..." : "Ajouter"}
+                </Button>
               </div>
               
-              <div>
-                <OutcomesList 
-                  outcomes={outcomes}
-                  onDelete={deleteOutcome.mutateAsync}
-                  isLoading={isLoadingOutcomes}
-                />
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="incomes" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-6">
-                <CategoryForm 
-                  onSubmit={createIncomeCategory.mutateAsync} 
-                  isLoading={createIncomeCategory.isPending}
-                  type="income"
-                />
-                <CategoriesList 
-                  categories={incomeCategories} 
-                  onDelete={deleteIncomeCategory.mutateAsync}
-                  isLoading={isLoadingIncomeCategories}
-                  title="Catégories de revenus"
-                />
-              </div>
-              
-              <div>
-                <IncomeForm 
-                  onSubmit={createIncome.mutateAsync}
-                  categories={incomeCategories}
-                  isLoading={createIncome.isPending}
-                />
-              </div>
-              
-              <div>
-                <IncomesList 
-                  incomes={incomes}
-                  onDelete={deleteIncome.mutateAsync}
-                  isLoading={isLoadingIncomes}
-                />
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </DashboardLayout>
+              {isLoading ? (
+                <div>Chargement des catégories...</div>
+              ) : (
+                <div className="space-y-2">
+                  {categories.length === 0 ? (
+                    <div className="text-muted-foreground">Aucune catégorie trouvée</div>
+                  ) : (
+                    categories.map((category) => (
+                      <div key={category.id} className="flex justify-between items-center p-3 border rounded-md">
+                        <span>{category.name}</span>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

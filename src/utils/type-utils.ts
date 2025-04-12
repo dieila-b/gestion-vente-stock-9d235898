@@ -1,97 +1,109 @@
 
-import { SelectQueryError } from "@/types/db-adapter";
+import type { SelectQueryError } from "@/types/db-adapter";
 
-/**
- * Type guard to check if an object is a SelectQueryError
- */
+// Type guard to check if an object is a SelectQueryError
 export function isSelectQueryError(obj: any): obj is SelectQueryError {
   return obj && typeof obj === 'object' && obj.error === true;
 }
 
-/**
- * Creates a safe default object for suppliers when we encounter SelectQueryError
- */
-export function safeSupplier(supplier: any) {
+// Safely access nested properties when they could be SelectQueryError
+export function safeGet<T, K extends keyof T>(obj: T | SelectQueryError, key: K, defaultValue: any = null): T[K] {
+  if (isSelectQueryError(obj)) {
+    return defaultValue;
+  }
+  return obj[key] ?? defaultValue;
+}
+
+// Safely access client properties from a relation that could be SelectQueryError
+export function safeClient(client: any): { 
+  id: string; 
+  company_name: string; 
+  contact_name?: string;
+  status?: string;
+  email?: string;
+  phone?: string;
+} {
+  if (isSelectQueryError(client)) {
+    return {
+      id: '',
+      company_name: 'Erreur de chargement',
+      contact_name: '',
+      status: '',
+      email: '',
+      phone: ''
+    };
+  }
+  return client;
+}
+
+// Safely handle arrays that could be SelectQueryError
+export function safeArray<T>(items: T[] | SelectQueryError): T[] {
+  if (isSelectQueryError(items)) {
+    return [];
+  }
+  return items;
+}
+
+// Safely handle supplier properties
+export function safeSupplier(supplier: any): {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+} {
   if (isSelectQueryError(supplier)) {
     return {
       id: '',
-      name: 'Unknown Supplier',
+      name: 'Erreur de chargement',
       phone: '',
       email: ''
     };
   }
-  return supplier || { id: '', name: 'Unknown Supplier', phone: '', email: '' };
+  return supplier;
 }
 
-/**
- * Creates a safe default object for purchase orders when we encounter SelectQueryError
- */
-export function safePurchaseOrder(order: any) {
-  if (isSelectQueryError(order)) {
-    return {
-      id: '',
-      order_number: '',
-      total_amount: 0
-    };
-  }
-  return order || { id: '', order_number: '', total_amount: 0 };
-}
-
-/**
- * Creates a safe default object for delivery notes when we encounter SelectQueryError
- */
-export function safeDeliveryNote(note: any) {
-  if (isSelectQueryError(note)) {
-    return {
-      id: '',
-      delivery_number: '',
-      status: 'pending'
-    };
-  }
-  return note || { id: '', delivery_number: '', status: 'pending' };
-}
-
-/**
- * Creates a safe default object for products when we encounter SelectQueryError
- */
-export function safeProduct(product: any) {
+// Safely handle product properties
+export function safeProduct(product: any): {
+  id?: string;
+  name?: string;
+  reference?: string;
+  category?: string;
+} {
   if (isSelectQueryError(product)) {
     return {
       id: '',
-      name: 'Unknown Product',
+      name: 'Produit non disponible',
       reference: '',
       category: ''
     };
   }
-  return product || { id: '', name: 'Unknown Product', reference: '', category: '' };
+  return product;
 }
 
-/**
- * Safely handle properties that could be SelectQueryError
- */
-export function safeGet<T>(obj: any, property: string, defaultValue: T): T {
-  if (!obj || isSelectQueryError(obj)) {
-    return defaultValue;
+// Safely handle purchase order properties
+export function safePurchaseOrder(purchaseOrder: any): {
+  id: string;
+  order_number: string;
+} {
+  if (isSelectQueryError(purchaseOrder)) {
+    return {
+      id: '',
+      order_number: 'Bon de commande non disponible'
+    };
   }
-  return obj[property] !== undefined ? obj[property] : defaultValue;
+  return purchaseOrder || { id: '', order_number: '' };
 }
 
-/**
- * Safely handle arrays that could be SelectQueryError
- */
-export function safeArray<T>(items: any): T[] {
-  if (!items || isSelectQueryError(items)) {
-    return [];
+// Safely handle delivery note properties
+export function safeDeliveryNote(deliveryNote: any): {
+  id: string;
+  delivery_number: string;
+} {
+  if (isSelectQueryError(deliveryNote)) {
+    return {
+      id: '',
+      delivery_number: 'Bon de livraison non disponible'
+    };
   }
-  return Array.isArray(items) ? items : [];
-}
-
-/**
- * Safe type conversion - tries to cast but falls back to default
- */
-export function safeAs<T>(value: any, defaultValue: T): T {
-  if (value === undefined || value === null || isSelectQueryError(value)) {
-    return defaultValue;
-  }
-  return value as T;
+  return deliveryNote || { id: '', delivery_number: '' };
 }

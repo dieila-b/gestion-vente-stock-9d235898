@@ -69,9 +69,9 @@ const useEditOrder = () => {
         }
 
         if (order) {
-          // Check if order is a valid object (not a SelectQueryError)
-          if (isSelectQueryError(order)) {
-            console.error("Order data error:", order);
+          // Check if order has expected properties
+          if (!order || !order.client || !order.items) {
+            console.error("Invalid order data structure", order);
             toast.error("Erreur de récupération des données de la commande");
             setIsLoading(false);
             return;
@@ -92,31 +92,25 @@ const useEditOrder = () => {
             country: clientData.country || '',
             client_type: clientData.client_type || '',
             client_code: clientData.client_code || '',
-            // Provide fallbacks for missing properties
-            mobile_1: clientData.phone || '',
-            mobile_2: clientData.phone || '',
-            whatsapp: clientData.phone || '',
-            credit_limit: clientData.balance || 0,
-            rc_number: clientData.client_code || '',
-            cc_number: clientData.client_code || '',
+            // Fallbacks for missing properties
             status: clientData.client_type || 'active',
           } : null;
 
           setSelectedClient(formattedClient);
 
-          // Format cart items
-          const formattedCart = !isSelectQueryError(order.items) ? 
-            (order.items?.map((item) => ({
+          // Format cart items from order items
+          const formattedCart = Array.isArray(order.items) ? 
+            order.items.map((item) => ({
               id: item.product_id,
               product_id: item.product_id,
               name: item.product?.name || 'Unknown Product',
               quantity: item.quantity,
               price: item.product?.price || 0,
-              discount: 0, // Assuming default discount is 0
+              discount: 0, // Default discount
               category: item.product?.category || 'Uncategorized',
               reference: item.product?.reference || '',
               image_url: item.product?.image_url || '',
-            })) || []) : [];
+            })) : [];
 
           setCart(formattedCart);
 

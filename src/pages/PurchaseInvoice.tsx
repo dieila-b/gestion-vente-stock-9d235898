@@ -3,23 +3,43 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError, safeSupplier, safePurchaseOrder, safeDeliveryNote } from "@/utils/type-utils";
-import { PurchaseInvoice } from "@/types/PurchaseInvoice";
+import { isSelectQueryError } from "@/utils/type-utils";
 
-// Extend the PurchaseInvoice type to include the missing properties
-interface ExtendedPurchaseInvoice extends PurchaseInvoice {
-  tax_amount?: number;
-  payment_status?: string;
-  due_date?: string;
-  paid_amount?: number;
-  remaining_amount?: number;
-  discount?: number;
-  notes?: string;
-  shipping_cost?: number;
+// Update PurchaseInvoice interface to match expected structure
+interface PurchaseInvoice {
+  id: string;
+  invoice_number: string;
+  supplier_id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  // Add all the required properties for compatibility
+  tax_amount: number;
+  payment_status: string;
+  due_date: string;
+  paid_amount: number;
+  remaining_amount: number;
+  discount: number;
+  notes: string;
+  shipping_cost: number;
+  supplier?: {
+    name: string;
+    phone?: string;
+    email?: string;
+  };
+  purchase_order?: {
+    id: string;
+    order_number: string;
+  };
+  delivery_note?: {
+    id: string;
+    delivery_number: string;
+  };
 }
 
 function PurchaseInvoicePage() {
-  const [invoices, setInvoices] = useState<ExtendedPurchaseInvoice[]>([]);
+  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -60,37 +80,37 @@ function PurchaseInvoicePage() {
         return;
       }
 
-      // When mapping data to PurchaseInvoice type, add the required properties:
+      // When mapping data to PurchaseInvoice type, provide defaults for required properties:
       const mappedInvoices = data.map(invoice => {
-        // Handle relations that could be SelectQueryError
-        const safeSupplierData = safeSupplier(invoice.supplier);
-        const safePurchaseOrderData = safePurchaseOrder(invoice.purchase_order);
-        const safeDeliveryNoteData = safeDeliveryNote(invoice.delivery_note);
+        // Create a safe supplier object
+        const safeSupplier = isSelectQueryError(invoice.supplier) 
+          ? { name: 'Supplier not found', phone: '', email: '' }
+          : invoice.supplier || { name: 'Supplier not found', phone: '', email: '' };
+          
+        // Create a safe purchase order object
+        const safePurchaseOrder = isSelectQueryError(invoice.purchase_order)
+          ? { id: '', order_number: 'Order not found' }
+          : invoice.purchase_order || { id: '', order_number: 'Order not found' };
+          
+        // Create a safe delivery note object
+        const safeDeliveryNote = isSelectQueryError(invoice.delivery_note)
+          ? { id: '', delivery_number: 'Delivery note not found' }
+          : invoice.delivery_note || { id: '', delivery_number: 'Delivery note not found' };
 
         return {
           ...invoice,
-          tax_amount: invoice.tax_amount || 0,
-          payment_status: invoice.payment_status || 'pending',
-          due_date: invoice.due_date || new Date().toISOString(),
-          paid_amount: invoice.paid_amount || 0,
-          remaining_amount: invoice.total_amount - (invoice.paid_amount || 0),
-          discount: invoice.discount || 0,
-          notes: invoice.notes || '',
-          shipping_cost: invoice.shipping_cost || 0,
-          supplier: {
-            name: safeSupplierData.name,
-            phone: safeSupplierData.phone,
-            email: safeSupplierData.email
-          },
-          purchase_order: {
-            id: safePurchaseOrderData.id,
-            order_number: safePurchaseOrderData.order_number
-          },
-          delivery_note: {
-            id: safeDeliveryNoteData.id,
-            delivery_number: safeDeliveryNoteData.delivery_number
-          }
-        } as ExtendedPurchaseInvoice;
+          tax_amount: 0, // Default values for required fields
+          payment_status: 'pending',
+          due_date: new Date().toISOString(),
+          paid_amount: 0,
+          remaining_amount: invoice.total_amount || 0,
+          discount: 0,
+          notes: '',
+          shipping_cost: 0,
+          supplier: safeSupplier,
+          purchase_order: safePurchaseOrder,
+          delivery_note: safeDeliveryNote
+        } as PurchaseInvoice;
       });
 
       setInvoices(mappedInvoices);

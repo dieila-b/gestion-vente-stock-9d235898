@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, XCircle } from "lucide-react";
-import { useCart } from "@/hooks/use-cart"; // Updated import path
+import { useCart } from "@/hooks/use-cart"; 
 import { ProductCard } from "@/components/pos/ProductCard";
 import { Product } from "@/types/pos";
 import { toast } from "sonner";
-import { PreorderCart } from "@/components/preorders/PreorderCart"; // Updated the import path
+import { PreorderCart } from "@/components/preorders/PreorderCart"; 
 import { Client } from "@/types/client_unified";
 import { PreorderInvoiceView } from "@/components/preorder/PreorderInvoiceView";
 import useEditOrder from "@/hooks/use-edit-order";
@@ -134,9 +133,12 @@ export default function Preorders() {
 
   // Replace the cart and state setting functions with updated versions that correctly handle type conversion
   const handleSetCart = (newCart: POSCartItem[]) => {
-    // Convert cart items from pos.CartItem to CartState.CartItem format with subtotal
-    const convertedCart = adaptCartItems(newCart);
-    setCart(convertedCart);
+    // Make sure each item has a discount property
+    const fixedCart = newCart.map(item => ({
+      ...item,
+      discount: item.discount || 0
+    }));
+    setCart(fixedCart);
   };
 
   // Create adapter for updateDiscount to match expected function signature

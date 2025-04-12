@@ -1,12 +1,18 @@
 
 import { DeliveryNote } from "@/types/delivery-note";
 import { Card } from "@/components/ui/card";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 interface DeliveryNoteViewProps {
   deliveryNote: DeliveryNote;
 }
 
 export function DeliveryNoteView({ deliveryNote }: DeliveryNoteViewProps) {
+  // Helper function to check if a relation has an error
+  const hasError = (obj: any): boolean => {
+    return obj && typeof obj === 'object' && obj.error === true;
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -21,14 +27,14 @@ export function DeliveryNoteView({ deliveryNote }: DeliveryNoteViewProps) {
             <p className="font-medium">{new Date(deliveryNote.created_at).toLocaleDateString()}</p>
           </div>
 
-          {deliveryNote.supplier && !deliveryNote.supplier.error && (
+          {deliveryNote.supplier && !hasError(deliveryNote.supplier) && (
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">Fournisseur</h3>
               <p className="font-medium">{deliveryNote.supplier.name || 'N/A'}</p>
             </div>
           )}
           
-          {deliveryNote.purchase_order && !deliveryNote.purchase_order.error && (
+          {deliveryNote.purchase_order && !hasError(deliveryNote.purchase_order) && (
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">Bon de commande associé</h3>
               <p className="font-medium">{deliveryNote.purchase_order.order_number || 'N/A'}</p>
