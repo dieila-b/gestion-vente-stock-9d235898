@@ -30,13 +30,30 @@ export const UserFormList = ({
 }: UserFormListProps) => {
   const handleImageUpload = async (index: number, file: File) => {
     try {
+      // Check file size - limit to 5MB
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        console.error("File size exceeds limit", file.size);
+        toast.error(`La taille du fichier dépasse la limite de 5MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+        return;
+      }
+      
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
+      // Check if bucket exists, create if not
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
+      
+      if (!lovableBucket) {
+        toast.error("Le bucket de stockage n'existe pas. Veuillez contacter l'administrateur.");
+        return;
+      }
+      
       // Télécharger le fichier
       console.log("Uploading file to path:", filePath);
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file);
       

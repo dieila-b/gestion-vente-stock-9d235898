@@ -1,31 +1,39 @@
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useBucketCheck = () => {
+  const [bucketExists, setBucketExists] = useState<boolean | null>(null);
+
   useEffect(() => {
     const checkBucket = async () => {
       try {
-        // Vérifier si le bucket existe
+        // Check if bucket exists
         const { data: buckets, error } = await supabase.storage.listBuckets();
         
         if (error) {
           console.error("Error checking buckets:", error);
+          toast.error("Erreur lors de la vérification du stockage");
           return;
         }
         
-        const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
+        const lovableBucket = buckets.find(bucket => bucket.name === 'lovable-uploads');
+        setBucketExists(!!lovableBucket);
         
-        if (bucketExists) {
-          console.log("Bucket 'lovable-uploads' exists");
-        } else {
-          console.log("Bucket 'lovable-uploads' does not exist");
+        if (!lovableBucket) {
+          console.warn("Le bucket 'lovable-uploads' n'existe pas");
+          // We don't create it automatically, as it requires admin privileges
+          // Just notify the user that uploads may fail
+          toast.warning("Stockage non configuré pour les téléchargements");
         }
       } catch (err) {
-        console.error("Error in bucket check:", err);
+        console.error("Exception checking bucket:", err);
       }
     };
     
     checkBucket();
   }, []);
+  
+  return { bucketExists };
 };
