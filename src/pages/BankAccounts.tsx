@@ -1,173 +1,146 @@
-import { useState, useEffect, FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+
+// Import components and utilities
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { BankAccountsTable } from "@/components/banking/BankAccountsTable";
+import { BankAccountDialog } from "@/components/banking/BankAccountDialog";
+import { BankAccountFilter } from "@/components/banking/BankAccountFilter";
+import { BankAccount } from "@/types/bank-account";
 
-interface BankAccount {
-  id?: string;
-  name: string;
-  account_number: string;
-  bank_name: string;
-  currency: string;
-  created_at?: string;
-}
-
-const BankAccounts = () => {
+export default function BankAccounts() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: initialAccounts, isLoading } = useQuery({
-    queryKey: ['bank-accounts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bank_accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as BankAccount[];
-    }
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
+  const [filterText, setFilterText] = useState("");
 
   useEffect(() => {
-    if (initialAccounts) {
-      setAccounts(initialAccounts);
-    }
-  }, [initialAccounts]);
+    fetchAccounts();
+  }, []);
 
   const fetchAccounts = async () => {
-    const { data, error } = await supabase
-      .from('bank_accounts')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    setAccounts(data as BankAccount[]);
-  };
-
-  const handleAddAccount = () => {
-    setAccounts([
-      ...accounts,
-      {
-        name: "",
-        account_number: "",
-        bank_name: "",
-        currency: "GNF",
-      },
-    ]);
-  };
-
-  const handleRemoveAccount = (index: number) => {
-    const newAccounts = [...accounts];
-    newAccounts.splice(index, 1);
-    setAccounts(newAccounts);
-  };
-
-  const handleAccountChange = (index: number, field: string, value: string) => {
-    const newAccounts = [...accounts];
-    newAccounts[index][field] = value;
-    setAccounts(newAccounts);
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
-      // Fix the INSERT operation by ensuring name is provided for each account
-      const accountsToInsert = accounts.map(account => ({
-        ...account,
-        name: account.name || 'Default Account Name' // Ensure name has a value
-      }));
-      
-      const { error } = await supabase
-        .from('bank_accounts')
-        .insert(accountsToInsert);
-      
+      const { data, error } = await supabase
+        .from("bank_accounts")
+        .select("*")
+        .order("name");
+
       if (error) throw error;
       
-      toast.success("Comptes bancaires enregistrés avec succès");
-      await fetchAccounts();
-      setAccounts([]);
-      setIsSubmitting(false);
+      // Add currency field with default value if it doesn't exist
+      const accountsWithCurrency = data.map(account => ({
+        ...account,
+        currency: account.currency || 'GNF'
+      })) as BankAccount[];
+      
+      setAccounts(accountsWithCurrency);
     } catch (error) {
-      console.error("Error saving accounts:", error);
-      toast.error("Erreur lors de l'enregistrement des comptes");
-      setIsSubmitting(false);
+      console.error("Error fetching bank accounts:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Comptes Bancaires</h1>
+  const handleCreate = async (account: Partial<BankAccount>) => {
+    try {
+      // Ensure currency field is included
+      const accountWithCurrency = {
+        ...account,
+        currency: account.currency || 'GNF'
+      };
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {accounts.map((account, index) => (
-          <div key={index} className="flex items-center space-x-4">
-            <div className="flex-1 grid grid-cols-2 gap-4">
-              <Input
-                type="text"
-                placeholder="Nom du compte"
-                value={account.name}
-                onChange={(e) => handleAccountChange(index, "name", e.target.value)}
-                required
-              />
-              <Input
-                type="text"
-                placeholder="Numéro de compte"
-                value={account.account_number}
-                onChange={(e) => handleAccountChange(index, "account_number", e.target.value)}
-                required
-              />
-              <Input
-                type="text"
-                placeholder="Nom de la banque"
-                value={account.bank_name}
-                onChange={(e) => handleAccountChange(index, "bank_name", e.target.value)}
-                required
-              />
-              <Input
-                type="text"
-                placeholder="Devise"
-                value={account.currency}
-                onChange={(e) => handleAccountChange(index, "currency", e.target.value)}
-                required
-              />
-            </div>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={() => handleRemoveAccount(index)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-        
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={handleAddAccount}
+      const { error } = await supabase
+        .from("bank_accounts")
+        .insert([accountWithCurrency]);
+
+      if (error) throw error;
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Error creating bank account:", error);
+    }
+  };
+
+  const handleUpdate = async (id: string, account: Partial<BankAccount>) => {
+    try {
+      const { error } = await supabase
+        .from("bank_accounts")
+        .update(account)
+        .eq("id", id);
+
+      if (error) throw error;
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Error updating bank account:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("bank_accounts")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Error deleting bank account:", error);
+    }
+  };
+
+  // Filter accounts based on search text
+  const filteredAccounts = accounts.filter(
+    account => 
+      account.name.toLowerCase().includes(filterText.toLowerCase()) ||
+      (account.bank_name && account.bank_name.toLowerCase().includes(filterText.toLowerCase())) ||
+      (account.account_number && account.account_number.toLowerCase().includes(filterText.toLowerCase()))
+  );
+
+  return (
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Comptes Bancaires</h1>
+        <Button
+          onClick={() => {
+            setEditingAccount(null);
+            setIsDialogOpen(true);
+          }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
-          Ajouter un compte
+          Nouveau Compte
         </Button>
-        
-        {/* Fix the button variant from "primary" to "default" */}
-        <div className="mt-6 flex justify-end">
-          <Button 
-            type="submit" 
-            variant="default" 
-            disabled={isSubmitting || accounts.length === 0}
-          >
-            {isSubmitting ? "Enregistrement..." : "Enregistrer les comptes"}
-          </Button>
-        </div>
-      </form>
+      </div>
+
+      <BankAccountFilter filterText={filterText} setFilterText={setFilterText} />
+
+      <div className="mt-4">
+        <BankAccountsTable
+          accounts={filteredAccounts}
+          isLoading={isLoading}
+          onEdit={(account) => {
+            setEditingAccount(account);
+            setIsDialogOpen(true);
+          }}
+          onDelete={handleDelete}
+        />
+      </div>
+
+      <BankAccountDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        account={editingAccount}
+        onSubmit={(data) => {
+          if (editingAccount) {
+            handleUpdate(editingAccount.id, data);
+          } else {
+            handleCreate(data);
+          }
+          setIsDialogOpen(false);
+        }}
+      />
     </div>
   );
-};
-
-export default BankAccounts;
+}

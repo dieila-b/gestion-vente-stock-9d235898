@@ -12,6 +12,9 @@ interface DeliveryNoteListProps {
   onDelete: (id: string) => Promise<boolean> | void;
   onApprove: (id: string) => Promise<boolean> | void;
   onEdit: (id: string) => void;
+  selectedWarehouseId?: string;
+  onWarehouseSelect?: (id: string) => void;
+  warehouses?: Array<{ id: string; name: string }>;
 }
 
 export function DeliveryNoteList({
@@ -19,7 +22,10 @@ export function DeliveryNoteList({
   isLoading,
   onDelete,
   onApprove,
-  onEdit
+  onEdit,
+  selectedWarehouseId = "",
+  onWarehouseSelect = () => {},
+  warehouses = []
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (

@@ -5,13 +5,15 @@ export interface DeliveryNote {
   created_at: string;
   updated_at?: string;
   notes?: string;
-  status: string; // Make this required
+  status: string; // Making this required
   supplier: {
+    id?: string; // Add id field
     name: string;
     phone?: string;
     email?: string;
   };
   purchase_order: {
+    id?: string; // Add id field
     order_number: string;
     total_amount: number;
   };

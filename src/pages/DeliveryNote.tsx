@@ -7,7 +7,6 @@ import { DeliveryNoteList } from "@/components/delivery-notes/DeliveryNoteList";
 import { DeliveryNoteFilters } from "@/components/delivery-notes/DeliveryNoteFilters";
 import { useState } from "react";
 import { DeliveryNote } from "@/types/delivery-note";
-import { isSelectQueryError } from "@/utils/supabase-safe-query";
 
 export default function DeliveryNotePage() {
   const navigate = useNavigate();
@@ -24,58 +23,10 @@ export default function DeliveryNotePage() {
   
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
 
-  // Safely cast to DeliveryNote[] with default values for missing properties
-  const safeDeliveryNotes: DeliveryNote[] = deliveryNotes.map(note => {
-    // Create safe supplier object
-    const supplierObj = isSelectQueryError(note.supplier) 
-      ? { name: 'Unknown Supplier', phone: '', email: '' }
-      : note.supplier || { name: 'Unknown Supplier', phone: '', email: '' };
-    
-    // Create safe purchase_order object
-    const purchaseOrderObj = isSelectQueryError(note.purchase_order)
-      ? { order_number: '', total_amount: 0 }
-      : note.purchase_order || { order_number: '', total_amount: 0 };
-    
-    return {
-      id: note.id,
-      delivery_number: note.delivery_number || '',
-      created_at: note.created_at || '',
-      updated_at: note.updated_at || '',
-      notes: note.notes || '',
-      status: note.status || 'pending',
-      supplier: {
-        name: supplierObj.name || 'Unknown Supplier',
-        phone: supplierObj.phone || '',
-        email: supplierObj.email || ''
-      },
-      purchase_order: {
-        order_number: purchaseOrderObj.order_number || '',
-        total_amount: purchaseOrderObj.total_amount || 0
-      },
-      items: (note.items || []).map(item => {
-        const safeProduct = isSelectQueryError(item.product) 
-          ? { name: 'Unknown Product', reference: '', category: '' }
-          : item.product || { name: 'Unknown Product', reference: '', category: '' };
-          
-        return {
-          id: item.id || '',
-          product_id: item.product_id || '',
-          quantity_ordered: item.quantity_ordered || 0,
-          quantity_received: item.quantity_received || 0,
-          unit_price: item.unit_price || 0,
-          product: {
-            name: safeProduct.name || 'Unknown Product',
-            reference: safeProduct.reference || '',
-            category: safeProduct.category || ''
-          }
-        };
-      })
-    };
-  });
-
-  // Handle the status filter
-  const filteredNotes = safeDeliveryNotes.filter(note => {
+  // Filter notes based on search and status
+  const filteredNotes = deliveryNotes.filter(note => {
     const matchesStatus = filterStatus === "all" || note.status === filterStatus;
     const matchesSearch = searchTerm === "" || 
       note.delivery_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,6 +39,10 @@ export default function DeliveryNotePage() {
   // Create wrapper that adapts the edit function to match the expected signature
   const handleEditWrapper = (id: string) => {
     handleEdit(id, {});
+  };
+
+  const onWarehouseSelect = (id: string) => {
+    setSelectedWarehouseId(id);
   };
 
   return (
@@ -114,6 +69,9 @@ export default function DeliveryNotePage() {
           onDelete={handleDelete}
           onApprove={handleApprove}
           onEdit={handleEditWrapper}
+          selectedWarehouseId={selectedWarehouseId}
+          onWarehouseSelect={onWarehouseSelect}
+          warehouses={warehouses}
         />
       </div>
     </div>

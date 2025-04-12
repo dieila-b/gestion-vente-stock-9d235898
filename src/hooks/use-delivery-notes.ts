@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
@@ -9,6 +10,21 @@ export const useDeliveryNotes = () => {
   const queryClient = useQueryClient();
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Fetch warehouses for delivery note validation
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('warehouses')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+        
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   const { data: deliveryNotes = [], isLoading } = useQuery({
     queryKey: ['delivery-notes'],
@@ -34,13 +50,16 @@ export const useDeliveryNotes = () => {
 
       // Transform the data to match DeliveryNote interface and handle SelectQueryError
       return (data || []).map(item => {
+        // Ensure status has a default value
+        const status = item.status || 'pending';
+        
         const safeItem = {
           id: item.id,
           delivery_number: item.delivery_number,
           created_at: item.created_at,
           updated_at: item.updated_at,
           notes: item.notes,
-          status: item.status || 'pending', // Provide default status if not present
+          status: status,
           supplier: safeSupplier(item.supplier),
           purchase_order: safePurchaseOrder(item.purchase_order),
           items: (item.items || []).map((lineItem: any) => ({
@@ -65,7 +84,7 @@ export const useDeliveryNotes = () => {
         .insert({
           delivery_number: deliveryNote.delivery_number,
           notes: deliveryNote.notes,
-          status: deliveryNote.status || 'pending', // Include status in insert
+          status: deliveryNote.status || 'pending',
           supplier_id: deliveryNote.supplier?.id,
           purchase_order_id: deliveryNote.purchase_order?.id
         })
@@ -76,7 +95,7 @@ export const useDeliveryNotes = () => {
       // Then, create the items if provided
       if (deliveryNote.items && deliveryNote.items.length > 0) {
         const itemsToInsert = deliveryNote.items.map(item => ({
-          delivery_note_id: noteData.id,
+          delivery_note_id: noteData[0].id,
           product_id: item.product_id,
           quantity_ordered: item.quantity_ordered,
           quantity_received: item.quantity_received,
@@ -90,64 +109,36 @@ export const useDeliveryNotes = () => {
         if (itemsError) throw itemsError;
       }
 
-      toast({
-        title: 'Success',
-        description: 'Delivery note created successfully',
-      });
+      toast.success('Delivery note created successfully');
 
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      return noteData;
+      return noteData[0];
     },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Delivery note created successfully',
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error creating delivery note',
-        description: error.message,
-      });
+    onError: (error: any) => {
+      toast.error(`Error creating delivery note: ${error.message}`);
     }
   });
 
   const updateDeliveryNote = useMutation({
-    mutationFn: async (id: string, data: any) => {
-      const { data: updatedNote, error } = await supabase
-        .from('delivery_notes')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      try {
+        const { data: updatedNote, error } = await supabase
+          .from('delivery_notes')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Delivery note updated successfully',
-      });
+        toast.success('Delivery note updated successfully');
 
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      return updatedNote;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Delivery note updated successfully',
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error updating delivery note',
-        description: error.message,
-      });
+        queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        return updatedNote;
+      } catch (error: any) {
+        toast.error(`Error updating delivery note: ${error.message}`);
+        throw error;
+      }
     }
   });
 
@@ -160,19 +151,12 @@ export const useDeliveryNotes = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Delivery note deleted successfully',
-      });
+      toast.success('Delivery note deleted successfully');
 
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       return true;
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error deleting delivery note',
-        description: error.message,
-      });
+      toast.error(`Error deleting delivery note: ${error.message}`);
       return false;
     }
   };
@@ -186,19 +170,12 @@ export const useDeliveryNotes = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Delivery note approved successfully',
-      });
+      toast.success('Delivery note approved successfully');
 
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       return true;
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error approving delivery note',
-        description: error.message,
-      });
+      toast.error(`Error approving delivery note: ${error.message}`);
       return false;
     }
   };
@@ -219,6 +196,7 @@ export const useDeliveryNotes = () => {
     updateDeliveryNote,
     handleDelete,
     handleApprove,
-    handleEdit
+    handleEdit,
+    warehouses
   };
 };

@@ -62,9 +62,10 @@ export default function useEditOrder(
         const client: Client = {
           id: clientData.id || '',
           company_name: clientData.company_name || '',
-          contact_name: clientData.contact_name,
-          email: clientData.email,
-          phone: clientData.phone,
+          contact_name: clientData.contact_name || '',
+          email: clientData.email || '',
+          phone: clientData.phone || '',
+          // Use optional chaining for properties that might not exist
           mobile_1: clientData.mobile_1 || '',
           mobile_2: clientData.mobile_2 || '',
           whatsapp: clientData.whatsapp || '',
@@ -72,6 +73,15 @@ export default function useEditOrder(
           rc_number: clientData.rc_number || '',
           cc_number: clientData.cc_number || '',
           status: clientData.status || 'particulier', // Ensure status is always set
+          address: clientData.address || '',
+          city: clientData.city || '',
+          state: clientData.state || '',
+          country: clientData.country || '',
+          postal_code: clientData.postal_code || '',
+          balance: clientData.balance || 0,
+          client_type: clientData.client_type || '',
+          client_code: clientData.client_code || '',
+          notes: clientData.notes || '',
           created_at: clientData.created_at || new Date().toISOString(),
           updated_at: clientData.updated_at || new Date().toISOString()
         };

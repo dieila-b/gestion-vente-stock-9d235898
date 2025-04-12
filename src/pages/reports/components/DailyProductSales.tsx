@@ -8,15 +8,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DailyProductSales as DailyProductSalesType } from '../hooks/useDailyReportQueries';
+import { formatGNF } from "@/lib/currency";
+import { DailyProductSales } from "../hooks/types";
 
 interface DailyProductSalesProps {
-  salesByProduct?: DailyProductSalesType[];
+  salesByProduct?: DailyProductSales[];
+  isLoading: boolean;
 }
 
-export function DailyProductSalesTable({ salesByProduct }: DailyProductSalesProps) {
+export function DailyProductSales({ salesByProduct, isLoading }: DailyProductSalesProps) {
   return (
-    <div>
+    <div id="product-sales">
       <h2 className="text-lg font-semibold mb-4">Ventes par produit</h2>
       <div className="rounded-md border">
         <Table>
@@ -24,19 +26,28 @@ export function DailyProductSalesTable({ salesByProduct }: DailyProductSalesProp
             <TableRow>
               <TableHead>Produit</TableHead>
               <TableHead className="text-right">Quantité vendue</TableHead>
+              <TableHead className="text-right">Montant vendu</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {salesByProduct?.map((sale, index) => (
-              <TableRow key={index}>
-                <TableCell>{sale.product_name}</TableCell>
-                <TableCell className="text-right">{sale.total_quantity}</TableCell>
-              </TableRow>
-            ))}
-            {(!salesByProduct || salesByProduct.length === 0) && (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={2} className="text-center">
-                  Aucune vente aujourd'hui
+                <TableCell colSpan={3} className="text-center">
+                  Chargement des données...
+                </TableCell>
+              </TableRow>
+            ) : salesByProduct && salesByProduct.length > 0 ? (
+              salesByProduct.map((sale, index) => (
+                <TableRow key={index}>
+                  <TableCell>{sale.product_name}</TableCell>
+                  <TableCell className="text-right">{sale.total_quantity}</TableCell>
+                  <TableCell className="text-right">{formatGNF(sale.total_sales)}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  Aucune vente sur cette période
                 </TableCell>
               </TableRow>
             )}

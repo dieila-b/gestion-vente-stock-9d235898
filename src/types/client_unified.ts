@@ -1,31 +1,26 @@
 
 export interface Client {
   id: string;
-  company_name: string; // Required field
+  company_name: string;
   contact_name?: string;
   email?: string;
   phone?: string;
   mobile_1?: string;
   mobile_2?: string;
   whatsapp?: string;
+  credit_limit?: number;
+  rc_number?: string;
+  cc_number?: string;
+  status: string;
   address?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
   country?: string;
-  client_code?: string;
+  postal_code?: string;
+  balance?: number;
   client_type?: string;
+  client_code?: string;
   notes?: string;
-  credit_limit?: number;
-  tax_number?: string;
-  rc_number?: string;
-  cc_number?: string;
-  payment_terms?: string;
   created_at: string;
   updated_at: string;
-  status: string; // Required field
-  balance?: number;
 }
-
-// Re-export for backward compatibility
-export type { Client as ClientType };

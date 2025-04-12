@@ -45,9 +45,10 @@ export function safeDeliveryNote(note: any) {
     return {
       id: '',
       delivery_number: '',
+      status: 'pending'
     };
   }
-  return note || { id: '', delivery_number: '' };
+  return note || { id: '', delivery_number: '', status: 'pending' };
 }
 
 /**

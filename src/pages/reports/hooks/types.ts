@@ -22,3 +22,12 @@ export interface DailyClientSales {
   paid_amount: number;
   remaining_amount: number;
 }
+
+export type SalesByProduct = DailyProductSales;
+export type ClientSale = DailyClientSales;
+
+// Add a DateRange type for UnpaidReport component
+export interface DateRange {
+  from?: Date;
+  to?: Date;
+}
