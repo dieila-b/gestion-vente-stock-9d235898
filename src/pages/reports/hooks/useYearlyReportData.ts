@@ -25,49 +25,50 @@ async function fetchSalesData(
   const startDate = startOfYear(new Date(parseInt(selectedYear)));
   const endDate = endOfYear(startDate);
 
-  // Use a single query string approach to avoid excessive type nesting
-  let queryStr = 'created_at, final_total';
-  
-  // Create the base query
-  const query = supabase.from('orders').select(queryStr);
-  
-  // Apply date filters
-  const dateFiltered = query
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString());
-  
-  // Apply order and POS filter if needed
-  const finalQuery = selectedPOS !== "all" 
-    ? dateFiltered.eq('depot', selectedPOS).order('created_at')
-    : dateFiltered.order('created_at');
-  
-  // Execute the query
-  const { data: orders, error } = await finalQuery;
+  try {
+    // First create the base query
+    const query = supabase.from('orders')
+      .select('created_at, final_total')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
+    
+    // Then add conditional filtering and ordering
+    const { data: orders, error } = await (
+      selectedPOS !== "all" 
+        ? query.eq('depot', selectedPOS).order('created_at')
+        : query.order('created_at')
+    );
 
-  if (error) throw error;
+    if (error) throw error;
+    
+    if (!orders) return [];
 
-  // Generate all months of the year
-  const months = eachMonthOfInterval({
-    start: startDate,
-    end: endDate
-  });
+    // Generate all months of the year
+    const months = eachMonthOfInterval({
+      start: startDate,
+      end: endDate
+    });
 
-  // Initialize data with 0 for each month
-  const monthlyData: SalesData[] = months.map((month) => ({
-    month: format(month, 'MMMM', { locale: fr }),
-    sales: 0
-  }));
+    // Initialize data with 0 for each month
+    const monthlyData: SalesData[] = months.map((month) => ({
+      month: format(month, 'MMMM', { locale: fr }),
+      sales: 0
+    }));
 
-  // Aggregate sales by month
-  orders?.forEach((order) => {
-    const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
-    const index = monthlyData.findIndex((data) => data.month === orderMonth);
-    if (index !== -1) {
-      monthlyData[index].sales += order.final_total;
-    }
-  });
+    // Aggregate sales by month
+    orders.forEach((order) => {
+      const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
+      const index = monthlyData.findIndex((data) => data.month === orderMonth);
+      if (index !== -1) {
+        monthlyData[index].sales += order.final_total;
+      }
+    });
 
-  return monthlyData;
+    return monthlyData;
+  } catch (error) {
+    console.error('Error fetching sales data:', error);
+    return [];
+  }
 }
 
 export function useYearlyReportData() {
