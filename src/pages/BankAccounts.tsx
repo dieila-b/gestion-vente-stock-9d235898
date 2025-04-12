@@ -47,9 +47,9 @@ export default function BankAccounts() {
     try {
       // Ensure currency field is included and name is required
       const accountWithCurrency = {
+        name: account.name || '',
         ...account,
-        currency: account.currency || 'GNF',
-        name: account.name || ''  // Ensure name is provided
+        currency: account.currency || 'GNF'
       };
 
       const { error } = await supabase
@@ -92,10 +92,11 @@ export default function BankAccounts() {
   };
 
   // Filter accounts based on search text
-  const filteredAccounts = accounts.filter((account) =>
-    account.name.toLowerCase().includes(filterText.toLowerCase()) ||
-    (account.bank_name && account.bank_name.toLowerCase().includes(filterText.toLowerCase())) ||
-    (account.account_number && account.account_number.toLowerCase().includes(filterText.toLowerCase()))
+  const filteredAccounts = accounts.filter(
+    (account) =>
+      account.name.toLowerCase().includes(filterText.toLowerCase()) ||
+      (account.bank_name && account.bank_name.toLowerCase().includes(filterText.toLowerCase())) ||
+      (account.account_number && account.account_number.toLowerCase().includes(filterText.toLowerCase()))
   );
 
   return (
@@ -113,10 +114,7 @@ export default function BankAccounts() {
         </Button>
       </div>
 
-      <BankAccountFilter
-        filterText={filterText}
-        setFilterText={setFilterText}
-      />
+      <BankAccountFilter filterText={filterText} setFilterText={setFilterText} />
 
       <div className="mt-4">
         <BankAccountsTable

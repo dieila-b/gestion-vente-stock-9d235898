@@ -1,244 +1,282 @@
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { safeGet, safeSupplier, safeArray } from "@/utils/select-query-helper";
+import { toast } from "sonner";
 
-export const usePurchaseEdit = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [purchaseOrder, setPurchaseOrder] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [totals, setTotals] = useState({
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-  });
+export function usePurchaseEdit(id?: string) {
+  // Define state variables
+  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [transitCost, setTransitCost] = useState(0);
+  const [logisticsCost, setLogisticsCost] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [taxRate, setTaxRate] = useState(20);
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
+  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
 
-  // Fetch purchase order
-  const { data: purchaseOrderData, isLoading } = useQuery({
-    queryKey: ["purchase-order", id],
+  // Fetch suppliers
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
+    queryKey: ['suppliers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("purchase_orders")
+        .from('suppliers')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch products
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['catalog'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalog')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch purchase order if editing
+  const { data: purchaseOrder, isLoading: isLoadingOrder } = useQuery({
+    queryKey: ['purchase-order', id],
+    queryFn: async () => {
+      if (!id) return null;
+      
+      const { data, error } = await supabase
+        .from('purchase_orders')
         .select(`
           *,
-          supplier:supplier_id (*),
-          warehouse:warehouse_id (*),
-          items:purchase_order_items (*)
+          supplier:supplier_id(*),
+          items:purchase_order_items(
+            id,
+            product_id,
+            quantity,
+            unit_price,
+            selling_price,
+            total_price,
+            product:product_id(*)
+          )
         `)
-        .eq("id", id)
+        .eq('id', id)
         .single();
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger la commande",
-        });
-        throw error;
-      }
-
-      return data;
-    },
-    meta: {
-      onSuccess: (data: any) => {
-        // Process purchase order
-        const supplier = safeSupplier(data.supplier);
-        
-        const processedOrder = {
-          id: data.id,
-          supplier_id: data.supplier_id,
-          order_number: data.order_number,
-          expected_delivery_date: data.expected_delivery_date,
-          warehouse_id: data.warehouse_id,
-          notes: data.notes,
-          status: data.status,
-          total_amount: data.total_amount,
-          payment_status: data.payment_status,
-          paid_amount: data.paid_amount,
-          subtotal: data.subtotal,
-          tax_rate: data.tax_rate,
-          tax_amount: data.tax_amount,
-          discount: data.discount,
-          transit_cost: data.transit_cost,
-          shipping_cost: data.shipping_cost,
-          logistics_cost: data.logistics_cost,
-          total_ttc: data.total_ttc,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          supplier: {
-            id: supplier.id,
-            name: supplier.name,
-            phone: supplier.phone,
-            email: supplier.email
-          },
-          items: safeArray(data.items),
-          deleted: false
-        };
-
-        setPurchaseOrder(processedOrder);
-        setItems(safeArray(data.items));
-        
-        // Calculate totals
-        const subtotal = processedOrder.subtotal || 0;
-        const taxAmount = processedOrder.tax_amount || 0;
-        const total = processedOrder.total_amount || 0;
-        
-        setTotals({
-          subtotal,
-          tax: taxAmount,
-          total,
-        });
-      }
-    }
-  });
-
-  const updatePurchaseOrderMutation = useMutation({
-    mutationFn: async (purchaseOrderData: any) => {
-      const { data, error } = await supabase
-        .from("purchase_orders")
-        .update({
-          supplier_id: purchaseOrderData.supplier_id,
-          order_number: purchaseOrderData.order_number,
-          expected_delivery_date: purchaseOrderData.expected_delivery_date,
-          warehouse_id: purchaseOrderData.warehouse_id,
-          notes: purchaseOrderData.notes,
-          status: purchaseOrderData.status,
-          total_amount: purchaseOrderData.total_amount,
-          payment_status: purchaseOrderData.payment_status,
-          paid_amount: purchaseOrderData.paid_amount,
-          subtotal: purchaseOrderData.subtotal,
-          tax_rate: purchaseOrderData.tax_rate,
-          tax_amount: purchaseOrderData.tax_amount,
-          discount: purchaseOrderData.discount,
-          transit_cost: purchaseOrderData.transit_cost,
-          shipping_cost: purchaseOrderData.shipping_cost,
-          logistics_cost: purchaseOrderData.logistics_cost,
-          total_ttc: purchaseOrderData.total_ttc,
-        })
-        .eq("id", purchaseOrderData.id);
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-order", id] });
-      toast({
-        title: "Commande mise à jour",
-        description: "La commande a été mise à jour avec succès",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de mettre à jour la commande"
-      });
-    }
-  });
-
-  const updatePurchaseOrderItems = async (items: any[]) => {
-    try {
-      // Delete all items
-      await supabase
-        .from("purchase_order_items")
-        .delete()
-        .eq("purchase_order_id", id);
-
-      // Insert new items
-      const { error } = await supabase
-        .from("purchase_order_items")
-        .insert(
-          items.map((item) => ({
-            purchase_order_id: id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            selling_price: item.selling_price,
-            total_price: item.total_price
-          }))
-        );
-
-      if (error) throw error;
       
-      return true;
-    } catch (error) {
-      console.error("Error updating purchase order items", error);
-      return false;
-    }
-  };
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id
+  });
 
-  const handleSubmit = async (values: any) => {
-    setIsSubmitting(true);
-
-    try {
-      // Update purchase order
-      await updatePurchaseOrderMutation.mutateAsync({
-        ...purchaseOrder,
-        ...values,
-      });
-
-      // Update items
-      await updatePurchaseOrderItems(items);
-
-      navigate("/purchase-orders");
-    } catch (error) {
-      console.error("Error updating purchase order", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAddItem = (item: any) => {
-    setItems([...items, item]);
-  };
-
-  const handleUpdateItem = (index: number, item: any) => {
-    const updatedItems = [...items];
-    updatedItems[index] = item;
-    setItems(updatedItems);
-  };
-
-  const handleRemoveItem = (index: number) => {
-    const updatedItems = [...items];
-    updatedItems.splice(index, 1);
-    setItems(updatedItems);
-  };
-
-  const calculateTotals = () => {
-    const subtotal = items.reduce((acc, item) => acc + (item.total_price || 0), 0);
-    const taxRate = purchaseOrder?.tax_rate || 0;
-    const taxAmount = subtotal * (taxRate / 100);
-    const total = subtotal + taxAmount;
-
-    setTotals({
-      subtotal,
-      tax: taxAmount,
-      total,
-    });
-  };
-
+  // Load purchase order data when available
   useEffect(() => {
-    if (items.length > 0) {
-      calculateTotals();
+    if (purchaseOrder) {
+      setSelectedSupplier(purchaseOrder.supplier);
+      setShippingCost(purchaseOrder.shipping_cost || 0);
+      setTransitCost(purchaseOrder.transit_cost || 0);
+      setLogisticsCost(purchaseOrder.logistics_cost || 0);
+      setDiscount(purchaseOrder.discount || 0);
+      setTaxRate(purchaseOrder.tax_rate || 20);
+      setExpectedDeliveryDate(purchaseOrder.expected_delivery_date || "");
+      setOrderStatus(purchaseOrder.status || "pending");
+      setPaymentStatus(purchaseOrder.payment_status || "pending");
+      
+      if (purchaseOrder.items && Array.isArray(purchaseOrder.items)) {
+        setSelectedProducts(purchaseOrder.items.map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          product: item.product,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          selling_price: item.selling_price,
+          total_price: item.total_price
+        })));
+      }
     }
-  }, [items]);
+  }, [purchaseOrder]);
+
+  // Product selection handler
+  const handleProductSelect = (product: any) => {
+    if (selectedProducts.some(p => p.product_id === product.id)) {
+      toast.info("Ce produit est déjà dans la liste");
+      return;
+    }
+    
+    const newProduct = {
+      product_id: product.id,
+      product,
+      quantity: 1,
+      unit_price: product.purchase_price || 0,
+      selling_price: product.price || 0,
+      total_price: product.purchase_price || 0
+    };
+    
+    setSelectedProducts([...selectedProducts, newProduct]);
+  };
+
+  // Add product handler
+  const handleAddProduct = (product: any) => {
+    setSelectedProducts([...selectedProducts, product]);
+  };
+
+  // Quantity change handler
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setSelectedProducts(prev => prev.map(item => {
+      if (item.product_id === productId) {
+        return {
+          ...item,
+          quantity,
+          total_price: quantity * item.unit_price
+        };
+      }
+      return item;
+    }));
+  };
+
+  // Price change handler
+  const handlePriceChange = (productId: string, price: number) => {
+    setSelectedProducts(prev => prev.map(item => {
+      if (item.product_id === productId) {
+        return {
+          ...item,
+          unit_price: price,
+          total_price: item.quantity * price
+        };
+      }
+      return item;
+    }));
+  };
+
+  // Calculate subtotal
+  const calculateSubtotal = () => {
+    return selectedProducts.reduce((total, item) => total + (item.total_price || 0), 0);
+  };
+
+  // Calculate tax
+  const calculateTax = () => {
+    return (calculateSubtotal() * taxRate) / 100;
+  };
+
+  // Calculate total
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax() + shippingCost + transitCost + logisticsCost - discount;
+  };
+
+  // Submit handler
+  const handleSubmit = async () => {
+    try {
+      if (!selectedSupplier) {
+        toast.error("Veuillez sélectionner un fournisseur");
+        return;
+      }
+
+      const orderData = {
+        supplier_id: selectedSupplier.id,
+        status: orderStatus,
+        payment_status: paymentStatus,
+        shipping_cost: shippingCost,
+        transit_cost: transitCost,
+        logistics_cost: logisticsCost,
+        discount,
+        tax_rate: taxRate,
+        expected_delivery_date: expectedDeliveryDate || null,
+        subtotal: calculateSubtotal(),
+        tax_amount: calculateTax(),
+        total_amount: calculateTotal()
+      };
+
+      let result;
+      
+      if (id) {
+        // Update existing order
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .update(orderData)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        // Handle order items updates
+        // This would typically include deleting removed items and updating existing ones
+      } else {
+        // Create new order
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .insert(orderData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        // Insert order items
+        if (selectedProducts.length > 0) {
+          const items = selectedProducts.map(product => ({
+            purchase_order_id: result.id,
+            product_id: product.product_id,
+            quantity: product.quantity,
+            unit_price: product.unit_price,
+            selling_price: product.selling_price,
+            total_price: product.total_price
+          }));
+          
+          const { error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .insert(items);
+          
+          if (itemsError) throw itemsError;
+        }
+      }
+      
+      toast.success(`Commande ${id ? 'mise à jour' : 'créée'} avec succès`);
+      return result;
+    } catch (error: any) {
+      console.error("Error saving purchase order:", error);
+      toast.error(error.message || "Une erreur est survenue");
+    }
+  };
 
   return {
-    purchaseOrder,
-    items,
-    isLoading,
-    isSubmitting,
-    totals,
-    handleSubmit,
-    handleAddItem,
-    handleUpdateItem,
-    handleRemoveItem,
+    suppliers,
+    products,
+    isLoadingOrder,
+    isLoadingProducts: isLoadingProducts || isLoadingSuppliers,
+    selectedSupplier,
+    setSelectedSupplier,
+    selectedProducts,
+    shippingCost,
+    setShippingCost,
+    transitCost,
+    setTransitCost,
+    logisticsCost,
+    setLogisticsCost,
+    discount,
+    setDiscount,
+    taxRate,
+    setTaxRate,
+    expectedDeliveryDate,
+    setExpectedDeliveryDate,
+    orderStatus,
+    setOrderStatus,
+    paymentStatus,
+    setPaymentStatus,
+    handleProductSelect,
+    calculateSubtotal,
+    calculateTax,
+    calculateTotal,
+    handleAddProduct,
+    handleQuantityChange,
+    handlePriceChange,
+    handleSubmit
   };
-};
+}

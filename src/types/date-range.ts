@@ -1,5 +1,5 @@
 
 export interface DateRange {
-  from?: Date;
+  from: Date;
   to?: Date;
 }
