@@ -7,25 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { User } from "@/types/user";
 
 interface UserFormProps {
   user: Omit<User, 'id'>;
   index: number;
+  passwordConfirmation: string;
+  showPassword: boolean;
   onInputChange: (index: number, field: string, value: any) => void;
+  onPasswordConfirmationChange: (index: number, value: string) => void;
   onRemove: (index: number) => void;
   onImageUpload: (index: number, file: File) => Promise<void>;
+  onTogglePasswordVisibility: (index: number) => void;
 }
 
-export const UserForm = ({ user, index, onInputChange, onRemove, onImageUpload }: UserFormProps) => {
-  const [showPassword, setShowPassword] = useState(false);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev);
-  };
-
+export const UserForm = ({ 
+  user, 
+  index, 
+  passwordConfirmation, 
+  showPassword,
+  onInputChange, 
+  onPasswordConfirmationChange,
+  onRemove, 
+  onImageUpload,
+  onTogglePasswordVisibility
+}: UserFormProps) => {
   const handleRoleChange = (role: "admin" | "manager" | "employee") => {
     onInputChange(index, "role", role);
   };
@@ -104,7 +110,7 @@ export const UserForm = ({ user, index, onInputChange, onRemove, onImageUpload }
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={togglePasswordVisibility}
+              onClick={() => onTogglePasswordVisibility(index)}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4 text-gray-500" />
@@ -115,8 +121,23 @@ export const UserForm = ({ user, index, onInputChange, onRemove, onImageUpload }
           </div>
         </div>
         <div>
+          <Label htmlFor={`password_confirmation_${index}`}>Confirmation du mot de passe</Label>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              id={`password_confirmation_${index}`}
+              value={passwordConfirmation || ""}
+              onChange={(e) => onPasswordConfirmationChange(index, e.target.value)}
+              className="pr-10"
+            />
+          </div>
+        </div>
+        <div>
           <Label htmlFor={`role_${index}`}>Rôle</Label>
-          <Select onValueChange={(value) => handleRoleChange(value as "admin" | "manager" | "employee")}>
+          <Select 
+            value={user.role} 
+            onValueChange={(value) => handleRoleChange(value as "admin" | "manager" | "employee")}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un rôle" />
             </SelectTrigger>
@@ -138,7 +159,10 @@ export const UserForm = ({ user, index, onInputChange, onRemove, onImageUpload }
         </div>
         <div>
           <Label htmlFor={`is_active_${index}`}>Actif</Label>
-          <Select onValueChange={(value) => handleIsActiveChange(value === "true")}>
+          <Select 
+            value={user.is_active ? "true" : "false"} 
+            onValueChange={(value) => handleIsActiveChange(value === "true")}
+          >
             <SelectTrigger>
               <SelectValue placeholder={user.is_active ? "Actif" : "Inactif"} />
             </SelectTrigger>

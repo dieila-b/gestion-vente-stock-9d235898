@@ -5,10 +5,14 @@ import { useInternalUsers } from "@/hooks/use-internal-users";
 const InternalUsers = () => {
   const { 
     newUserData, 
-    handleInputChange, 
+    passwordConfirmation,
+    showPassword,
+    handleInputChange,
+    handlePasswordConfirmationChange,
     handleAddUser, 
     handleRemoveUser, 
-    handleBulkInsert 
+    handleBulkInsert,
+    togglePasswordVisibility
   } = useInternalUsers();
 
   return (
@@ -18,10 +22,14 @@ const InternalUsers = () => {
       <div className="mb-4">
         <UserFormList
           newUserData={newUserData}
+          passwordConfirmation={passwordConfirmation}
+          showPassword={showPassword}
           onAddUser={handleAddUser}
           onBulkInsert={handleBulkInsert}
           onInputChange={handleInputChange}
+          onPasswordConfirmationChange={handlePasswordConfirmationChange}
           onRemoveUser={handleRemoveUser}
+          onTogglePasswordVisibility={togglePasswordVisibility}
         />
       </div>
     </div>

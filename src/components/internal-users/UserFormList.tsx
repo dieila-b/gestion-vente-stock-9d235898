@@ -7,18 +7,26 @@ import { User } from "@/types/user";
 
 interface UserFormListProps {
   newUserData: Omit<User, 'id'>[];
+  passwordConfirmation: { [key: number]: string };
+  showPassword: { [key: number]: boolean };
   onAddUser: () => void;
   onBulkInsert: () => Promise<void>;
   onInputChange: (index: number, field: string, value: any) => void;
+  onPasswordConfirmationChange: (index: number, value: string) => void;
   onRemoveUser: (index: number) => void;
+  onTogglePasswordVisibility: (index: number) => void;
 }
 
 export const UserFormList = ({ 
   newUserData, 
+  passwordConfirmation,
+  showPassword,
   onAddUser, 
   onBulkInsert, 
-  onInputChange, 
-  onRemoveUser 
+  onInputChange,
+  onPasswordConfirmationChange,
+  onRemoveUser,
+  onTogglePasswordVisibility
 }: UserFormListProps) => {
   const handleImageUpload = async (index: number, file: File) => {
     try {
@@ -51,10 +59,14 @@ export const UserFormList = ({
         <UserForm 
           key={index} 
           user={user} 
-          index={index} 
-          onInputChange={onInputChange} 
+          index={index}
+          passwordConfirmation={passwordConfirmation[index] || ""}
+          showPassword={showPassword[index] || false}
+          onInputChange={onInputChange}
+          onPasswordConfirmationChange={onPasswordConfirmationChange}
           onRemove={onRemoveUser}
           onImageUpload={handleImageUpload}
+          onTogglePasswordVisibility={onTogglePasswordVisibility}
         />
       ))}
       

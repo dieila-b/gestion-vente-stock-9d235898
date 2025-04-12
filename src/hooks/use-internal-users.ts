@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 export const useInternalUsers = () => {
   const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([]);
   const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
+  const [passwordConfirmation, setPasswordConfirmation] = useState<{ [key: number]: string }>({});
 
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ['internal-users'],
@@ -31,6 +32,13 @@ export const useInternalUsers = () => {
     setNewUserData(updatedData);
   };
 
+  const handlePasswordConfirmationChange = (index: number, value: string) => {
+    setPasswordConfirmation(prev => ({
+      ...prev,
+      [index]: value
+    }));
+  };
+
   const handleAddUser = () => {
     setNewUserData([
       ...newUserData,
@@ -52,6 +60,11 @@ export const useInternalUsers = () => {
     const updatedData = [...newUserData];
     updatedData.splice(index, 1);
     setNewUserData(updatedData);
+
+    // Also clean up password confirmation state
+    const updatedConfirmations = { ...passwordConfirmation };
+    delete updatedConfirmations[index];
+    setPasswordConfirmation(updatedConfirmations);
   };
 
   const togglePasswordVisibility = (index: number) => {
@@ -65,9 +78,29 @@ export const useInternalUsers = () => {
     await refetch();
   };
 
+  const validatePasswords = () => {
+    for (const [index, user] of newUserData.entries()) {
+      if (!user.password) {
+        toast.error(`L'utilisateur ${index + 1} doit avoir un mot de passe`);
+        return false;
+      }
+      
+      if (user.password !== passwordConfirmation[index]) {
+        toast.error(`Les mots de passe ne correspondent pas pour l'utilisateur ${index + 1}`);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleBulkInsert = async () => {
     if (newUserData.length === 0) {
-      toast.error("No users to add");
+      toast.error("Aucun utilisateur à ajouter");
+      return;
+    }
+    
+    // Validate passwords match before submitting
+    if (!validatePasswords()) {
       return;
     }
     
@@ -84,12 +117,13 @@ export const useInternalUsers = () => {
       
       if (error) throw error;
       
-      toast.success("Users added successfully");
+      toast.success("Utilisateurs ajoutés avec succès");
       fetchUsers();
       setNewUserData([]);
+      setPasswordConfirmation({});
     } catch (error) {
       console.error("Error adding users:", error);
-      toast.error("Error adding users");
+      toast.error("Erreur lors de l'ajout des utilisateurs");
     }
   };
 
@@ -98,7 +132,9 @@ export const useInternalUsers = () => {
     isLoading,
     newUserData,
     showPassword,
+    passwordConfirmation,
     handleInputChange,
+    handlePasswordConfirmationChange,
     handleAddUser,
     handleRemoveUser,
     togglePasswordVisibility,
