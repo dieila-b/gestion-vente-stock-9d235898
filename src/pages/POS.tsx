@@ -6,7 +6,7 @@ import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
 import useEditOrder from "@/hooks/use-edit-order";
-import { Product } from "@/types/pos";
+import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AlertCircle } from "lucide-react";
@@ -68,7 +68,7 @@ export default function POS() {
     if (editOrderData && !editOrderData.isLoading && editOrderData.selectedClient) {
       setSelectedClient(editOrderData.selectedClient);
       if (editOrderData.cart && editOrderData.cart.length > 0) {
-        setCart(editOrderData.cart);
+        setCart(editOrderData.cart as POSCartItem[]);
       }
     }
   }, [editOrderData, setSelectedClient, setCart]);
@@ -88,6 +88,11 @@ export default function POS() {
     const currentStock = stockItem ? stockItem.quantity : product.stock || 0;
     
     addToCart(product, currentStock);
+  };
+
+  // Handle product discount update to match expected function signature
+  const handleUpdateDiscount = (productId: string, discount: number) => {
+    updateDiscount(productId, discount);
   };
 
   return (
@@ -132,9 +137,7 @@ export default function POS() {
               onUpdateQuantity={(productId, delta) => {
                 updateQuantity(productId, delta);
               }}
-              onUpdateDiscount={(productId, discount) => {
-                updateDiscount(productId, discount);
-              }}
+              onUpdateDiscount={handleUpdateDiscount}
               subtotal={calculateSubtotal()}
               total={calculateTotal()}
               totalDiscount={calculateTotalDiscount()}

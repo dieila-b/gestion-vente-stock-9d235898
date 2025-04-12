@@ -1,39 +1,44 @@
 
-import { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Check, MoreVertical, Pencil, Trash } from "lucide-react";
-import { formatGNF } from "@/lib/currency";
-import { format } from "date-fns";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatGNF } from "@/lib/currency";
+import { Eye, Edit, Trash2, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Define the PurchaseOrder type based on the data we're using
+interface PurchaseOrder {
+  id: string;
+  order_number: string;
+  created_at: string;
+  expected_delivery_date: string;
+  supplier: {
+    id: string;
+    name: string;
+  };
+  status: string;
+  payment_status: string;
+  total_amount: number;
+  paid_amount: number;
+  discount: number;
+  warehouse: {
+    id: string;
+    name: string;
+  };
+}
+
 interface PurchaseOrderListProps {
-  orders: any[];
+  orders: PurchaseOrder[];
   isLoading: boolean;
   onApprove: (id: string) => void;
   onDelete: (id: string) => void;
@@ -45,157 +50,156 @@ export function PurchaseOrderList({
   isLoading,
   onApprove,
   onDelete,
-  onEdit
+  onEdit,
 }: PurchaseOrderListProps) {
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedOrderId(id);
-    setDeleteConfirmOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (selectedOrderId) {
-      onDelete(selectedOrderId);
-      setDeleteConfirmOpen(false);
-      setSelectedOrderId(null);
-    }
-  };
-
+  // Function to get badge variant based on status
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">En attente</Badge>;
-      case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approuvé</Badge>;
-      case 'delivered':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Livré</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Annulé</Badge>;
+      case "approved":
+        return <Badge className="bg-green-500">Approuvé</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-500">En attente</Badge>;
+      case "canceled":
+        return <Badge className="bg-red-500">Annulé</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
 
-  const getPaymentStatusBadge = (status: string) => {
+  // Function to get payment status badge
+  const getPaymentBadge = (status: string) => {
     switch (status) {
-      case 'unpaid':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Non payé</Badge>;
-      case 'partial':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Paiement partiel</Badge>;
-      case 'paid':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Payé</Badge>;
+      case "paid":
+        return <Badge className="bg-green-500">Payé</Badge>;
+      case "partial":
+        return <Badge className="bg-blue-500">Partiel</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-500">Non payé</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
 
+  // Format date function
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy", { locale: fr });
+    } catch (error) {
+      return "Date invalide";
+    }
+  };
+
+  // Loading skeleton
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!orders || orders.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground py-8">Aucun bon de commande trouvé</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Numéro</TableHead>
+              <TableHead>N° Commande</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead>Fournisseur</TableHead>
               <TableHead>Entrepôt</TableHead>
-              <TableHead>Date de livraison</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Paiement</TableHead>
-              <TableHead className="text-right">Montant</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.order_number}</TableCell>
-                <TableCell>{order.supplier?.company_name || 'N/A'}</TableCell>
-                <TableCell>{order.warehouse?.name || 'N/A'}</TableCell>
-                <TableCell>
-                  {order.expected_delivery_date 
-                    ? format(new Date(order.expected_delivery_date), 'dd/MM/yyyy')
-                    : 'N/A'
-                  }
-                </TableCell>
-                <TableCell>{getStatusBadge(order.order_status)}</TableCell>
-                <TableCell>{getPaymentStatusBadge(order.payment_status)}</TableCell>
-                <TableCell className="text-right">{formatGNF(order.total)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {order.order_status !== 'approved' && (
-                        <DropdownMenuItem onClick={() => onApprove(order.id)}>
-                          <Check className="mr-2 h-4 w-4" />
-                          <span>Approuver</span>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => onEdit(order.id)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Modifier</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteClick(order.id)} className="text-red-600">
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>Supprimer</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+            {Array(5).fill(0).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-32" /></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+    );
+  }
 
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmation de suppression</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce bon de commande ? Cette action ne peut pas être annulée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+  // Empty state
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-10 border rounded-md">
+        <p className="text-muted-foreground">Aucun bon de commande trouvé</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>N° Commande</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead>Entrepôt</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead>Paiement</TableHead>
+            <TableHead>Montant</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell className="font-medium">{order.order_number}</TableCell>
+              <TableCell>{formatDate(order.created_at)}</TableCell>
+              <TableCell>{order.supplier?.name || "N/A"}</TableCell>
+              <TableCell>{order.warehouse?.name || "N/A"}</TableCell>
+              <TableCell>{getStatusBadge(order.status)}</TableCell>
+              <TableCell>{getPaymentBadge(order.payment_status)}</TableCell>
+              <TableCell>{formatGNF(order.total_amount || 0)}</TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Link to={`/purchase-orders/${order.id}`}>
+                    <Button size="icon" variant="ghost">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => onEdit(order.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  
+                  {order.status === "pending" && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => onApprove(order.id)}
+                      className="text-green-500 hover:text-green-700"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => onDelete(order.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

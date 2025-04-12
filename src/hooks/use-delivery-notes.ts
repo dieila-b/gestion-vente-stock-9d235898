@@ -2,24 +2,41 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DeliveryNote } from "@/types/delivery-note";
+import { db } from "@/utils/db-adapter";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
 
   // Query to fetch delivery notes
-  const fetchDeliveryNotes = useQuery({
+  const { data: deliveryNotes = [], isLoading } = useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('delivery_notes')
-        .select('*')
+        .select(`
+          *,
+          supplier:suppliers (name, phone, email),
+          purchase_order:purchase_orders!delivery_notes_purchase_order_id_fkey (order_number, total_amount),
+          items:delivery_note_items (
+            id, product_id, quantity_ordered, quantity_received, unit_price,
+            product:catalog!delivery_note_items_product_id_fkey (name, reference, category)
+          )
+        `)
         .order('created_at', { ascending: false });
+      
       if (error) throw error;
-      return data || [];
+      return data as DeliveryNote[];
     }
   });
 
-  // Add implementation for the missing handlers
+  // Mock warehouse data until we implement the real function
+  const warehouses = [
+    { id: "1", name: "Main Warehouse" },
+    { id: "2", name: "Secondary Warehouse" }
+  ];
+
+  // Handle delete
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -37,12 +54,13 @@ export function useDeliveryNotes() {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  // Handle approve - accepts both id and data for flexibility
+  const handleApprove = async (id: string, data?: any) => {
     try {
       // Assuming there is a status field that can be updated
       const { error } = await supabase
         .from('delivery_notes')
-        .update({ notes: 'Approved' }) // Use 'notes' field instead of 'status'
+        .update({ status: 'approved' })
         .eq('id', id);
       
       if (error) throw error;
@@ -55,6 +73,7 @@ export function useDeliveryNotes() {
     }
   };
 
+  // Handle edit
   const handleEdit = async (id: string, data: any) => {
     try {
       const { error } = await supabase
@@ -145,7 +164,8 @@ export function useDeliveryNotes() {
     handleDelete,
     handleApprove,
     handleEdit,
-    deliveryNotes: fetchDeliveryNotes.data || [],
-    isLoading: fetchDeliveryNotes.isLoading
+    deliveryNotes,
+    isLoading,
+    warehouses
   };
 }

@@ -6,6 +6,7 @@ import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePOSProducts } from "./pos/use-pos-products";
 import { usePOSPayment } from "./pos/payment";
+import { CartItem } from "@/types/pos"; // Unified type import
 
 export function usePOS(editOrderId?: string | null) {
   // Cart state from zustand store
@@ -16,7 +17,7 @@ export function usePOS(editOrderId?: string | null) {
     updateQuantity, 
     updateDiscount,
     clearCart, 
-    setCart,
+    setCart: storeSetCart,
     addClient,
     removeClient
   } = useCartStore();
@@ -145,6 +146,18 @@ export function usePOS(editOrderId?: string | null) {
   // Set quantity manually
   const setQuantity = (productId: string, quantity: number) => {
     updateQuantity(productId, quantity);
+  };
+
+  // Custom wrapper for setCart to ensure types are consistent
+  const setCart = (items: CartItem[]) => {
+    // Ensure all items have required properties for CartItem type
+    const completeItems = items.map(item => ({
+      ...item,
+      product_id: item.product_id || item.id,
+      category: item.category || '',
+      subtotal: item.price * item.quantity
+    }));
+    storeSetCart(completeItems);
   };
 
   // Use the payment hook

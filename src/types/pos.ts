@@ -9,11 +9,14 @@ export interface Product {
   reference?: string;
   created_at?: string;
   updated_at?: string;
+  product_id?: string; // Added to match some usages
 }
 
 export interface CartItem extends Product {
   quantity: number;
   discount: number;
+  product_id: string; // Required by some components
+  subtotal?: number; // Added to satisfy CartState.CartItem requirement
 }
 
 export interface Order {

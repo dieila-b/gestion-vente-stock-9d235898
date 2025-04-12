@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
 import { OrderForm } from '@/components/orders/OrderForm';
@@ -8,11 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import { ClientSelect } from '@/components/clients/ClientSelect';
 import { PreorderCart } from '@/components/preorders/PreorderCart';
 import { PreorderInvoiceView } from '@/components/preorders/PreorderInvoiceView';
+import { CartItem } from '@/types/pos'; // Import the unified CartItem type
 
 export default function Preorders() {
   const navigate = useNavigate();
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
-  const [currentPreorder, setCurrentPreorder] = useState(null);
+  const [currentPreorder, setCurrentPreorder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   // Get the cart state and methods
@@ -23,7 +25,7 @@ export default function Preorders() {
   
   // Wrapper for updateDiscount to match expected signature
   const handleUpdateDiscount = (id: string, discount: number) => {
-    updateDiscount(discount);
+    updateDiscount(id, discount);
   };
   
   const addToCart = addItem;
@@ -70,7 +72,7 @@ export default function Preorders() {
       // Create preorder items
       const preorderItems = cart.items.map(item => ({
         preorder_id: preorderData.id,
-        product_id: item.product_id,
+        product_id: item.product_id || item.id,
         quantity: item.quantity,
         unit_price: item.price,
         total_price: item.price * item.quantity,
@@ -107,13 +109,8 @@ export default function Preorders() {
     toast.success(isReceipt ? "Reçu imprimé" : "Facture imprimée");
   };
   
-  // Props for the invoice dialog
-  const invoiceProps = {
-    showInvoiceDialog,
-    handleCloseInvoice,
-    currentPreorder,
-    handlePrintInvoice
-  };
+  // Ensure correct type for cart items
+  const cartItems = cart.items as CartItem[];
   
   return (
     <div className="container mx-auto p-4">
@@ -138,13 +135,16 @@ export default function Preorders() {
           </div>
           
           <PreorderCart
-            items={cart.items || []}
+            items={cartItems}
             onRemoveItem={removeFromCart}
-            onQuantityChange={setCartItemQuantity}
+            onUpdateQuantity={setCartItemQuantity}
             onSubmit={handleSubmitPreorder}
             onNotesChange={updateNotes}
             notes={cart.notes}
             isLoading={isLoading}
+            onUpdateDiscount={handleUpdateDiscount}
+            selectedClient={cart.client}
+            clearCart={clearCart}
           />
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function Preorders() {
               onClearClient={removeClient}
               onSubmit={handleSubmitPreorder}
               onSelectClient={addClient}
-              onSetDiscount={updateDiscount}
+              onSetDiscount={handleUpdateDiscount}
               onUpdateDiscount={handleUpdateDiscount}
               isLoading={isLoading}
               isEditMode={false}

@@ -14,7 +14,7 @@ export default function POSLocations() {
     isAddDialogOpen,
     setIsAddDialogOpen,
     handleSubmit,
-    handleDelete,
+    handleDelete
   } = usePOSLocation();
 
   return (

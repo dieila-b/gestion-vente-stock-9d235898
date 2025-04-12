@@ -1,171 +1,135 @@
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { POSLocation } from "@/types/pos-locations";
-import { transformPOSLocation } from "@/utils/data-transformers";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-export const usePOSLocation = () => {
-  const { toast } = useToast();
+export interface POSLocation {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  manager?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
+  capacity?: number;
+  occupied?: number;
+  surface?: number;
+}
+
+export function usePOSLocation() {
   const queryClient = useQueryClient();
-  const [isCreating, setIsCreating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<POSLocation | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<POSLocation | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const { data: locations = [], isLoading } = useQuery({
+  // Fetch all POS locations
+  const { data: locations = [], isLoading, isError } = useQuery({
     queryKey: ["pos-locations"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pos_locations")
         .select("*")
-        .order("name");
-
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      
-      if (data && Array.isArray(data)) {
-        return data.map(item => transformPOSLocation(item));
-      }
-      
-      return [];
-    },
+      return data as POSLocation[];
+    }
   });
 
-  const createLocationMutation = useMutation({
-    mutationFn: async (formData: Omit<POSLocation, "id">) => {
+  // Create POS location
+  const { mutate: createLocation, isPending: isCreating } = useMutation({
+    mutationFn: async (locationData: Omit<POSLocation, "id">) => {
       const { data, error } = await supabase
         .from("pos_locations")
-        .insert({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          address: formData.address,
-          status: formData.status,
-          is_active: formData.is_active,
-          manager: formData.manager,
-          capacity: formData.capacity,
-          occupied: formData.occupied,
-          surface: formData.surface,
-        })
+        .insert([locationData])
         .select();
-
+      
       if (error) throw error;
-      return data;
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast({
-        title: "Point de vente créé",
-        description: "Le point de vente a été créé avec succès",
-      });
-      setIsCreating(false);
+      toast.success("Point de vente créé avec succès");
+      setIsAddDialogOpen(false);
     },
     onError: (error) => {
-      console.error("Error creating POS location:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de créer le point de vente",
-      });
-    },
+      toast.error(`Erreur lors de la création: ${error instanceof Error ? error.message : "erreur inconnue"}`);
+    }
   });
 
-  const updateLocationMutation = useMutation({
-    mutationFn: async ({ id, formData }: { id: string; formData: Omit<POSLocation, "id"> }) => {
+  // Update POS location
+  const { mutate: updateLocation, isPending: isEditing } = useMutation({
+    mutationFn: async (location: POSLocation) => {
       const { data, error } = await supabase
         .from("pos_locations")
         .update({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          address: formData.address,
-          status: formData.status,
-          is_active: formData.is_active,
-          manager: formData.manager,
-          capacity: formData.capacity,
-          occupied: formData.occupied,
-          surface: formData.surface,
+          name: location.name,
+          address: location.address,
+          phone: location.phone,
+          email: location.email,
+          manager: location.manager,
+          status: location.status,
+          is_active: location.is_active,
+          capacity: location.capacity,
+          occupied: location.occupied,
+          surface: location.surface
         })
-        .eq("id", id)
+        .eq("id", location.id)
         .select();
-
+      
       if (error) throw error;
-      return data;
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast({
-        title: "Point de vente mis à jour",
-        description: "Le point de vente a été mis à jour avec succès",
-      });
-      setIsEditing(false);
-      setEditingLocation(null);
+      toast.success("Point de vente mis à jour avec succès");
+      setIsAddDialogOpen(false);
     },
     onError: (error) => {
-      console.error("Error updating POS location:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de mettre à jour le point de vente",
-      });
-    },
+      toast.error(`Erreur lors de la mise à jour: ${error instanceof Error ? error.message : "erreur inconnue"}`);
+    }
   });
 
-  const deleteLocationMutation = useMutation({
+  // Delete POS location
+  const { mutate: deleteLocationMutation } = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("pos_locations")
         .delete()
         .eq("id", id);
-
+      
       if (error) throw error;
-      return { success: true };
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast({
-        title: "Point de vente supprimé",
-        description: "Le point de vente a été supprimé avec succès",
-      });
+      toast.success("Point de vente supprimé avec succès");
     },
     onError: (error) => {
-      console.error("Error deleting POS location:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de supprimer le point de vente",
-      });
-    },
+      toast.error(`Erreur lors de la suppression: ${error instanceof Error ? error.message : "erreur inconnue"}`);
+    }
   });
 
-  const createLocation = async (formData: Omit<POSLocation, "id">) => {
-    await createLocationMutation.mutateAsync(formData);
+  // Handle form submission
+  const handleSubmit = (data: POSLocation) => {
+    if (selectedLocation?.id) {
+      updateLocation({
+        ...data,
+        id: selectedLocation.id
+      });
+    } else {
+      createLocation(data);
+    }
   };
 
-  const updateLocation = async (id: string, formData: Omit<POSLocation, "id">) => {
-    await updateLocationMutation.mutateAsync({ id, formData });
-  };
-
-  const deleteLocation = async (id: string) => {
-    await deleteLocationMutation.mutateAsync(id);
-  };
-
-  const openCreateDialog = () => {
-    setIsCreating(true);
-  };
-
-  const closeCreateDialog = () => {
-    setIsCreating(false);
-  };
-
-  const openEditDialog = (location: POSLocation) => {
-    setEditingLocation(location);
-    setIsEditing(true);
-  };
-
-  const closeEditDialog = () => {
-    setIsEditing(false);
-    setEditingLocation(null);
+  // Handle delete
+  const handleDelete = (id: string) => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce point de vente?")) {
+      deleteLocationMutation(id);
+    }
   };
 
   return {
@@ -173,13 +137,15 @@ export const usePOSLocation = () => {
     isLoading,
     isCreating,
     isEditing,
-    editingLocation,
+    editingLocation: selectedLocation ?? {} as POSLocation,
     createLocation,
     updateLocation,
-    deleteLocation,
-    openCreateDialog,
-    closeCreateDialog,
-    openEditDialog,
-    closeEditDialog,
+    deleteLocationMutation,
+    selectedLocation,
+    setSelectedLocation,
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    handleSubmit,
+    handleDelete
   };
-};
+}
