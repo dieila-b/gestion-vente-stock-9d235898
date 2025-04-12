@@ -132,6 +132,11 @@ export function usePOSLocation() {
     }
   };
 
+  // Close dialog helper
+  const closeEditDialog = () => {
+    setIsAddDialogOpen(false);
+  };
+
   return {
     locations,
     isLoading,
@@ -146,6 +151,7 @@ export function usePOSLocation() {
     isAddDialogOpen,
     setIsAddDialogOpen,
     handleSubmit,
-    handleDelete
+    handleDelete,
+    closeEditDialog
   };
 }

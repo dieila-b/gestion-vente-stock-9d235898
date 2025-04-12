@@ -6,6 +6,7 @@ import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePOSProducts } from "./use-pos-products";
 import { usePOSPayment } from "./payment";
+import { CartItem } from "@/types/pos";
 
 export function usePOSCombined(editOrderId?: string | null) {
   // Cart state from zustand store
@@ -16,7 +17,7 @@ export function usePOSCombined(editOrderId?: string | null) {
     updateQuantity, 
     updateDiscount,
     clearCart, 
-    setCart,
+    setCart: setCartItems,
     addClient,
     removeClient
   } = useCartStore();
@@ -84,6 +85,7 @@ export function usePOSCombined(editOrderId?: string | null) {
       if (!selectedPDV) return;
       
       try {
+        // Use warehouse_stock table which definitely exists
         const { data, error } = await supabase
           .from('warehouse_stock')
           .select('*')
@@ -150,7 +152,7 @@ export function usePOSCombined(editOrderId?: string | null) {
   // Use the payment hook
   const { handlePayment } = usePOSPayment({
     selectedClient,
-    cart: cart.items,
+    cart: cart.items as CartItem[],
     calculateTotal: () => cart.total,
     calculateSubtotal: () => cart.subtotal,
     calculateTotalDiscount: () => cart.discount,
@@ -178,7 +180,7 @@ export function usePOSCombined(editOrderId?: string | null) {
 
   return {
     // Cart state
-    cart: cart.items,
+    cart: cart.items as CartItem[],
     addToCart: addItem,
     removeFromCart: removeItem,
     updateQuantity,
@@ -187,7 +189,7 @@ export function usePOSCombined(editOrderId?: string | null) {
     calculateTotal: () => cart.total,
     calculateTotalDiscount: () => cart.discount,
     clearCart,
-    setCart,
+    setCart: setCartItems,
     availableStock,
     updateAvailableStock,
     setQuantity,

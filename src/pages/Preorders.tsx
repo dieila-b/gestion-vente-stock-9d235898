@@ -18,7 +18,7 @@ export default function Preorders() {
   const [isLoading, setIsLoading] = useState(false);
   
   // Get the cart state and methods
-  const { cart, addItem, removeItem, updateQuantity, addClient, removeClient, clearCart, updateNotes, updateDiscount } = useCartStore();
+  const { cart, addItem, removeItem, updateQuantity, updateDiscount, addClient, removeClient, clearCart, updateNotes } = useCartStore();
   
   // Map cart methods to component methods
   const removeFromCart = removeItem;
@@ -29,7 +29,9 @@ export default function Preorders() {
   };
   
   const addToCart = addItem;
-  const setCartItemQuantity = updateQuantity;
+  const setCartItemQuantity = (id: string, quantity: number) => {
+    updateQuantity(id, quantity - cart.items.find(item => item.id === id)?.quantity || 0);
+  };
   
   // Validation function
   const validatePreorder = () => {
@@ -109,9 +111,6 @@ export default function Preorders() {
     toast.success(isReceipt ? "Reçu imprimé" : "Facture imprimée");
   };
   
-  // Ensure correct type for cart items
-  const cartItems = cart.items as CartItem[];
-  
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Gestion des Précommandes</h1>
@@ -135,7 +134,7 @@ export default function Preorders() {
           </div>
           
           <PreorderCart
-            items={cartItems}
+            items={cart.items}
             onRemoveItem={removeFromCart}
             onUpdateQuantity={setCartItemQuantity}
             onSubmit={handleSubmitPreorder}

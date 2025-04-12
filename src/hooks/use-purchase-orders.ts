@@ -2,9 +2,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function usePurchaseOrders() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Query to fetch purchase orders
   const { data: orders = [], isLoading } = useQuery({
@@ -57,24 +59,9 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle edit
-  const handleEdit = async (id: string, data?: any) => {
-    try {
-      const { error } = await supabase
-        .from('purchase_orders')
-        .update(data || { status: 'approved' })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      toast.success("Bon de commande modifié avec succès");
-      return true;
-    } catch (error) {
-      console.error('Error updating purchase order:', error);
-      toast.error("Erreur lors de la modification");
-      return false;
-    }
+  // Handle edit (navigate to edit page)
+  const handleEdit = (id: string) => {
+    navigate(`/purchase-orders/edit/${id}`);
   };
 
   // Handle approve

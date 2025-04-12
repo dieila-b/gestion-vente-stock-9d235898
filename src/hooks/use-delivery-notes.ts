@@ -1,171 +1,168 @@
 
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DeliveryNote } from "@/types/delivery-note";
-import { db } from "@/utils/db-adapter";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Query to fetch delivery notes
-  const { data: deliveryNotes = [], isLoading } = useQuery({
-    queryKey: ['delivery-notes'],
+  // Fetch delivery notes
+  const { data: deliveryNotes = [] } = useQuery({
+    queryKey: ["delivery-notes"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('delivery_notes')
+        .from("delivery_notes")
         .select(`
           *,
-          supplier:suppliers (name, phone, email),
-          purchase_order:purchase_orders!delivery_notes_purchase_order_id_fkey (order_number, total_amount),
-          items:delivery_note_items (
-            id, product_id, quantity_ordered, quantity_received, unit_price,
-            product:catalog!delivery_note_items_product_id_fkey (name, reference, category)
+          supplier:suppliers(*),
+          purchase_order:purchase_orders(*),
+          items:delivery_note_items(
+            *,
+            product:catalog(*)
           )
         `)
-        .order('created_at', { ascending: false });
-      
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       return data as DeliveryNote[];
     }
   });
 
-  // Mock warehouse data until we implement the real function
-  const warehouses = [
-    { id: "1", name: "Main Warehouse" },
-    { id: "2", name: "Secondary Warehouse" }
-  ];
+  // Fetch warehouses for delivery destination
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ["warehouses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warehouses")
+        .select("*")
+        .eq("is_active", true);
 
-  // Handle delete
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('delivery_notes')
-        .delete()
-        .eq('id', id);
-      
       if (error) throw error;
-      
-      toast.success("Note de livraison supprimée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    } catch (error) {
-      console.error("Error deleting delivery note:", error);
-      toast.error("Erreur lors de la suppression de la note de livraison");
+      return data;
     }
-  };
-
-  // Handle approve - accepts both id and data for flexibility
-  const handleApprove = async (id: string, data?: any) => {
-    try {
-      // Assuming there is a status field that can be updated
-      const { error } = await supabase
-        .from('delivery_notes')
-        .update({ status: 'approved' })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast.success("Note de livraison approuvée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    } catch (error) {
-      console.error("Error approving delivery note:", error);
-      toast.error("Erreur lors de l'approbation de la note de livraison");
-    }
-  };
-
-  // Handle edit
-  const handleEdit = async (id: string, data: any) => {
-    try {
-      const { error } = await supabase
-        .from('delivery_notes')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast.success("Note de livraison modifiée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    } catch (error) {
-      console.error("Error editing delivery note:", error);
-      toast.error("Erreur lors de la modification de la note de livraison");
-    }
-  };
+  });
 
   // Create delivery note
   const createDeliveryNote = useMutation({
-    mutationFn: async (data: any) => {
-      const { data: result, error } = await supabase
-        .from('delivery_notes')
-        .insert([data])
+    mutationFn: async (data: Partial<DeliveryNote>) => {
+      const { data: newNote, error } = await supabase
+        .from("delivery_notes")
+        .insert([{ 
+          ...data,
+          status: "pending" 
+        }])
         .select()
         .single();
-      
+
       if (error) throw error;
-      return result;
+      return newNote;
     },
     onSuccess: () => {
-      toast.success("Note de livraison créée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    },
-    onError: (error: any) => {
-      toast.error("Erreur lors de la création de la note de livraison");
-      console.error("Create error:", error);
+      queryClient.invalidateQueries({ queryKey: ["delivery-notes"] });
+      toast.success("Bon de livraison créé avec succès");
     }
   });
 
   // Update delivery note
   const updateDeliveryNote = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) => {
-      const { data: result, error } = await supabase
-        .from('delivery_notes')
+    mutationFn: async ({ id, data }: { id: string; data: Partial<DeliveryNote> }) => {
+      const { error } = await supabase
+        .from("delivery_notes")
         .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      
+        .eq("id", id);
+
       if (error) throw error;
-      return result;
+      return { id, ...data };
     },
     onSuccess: () => {
-      toast.success("Note de livraison mise à jour avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    },
-    onError: (error: any) => {
-      toast.error("Erreur lors de la mise à jour de la note de livraison");
-      console.error("Update error:", error);
+      queryClient.invalidateQueries({ queryKey: ["delivery-notes"] });
+      toast.success("Bon de livraison mis à jour avec succès");
     }
   });
 
   // Delete delivery note
   const deleteDeliveryNote = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('delivery_notes')
+      // First delete associated items
+      const { error: itemsError } = await supabase
+        .from("delivery_note_items")
         .delete()
-        .eq('id', id);
-      
+        .eq("delivery_note_id", id);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the note itself
+      const { error } = await supabase
+        .from("delivery_notes")
+        .delete()
+        .eq("id", id);
+
       if (error) throw error;
       return id;
     },
     onSuccess: () => {
-      toast.success("Note de livraison supprimée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    },
-    onError: (error: any) => {
-      toast.error("Erreur lors de la suppression de la note de livraison");
-      console.error("Delete error:", error);
+      queryClient.invalidateQueries({ queryKey: ["delivery-notes"] });
+      toast.success("Bon de livraison supprimé avec succès");
     }
   });
 
+  // Handle approve action
+  const handleApprove = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await updateDeliveryNote.mutateAsync({ 
+        id, 
+        data: { status: "approved" } 
+      });
+      return true;
+    } catch (error) {
+      console.error("Error approving delivery note:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle edit action
+  const handleEdit = async (id: string, data: any) => {
+    try {
+      setIsLoading(true);
+      await updateDeliveryNote.mutateAsync({ id, data });
+      return true;
+    } catch (error) {
+      console.error("Error updating delivery note:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle delete action
+  const handleDelete = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await deleteDeliveryNote.mutateAsync(id);
+      return true;
+    } catch (error) {
+      console.error("Error deleting delivery note:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
+    deliveryNotes,
+    isLoading,
+    warehouses,
     createDeliveryNote,
     updateDeliveryNote,
     deleteDeliveryNote,
-    handleDelete,
     handleApprove,
     handleEdit,
-    deliveryNotes,
-    isLoading,
-    warehouses
+    handleDelete
   };
 }
