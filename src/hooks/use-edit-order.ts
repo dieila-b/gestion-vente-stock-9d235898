@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Client } from "@/types/client_unified";
 import { CartItem } from "@/types/pos";
+import { SelectQueryError } from "@/types/db-adapter";
 
 // Define proper Order type to fix 'never' type issues
 interface OrderData {
@@ -77,12 +78,16 @@ const useEditOrder = () => {
             return;
           }
 
-          // Safe access with default values
-          const hasClientError = !order.client || isSelectQueryError(order.client);
-          const hasItemsError = !order.items || isSelectQueryError(order.items);
+          // Safe access with additional type checking
+          const client = order.client;
+          const items = order.items;
+          
+          // Check if client and items are SelectQueryError objects
+          const hasClientError = !client || isSelectQueryError(client);
+          const hasItemsError = !items || isSelectQueryError(items);
 
           // Format client data if available
-          const clientData = hasClientError ? null : order.client;
+          const clientData = hasClientError ? null : client;
 
           // Handle client data with optional properties
           const formattedClient = clientData ? {
@@ -104,8 +109,8 @@ const useEditOrder = () => {
 
           // Format cart items from order items if available
           const formattedCart = hasItemsError ? [] : 
-            Array.isArray(order.items) ? 
-              order.items.map((item: any) => ({
+            Array.isArray(items) ? 
+              items.map((item: any) => ({
                 id: item.product_id,
                 product_id: item.product_id,
                 name: item.product?.name || 'Unknown Product',
