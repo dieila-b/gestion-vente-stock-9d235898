@@ -13,8 +13,10 @@ export const PurchaseHeader: React.FC<PurchaseHeaderProps> = ({
 }) => {
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-      <p className="text-muted-foreground">{description}</p>
+      <PageHeader>
+        <PageHeader.Title>{title}</PageHeader.Title>
+        <PageHeader.Description>{description}</PageHeader.Description>
+      </PageHeader>
     </div>
   );
 };

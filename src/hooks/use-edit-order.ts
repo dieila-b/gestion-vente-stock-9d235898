@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { safeClient, safeArray } from '@/utils/select-query-helper';
 
 export function useEditOrder(orderId) {
   const [client, setClient] = useState(null);
@@ -35,7 +36,7 @@ export function useEditOrder(orderId) {
         
         // Process the order
         // Safely check if items is an array and not a SelectQueryError
-        const items = isSelectQueryError(data.items) ? [] : (Array.isArray(data.items) ? data.items : []);
+        const items = safeArray(data.items, []);
         
         // Calculate totals from the actual items
         const orderTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -43,26 +44,7 @@ export function useEditOrder(orderId) {
         const orderFinalTotal = orderTotal - orderDiscount;
         
         // Create safe client object
-        const defaultClient = {
-          id: '',
-          company_name: 'Unknown Company',
-          contact_name: 'Unknown Contact',
-          status: 'particulier',
-          email: '',
-          phone: ''
-        };
-        
-        let clientData = defaultClient;
-        if (data.client && !isSelectQueryError(data.client)) {
-          clientData = {
-            id: data.client.id || defaultClient.id,
-            company_name: data.client.company_name || defaultClient.company_name,
-            contact_name: data.client.contact_name || defaultClient.contact_name,
-            status: data.client.status || defaultClient.status,
-            email: data.client.email || defaultClient.email,
-            phone: data.client.phone || defaultClient.phone
-          };
-        }
+        const clientData = safeClient(data.client);
         
         setClient(clientData);
         setOrderItems(items);

@@ -9,6 +9,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Format a date string or Date object to a localized string format
+ */
 export function formatDate(date: string | Date, formatStr: string = "dd/MM/yyyy"): string {
   if (!date) return "";
   
@@ -21,6 +24,9 @@ export function formatDate(date: string | Date, formatStr: string = "dd/MM/yyyy"
   }
 }
 
+/**
+ * Format a number as currency with the specified locale and currency code
+ */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('fr-FR', { 
     style: 'currency', 

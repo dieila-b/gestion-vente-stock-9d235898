@@ -19,23 +19,23 @@ export function createTableQuery<T extends keyof SupabaseTables>(
  */
 export function useExtendedTables() {
   const getPosLocations = () => {
-    return createTableQuery('pos_locations');
+    return supabase.from('pos_locations');
   };
   
   const getGeographicZones = () => {
-    return createTableQuery('geographic_zones');
+    return supabase.from('geographic_zones');
   };
   
   const getPriceRequests = () => {
-    return createTableQuery('price_requests');
+    return supabase.from('price_requests');
   };
   
   const getDeliveryNoteItems = () => {
-    return createTableQuery('delivery_note_items');
+    return supabase.from('delivery_note_items');
   };
   
   const getSupplierReturnItems = () => {
-    return createTableQuery('supplier_return_items');
+    return supabase.from('supplier_return_items');
   };
   
   // Add more tables as needed

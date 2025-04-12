@@ -5,6 +5,7 @@ import { PurchaseOrder } from "@/types/purchaseOrder";
 import { toast } from "sonner";
 import { DeliveryNote } from "@/types/delivery-note";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { safeSupplier } from "@/utils/select-query-helper";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -62,32 +63,19 @@ export function useApprovePurchaseOrder() {
         if (deliveryItemsError) throw deliveryItemsError;
       }
 
-      // Create default supplier object for fallback
-      const defaultSupplier = { 
-        id: '', 
-        name: 'Unknown Supplier', 
-        phone: '', 
-        email: '' 
-      };
+      // Process supplier data safely
+      const supplier = safeSupplier(updatedOrder.supplier);
 
-      // Safely handle supplier data
-      const supplier = isSelectQueryError(updatedOrder.supplier) 
-        ? defaultSupplier
-        : {
-            id: updatedOrder.supplier?.id || defaultSupplier.id,
-            name: updatedOrder.supplier?.name || defaultSupplier.name,
-            phone: updatedOrder.supplier?.phone || defaultSupplier.phone,
-            email: updatedOrder.supplier?.email || defaultSupplier.email
-          };
-
-      // Cast payment_status to the correct type
+      // Cast status and payment_status to the correct types
+      const status = updatedOrder.status as "pending" | "delivered" | "draft" | "approved";
       const paymentStatus = updatedOrder.payment_status as "pending" | "partial" | "paid";
 
+      // Construct and return the purchase order
       const purchaseOrder: PurchaseOrder = {
         ...updatedOrder,
         supplier,
         items: orderItems,
-        status: updatedOrder.status as "pending" | "delivered" | "draft" | "approved",
+        status,
         payment_status: paymentStatus
       };
 

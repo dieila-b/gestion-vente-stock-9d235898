@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchaseOrder";
 import { toast } from "sonner";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { safeSupplier } from "@/utils/select-query-helper";
 
 export function useCreatePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -44,23 +45,8 @@ export function useCreatePurchaseOrder() {
 
       if (error) throw error;
 
-      // Process supplier data
-      const defaultSupplier = {
-        id: "",
-        name: "Unknown Supplier",
-        phone: "",
-        email: ""
-      };
-
-      // Safely handle supplier data
-      const supplier = isSelectQueryError(data.supplier) 
-        ? defaultSupplier
-        : {
-            id: data.supplier?.id || defaultSupplier.id,
-            name: data.supplier?.name || defaultSupplier.name,
-            phone: data.supplier?.phone || defaultSupplier.phone,
-            email: data.supplier?.email || defaultSupplier.email
-          };
+      // Process supplier data safely
+      const supplier = safeSupplier(data.supplier);
 
       // Return processed purchase order
       return {

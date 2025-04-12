@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchaseOrder";
 import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { safeSupplier } from "@/utils/select-query-helper";
 
 export function usePurchaseOrderQueries(
   status: string | null = null,
@@ -34,27 +35,14 @@ export function usePurchaseOrderQueries(
       if (error) throw error;
 
       const processedOrders = data.map((order) => {
-        const defaultSupplier = {
-          id: "",
-          name: "Unknown Supplier",
-          phone: "",
-          email: "",
-        };
-
+        // Default objects
         const defaultWarehouse = {
           id: "",
           name: "Unknown Warehouse",
         };
 
-        // Safely handle supplier
-        const supplier = isSelectQueryError(order.supplier) 
-          ? defaultSupplier
-          : {
-              id: order.supplier?.id || defaultSupplier.id,
-              name: order.supplier?.name || defaultSupplier.name,
-              phone: order.supplier?.phone || defaultSupplier.phone,
-              email: order.supplier?.email || defaultSupplier.email
-            };
+        // Process supplier data safely
+        const supplier = safeSupplier(order.supplier);
 
         // Safely handle warehouse
         const warehouse = isSelectQueryError(order.warehouse)
@@ -106,27 +94,14 @@ export function usePurchaseOrderQueries(
 
       if (error) throw error;
 
-      const defaultSupplier = {
-        id: "",
-        name: "Unknown Supplier",
-        phone: "",
-        email: "",
-      };
-
+      // Default objects
       const defaultWarehouse = {
         id: "",
         name: "Unknown Warehouse",
       };
 
-      // Safely handle supplier
-      const supplier = isSelectQueryError(data.supplier) 
-        ? defaultSupplier
-        : {
-            id: data.supplier?.id || defaultSupplier.id,
-            name: data.supplier?.name || defaultSupplier.name,
-            phone: data.supplier?.phone || defaultSupplier.phone,
-            email: data.supplier?.email || defaultSupplier.email
-          };
+      // Process supplier data safely
+      const supplier = safeSupplier(data.supplier);
 
       // Safely handle warehouse
       const warehouse = isSelectQueryError(data.warehouse)

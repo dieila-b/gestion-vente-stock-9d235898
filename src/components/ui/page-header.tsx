@@ -16,7 +16,33 @@ interface PageHeaderDescriptionProps {
   className?: string;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ 
+// Create the components separately instead of adding them as properties
+const PageHeaderTitle = ({ 
+  children, 
+  className = ""
+}: PageHeaderTitleProps) => {
+  return (
+    <h2 className={`text-2xl font-bold tracking-tight ${className}`}>
+      {children}
+    </h2>
+  );
+};
+
+const PageHeaderDescription = ({ 
+  children, 
+  className = ""
+}: PageHeaderDescriptionProps) => {
+  return (
+    <p className={`text-muted-foreground ${className}`}>
+      {children}
+    </p>
+  );
+};
+
+export const PageHeader: React.FC<PageHeaderProps> & {
+  Title: typeof PageHeaderTitle;
+  Description: typeof PageHeaderDescription;
+} = ({ 
   children, 
   className = ""
 }: PageHeaderProps) => {
@@ -27,25 +53,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   );
 };
 
-// Define subcomponents
-PageHeader.Title = function Title({ 
-  children, 
-  className = ""
-}: PageHeaderTitleProps) {
-  return (
-    <h2 className={`text-2xl font-bold tracking-tight ${className}`}>
-      {children}
-    </h2>
-  );
-};
-
-PageHeader.Description = function Description({ 
-  children, 
-  className = ""
-}: PageHeaderDescriptionProps) {
-  return (
-    <p className={`text-muted-foreground ${className}`}>
-      {children}
-    </p>
-  );
-};
+// Assign the subcomponents properly
+PageHeader.Title = PageHeaderTitle;
+PageHeader.Description = PageHeaderDescription;
