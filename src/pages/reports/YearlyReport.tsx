@@ -8,15 +8,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format, startOfYear, endOfYear, eachMonthOfInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { formatGNF } from "@/lib/currency";
+import { POSLocation } from "@/types/pos-locations";
 
+// Define the SalesData type outside to avoid nesting
 type SalesData = {
   month: string;
   sales: number;
-}
-
-type POSLocation = {
-  id: string;
-  name: string;
 }
 
 export default function YearlyReport() {
@@ -26,7 +23,7 @@ export default function YearlyReport() {
   const [selectedType, setSelectedType] = useState("Par mois");
 
   // Récupérer la liste des points de vente
-  const posLocationsQuery = useQuery({
+  const { data: posLocations = [] } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,57 +36,54 @@ export default function YearlyReport() {
     }
   });
   
-  const posLocations = posLocationsQuery.data || [];
+  // Completely separate type definition from useQuery to avoid deep instantiation
+  const fetchSalesData = async (): Promise<SalesData[]> => {
+    const startDate = startOfYear(new Date(parseInt(selectedYear)));
+    const endDate = endOfYear(startDate);
 
-  // Fix the type instantiation issue by avoiding nested generic types
-  const salesDataQuery = useQuery({
-    queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
-    queryFn: async () => {
-      const startDate = startOfYear(new Date(parseInt(selectedYear)));
-      const endDate = endOfYear(startDate);
+    const query = supabase
+      .from('orders')
+      .select('created_at, final_total')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .order('created_at');
 
-      const query = supabase
-        .from('orders')
-        .select('created_at, final_total')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at');
-
-      if (selectedPOS !== "all") {
-        query.eq('depot', selectedPOS);
-      }
-
-      const { data: orders, error } = await query;
-
-      if (error) throw error;
-
-      // Générer tous les mois de l'année
-      const months = eachMonthOfInterval({
-        start: startDate,
-        end: endDate
-      });
-
-      // Initialiser les données avec 0 pour chaque mois
-      const monthlyData: SalesData[] = months.map((month) => ({
-        month: format(month, 'MMMM', { locale: fr }),
-        sales: 0
-      }));
-
-      // Agréger les ventes par mois
-      orders?.forEach((order) => {
-        const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
-        const index = monthlyData.findIndex((data) => data.month === orderMonth);
-        if (index !== -1) {
-          monthlyData[index].sales += order.final_total;
-        }
-      });
-
-      return monthlyData;
+    if (selectedPOS !== "all") {
+      query.eq('depot', selectedPOS);
     }
+
+    const { data: orders, error } = await query;
+
+    if (error) throw error;
+
+    // Générer tous les mois de l'année
+    const months = eachMonthOfInterval({
+      start: startDate,
+      end: endDate
+    });
+
+    // Initialiser les données avec 0 pour chaque mois
+    const monthlyData: SalesData[] = months.map((month) => ({
+      month: format(month, 'MMMM', { locale: fr }),
+      sales: 0
+    }));
+
+    // Agréger les ventes par mois
+    orders?.forEach((order) => {
+      const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
+      const index = monthlyData.findIndex((data) => data.month === orderMonth);
+      if (index !== -1) {
+        monthlyData[index].sales += order.final_total;
+      }
+    });
+
+    return monthlyData;
+  };
+
+  const { data: salesData = [], isLoading } = useQuery({
+    queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
+    queryFn: fetchSalesData
   });
-  
-  const salesData = salesDataQuery.data || [];
-  const isLoading = salesDataQuery.isLoading;
 
   const years = Array.from(
     { length: 5 },
