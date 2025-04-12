@@ -26,24 +26,31 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Build the base query
-    let query = supabase
+    // Create a regular query builder first
+    const queryBuilder = supabase
       .from('orders')
-      .select('created_at, final_total')
+      .select('created_at, final_total');
+    
+    // Add date range filters
+    const dateFilteredQuery = queryBuilder
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString());
     
-    // Only add depot filter if a specific POS is selected
+    // Add POS filter if needed
+    let finalQuery = dateFilteredQuery;
     if (selectedPOS !== "all") {
-      query = query.eq('depot', selectedPOS);
+      finalQuery = dateFilteredQuery.eq('depot', selectedPOS);
     }
     
-    // Order the results and execute query
-    const { data: orders, error } = await query.order('created_at');
+    // Execute the query with an explicit type annotation
+    const { data, error } = await finalQuery.order('created_at') as { 
+      data: OrderData[] | null; 
+      error: Error | null 
+    };
     
     if (error) throw error;
     
-    if (!orders) return [];
+    if (!data) return [];
 
     // Generate all months of the year
     const months = eachMonthOfInterval({
@@ -58,7 +65,7 @@ async function fetchSalesData(
     }));
 
     // Aggregate sales by month
-    orders.forEach((order: OrderData) => {
+    data.forEach((order: OrderData) => {
       const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
       const index = monthlyData.findIndex((data) => data.month === orderMonth);
       if (index !== -1) {
