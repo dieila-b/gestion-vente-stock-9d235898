@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Category } from "@/types/Category";
 
 export function useIncomeCategories() {
   const queryClient = useQueryClient();
@@ -16,7 +17,12 @@ export function useIncomeCategories() {
         .order('name');
       
       if (error) throw error;
-      return data;
+      
+      // Cast to proper category type
+      return data.map(category => ({
+        ...category,
+        type: 'income' as 'expense' | 'income'
+      })) as Category[];
     }
   });
 

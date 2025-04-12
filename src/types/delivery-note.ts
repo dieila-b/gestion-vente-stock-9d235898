@@ -5,7 +5,7 @@ export interface DeliveryNote {
   created_at: string;
   updated_at: string;
   notes: string;
-  status: string;
+  status: string;  // Added this field
   supplier_id?: string;
   purchase_order_id?: string;
   

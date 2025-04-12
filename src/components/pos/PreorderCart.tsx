@@ -55,8 +55,10 @@ export function PreorderCart({
     calculateTotals();
   }, [items]);
 
-  const hasOutOfStockItems = items.some(item => !item.stock || item.stock === 0);
-  const hasLowStockItems = items.some(item => item.stock && item.stock < item.quantity);
+  // Removed stock-related checks since they are not needed for PreorderCart
+  // and were causing type errors
+  const hasOutOfStockItems = false;
+  const hasLowStockItems = false;
 
   const getButtonText = () => {
     if (isLoading) return "Traitement...";

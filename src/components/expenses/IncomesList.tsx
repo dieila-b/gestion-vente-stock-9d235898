@@ -1,8 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { formatGNF } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Income } from "@/types/outcome";
 
@@ -26,14 +25,6 @@ export function IncomesList({ incomes, onDelete, isLoading = false }: IncomesLis
     );
   }
 
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd MMM yyyy", { locale: fr });
-    } catch {
-      return dateString;
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -45,27 +36,24 @@ export function IncomesList({ incomes, onDelete, isLoading = false }: IncomesLis
         ) : (
           <div className="divide-y">
             {incomes.map((income) => (
-              <div key={income.id} className="py-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{income.description}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(income.created_at)} - {income.category?.name || "Catégorie inconnue"}
-                    </p>
+              <div key={income.id} className="py-3 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{income.description}</p>
+                  <div className="text-sm text-muted-foreground">
+                    <span>{income.category?.name}</span> • 
+                    <span className="ml-1">{new Date(income.created_at).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-green-600">
-                      {income.amount.toLocaleString()} GNF
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(income.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-green-500">{formatGNF(income.amount)}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(income.id)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}

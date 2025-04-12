@@ -8,6 +8,9 @@ export interface CartItem {
   discount: number;
   category: string;
   subtotal: number;
+  stock?: number;  // Added stock property
+  image_url?: string;
+  reference?: string;
 }
 
 export interface CartState {
@@ -18,8 +21,7 @@ export interface CartState {
     [key: string]: any;
   } | null;
   notes: string;
-  // Adding these properties to match implementation
-  subtotal?: number;
-  discount?: number;
-  total?: number;
+  subtotal: number;  // Changed from optional to required
+  discount: number;  // Changed from optional to required
+  total: number;     // Changed from optional to required
 }

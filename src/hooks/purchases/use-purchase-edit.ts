@@ -42,14 +42,16 @@ export function usePurchaseEdit() {
 
       return data;
     },
-    enabled: !!id,
-    onSuccess: (data) => {
-      if (data) {
-        setDeliveryStatus(data.status as 'pending' | 'delivered');
-        setPaymentStatus(data.payment_status as 'pending' | 'partial' | 'paid');
-      }
-    },
+    enabled: !!id
   });
+
+  // Set states when data is loaded
+  useEffect(() => {
+    if (purchase) {
+      setDeliveryStatus(purchase.status as 'pending' | 'delivered');
+      setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
+    }
+  }, [purchase]);
 
   // Handle update
   const handleUpdate = async (data: any) => {
@@ -77,8 +79,10 @@ export function usePurchaseEdit() {
   // Update status
   const updateStatus = async (status: string) => {
     try {
-      setDeliveryStatus(status as 'pending' | 'delivered');
-      await handleUpdate({ status });
+      if (status === 'pending' || status === 'delivered') {
+        setDeliveryStatus(status);
+        await handleUpdate({ status });
+      }
     } catch (error: any) {
       toast.error(`Error updating status: ${error.message}`);
     }
@@ -87,8 +91,10 @@ export function usePurchaseEdit() {
   // Update payment status
   const updatePaymentStatus = async (status: string) => {
     try {
-      setPaymentStatus(status as 'pending' | 'partial' | 'paid');
-      await handleUpdate({ payment_status: status });
+      if (status === 'pending' || status === 'partial' || status === 'paid') {
+        setPaymentStatus(status);
+        await handleUpdate({ payment_status: status });
+      }
     } catch (error: any) {
       toast.error(`Error updating payment status: ${error.message}`);
     }

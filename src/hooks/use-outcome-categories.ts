@@ -2,12 +2,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Category } from "@/types/Category";
 
 export function useOutcomeCategories() {
   const queryClient = useQueryClient();
 
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['outcome-categories'],
+    queryKey: ['expense-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('expense_categories')
@@ -16,7 +17,12 @@ export function useOutcomeCategories() {
         .order('name');
       
       if (error) throw error;
-      return data;
+      
+      // Cast to proper category type
+      return data.map(category => ({
+        ...category,
+        type: 'expense' as 'expense' | 'income'
+      })) as Category[];
     }
   });
 
@@ -36,7 +42,7 @@ export function useOutcomeCategories() {
     },
     onSuccess: () => {
       toast.success("Catégorie créée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['outcome-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
     },
     onError: (error: any) => {
       toast.error(`Erreur: ${error.message}`);
@@ -55,7 +61,7 @@ export function useOutcomeCategories() {
     },
     onSuccess: () => {
       toast.success("Catégorie supprimée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['outcome-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
     },
     onError: (error: any) => {
       toast.error(`Erreur: ${error.message}`);

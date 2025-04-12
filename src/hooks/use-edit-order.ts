@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client_unified";
-import { CartItem } from "@/types/pos";
+import { CartItem } from "@/types/CartState";
 import { isSelectQueryError } from "@/utils/type-utils";
 
 export default function useEditOrder(
@@ -56,19 +56,20 @@ export default function useEditOrder(
     if (!isOrderLoading && orderData) {
       if (orderData.client && !isSelectQueryError(orderData.client)) {
         const clientData = orderData.client;
+        // Create client data with safe defaults for potential missing properties
         const client: Client = {
           id: clientData.id || '',
           company_name: clientData.company_name || '',
           contact_name: clientData.contact_name || '',
           email: clientData.email || '',
           phone: clientData.phone || '',
-          mobile_1: clientData.mobile_1 || '',
-          mobile_2: clientData.mobile_2 || '',
-          whatsapp: clientData.whatsapp || '',
-          credit_limit: clientData.credit_limit || 0,
-          rc_number: clientData.rc_number || '',
-          cc_number: clientData.cc_number || '',
-          status: clientData.status || 'active',
+          mobile_1: clientData.mobile_1 || '',   // Handle potential undefined properties
+          mobile_2: clientData.mobile_2 || '',   // Handle potential undefined properties
+          whatsapp: clientData.whatsapp || '',   // Handle potential undefined properties
+          credit_limit: clientData.credit_limit || 0, // Handle potential undefined properties
+          rc_number: clientData.rc_number || '', // Handle potential undefined properties
+          cc_number: clientData.cc_number || '', // Handle potential undefined properties
+          status: clientData.status || 'active', // Handle potential undefined properties
           address: clientData.address || '',
           city: clientData.city || '',
           state: clientData.state || '',

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Outcome } from "@/types/outcome";
 
 export function useOutcomes() {
   const queryClient = useQueryClient();
@@ -15,32 +16,18 @@ export function useOutcomes() {
           *,
           category:category_id(id, name)
         `)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as Outcome[];
     }
   });
 
   const createOutcome = useMutation({
-    mutationFn: async (outcomeData: { 
-      amount: number;
-      description: string;
-      category_id: string;
-      date?: string;
-      payment_method?: string;
-      receipt_number?: string;
-    }) => {
+    mutationFn: async (outcomeData: Partial<Outcome>) => {
       const { data, error } = await supabase
         .from('outcome_entries')
-        .insert({
-          amount: outcomeData.amount,
-          description: outcomeData.description,
-          category_id: outcomeData.category_id,
-          date: outcomeData.date || new Date().toISOString(),
-          payment_method: outcomeData.payment_method || 'cash',
-          receipt_number: outcomeData.receipt_number
-        })
+        .insert(outcomeData)
         .select()
         .single();
       

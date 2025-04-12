@@ -2,46 +2,47 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Category } from "@/types/category";
+import { Category } from "@/types/Category";
+import { Outcome } from "@/types/outcome";
 
 interface OutcomeFormProps {
-  onSubmit: (data: {
-    amount: number;
-    description: string;
-    category_id: string;
-    payment_method: string;
-    receipt_number?: string;
-  }) => void;
+  onSubmit: (data: Partial<Outcome>) => Promise<any>;
   categories: Category[];
   isLoading?: boolean;
 }
 
 export function OutcomeForm({ onSubmit, categories, isLoading = false }: OutcomeFormProps) {
   const [amount, setAmount] = useState<number>(0);
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [receiptNumber, setReceiptNumber] = useState("");
+  const [description, setDescription] = useState<string>("");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [receiptNumber, setReceiptNumber] = useState<string>("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount > 0 && description.trim() && categoryId) {
-      onSubmit({
-        amount,
-        description,
-        category_id: categoryId,
-        payment_method: paymentMethod,
-        receipt_number: receiptNumber || undefined
-      });
-      setAmount(0);
-      setDescription("");
-      setCategoryId("");
-      setPaymentMethod("cash");
-      setReceiptNumber("");
+    if (amount && description && categoryId) {
+      try {
+        await onSubmit({
+          amount,
+          description,
+          category_id: categoryId,
+          payment_method: paymentMethod,
+          receipt_number: receiptNumber || undefined,
+          date: new Date().toISOString()
+        });
+        // Reset form
+        setAmount(0);
+        setDescription("");
+        setCategoryId("");
+        setPaymentMethod("cash");
+        setReceiptNumber("");
+      } catch (error) {
+        console.error("Error submitting outcome:", error);
+      }
     }
   };
 
@@ -51,73 +52,72 @@ export function OutcomeForm({ onSubmit, categories, isLoading = false }: Outcome
         <CardTitle>Ajouter une dépense</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="amount">Montant</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="Montant"
-                value={amount || ""}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                required
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="category">Catégorie</Label>
-              <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="payment-method">Méthode de paiement</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un mode de paiement" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Espèces</SelectItem>
-                  <SelectItem value="card">Carte bancaire</SelectItem>
-                  <SelectItem value="transfer">Virement</SelectItem>
-                  <SelectItem value="check">Chèque</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="receipt">Numéro de reçu</Label>
-              <Input
-                id="receipt"
-                placeholder="Numéro de reçu"
-                value={receiptNumber}
-                onChange={(e) => setReceiptNumber(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Description de la dépense"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="amount">Montant</Label>
+            <Input
+              id="amount"
+              type="number"
+              value={amount || ""}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="category">Catégorie</Label>
+            <Select value={categoryId} onValueChange={setCategoryId} required>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="paymentMethod">Mode de paiement</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Espèces</SelectItem>
+                <SelectItem value="card">Carte bancaire</SelectItem>
+                <SelectItem value="transfer">Virement</SelectItem>
+                <SelectItem value="check">Chèque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="receiptNumber">Numéro de reçu (optionnel)</Label>
+            <Input
+              id="receiptNumber"
+              value={receiptNumber}
+              onChange={(e) => setReceiptNumber(e.target.value)}
+            />
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end">
+        
+        <CardFooter>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Enregistrement..." : "Ajouter"}
+            {isLoading ? "Enregistrement..." : "Enregistrer la dépense"}
           </Button>
         </CardFooter>
       </form>
