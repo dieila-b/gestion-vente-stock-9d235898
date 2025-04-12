@@ -31,7 +31,7 @@ export const useUserMutations = (queryClient: QueryClient) => {
         const { password, photo_url, ...userData } = user;
         
         // Create a base object with required fields, ensuring they aren't nullable
-        const userDbObject = {
+        return {
           id: crypto.randomUUID(),
           email: userData.email || '',
           first_name: userData.first_name || '',
@@ -40,10 +40,8 @@ export const useUserMutations = (queryClient: QueryClient) => {
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
           phone: userData.phone || '',
           address: userData.address || ''
-          // photo_url est délibérément omis car il semble causer des problèmes
+          // photo_url is deliberately omitted as it causes issues
         };
-
-        return userDbObject;
       });
       
       console.log("Inserting users:", usersForDb);

@@ -67,12 +67,12 @@ export const ProfilePhotoSection = ({
         <CardContent className="pt-4">
           <Alert variant="destructive" className="mb-3">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Téléchargement d'images temporairement désactivé</AlertDescription>
+            <AlertDescription>Téléchargement d'images désactivé - fonctionnalité en développement</AlertDescription>
           </Alert>
           <ImageUpload 
             onUpload={handleImageUploadWithLoading} 
             value={user.photo_url}
-            disabled={true} // Toujours désactivé pour l'instant
+            disabled={true} // Disabled for now
           />
         </CardContent>
       </Card>
