@@ -29,7 +29,11 @@ const ClientsPage = () => {
         throw error;
       }
 
-      return data as Client[];
+      // Add default status if not present to conform to Client type
+      return (data as any[]).map(client => ({
+        ...client,
+        status: client.status || "active" 
+      })) as Client[];
     }
   });
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Client } from "@/types/client";
@@ -11,37 +10,48 @@ import { cn } from "@/lib/utils";
 import { AddClientForm } from "@/components/clients/AddClientForm";
 
 interface ClientSelectProps {
-  selectedClient: Client | null;
-  onSelectClient: (client: Client | null) => void;
-  onChange?: (client: Client | null) => void; // Added for backward compatibility
+  value: Client | null;
+  onChange?: (client: Client | null) => void;
 }
 
-export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: ClientSelectProps) => {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+export const ClientSelect = ({ value, onChange }: ClientSelectProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
 
-  const { data: clients } = useQuery({
-    queryKey: ['clients'],
+  const { data: clientsData = [], isLoading } = useQuery({
+    queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('company_name', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from("clients")
+          .select("*")
+          .order("company_name");
 
-      if (error) throw error;
-      return data as Client[];
-    }
+        if (error) {
+          throw error;
+        }
+
+        return (data as any[]).map(client => ({
+          ...client,
+          status: client.status || "active"
+        })) as Client[];
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+        toast.error("Erreur lors du chargement des clients");
+        return [];
+      }
+    },
   });
 
   const handleSelectClient = (client: Client | null) => {
-    onSelectClient(client);
-    if (onChange) onChange(client);
+    onChange(client);
+    if (showAddClient) setShowAddClient(false);
   };
 
-  const filteredClients = clients?.filter(client => {
-    if (!search) return true;
-    const searchLower = search.toLowerCase();
+  const filteredClients = clientsData?.filter(client => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
     return (
       client.company_name?.toLowerCase().includes(searchLower) ||
       client.contact_name?.toLowerCase().includes(searchLower) ||
@@ -52,23 +62,23 @@ export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: Clien
 
   return (
     <div className="relative">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={selectedClient ? "outline" : "destructive"}
+            variant={value ? "outline" : "destructive"}
             role="combobox"
-            aria-expanded={open}
+            aria-expanded={isOpen}
             className={cn(
               "w-[300px] justify-between enhanced-glass", 
-              !selectedClient && "border-2 border-red-500"
+              !value && "border-2 border-red-500"
             )}
           >
-            {selectedClient ? (
+            {value ? (
               <div className="flex items-center gap-2">
-                <span>{selectedClient.company_name || selectedClient.contact_name}</span>
-                {selectedClient.contact_name && selectedClient.company_name && (
+                <span>{value.company_name || value.contact_name}</span>
+                {value.contact_name && value.company_name && (
                   <span className="text-sm text-muted-foreground">
-                    ({selectedClient.contact_name})
+                    ({value.contact_name})
                   </span>
                 )}
               </div>
@@ -86,8 +96,8 @@ export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: Clien
               <UserSearch className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
                 placeholder="Rechercher un client..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
@@ -97,11 +107,11 @@ export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: Clien
                   key={client.id}
                   onClick={() => {
                     handleSelectClient(client);
-                    setOpen(false);
+                    setIsOpen(false);
                   }}
                   className={cn(
                     "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-white/10",
-                    selectedClient?.id === client.id && "bg-white/10"
+                    value?.id === client.id && "bg-white/10"
                   )}
                 >
                   <div className="flex-1">
@@ -111,7 +121,7 @@ export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: Clien
                       {client.phone && ` • ${client.phone}`}
                     </div>
                   </div>
-                  {selectedClient?.id === client.id && (
+                  {value?.id === client.id && (
                     <Check className="h-4 w-4" />
                   )}
                 </div>
@@ -123,7 +133,7 @@ export const ClientSelect = ({ selectedClient, onSelectClient, onChange }: Clien
                 className="w-full justify-start gap-2"
                 onClick={() => {
                   setShowAddClient(true);
-                  setOpen(false);
+                  setIsOpen(false);
                 }}
               >
                 <UserPlus className="h-4 w-4" />

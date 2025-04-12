@@ -24,6 +24,7 @@ import { formatGNF } from "@/lib/currency";
 import { Plus, X } from "lucide-react";
 import { ExpenseIncomePrintDialog } from "./ExpenseIncomePrintDialog";
 import { addCashRegisterTransaction } from "@/api/cash-register-api";
+import { safeGet } from "@/utils/select-query-helper";
 
 export function ExpenseOutcomeTab() {
   const [isFormVisible, setIsFormVisible] = useState(false);
@@ -33,7 +34,6 @@ export function ExpenseOutcomeTab() {
     category_id: "",
   });
 
-  // Query pour récupérer la caisse active
   const { data: activeCashRegister } = useQuery({
     queryKey: ['active-cash-register'],
     queryFn: async () => {
@@ -49,13 +49,13 @@ export function ExpenseOutcomeTab() {
   });
 
   const { data: outcomes = [], refetch } = useQuery({
-    queryKey: ['outcome-entries'],
+    queryKey: ['expense-entries'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('outcome_entries')
+        .from('expense_entries')
         .select(`
           *,
-          expense_categories!outcome_entries_expense_category_id_fkey (
+          expense_categories!expense_entries_expense_category_id_fkey (
             name
           )
         `)
@@ -96,10 +96,8 @@ export function ExpenseOutcomeTab() {
     }
 
     try {
-      // Commencer une transaction Supabase
-      // 1. Ajouter la sortie
       const { data: outcomeEntry, error: outcomeError } = await supabase
-        .from('outcome_entries')
+        .from('expense_entries')
         .insert({ 
           amount: parseFloat(newOutcome.amount),
           description: newOutcome.description || null,
@@ -110,7 +108,6 @@ export function ExpenseOutcomeTab() {
 
       if (outcomeError) throw outcomeError;
 
-      // 2. Créer la transaction de caisse
       await addCashRegisterTransaction(
         activeCashRegister.id,
         'withdrawal',
@@ -128,11 +125,10 @@ export function ExpenseOutcomeTab() {
     }
   };
 
-  // Formater les données pour l'impression
   const printableOutcomes = outcomes.map(outcome => ({
     id: outcome.id,
     date: outcome.created_at,
-    category: { name: outcome.expense_categories?.name || "Non catégorisé" },
+    category: { name: safeGet(outcome.expense_categories, 'name', 'Non catégorisé') },
     description: outcome.description,
     amount: outcome.amount
   }));
@@ -230,7 +226,7 @@ export function ExpenseOutcomeTab() {
                     {new Date(outcome.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>{outcome.description}</TableCell>
-                  <TableCell>{outcome.expense_categories?.name || "Non catégorisé"}</TableCell>
+                  <TableCell>{safeGet(outcome.expense_categories, 'name', 'Non catégorisé')}</TableCell>
                   <TableCell className="text-right font-medium text-red-600">
                     {formatGNF(outcome.amount)}
                   </TableCell>

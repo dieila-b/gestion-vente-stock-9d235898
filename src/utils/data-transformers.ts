@@ -24,5 +24,5 @@ export function transformPOSLocation(item: any): POSLocation {
 // Map an array of POS locations safely
 export function transformPOSLocations(items: any[]): POSLocation[] {
   if (!Array.isArray(items)) return [];
-  return items.map(item => safePOSLocation(item));
+  return items.map(item => transformPOSLocation(item));
 }

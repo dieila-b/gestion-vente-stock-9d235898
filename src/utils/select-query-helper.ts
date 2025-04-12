@@ -1,13 +1,22 @@
 
 import type { PostgrestError } from "@supabase/supabase-js";
 
+// Type for SelectQueryError to match what Supabase returns when queries fail
+export interface SelectQueryError extends String {
+  error: true;
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
 // Type guard to check if an object is a SelectQueryError
-export function isSelectQueryError(obj: any): obj is { error: true } & String {
+export function isSelectQueryError(obj: any): obj is SelectQueryError {
   return obj && typeof obj === 'object' && obj.error === true;
 }
 
 // Safely access nested properties when they could be SelectQueryError
-export function safeGet<T, K extends keyof T>(obj: T | { error: true } & String, key: K, defaultValue: any = null): T[K] {
+export function safeGet<T, K extends keyof T>(obj: T | SelectQueryError, key: K, defaultValue: any = null): T[K] {
   if (isSelectQueryError(obj)) {
     return defaultValue;
   }
@@ -37,7 +46,7 @@ export function safeClient(client: any): {
 }
 
 // Safely handle arrays that could be SelectQueryError
-export function safeArray<T>(items: T[] | { error: true } & String): T[] {
+export function safeArray<T>(items: T[] | SelectQueryError): T[] {
   if (isSelectQueryError(items)) {
     return [];
   }

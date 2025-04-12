@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
+import { safeGet, safeSupplier } from "@/utils/select-query-helper";
 
 export function useFetchDeliveryNotes() {
   return useQuery({
@@ -48,26 +49,26 @@ export function useFetchDeliveryNotes() {
       if (!data) return [];
 
       const transformedData = data.map(note => {
-        const items = (note.items || []).map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          quantity_ordered: item.quantity_ordered,
-          quantity_received: item.quantity_received,
-          unit_price: item.unit_price,
+        const items = (safeGet(note, 'items', []) || []).map(item => ({
+          id: safeGet(item, 'id', ''),
+          product_id: safeGet(item, 'product_id', ''),
+          quantity_ordered: safeGet(item, 'quantity_ordered', 0),
+          quantity_received: safeGet(item, 'quantity_received', 0),
+          unit_price: safeGet(item, 'unit_price', 0),
           product: {
-            name: item.product.name,
-            reference: item.product.reference,
-            category: item.product.category
+            name: safeGet(item.product, 'name', 'Produit non disponible'),
+            reference: safeGet(item.product, 'reference', ''),
+            category: safeGet(item.product, 'category', '')
           }
         }));
 
         return {
-          id: note.id,
-          delivery_number: note.delivery_number,
-          created_at: note.created_at,
-          status: note.status,
-          supplier: note.supplier,
-          purchase_order: note.purchase_order || null,
+          id: safeGet(note, 'id', ''),
+          delivery_number: safeGet(note, 'delivery_number', ''),
+          created_at: safeGet(note, 'created_at', ''),
+          status: safeGet(note, 'status', ''),
+          supplier: safeSupplier(note.supplier),
+          purchase_order: safeGet(note, 'purchase_order', null),
           items
         } as DeliveryNote;
       });
