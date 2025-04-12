@@ -8,7 +8,7 @@ import { DeliveryNoteFilters } from "@/components/delivery-notes/DeliveryNoteFil
 import { useState } from "react";
 import { DeliveryNote } from "@/types/delivery-note";
 
-export function DeliveryNotePage() {
+export default function DeliveryNotePage() {
   const navigate = useNavigate();
   const { 
     isLoading, 
@@ -66,11 +66,6 @@ export function DeliveryNotePage() {
     return matchesStatus && matchesSearch;
   });
 
-  // Create wrapper that adapts the edit function to match the expected signature
-  const handleEditWrapper = (id: string) => {
-    handleEdit(id, {}); 
-  };
-
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -94,7 +89,7 @@ export function DeliveryNotePage() {
           isLoading={isLoading}
           onDelete={handleDelete}
           onApprove={handleApprove}
-          onEdit={handleEditWrapper}
+          onEdit={(id) => handleEdit(id, {})}
         />
       </div>
     </div>
