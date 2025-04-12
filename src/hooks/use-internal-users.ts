@@ -118,7 +118,7 @@ export const useInternalUsers = () => {
       if (error) throw error;
       
       toast.success("Utilisateurs ajoutés avec succès");
-      fetchUsers();
+      await fetchUsers();
       setNewUserData([]);
       setPasswordConfirmation({});
     } catch (error) {
