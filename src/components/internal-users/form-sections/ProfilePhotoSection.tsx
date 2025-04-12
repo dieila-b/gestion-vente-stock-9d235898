@@ -5,8 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { User } from "@/types/user";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserRound, Loader2, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UserRound, Loader2 } from "lucide-react";
 
 interface ProfilePhotoSectionProps {
   user: Omit<User, 'id'>;
@@ -65,14 +64,10 @@ export const ProfilePhotoSection = ({
       
       <Card className="w-full max-w-xs">
         <CardContent className="pt-4">
-          <Alert variant="destructive" className="mb-3">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Téléchargement d'images désactivé - fonctionnalité en développement</AlertDescription>
-          </Alert>
           <ImageUpload 
             onUpload={handleImageUploadWithLoading} 
             value={user.photo_url}
-            disabled={true} // Disabled for now
+            disabled={false}
           />
         </CardContent>
       </Card>
