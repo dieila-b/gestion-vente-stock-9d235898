@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { NewReturnForm, InvoiceItem } from "@/types/customer-return";
+import { safeProduct, safeFetchFromTable } from "@/utils/supabase-safe-query";
 
 export function useReturnDialog(onSuccess: () => void, onClose: () => void) {
   const [clients, setClients] = useState<{id: string, company_name: string}[]>([]);
@@ -75,18 +76,21 @@ export function useReturnDialog(onSuccess: () => void, onClose: () => void) {
           quantity,
           price,
           product_id,
-          product:products(id, name)
+          product:catalog(id, name)
         `)
         .eq('order_id', invoiceId);
       
       if (error) throw error;
       
-      const items = data.map(item => ({
-        product_id: item.product_id,
-        product_name: item.product?.name || 'Produit inconnu',
-        quantity: item.quantity,
-        price: item.price
-      }));
+      const items = data.map(item => {
+        const productData = safeProduct(item.product);
+        return {
+          product_id: item.product_id,
+          product_name: productData.name || 'Produit inconnu',
+          quantity: item.quantity,
+          price: item.price
+        };
+      });
       
       console.log('Fetched invoice items:', items);
       setInvoiceItems(items);

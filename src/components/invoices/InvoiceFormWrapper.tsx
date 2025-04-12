@@ -5,8 +5,8 @@ import { useInvoiceForm } from "@/hooks/use-invoice-form";
 import { DynamicInvoice } from "./dynamic/DynamicInvoice";
 import { useState } from "react";
 import { InvoicePaymentDialog } from "./payments/InvoicePaymentDialog";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { safeFetchRecordById, safeInvoice } from "@/utils/supabase-safe-query";
 
 export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   const {
@@ -28,14 +28,17 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     queryKey: ['invoice', currentInvoiceId],
     queryFn: async () => {
       if (!currentInvoiceId) return null;
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', currentInvoiceId)
-        .single();
       
-      if (error) throw error;
-      return data;
+      // Use safe fetch for tables that might not exist in the schema yet
+      const invoiceData = await safeFetchRecordById(
+        'invoices',
+        currentInvoiceId,
+        q => q,
+        null,
+        "Erreur lors de la récupération de la facture"
+      );
+      
+      return safeInvoice(invoiceData);
     },
     enabled: !!currentInvoiceId
   });
@@ -73,8 +76,11 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
+  // Make sure invoice object has all required properties
+  const invoiceData = safeInvoice(invoice);
+  
   // Ensure payment_status is one of the allowed values
-  const paymentStatus = invoice?.payment_status as 'paid' | 'partial' | 'pending' || 'pending';
+  const paymentStatus = invoiceData.payment_status as 'paid' | 'partial' | 'pending';
 
   return (
     <div className="space-y-6">
@@ -103,8 +109,8 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           total={finalTotal}
           onDownload={() => setShowPreview(false)}
           paymentStatus={paymentStatus}
-          paidAmount={invoice?.paid_amount}
-          remainingAmount={invoice?.remaining_amount}
+          paidAmount={invoiceData.paid_amount}
+          remainingAmount={invoiceData.remaining_amount}
           onAddPayment={handleAddPayment}
           clientName={formData.clientName}
         />
@@ -115,7 +121,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           isOpen={showPaymentDialog}
           onClose={() => setShowPaymentDialog(false)}
           invoiceId={currentInvoiceId}
-          remainingAmount={invoice?.remaining_amount || 0}
+          remainingAmount={invoiceData.remaining_amount || 0}
           onPaymentComplete={handlePaymentComplete}
         />
       )}
