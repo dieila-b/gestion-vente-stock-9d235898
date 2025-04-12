@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useFetchPurchaseOrders } from "@/hooks/use-purchase-orders";
+import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { isSelectQueryError } from "@/utils/type-utils";
 
 interface PurchaseOrder {
@@ -17,7 +18,7 @@ export default function PurchaseOrder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
-  const { data: purchaseOrders, isLoading } = useFetchPurchaseOrders();
+  const { orders: purchaseOrders, isLoading } = usePurchaseOrders();
 
   useEffect(() => {
     if (purchaseOrders && id) {
