@@ -17,12 +17,6 @@ type OrderData = {
   final_total: number;
 }
 
-// Define a simple interface for raw query results
-interface QueryResult {
-  data: OrderData[] | null;
-  error: any;
-}
-
 // Define fetch function completely outside the hook to avoid type inference issues
 async function fetchSalesData(
   selectedYear: string,
@@ -32,35 +26,29 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    let orders: OrderData[] | null = null;
-    let error = null;
+    // Prepare query parameters
+    const baseQuery = {
+      created_at: {
+        gte: startDate.toISOString(),
+        lte: endDate.toISOString()
+      }
+    };
     
-    // Execute the appropriate query based on the POS selection
-    if (selectedPOS === "all") {
-      // Query for all POS locations - use explicit type casting to avoid deep inference
-      const result = await supabase
-        .from('orders')
-        .select('created_at, final_total')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at');
-      
-      orders = result.data as OrderData[] | null;
-      error = result.error;
-    } else {
-      // Query for a specific POS location - use explicit type casting to avoid deep inference
-      const result = await supabase
-        .from('orders')
-        .select('created_at, final_total')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .eq('depot', selectedPOS)
-        .order('created_at');
-      
-      orders = result.data as OrderData[] | null;
-      error = result.error;
-    }
+    // Add depot filter if a specific POS is selected
+    const query = selectedPOS === "all" 
+      ? baseQuery
+      : { ...baseQuery, depot: selectedPOS };
 
+    // Execute the query using a simplified approach to avoid deep type inference
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('created_at, final_total')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .eq(selectedPOS !== "all" ? 'depot' : 'created_at', 
+          selectedPOS !== "all" ? selectedPOS : startDate.toISOString())
+      .order('created_at');
+    
     if (error) throw error;
     
     if (!orders) return [];
@@ -78,7 +66,7 @@ async function fetchSalesData(
     }));
 
     // Aggregate sales by month
-    orders.forEach((order) => {
+    orders.forEach((order: OrderData) => {
       const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
       const index = monthlyData.findIndex((data) => data.month === orderMonth);
       if (index !== -1) {
