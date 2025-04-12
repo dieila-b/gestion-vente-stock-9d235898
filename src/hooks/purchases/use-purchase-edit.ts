@@ -1,18 +1,18 @@
+import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
+import { useProducts } from "@/hooks/use-products";
+import { useSuppliers } from "@/hooks/use-suppliers";
+import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { useNavigate } from "react-router-dom";
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { usePurchaseOrders } from '@/hooks/use-purchase-orders';
-import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchaseOrder';
-import { isSelectQueryError } from '@/utils/supabase-helpers';
-import { safeSupplier, safeCast } from '@/utils/select-query-helper';
-import { toast } from 'sonner';
-
-export function usePurchaseEdit(id: string) {
-  const purchaseOrders = usePurchaseOrders();
-  const { handleUpdate } = purchaseOrders;
-
-  // Form state
+export const usePurchaseEdit = (id?: string) => {
+  const navigate = useNavigate();
+  const { currentOrder, isLoadingOrder, handleUpdate, handleCreate } = usePurchaseOrders();
+  const { suppliers } = useSuppliers();
+  const { products, isLoading: isLoadingProducts } = useProducts();
+  const { toast } = useToast();
+  
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<PurchaseOrderItem[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
@@ -21,173 +21,125 @@ export function usePurchaseEdit(id: string) {
   const [discount, setDiscount] = useState(0);
   const [taxRate, setTaxRate] = useState(20);
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
-  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered" | "draft" | "approved">("pending");
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
-  const [customItems, setCustomItems] = useState<PurchaseOrderItem[]>([]);
+  const [orderStatus, setOrderStatus] = useState<'draft' | 'pending' | 'delivered' | 'approved'>('pending');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
 
-  // Fetch order data
-  const { data: order, isLoading: isLoadingOrder } = useQuery({
-    queryKey: ["purchase-order", id],
-    queryFn: () => purchaseOrders.fetchPurchaseOrder(id),
-    enabled: !!id,
-    onSettled: (data) => {
-      if (data) {
-        // Process supplier data safely
-        const supplier = safeSupplier(data.supplier);
-        
-        setSelectedSupplier(data.supplier_id || "");
-        setShippingCost(data.shipping_cost || 0);
-        setTransitCost(data.transit_cost || 0);
-        setLogisticsCost(data.logistics_cost || 0);
-        setDiscount(data.discount || 0);
-        setTaxRate(data.tax_rate || 20);
-        setExpectedDeliveryDate(data.expected_delivery_date ? new Date(data.expected_delivery_date).toISOString().split('T')[0] : "");
-        setOrderStatus(data.status as "pending" | "delivered" | "draft" | "approved");
-        setPaymentStatus(data.payment_status as "pending" | "partial" | "paid");
-        
-        if (Array.isArray(data.items) && data.items.length > 0) {
-          setSelectedProducts(data.items.map(item => ({
-            id: item.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            selling_price: item.selling_price,
-            total_price: item.total_price,
-            product: item.product ? safeCast(item.product, { name: "Unknown Product" }) : { name: "Unknown Product" },
-            designation: item.product ? safeCast(item.product, { name: "Unknown Product" }).name : "Unknown Product"
-          })));
-        }
-      }
+  useEffect(() => {
+    if (id && currentOrder) {
+      setSelectedSupplier(currentOrder.supplier_id);
+      setSelectedProducts(currentOrder.items || []);
+      setShippingCost(currentOrder.shipping_cost);
+      setTransitCost(currentOrder.transit_cost);
+      setLogisticsCost(currentOrder.logistics_cost);
+      setDiscount(currentOrder.discount);
+      setTaxRate(currentOrder.tax_rate);
+      setExpectedDeliveryDate(currentOrder.expected_delivery_date || "");
+      setOrderStatus(currentOrder.status as 'draft' | 'pending' | 'delivered' | 'approved');
+      setPaymentStatus(currentOrder.payment_status);
     }
-  });
+  }, [id, currentOrder]);
 
-  // Fetch products for selection
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("catalog")
-        .select("*")
-        .order("name");
-        
-      if (error) throw error;
-      return data;
+  const handleProductSelect = (index: number, productId: string) => {
+    const selectedProduct = products?.find(p => p.id === productId);
+    if (!selectedProduct) {
+      toast({
+        title: "Erreur",
+        description: "Le produit sélectionné n'existe pas dans le catalogue",
+        variant: "destructive"
+      });
+      return;
     }
-  });
 
-  // Fetch suppliers for selection
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("suppliers")
-        .select("*")
-        .order("name");
-        
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Product selection handler
-  const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    
-    const newProduct: PurchaseOrderItem = {
-      id: `temp-${Date.now()}`,
-      product_id: product.id,
-      quantity: 1,
-      unit_price: product.purchase_price || 0,
-      selling_price: product.price || 0,
-      total_price: product.purchase_price || 0,
-      product: product,
-      designation: product.name
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      product_id: productId,
+      designation: selectedProduct.name,
+      product_code: selectedProduct.reference,
+      unit_price: selectedProduct.purchase_price || selectedProduct.price,
+      selling_price: selectedProduct.price || 0,
+      total_price: (updatedProducts[index].quantity || 0) * (selectedProduct.purchase_price || selectedProduct.price)
     };
-    
-    setSelectedProducts(prev => [...prev, newProduct]);
-  };
-
-  // Handler for adding a product
-  const handleAddProduct = (product: any) => {
-    const existingProductIndex = selectedProducts.findIndex(
-      (p) => p.product_id === product.id
-    );
-
-    if (existingProductIndex !== -1) {
-      // If product already exists, update quantity
-      const updatedProducts = [...selectedProducts];
-      updatedProducts[existingProductIndex].quantity += 1;
-      updatedProducts[existingProductIndex].total_price =
-        updatedProducts[existingProductIndex].quantity *
-        updatedProducts[existingProductIndex].unit_price;
-      setSelectedProducts(updatedProducts);
-    } else {
-      // Add new product
-      const newProduct: PurchaseOrderItem = {
-        id: `temp-${Date.now()}`,
-        product_id: product.id,
-        quantity: 1,
-        unit_price: product.purchase_price || 0,
-        selling_price: product.price || 0,
-        total_price: product.purchase_price || 0,
-        product: product,
-        designation: product.name
-      };
-      
-      setSelectedProducts([...selectedProducts, newProduct]);
-    }
-  };
-
-  // Handler for updating quantity
-  const handleQuantityChange = (index: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    const updatedProducts = [...selectedProducts];
-    updatedProducts[index].quantity = newQuantity;
-    updatedProducts[index].total_price = newQuantity * updatedProducts[index].unit_price;
     setSelectedProducts(updatedProducts);
   };
 
-  // Handler for updating price
-  const handlePriceChange = (index: number, newPrice: number) => {
-    if (newPrice < 0) return;
-    
-    const updatedProducts = [...selectedProducts];
-    updatedProducts[index].unit_price = newPrice;
-    updatedProducts[index].total_price = updatedProducts[index].quantity * newPrice;
-    setSelectedProducts(updatedProducts);
-  };
-
-  // Calculate subtotal before taxes and additional costs
   const calculateSubtotal = () => {
-    return selectedProducts.reduce((sum, product) => sum + product.total_price, 0);
+    const productsTotal = selectedProducts.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+    return productsTotal + shippingCost + transitCost + logisticsCost - discount;
   };
 
-  // Calculate tax amount
   const calculateTax = () => {
-    return (calculateSubtotal() * taxRate) / 100;
+    return calculateSubtotal() * (taxRate / 100);
   };
 
-  // Calculate total including taxes and additional costs
   const calculateTotal = () => {
-    return (
-      calculateSubtotal() +
-      calculateTax() +
-      shippingCost +
-      transitCost +
-      logisticsCost -
-      discount
-    );
+    return calculateSubtotal() + calculateTax();
   };
 
-  // Form submission handler
+  const handleAddProduct = () => {
+    const newProduct: PurchaseOrderItem = {
+      id: crypto.randomUUID(),
+      product_id: "",
+      product_code: "",
+      designation: "",
+      quantity: 1,
+      unit_price: 0,
+      total_price: 0,
+      selling_price: 0
+    };
+    setSelectedProducts([...selectedProducts, newProduct]);
+  };
+
+  const handleQuantityChange = (index: number, quantity: number) => {
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      quantity,
+      total_price: quantity * updatedProducts[index].unit_price
+    };
+    setSelectedProducts(updatedProducts);
+  };
+
+  const handlePriceChange = (index: number, price: number) => {
+    const updatedProducts = [...selectedProducts];
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      unit_price: price,
+      total_price: updatedProducts[index].quantity * price
+    };
+    setSelectedProducts(updatedProducts);
+  };
+
   const handleSubmit = async () => {
+    if (!selectedSupplier) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const invalidProducts = selectedProducts.filter(
+      item => !products?.some(p => p.id === item.product_id)
+    );
+
+    if (invalidProducts.length > 0) {
+      toast({
+        title: "Erreur",
+        description: "Certains produits sélectionnés n'existent pas dans le catalogue",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // Prepare order data
       const orderData = {
         supplier_id: selectedSupplier,
-        expected_delivery_date: expectedDeliveryDate || null,
+        items: selectedProducts.map(item => ({
+          ...item,
+          purchase_order_id: id
+        })),
         shipping_cost: shippingCost,
         transit_cost: transitCost,
         logistics_cost: logisticsCost,
@@ -196,54 +148,26 @@ export function usePurchaseEdit(id: string) {
         subtotal: calculateSubtotal(),
         tax_amount: calculateTax(),
         total_ttc: calculateTotal(),
-        total_amount: calculateTotal(),
+        expected_delivery_date: expectedDeliveryDate,
         status: orderStatus,
         payment_status: paymentStatus,
-        items: selectedProducts
+        paid_amount: 0 // Default value, should be updated in a real application
       };
-      
-      // Update the order
-      const updatedOrder = await handleUpdate(id, orderData);
-      
-      // Update items by removing old ones and adding new ones
-      if (selectedProducts.length > 0) {
-        // Remove existing items
-        const { error: deleteError } = await supabase
-          .from("purchase_order_items")
-          .delete()
-          .eq("purchase_order_id", id);
-          
-        if (deleteError) {
-          console.error("Error deleting existing items:", deleteError);
-          throw deleteError;
-        }
-        
-        // Add new items
-        const newItems = selectedProducts.map(item => ({
-          purchase_order_id: id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          selling_price: item.selling_price,
-          total_price: item.total_price
-        }));
-        
-        const { error: insertError } = await supabase
-          .from("purchase_order_items")
-          .insert(newItems);
-          
-        if (insertError) {
-          console.error("Error inserting new items:", insertError);
-          throw insertError;
-        }
+
+      if (id) {
+        await handleUpdate(id, orderData);
+      } else {
+        await handleCreate(orderData);
       }
       
-      // Success message
-      toast.success("Bon de commande mis à jour avec succès");
-      
+      navigate("/purchase-orders");
     } catch (error) {
-      console.error("Error updating purchase order:", error);
-      toast.error("Erreur lors de la mise à jour du bon de commande");
+      console.error("Erreur lors de la sauvegarde:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la sauvegarde",
+        variant: "destructive"
+      });
     }
   };
 
@@ -280,4 +204,4 @@ export function usePurchaseEdit(id: string) {
     handlePriceChange,
     handleSubmit
   };
-}
+};

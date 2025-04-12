@@ -1,150 +1,135 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
-import { castWithDefault } from '@/lib/utils';
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { CatalogProduct } from "@/types/catalog";
+import { toast } from "sonner";
+
+export interface InvoiceProduct extends CatalogProduct {
+  quantity: number;
+  discount: number;
+}
+
+export interface InvoiceFormData {
+  invoiceNumber: string;
+  clientName: string;
+  clientEmail: string;
+  amount: string;
+  description: string;
+  vatRate: string;
+  signature: string;
+  discount: string;
+  posLocationId?: string;
+}
 
 export function useInvoiceForm() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [productSearchQuery, setProductSearchQuery] = useState('');
-  const [showProductsModal, setShowProductsModal] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState('pending');
-  const [paidAmount, setPaidAmount] = useState(0);
-
-  const form = useForm({
-    defaultValues: {
-      issue_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: '',
-    },
+  const [selectedProducts, setSelectedProducts] = useState<InvoiceProduct[]>([]);
+  const [formData, setFormData] = useState<InvoiceFormData>({
+    invoiceNumber: generateInvoiceNumber(),
+    clientName: "",
+    clientEmail: "",
+    amount: "",
+    description: "",
+    vatRate: "20",
+    signature: "",
+    discount: "0",
+    posLocationId: ""
   });
 
-  const calculateSubtotal = () => {
-    return selectedProducts.reduce((total, product) => {
-      return total + (product.price * product.quantity);
-    }, 0);
-  };
+  function generateInvoiceNumber() {
+    const prefix = "INV";
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `${prefix}-${year}${month}-${random}`;
+  }
 
-  const calculateTotalWithoutDiscount = () => {
-    return calculateSubtotal();
-  };
-
-  const calculateTotal = () => {
-    return calculateTotalWithoutDiscount();
-  };
-
-  const addProduct = (product) => {
-    const existingProduct = selectedProducts.find(p => p.product_id === product.id);
-    
-    if (existingProduct) {
-      setSelectedProducts(prev => prev.map(p => {
-        if (p.product_id === product.id) {
-          return { ...p, quantity: p.quantity + 1 };
-        }
-        return p;
-      }));
-    } else {
-      setSelectedProducts(prev => [...prev, {
-        product_id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        discount: 0
-      }]);
-    }
-  };
-
-  const removeProduct = (productId) => {
-    setSelectedProducts(prev => prev.filter(p => p.product_id !== productId));
-  };
-
-  const updateProductQuantity = (productId, quantity) => {
-    if (quantity < 1) return;
-    
-    setSelectedProducts(prev => prev.map(p => {
-      if (p.product_id === productId) {
-        return { ...p, quantity: Number(quantity) };
-      }
-      return p;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
   };
 
-  const updateProductPrice = (productId, price, discount = 0) => {
+  const handleAddProduct = (product: CatalogProduct) => {
+    const existingProduct = selectedProducts.find(p => p.id === product.id);
+    
+    if (existingProduct) {
+      setSelectedProducts(selectedProducts.map(p => 
+        p.id === product.id 
+          ? { ...p, quantity: p.quantity + 1 }
+          : p
+      ));
+    } else {
+      setSelectedProducts([...selectedProducts, { ...product, quantity: 1, discount: 0 }]);
+    }
+  };
+
+  const handleRemoveProduct = (productId: string) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
+  };
+
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    setSelectedProducts(prev => prev.map(p => 
+      p.id === productId 
+        ? { ...p, quantity: Math.max(1, quantity) }
+        : p
+    ));
+  };
+
+  const handleUpdateDiscount = (productId: string, discount: number) => {
     setSelectedProducts(prev => prev.map(p => {
-      if (p.product_id === productId) {
-        return { 
-          ...p, 
-          price: Number(price),
-          discount: Number(discount) || 0
+      if (p.id === productId) {
+        const maxDiscount = p.price * p.quantity;
+        return {
+          ...p,
+          discount: Math.min(Math.max(0, discount), maxDiscount)
         };
       }
       return p;
     }));
   };
 
-  const ensureValidPaymentStatus = (status) => {
-    const validStatuses = ['pending', 'partial', 'paid'];
-    return validStatuses.includes(status) ? status : 'pending';
-  };
-
-  const handleSubmit = async (values) => {
-    if (!selectedClient) {
-      toast({
-        title: "Error",
-        description: "Please select a client",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedProducts.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please add at least one product",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const handleSubmitInvoice = async () => {
     try {
-      const invoiceId = uuidv4();
-      const invoiceData = {
-        id: invoiceId,
-        client_id: selectedClient.id,
-        issue_date: values.issue_date,
-        due_date: values.due_date,
-        total_amount: calculateTotal(),
-        payment_status: ensureValidPaymentStatus(paymentStatus),
-        paid_amount: paidAmount,
-        remaining_amount: calculateTotal() - paidAmount,
-        status: "completed",
-        notes: values.notes
-      };
+      const subtotal = selectedProducts.reduce((total, product) => {
+        return total + (product.price * product.quantity);
+      }, 0);
 
-      // Insert invoice
-      const { error: invoiceError } = await supabase
+      const totalDiscount = selectedProducts.reduce((total, product) => {
+        return total + (product.discount || 0);
+      }, 0);
+
+      const finalAmount = subtotal - totalDiscount;
+
+      const { data: invoice, error } = await supabase
         .from('invoices')
-        .insert(invoiceData);
+        .insert({
+          invoice_number: formData.invoiceNumber,
+          client_name: formData.clientName,
+          client_email: formData.clientEmail,
+          amount: finalAmount,
+          description: formData.description,
+          vat_rate: parseFloat(formData.vatRate),
+          signature: formData.signature,
+          discount: totalDiscount,
+          payment_status: 'pending',
+          remaining_amount: finalAmount,
+          pos_location_id: formData.posLocationId || null
+        })
+        .select()
+        .single();
 
-      if (invoiceError) throw invoiceError;
+      if (error) throw error;
 
-      // Insert invoice items with total calculated
+      // Insert invoice items
       const invoiceItems = selectedProducts.map(product => ({
-        invoice_id: invoiceId,
-        product_id: product.product_id,
+        invoice_id: invoice.id,
+        product_id: product.id,
         quantity: product.quantity,
         price: product.price,
-        total: product.price * product.quantity,
-        discount: product.discount || 0
+        discount: product.discount
       }));
 
       const { error: itemsError } = await supabase
@@ -153,59 +138,29 @@ export function useInvoiceForm() {
 
       if (itemsError) throw itemsError;
 
-      // Record payment if paid
-      if (paidAmount > 0) {
-        const { error: paymentError } = await supabase
-          .from('invoice_payments')
-          .insert({
-            invoice_id: invoiceId,
-            amount: paidAmount,
-            payment_method: 'cash',
-            payment_date: new Date().toISOString().split('T')[0]
-          });
-
-        if (paymentError) throw paymentError;
-      }
-
-      toast({
-        title: "Success",
-        description: "Invoice created successfully"
-      });
-
-      return invoiceData;
+      toast.success("Facture créée avec succès");
+      return invoice;
     } catch (error) {
-      console.error("Error creating invoice:", error);
-      toast({
-        title: "Error",
-        description: "Error creating invoice",
-        variant: "destructive",
-      });
+      console.error('Error creating invoice:', error);
+      toast.error("Erreur lors de la création de la facture");
       return null;
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return {
-    form,
-    isSubmitting,
+    formData,
     selectedProducts,
-    selectedClient,
-    setSelectedClient,
-    productSearchQuery,
-    setProductSearchQuery,
-    showProductsModal,
-    setShowProductsModal,
-    paymentStatus,
-    setPaymentStatus,
-    paidAmount,
-    setPaidAmount,
-    addProduct,
-    removeProduct,
-    updateProductQuantity,
-    updateProductPrice,
-    calculateSubtotal,
-    calculateTotal,
-    handleSubmit
+    handleInputChange,
+    handleAddProduct,
+    handleRemoveProduct,
+    handleUpdateQuantity,
+    handleUpdateDiscount,
+    handleSubmitInvoice,
+    handlePosLocationChange: (value: string) => {
+      setFormData(prev => ({
+        ...prev,
+        posLocationId: value
+      }));
+    }
   };
 }

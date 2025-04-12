@@ -5,7 +5,6 @@ import { POSLocationForm } from "@/components/pos-locations/POSLocationForm";
 import { POSLocationsHeader } from "@/components/pos-locations/POSLocationsHeader";
 import { usePOSLocation } from "@/hooks/use-pos-location";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
 
 export default function POSLocations() {
   const {
@@ -17,8 +16,6 @@ export default function POSLocations() {
     handleSubmit,
     handleDelete,
   } = usePOSLocation();
-  
-  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="p-4 space-y-4">
@@ -29,9 +26,7 @@ export default function POSLocations() {
       
       <Card className="bg-white/10 backdrop-blur-xl border border-white/20">
         <POSLocationsTable
-          posLocations={locations || []}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
+          locations={locations || []}
           onEdit={(location) => {
             setSelectedLocation(location);
             setIsAddDialogOpen(true);

@@ -1,219 +1,205 @@
+import { useState } from 'react';
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { CatalogProduct } from "@/types/catalog";
+import { supabase } from "@/integrations/supabase/client";
+import { generateQuotePDF } from "@/lib/generateQuotePDF";
+import { QuoteHeader } from "./form/QuoteHeader";
+import { QuoteProducts } from "./form/QuoteProducts";
+import { QuoteNotes } from "./form/QuoteNotes";
+import { QuoteActions } from "./form/QuoteActions";
+import { InvoiceProductModal } from "@/components/invoices/form/InvoiceProductModal";
+import { useProducts } from "@/hooks/use-products";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Search, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatGNF } from '@/lib/currency';
 
-import React, { useState } from 'react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
+interface QuoteFormData {
+  quoteNumber: string;
+  clientName: string;
+  clientEmail: string;
+  validityDate: string;
+  notes: string;
+  products: Array<{
+    product: CatalogProduct;
+    quantity: number;
+  }>;
+}
 
 interface QuoteFormProps {
+  formData: QuoteFormData;
+  setFormData: (data: QuoteFormData) => void;
   onClose: () => void;
 }
 
-interface Client {
-  id: string;
-  company_name: string;
-}
+export function QuoteForm({ formData, setFormData, onClose }: QuoteFormProps) {
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { products } = useProducts();
 
-// Define the form data shape
-interface QuoteFormData {
-  client_id: string;
-  issue_date: string;
-  expiry_date: string;
-  quote_number: string;
-  status: string;
-  notes: string;
-  total_amount: number;
-}
-
-export const QuoteForm: React.FC<QuoteFormProps> = ({ onClose }) => {
-  const [formData, setFormData] = useState<QuoteFormData>({
-    client_id: '',
-    issue_date: new Date().toISOString().split('T')[0],
-    expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    quote_number: `QT-${Date.now().toString().slice(-8)}`,
-    status: 'draft',
-    notes: '',
-    total_amount: 0
-  });
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch clients on mount
-  React.useEffect(() => {
-    const fetchClients = async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, company_name')
-        .order('company_name');
-        
-      if (error) {
-        console.error('Error fetching clients:', error);
-        toast.error('Failed to load clients');
-        return;
-      }
-      
-      setClients(data || []);
-    };
-    
-    fetchClients();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({
+      ...formData,
+      [name]: value
+    });
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const calculateTotal = () => {
+    return formData.products.reduce((total, item) => {
+      return total + (item.product.price * item.quantity);
+    }, 0);
+  };
+
+  const handleQuantityChange = (index: number, quantity: number) => {
+    const newProducts = [...formData.products];
+    newProducts[index].quantity = quantity;
+    setFormData({ ...formData, products: newProducts });
+  };
+
+  const handleProductRemove = (index: number) => {
+    const newProducts = formData.products.filter((_, i) => i !== index);
+    setFormData({ ...formData, products: newProducts });
+  };
+
+  const handleAddProduct = (product: CatalogProduct) => {
+    const existingProductIndex = formData.products.findIndex(
+      (item) => item.product.id === product.id
+    );
+
+    if (existingProductIndex !== -1) {
+      const newProducts = [...formData.products];
+      newProducts[existingProductIndex].quantity += 1;
+      setFormData({ ...formData, products: newProducts });
+    } else {
+      setFormData({
+        ...formData,
+        products: [...formData.products, { product, quantity: 1 }]
+      });
+    }
+    setIsProductSelectorOpen(false);
+  };
+
+  const handleGeneratePDF = () => {
+    try {
+      const doc = generateQuotePDF(formData);
+      doc.save(`devis-${formData.quoteNumber}.pdf`);
+      toast.success("Devis généré avec succès !");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Erreur lors de la génération du PDF");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     try {
-      // Create the quote
-      const { data, error } = await supabase
+      const amount = calculateTotal();
+      const { error } = await supabase
         .from('quotes')
         .insert({
-          client_id: formData.client_id,
-          issue_date: formData.issue_date,
-          expiry_date: formData.expiry_date,
-          quote_number: formData.quote_number,
-          status: formData.status,
-          notes: formData.notes,
-          total_amount: formData.total_amount
-        })
-        .select()
-        .single();
-        
+          quote_number: formData.quoteNumber,
+          client_name: formData.clientName,
+          client_email: formData.clientEmail,
+          validity_date: new Date(formData.validityDate).toISOString(),
+          description: formData.notes,
+          amount: amount,
+          status: 'draft'
+        });
+
       if (error) throw error;
-      
-      toast.success('Quote created successfully');
+
+      toast.success("Devis créé avec succès !");
       onClose();
     } catch (error) {
       console.error('Error creating quote:', error);
-      toast.error('Failed to create quote');
-    } finally {
-      setIsLoading(false);
+      toast.error("Erreur lors de la création du devis");
     }
   };
 
+  const filteredProducts = products?.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.reference.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="client_id" className="block text-sm font-medium">Client</label>
-        <Select
-          value={formData.client_id}
-          onValueChange={value => handleSelectChange('client_id', value)}
-        >
-          <SelectTrigger id="client_id">
-            <SelectValue placeholder="Select a client" />
-          </SelectTrigger>
-          <SelectContent>
-            {clients.map(client => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.company_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="issue_date" className="block text-sm font-medium">Issue Date</label>
-          <Input
-            id="issue_date"
-            name="issue_date"
-            type="date"
-            value={formData.issue_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="expiry_date" className="block text-sm font-medium">Expiry Date</label>
-          <Input
-            id="expiry_date"
-            name="expiry_date"
-            type="date"
-            value={formData.expiry_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="quote_number" className="block text-sm font-medium">Quote Number</label>
-          <Input
-            id="quote_number"
-            name="quote_number"
-            value={formData.quote_number}
-            onChange={handleChange}
-            readOnly
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="status" className="block text-sm font-medium">Status</label>
-          <Select
-            value={formData.status}
-            onValueChange={value => handleSelectChange('status', value)}
-          >
-            <SelectTrigger id="status">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="accepted">Accepted</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="total_amount" className="block text-sm font-medium">Total Amount</label>
-        <Input
-          id="total_amount"
-          name="total_amount"
-          type="number"
-          value={formData.total_amount.toString()}
-          onChange={handleChange}
-          required
+    <Card className="enhanced-glass p-8 space-y-6 animate-fade-in">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <QuoteHeader
+          quoteNumber={formData.quoteNumber}
+          clientName={formData.clientName}
+          clientEmail={formData.clientEmail}
+          validityDate={formData.validityDate}
+          onChange={handleInputChange}
         />
-      </div>
 
-      <div className="space-y-2">
-        <label htmlFor="notes" className="block text-sm font-medium">Notes</label>
-        <Textarea
-          id="notes"
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          rows={4}
+        <QuoteProducts
+          products={formData.products}
+          onQuantityChange={handleQuantityChange}
+          onProductRemove={handleProductRemove}
+          onAddProduct={() => setIsProductSelectorOpen(true)}
         />
-      </div>
 
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" type="button" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Quote'}
-        </Button>
-      </div>
-    </form>
+        <QuoteNotes
+          notes={formData.notes}
+          onChange={handleInputChange}
+        />
+
+        <QuoteActions
+          total={calculateTotal()}
+          onSave={handleSubmit}
+          onGeneratePDF={handleGeneratePDF}
+          onSend={() => toast.info("Envoi par email en cours...")}
+        />
+      </form>
+
+      <Sheet open={isProductSelectorOpen} onOpenChange={setIsProductSelectorOpen}>
+        <SheetContent side="right" className="w-full sm:w-[540px]">
+          <SheetHeader className="mb-5">
+            <SheetTitle>Sélectionner des produits</SheetTitle>
+          </SheetHeader>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Rechercher par nom ou référence..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between p-4 rounded-lg enhanced-glass hover:bg-accent/50 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatGNF(product.price)} - Réf: {product.reference}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddProduct(product)}
+                    className="enhanced-glass"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </Card>
   );
-};
+}

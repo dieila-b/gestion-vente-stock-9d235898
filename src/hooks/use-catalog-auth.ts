@@ -1,8 +1,8 @@
 
+import { useAuth } from '@/components/auth/AuthProvider';
+
 export const useCatalogAuth = () => {
-  // Simulating an authenticated user
-  return { 
-    isAuthenticated: true, 
-    loading: false 
-  };
+  const { isAuthenticated, loading } = useAuth();
+
+  return { isAuthenticated, loading };
 };

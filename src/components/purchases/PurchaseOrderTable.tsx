@@ -1,129 +1,143 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Printer, Check, Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
 import { PurchaseOrder } from "@/types/purchaseOrder";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+  TableHead
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Edit, FileText, Trash, Printer } from "lucide-react";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
   isLoading: boolean;
-  onApprove: (orderId: string) => void;
-  onDelete: (orderId: string) => void;
-  onEdit: (orderId: string) => void;
-  onView?: (orderId: string) => void;
-  onPrint?: (order: PurchaseOrder) => void;
+  onApprove: (id: string) => void;
+  onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
+  onPrint: (order: PurchaseOrder) => void;
 }
 
-export const PurchaseOrderTable = ({
+export function PurchaseOrderTable({
   orders,
   isLoading,
   onApprove,
   onDelete,
   onEdit,
-  onView,
-  onPrint
-}: PurchaseOrderTableProps) => {
+  onPrint,
+}: PurchaseOrderTableProps) {
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-500 text-white';
+      case 'pending':
+        return 'bg-yellow-500 text-white';
+      case 'draft':
+        return 'bg-gray-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'Approuvé';
+      case 'pending':
+        return 'En attente';
+      case 'draft':
+        return 'Brouillon';
+      default:
+        return status;
+    }
+  };
+
   return (
-    <div className="rounded-lg border">
+    <div className="border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>N° Commande</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
-            <TableHead>Nombre articles</TableHead>
             <TableHead>Statut</TableHead>
-            <TableHead>Montant net</TableHead>
-            <TableHead>Action</TableHead>
+            <TableHead>Montant Total</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center">Chargement...</TableCell>
+              <TableCell colSpan={6} className="text-center">
+                Chargement...
+              </TableCell>
             </TableRow>
-          ) : orders?.length === 0 ? (
+          ) : !orders?.length ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center">Aucun bon de commande trouvé</TableCell>
+              <TableCell colSpan={6} className="text-center">
+                Aucun bon de commande trouvé
+              </TableCell>
             </TableRow>
           ) : (
-            orders?.map((order) => (
+            orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell>{order.order_number}</TableCell>
                 <TableCell>
-                  {formatDate(order.created_at)}
+                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
-                <TableCell>{order.supplier.name}</TableCell>
-                <TableCell>{order.items.length}</TableCell>
+                <TableCell>{order.supplier?.name}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      order.status === 'approved' ? "outline" :
-                      order.status === 'draft' ? "outline" :
-                      "outline"
-                    }
-                    className={
-                      order.status === 'approved' ? 'bg-green-100 text-green-800 hover:bg-green-100' :
-                      order.status === 'draft' ? 'bg-gray-100 text-gray-800 hover:bg-gray-100' :
-                      'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-                    }
-                  >
-                    {order.status === 'approved' ? 'Approuvé' :
-                     order.status === 'draft' ? 'Brouillon' :
-                     order.status === 'pending' ? 'En attente' :
-                     'Livré'}
-                  </Badge>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
+                    {getStatusText(order.status)}
+                  </span>
                 </TableCell>
-                <TableCell>{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
+                <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     {order.status !== 'approved' && (
                       <>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onEdit(order.id)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600"
+                          className="bg-green-500 hover:bg-green-600 text-white"
                           onClick={() => onApprove(order.id)}
+                          title="Approuver"
                         >
-                          <Check className="w-4 h-4" />
+                          <FileText className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600"
-                          onClick={() => onDelete(order.id)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                          onClick={() => onEdit(order.id)}
+                          title="Modifier"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                          onClick={() => onDelete(order.id)}
+                          title="Supprimer"
+                        >
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </>
                     )}
-                    {onView && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onView(order.id)}
-                      >
-                        <Printer className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {onPrint && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPrint(order)}
-                      >
-                        <Printer className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300"
+                      onClick={() => onPrint(order)}
+                      title="Imprimer"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -133,4 +147,4 @@ export const PurchaseOrderTable = ({
       </Table>
     </div>
   );
-};
+}

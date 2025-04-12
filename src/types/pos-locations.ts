@@ -1,26 +1,16 @@
 
-/**
- * Define types for POS Locations
- */
-
-export interface POSLocation {
+export type POSLocation = {
   id: string;
   name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  status?: string;
-  manager?: string;
+  address: string;
+  phone: string | null;
+  email?: string | null;
+  manager: string;
+  status: string;
+  capacity: number;
+  occupied: number;
+  surface: number;
   is_active?: boolean;
-  capacity?: number;
-  occupied?: number;
-  surface?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface POSLocationStats {
-  totalSales: number;
-  totalOrders: number;
-  averageOrderValue: number;
-}
+  created_at: string;
+  updated_at: string | null;
+};

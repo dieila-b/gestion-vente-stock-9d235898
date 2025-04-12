@@ -1,54 +1,37 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
 
-export function useClientStats() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["client-stats"],
+export const useClientStats = () => {
+  // Fetch clients count from the clients table
+  const { data: clientsCount } = useQuery({
+    queryKey: ['clients-count'],
     queryFn: async () => {
-      // Get client count
-      const { count: clientCount, error: clientError } = await supabase
-        .from("clients")
-        .select("*", { count: "exact", head: true });
+      const { count, error } = await supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
 
-      if (clientError) throw clientError;
-
-      // Get total sales
-      const { data: salesData, error: salesError } = await supabase
-        .from("orders")
-        .select("total");
-
-      if (salesError) throw salesError;
-
-      // Get total supplier orders
-      const { data: supplierData, error: supplierError } = await supabase
-        .from("purchase_orders")
-        .select("total_amount");
-
-      if (supplierError) throw supplierError;
-
-      // Calculate total sales
-      const totalSales = salesData.reduce((sum, item) => sum + (item.total || 0), 0);
-
-      // Calculate total supplier orders
-      const totalSupplierOrders = supplierData.reduce((sum, item) => {
-        if (isSelectQueryError(item)) return sum;
-        return sum + (item.total_amount || 0);
-      }, 0);
-
-      return {
-        clientCount: clientCount || 0,
-        totalSales,
-        totalSupplierOrders,
-      };
-    },
+  // Fetch supplier payments
+  const { data: supplierPayments } = useQuery({
+    queryKey: ['supplier-payments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('supplier_orders')
+        .select('paid_amount')
+        .eq('payment_status', 'paid');
+      
+      if (error) throw error;
+      return data?.reduce((sum, order) => sum + (order.paid_amount || 0), 0) || 0;
+    }
   });
 
   return {
-    clientCount: data?.clientCount || 0,
-    totalSales: data?.totalSales || 0,
-    totalSupplierOrders: data?.totalSupplierOrders || 0,
-    isLoading,
+    clientsCount,
+    supplierPayments
   };
-}
+};

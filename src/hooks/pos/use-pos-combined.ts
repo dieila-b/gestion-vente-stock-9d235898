@@ -1,52 +1,122 @@
-
 import { useState, useEffect } from "react";
 import { usePOSProducts } from "./use-pos-products";
-import { CartItem } from "@/types/pos";
+import { usePOSLocations } from "./use-pos-locations";
+import { usePOSRealtime } from "./use-pos-realtime";
+// Fix the import path to use the new module structure
+import { usePOSPayment } from "./payment";
+import { useCart } from "../use-cart";
+import { Client } from "@/types/client";
 
-/**
- * A hook that combines products from different sources
- */
-export function usePOSCombined(posLocationId: string, selectedCategory: string | null = null, searchTerm: string = '') {
-  const [combinedProducts, setCombinedProducts] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export function usePOS(editOrderId?: string | null) {
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPDV, setSelectedPDV] = useState("_all");
 
-  // Get products from main POS system
+  // Use the cart hook for managing cart items
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    updateDiscount,
+    calculateSubtotal,
+    calculateTotal,
+    calculateTotalDiscount,
+    clearCart,
+    setCart,
+    availableStock,
+    updateAvailableStock,
+    getAvailableStock,
+    setQuantity
+  } = useCart();
+
+  // Use the products hook for fetching and filtering products
   const {
     products,
     categories,
     stockItems,
     isLoading: productsLoading,
-    error: productsError,
     currentPage,
     totalPages,
     goToNextPage,
     goToPrevPage,
     refetchStock
-  } = usePOSProducts(posLocationId, selectedCategory, searchTerm);
+  } = usePOSProducts(selectedPDV, selectedCategory, searchTerm);
 
-  // Combine products and handle loading states
+  // Use the locations hook for fetching POS locations
+  const { posLocations, activeRegister } = usePOSLocations();
+
+  // Use the payment hook for handling payment and order creation
+  const {
+    isPaymentDialogOpen,
+    setIsPaymentDialogOpen,
+    isLoading: paymentLoading,
+    handlePayment
+  } = usePOSPayment(
+    selectedClient,
+    cart,
+    calculateTotal,
+    calculateSubtotal,
+    calculateTotalDiscount,
+    clearCart,
+    stockItems,
+    selectedPDV,
+    activeRegister,
+    refetchStock,
+    editOrderId // Pass editOrderId here
+  );
+
+  // Filter products for display
+  const currentProducts = usePOSRealtime(products);
+
+  // Reset the selected category when switching POS
   useEffect(() => {
-    setIsLoading(productsLoading);
-    
-    if (productsError) {
-      setError(productsError as Error);
-    } else {
-      setError(null);
-    }
-    
-    // Update combined products when source products change
-    setCombinedProducts(products);
-  }, [products, productsLoading, productsError]);
+    setSelectedCategory(null);
+  }, [selectedPDV]);
 
   return {
-    products: combinedProducts,
-    categories,
-    stockItems,
-    isLoading,
-    error,
+    // Cart state
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    updateDiscount,
+    calculateSubtotal,
+    calculateTotal,
+    calculateTotalDiscount,
+    clearCart,
+    setCart,
+    availableStock,
+    updateAvailableStock,
+    getAvailableStock,
+    setQuantity,
+
+    // UI state
+    selectedClient,
+    setSelectedClient,
+    selectedCategory,
+    setSelectedCategory,
+    searchTerm,
+    setSearchTerm,
+    isPaymentDialogOpen,
+    setIsPaymentDialogOpen,
+    isLoading: productsLoading || paymentLoading,
     currentPage,
     totalPages,
+    
+    // Products and filtering
+    currentProducts,
+    categories,
+    stockItems,
+    
+    // POS/Location data
+    posLocations,
+    selectedPDV,
+    setSelectedPDV,
+    
+    // Actions
+    handlePayment,
     goToNextPage,
     goToPrevPage,
     refetchStock

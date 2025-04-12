@@ -19,7 +19,6 @@ export const generateClientPDF = (client: Client) => {
     ["Nom de l'entreprise", client.company_name || "-"],
     ["Type de client", client.client_type || "occasionnel"],
     ["Téléphone", client.phone || "-"],
-    ["Mobile 1", client.mobile_1 || "-"],
     ["Mobile 2", client.mobile_2 || "-"],
     ["WhatsApp", client.whatsapp || "-"],
     ["Email", client.email || "-"],

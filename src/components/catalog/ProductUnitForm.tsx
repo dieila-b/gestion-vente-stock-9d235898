@@ -22,7 +22,6 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
     name: unit?.name ?? "",
     symbol: unit?.symbol ?? "",
     description: unit?.description ?? "",
-    abbreviation: unit?.abbreviation ?? "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,12 +33,7 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
         // Update existing unit
         const { error } = await supabase
           .from('product_units')
-          .update({
-            name: formData.name,
-            symbol: formData.symbol,
-            description: formData.description,
-            abbreviation: formData.abbreviation
-          })
+          .update(formData)
           .eq('id', unit.id);
 
         if (error) throw error;
@@ -48,12 +42,7 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
         // Create new unit
         const { error } = await supabase
           .from('product_units')
-          .insert({
-            name: formData.name,
-            symbol: formData.symbol,
-            description: formData.description,
-            abbreviation: formData.abbreviation
-          });
+          .insert(formData);
 
         if (error) throw error;
         toast.success("Unité créée avec succès");
@@ -88,17 +77,6 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
           id="symbol"
           value={formData.symbol}
           onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
-          required
-          className="enhanced-glass"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="abbreviation">Abréviation</Label>
-        <Input
-          id="abbreviation"
-          value={formData.abbreviation}
-          onChange={(e) => setFormData(prev => ({ ...prev, abbreviation: e.target.value }))}
           required
           className="enhanced-glass"
         />

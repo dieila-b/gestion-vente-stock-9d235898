@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerReturn } from "@/types/customer-return";
 import { ReturnsList } from "@/components/customer-returns/ReturnsList";
 import { NewReturnDialog } from "@/components/customer-returns/NewReturnDialog";
-import { transformToCustomerReturn } from "@/utils/data-transformers";
 
 export default function CustomerReturns() {
   const [returns, setReturns] = useState<CustomerReturn[]>([]);
@@ -70,14 +69,13 @@ export default function CustomerReturns() {
           }));
         }
         
-        // Transform the return object
-        const transformedReturn = transformToCustomerReturn({
+        // Build the complete return object
+        processedReturns.push({
           ...returnItem,
+          status: returnItem.status as 'pending' | 'completed' | 'cancelled',
           invoice: invoiceData,
           returned_items: returnedItems
         });
-        
-        processedReturns.push(transformedReturn);
       }
       
       setReturns(processedReturns);

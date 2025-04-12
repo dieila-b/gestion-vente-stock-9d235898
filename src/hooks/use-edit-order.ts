@@ -1,143 +1,106 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { isSelectQueryError } from '@/utils/supabase-helpers';
-import { safeClient, safeArray } from '@/utils/select-query-helper';
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Client } from "@/types/client";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
-export function useEditOrder(orderId) {
-  const [client, setClient] = useState(null);
-  const [orderItems, setOrderItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [total, setTotal] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [finalTotal, setFinalTotal] = useState(0);
+export function useEditOrder(setSelectedClient: (client: Client | null) => void, setCart: (items: any[]) => void) {
+  const [searchParams] = useSearchParams();
+  const editOrderId = searchParams.get('editOrder');
+  const navigate = useNavigate();
 
-  // Load order data
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select(`
-            *,
-            client:clients(*),
-            items:order_items(
-              *,
-              product:catalog(*)
-            )
-          `)
-          .eq('id', orderId)
-          .single();
+    if (editOrderId) {
+      const editDataString = localStorage.getItem('editInvoiceData');
+      if (editDataString) {
+        try {
+          const editData = JSON.parse(editDataString);
           
-        if (error) throw error;
-        
-        // Process the order
-        // Safely check if items is an array and not a SelectQueryError
-        const items = safeArray(data.items, []);
-        
-        // Calculate totals from the actual items
-        const orderTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const orderDiscount = data.discount || 0;
-        const orderFinalTotal = orderTotal - orderDiscount;
-        
-        // Create safe client object
-        const clientData = safeClient(data.client);
-        
-        setClient(clientData);
-        setOrderItems(items);
-        setTotal(orderTotal);
-        setDiscount(orderDiscount);
-        setFinalTotal(orderFinalTotal);
-      } catch (err) {
-        console.error("Error fetching order:", err);
-        setError(err);
-        toast.error("Erreur lors du chargement de la commande");
-      } finally {
-        setLoading(false);
+          if (editData.client) {
+            const clientData = {
+              ...editData.client,
+              status: editData.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+            } as Client;
+            setSelectedClient(clientData);
+          }
+
+          if (editData.items) {
+            // Make sure to preserve the deliveredQuantity when setting the cart
+            setCart(editData.items);
+          }
+
+          localStorage.removeItem('editInvoiceData');
+        } catch (error) {
+          console.error('Erreur lors du chargement des données de facture:', error);
+          toast.error("Erreur lors du chargement de la facture");
+        }
       }
-    };
-    
-    if (orderId) {
-      fetchOrder();
     }
-  }, [orderId]);
+  }, [editOrderId, setCart, setSelectedClient]);
 
-  // Update item quantity
-  const updateItemQuantity = async (itemId, newQuantity) => {
-    try {
-      const item = orderItems.find(i => i.id === itemId);
-      if (!item) return;
+  const { data: editOrder } = useQuery({
+    queryKey: ['edit-order', editOrderId],
+    queryFn: async () => {
+      if (!editOrderId) return null;
       
-      const newTotal = item.price * newQuantity;
-      
-      // Update in database
-      const { error } = await supabase
-        .from('order_items')
-        .update({ 
-          quantity: newQuantity,
-          total: newTotal
-        })
-        .eq('id', itemId);
-        
-      if (error) throw error;
-      
-      // Update in local state
-      const updatedItems = orderItems.map(i => 
-        i.id === itemId 
-          ? {...i, quantity: newQuantity, total: newTotal} 
-          : i
-      );
-      
-      setOrderItems(updatedItems);
-      
-      // Recalculate totals
-      const newOrderTotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      setTotal(newOrderTotal);
-      setFinalTotal(newOrderTotal - discount);
-      
-      toast.success("Quantité mise à jour");
-    } catch (err) {
-      console.error("Error updating quantity:", err);
-      toast.error("Erreur lors de la mise à jour de la quantité");
-    }
-  };
-
-  // Update order discount
-  const updateDiscount = async (newDiscount) => {
-    try {
-      // Update in database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .update({ 
-          discount: newDiscount,
-          final_total: total - newDiscount
-        })
-        .eq('id', orderId);
-        
+        .select(`
+          *,
+          client:clients(*),
+          items:order_items(
+            id,
+            quantity,
+            price,
+            discount,
+            delivered_quantity,
+            delivery_status,
+            product:products(*)
+          )
+        `)
+        .eq('id', editOrderId)
+        .single();
+
       if (error) throw error;
       
-      setDiscount(newDiscount);
-      setFinalTotal(total - newDiscount);
+      // Si la facture est déjà payée ou partiellement payée, empêcher l'édition du panier et rediriger vers la liste des factures
+      if (data && (data.payment_status === 'paid' || data.payment_status === 'partial')) {
+        toast.error("Les factures payées ou partiellement payées ne peuvent pas être modifiées");
+        navigate("/sales-invoices");
+        return null;
+      }
       
-      toast.success("Remise mise à jour");
-    } catch (err) {
-      console.error("Error updating discount:", err);
-      toast.error("Erreur lors de la mise à jour de la remise");
-    }
-  };
+      return data;
+    },
+    enabled: !!editOrderId
+  });
 
-  return {
-    client,
-    orderItems,
-    loading,
-    error,
-    total,
-    discount,
-    finalTotal,
-    updateItemQuantity,
-    updateDiscount
-  };
+  useEffect(() => {
+    if (editOrder && editOrder.client) {
+      const clientData = {
+        ...editOrder.client,
+        status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+      } as Client;
+      
+      setSelectedClient(clientData);
+      
+      const cartItems = editOrder.items.map((item: any) => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.price,
+        quantity: item.quantity,
+        discount: item.discount || 0,
+        category: item.product.category,
+        image: item.product.image_url,
+        // Include delivered quantity information to preserve it when editing
+        deliveredQuantity: item.delivered_quantity || 0
+      }));
+      setCart(cartItems);
+    }
+  }, [editOrder, setCart, setSelectedClient]);
+
+  return { editOrderId, editOrder };
 }

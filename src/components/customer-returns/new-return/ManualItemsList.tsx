@@ -1,16 +1,15 @@
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
-import { ReturnItem } from "@/types/customer-return";
-import { InvoiceItem } from "@/types/customer-return";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft } from "lucide-react";
 
 interface ManualItemsListProps {
-  items: ReturnItem[];
-  products: any[];
-  invoiceItems: InvoiceItem[];
-  onManualProductChange: (index: number, productId: string) => void;
+  items: { product_id: string; quantity: number }[];
+  products: { id: string; name: string }[];
+  invoiceItems: any[];
+  onManualProductChange: (index: number, field: 'product_id' | 'quantity', value: string | number) => void;
   onRemoveManualProduct: (index: number) => void;
   onAddManualProduct: () => void;
 }
@@ -23,54 +22,83 @@ export function ManualItemsList({
   onRemoveManualProduct,
   onAddManualProduct
 }: ManualItemsListProps) {
-  // Get invoice items product names for display
-  const getProductName = (productId: string) => {
-    const item = invoiceItems.find(item => item.product_id === productId);
-    return item ? item.product_name : "Produit inconnu";
-  };
+  // Filter out items that already exist in the invoice items
+  const manualItems = items.filter(
+    item => !invoiceItems.some(invoiceItem => invoiceItem.product_id === item.product_id)
+  );
+
+  if (manualItems.length === 0) {
+    return (
+      <div className="flex items-center justify-between">
+        <Label>Articles additionnels</Label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAddManualProduct}
+          size="sm"
+          className="h-8"
+        >
+          Ajouter un article
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 mt-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-medium">Articles sélectionnés pour le retour</h3>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm"
+    <>
+      <div className="flex items-center justify-between">
+        <Label>Articles additionnels</Label>
+        <Button
+          type="button"
+          variant="outline"
           onClick={onAddManualProduct}
-          className="hidden" // Hide this button until manual product selection is implemented
+          size="sm"
+          className="h-8"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter un article manuel
+          Ajouter un article
         </Button>
       </div>
 
-      {items.length === 0 ? (
-        <div className="text-sm text-muted-foreground text-center py-4 border rounded-md">
-          Aucun article sélectionné pour le retour
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={index} className="flex items-center gap-3 p-3 border rounded-md">
-              <div className="flex-1">
-                <p className="font-medium">{getProductName(item.product_id)}</p>
-                <p className="text-sm text-muted-foreground">
-                  Quantité: {item.quantity}
-                </p>
-              </div>
+      <div className="space-y-4 mt-4 border rounded-md p-4 bg-secondary/20">
+        <h3 className="font-medium">Articles additionnels</h3>
+        <div className="space-y-3">
+          {manualItems.map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Select
+                value={item.product_id}
+                onValueChange={(value) => onManualProductChange(index, 'product_id', value)}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Sélectionner un produit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min="1"
+                value={item.quantity}
+                onChange={(e) => onManualProductChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                className="w-20"
+              />
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={() => onRemoveManualProduct(index)}
+                className="h-10 w-10"
               >
-                <Trash2 className="h-4 w-4 text-destructive" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </div>
           ))}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

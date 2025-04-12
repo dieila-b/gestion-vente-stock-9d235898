@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { usePOSCombined } from "./pos/use-pos-combined";
+import { usePOSProducts } from "./pos/use-pos-products";
 import { usePOSLocations } from "./pos/use-pos-locations";
 import { usePOSRealtime } from "./pos/use-pos-realtime";
 // Import from our new folder structure
@@ -32,7 +32,7 @@ export function usePOS(editOrderId?: string | null) {
     setQuantity
   } = useCart();
 
-  // Use the combined products hook for fetching and filtering products
+  // Use the products hook for fetching and filtering products
   const {
     products,
     categories,
@@ -43,7 +43,7 @@ export function usePOS(editOrderId?: string | null) {
     goToNextPage,
     goToPrevPage,
     refetchStock
-  } = usePOSCombined(selectedPDV, selectedCategory, searchTerm);
+  } = usePOSProducts(selectedPDV, selectedCategory, searchTerm);
 
   // Use the locations hook for fetching POS locations
   const { posLocations, activeRegister } = usePOSLocations();
@@ -54,18 +54,19 @@ export function usePOS(editOrderId?: string | null) {
     setIsPaymentDialogOpen,
     isLoading: paymentLoading,
     handlePayment
-  } = usePOSPayment({
+  } = usePOSPayment(
     selectedClient,
     cart,
     calculateTotal,
     calculateSubtotal,
     calculateTotalDiscount,
     clearCart,
+    stockItems,
     selectedPDV,
     activeRegister,
     refetchStock,
-    editOrderId
-  });
+    editOrderId // Pass editOrderId here
+  );
 
   // Filter products for display
   const currentProducts = usePOSRealtime(products);

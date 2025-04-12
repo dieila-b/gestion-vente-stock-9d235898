@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Card } from "@/components/ui/card";
 import {
   BarChart,
@@ -13,12 +12,6 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  unwrapSupabaseObject, 
-  transformSupabaseResponse, 
-  isSelectQueryError, 
-  safeGetProperty 
-} from '@/utils/supabase-helpers';
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({
@@ -26,7 +19,7 @@ export function ProductsChart() {
     queryFn: async () => {
       console.log("Fetching combined stock data...");
       
-      // Get all stocks (warehouses and points of sale)
+      // Récupérer tous les stocks (entrepôts et points de vente)
       const { data: stockData, error } = await supabase
         .from('warehouse_stock')
         .select(`
@@ -39,32 +32,22 @@ export function ProductsChart() {
 
       if (error) throw error;
 
-      // Aggregate quantities by product
-      const combinedStock = stockData.reduce((acc: Array<{name: string, value: number}>, item: any) => {
-        // Skip if product is a SelectQueryError
-        if (isSelectQueryError(item.product)) {
-          return acc;
-        }
-        
-        const product = unwrapSupabaseObject(item.product);
-        if (!product) return acc;
-        
-        const productName = safeGetProperty(product, 'name', 'Unknown product');
-        if (productName === 'Unknown product') return acc;
-        
-        const existingProduct = acc.find(p => p.name === productName);
+      // Agréger les quantités par produit
+      const combinedStock = stockData.reduce((acc, item) => {
+        if (!item.product?.name) return acc;
+        const existingProduct = acc.find(p => p.name === item.product.name);
         if (existingProduct) {
           existingProduct.value += item.quantity;
         } else {
           acc.push({
-            name: productName,
+            name: item.product.name,
             value: item.quantity
           });
         }
         return acc;
-      }, []);
+      }, [] as { name: string; value: number }[]);
 
-      // Sort by total quantity and take the top 5
+      // Trier par quantité totale et prendre les 5 premiers
       const topProducts = combinedStock
         .sort((a, b) => b.value - a.value)
         .slice(0, 5);

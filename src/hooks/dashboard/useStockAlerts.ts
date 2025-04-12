@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export type StockAlert = {
   id: string;
@@ -76,30 +75,16 @@ export const useStockAlerts = () => {
         })
         .map(item => {
           const locationType = item.warehouse_id ? 'warehouse' : 'pos';
-          
-          // Handle potentially undefined or SelectQueryError values
-          const warehouseName = !isSelectQueryError(item.warehouses) && item.warehouses ? 
-            (typeof item.warehouses === 'object' ? (item.warehouses as any).name : 'Dépôt inconnu') : 
-            'Dépôt inconnu';
-            
-          const posLocationName = !isSelectQueryError(item.pos_locations) && item.pos_locations ? 
-            (typeof item.pos_locations === 'object' ? (item.pos_locations as any).name : 'PDV inconnu') : 
-            'PDV inconnu';
-            
-          const catalogItem = !isSelectQueryError(item.catalog) && item.catalog ? 
-            item.catalog : 
-            { name: 'Produit inconnu', category: 'Inconnu', price: 0 };
-          
-          const locationName = item.warehouse_id ? 
-            warehouseName : 
-            posLocationName;
+          const locationName = item.warehouse_id 
+            ? (item.warehouses?.name || 'Dépôt inconnu')
+            : (item.pos_locations?.name || 'PDV inconnu');
           
           return {
             id: `${item.product_id}-${item.id}`,
-            name: (catalogItem as any).name || 'Produit inconnu',
+            name: item.catalog?.name || 'Produit inconnu',
             stock: item.quantity,
-            category: (catalogItem as any).category,
-            price: (catalogItem as any).price || 0,
+            category: item.catalog?.category,
+            price: item.catalog?.price || 0,
             min_stock_level: DEFAULT_MIN_STOCK,
             alert_type: item.quantity === 0 ? 'out_of_stock' : 'low_stock',
             location: locationName,

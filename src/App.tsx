@@ -1,3 +1,4 @@
+
 import { Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -24,7 +25,6 @@ import InternalUsers from "@/pages/InternalUsers";
 import StockLocation from "@/pages/StockLocation"; 
 import POSLocations from "@/pages/POSLocations"; 
 import Index from "@/pages/Index";
-import Unauthorized from "@/pages/Unauthorized";
 
 // Reports imports
 import DailyReport from "@/pages/reports/DailyReport";
@@ -61,7 +61,6 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/" element={<Index />} />
         <Route path="/*" element={
           <RequireAuth>

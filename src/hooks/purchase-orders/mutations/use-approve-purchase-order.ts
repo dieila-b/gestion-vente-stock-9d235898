@@ -1,102 +1,114 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PurchaseOrder } from "@/types/purchaseOrder";
 import { toast } from "sonner";
-import { DeliveryNote } from "@/types/delivery-note";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
-import { safeSupplier } from "@/utils/select-query-helper";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
 
-  const approvePurchaseOrder = async (id: string): Promise<PurchaseOrder> => {
-    try {
-      // 1. Update purchase order status to approved
-      const { data: updatedOrder, error: updateError } = await supabase
-        .from("purchase_orders")
-        .update({ status: "approved" as const })
-        .eq("id", id)
-        .select(`
-          *,
-          supplier:suppliers(*)
-        `)
-        .single();
+  const approvePurchaseOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      try {
+        const { data: order } = await supabase
+          .from('purchase_orders')
+          .select('id, status, supplier_id, total_amount, deleted')
+          .eq('id', orderId)
+          .single();
 
-      if (updateError) throw updateError;
+        if (!order || order.deleted) {
+          throw new Error('Commande non trouvée ou supprimée');
+        }
 
-      // 2. Get purchase order items
-      const { data: orderItems, error: itemsError } = await supabase
-        .from("purchase_order_items")
-        .select("*")
-        .eq("purchase_order_id", id);
+        const { data: result } = await supabase
+          .rpc('approve_purchase_order', {
+            order_id: orderId,
+            new_status: 'approved'
+          });
 
-      if (itemsError) throw itemsError;
+        if (!result) {
+          throw new Error('Erreur lors de l\'approbation de la commande');
+        }
 
-      // 3. Create delivery note
-      const { data: deliveryNote, error: deliveryError } = await supabase
-        .from("delivery_notes")
-        .insert({
-          purchase_order_id: id,
-          supplier_id: updatedOrder.supplier_id,
-          delivery_number: `DN-${Date.now().toString().slice(-6)}`,
-          status: "pending",
-        })
-        .select("*")
-        .single();
+        const { data: updatedOrder } = await supabase
+          .from('purchase_orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
 
-      if (deliveryError) throw deliveryError;
+        if (!updatedOrder) {
+          throw new Error('Impossible de récupérer la commande mise à jour');
+        }
 
-      // 4. Create delivery note items
-      const deliveryItems = orderItems.map((item) => ({
-        delivery_note_id: deliveryNote.id,
-        product_id: item.product_id,
-        expected_quantity: item.quantity,
-        unit_price: item.unit_price,
-      }));
+        // Create delivery note
+        const { data: warehouseData } = await supabase
+          .from('warehouses')
+          .select('id')
+          .eq('status', 'Actif')
+          .limit(1)
+          .single();
 
-      if (deliveryItems.length > 0) {
-        const { error: deliveryItemsError } = await supabase
-          .from("delivery_note_items")
+        if (!warehouseData) {
+          throw new Error('Aucun entrepôt actif trouvé');
+        }
+
+        const deliveryNumber = `BL-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+        const { data: deliveryNote } = await supabase
+          .from('delivery_notes')
+          .insert({
+            delivery_number: deliveryNumber,
+            purchase_order_id: orderId,
+            supplier_id: order.supplier_id,
+            status: 'pending',
+            warehouse_id: warehouseData.id
+          })
+          .select('id')
+          .single();
+
+        if (!deliveryNote) {
+          throw new Error('Erreur lors de la création du bon de livraison');
+        }
+
+        // Get order items
+        const { data: orderItems } = await supabase
+          .from('purchase_order_items')
+          .select('id, product_id, quantity, unit_price')
+          .eq('purchase_order_id', orderId);
+
+        if (!orderItems) {
+          throw new Error('Impossible de récupérer les articles de la commande');
+        }
+
+        // Create delivery note items
+        const deliveryItems = orderItems.map(item => ({
+          delivery_note_id: deliveryNote.id,
+          product_id: item.product_id,
+          quantity_ordered: item.quantity,
+          quantity_received: 0,
+          unit_price: item.unit_price
+        }));
+
+        await supabase
+          .from('delivery_note_items')
           .insert(deliveryItems);
 
-        if (deliveryItemsError) throw deliveryItemsError;
+        return updatedOrder;
+      } catch (error) {
+        console.error('Error in approvePurchaseOrder:', error);
+        throw error;
       }
-
-      // Process supplier data safely
-      const supplier = safeSupplier(updatedOrder.supplier);
-
-      // Cast status and payment_status to the correct types
-      const status = updatedOrder.status as "pending" | "delivered" | "draft" | "approved";
-      const paymentStatus = updatedOrder.payment_status as "pending" | "partial" | "paid";
-
-      // Construct and return the purchase order
-      const purchaseOrder: PurchaseOrder = {
-        ...updatedOrder,
-        supplier,
-        items: orderItems,
-        status,
-        payment_status: paymentStatus
-      };
-
-      return purchaseOrder;
-    } catch (error) {
-      console.error("Error approving purchase order:", error);
-      throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast.success('Commande approuvée avec succès');
+    },
+    onError: (error: Error) => {
+      console.error('Mutation error:', error);
+      toast.error("Erreur lors de l'approbation: " + error.message);
     }
-  };
-
-  return useMutation({
-    mutationFn: approvePurchaseOrder,
-    onSuccess: (data) => {
-      toast.success("Bon de commande approuvé avec succès");
-      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["purchase-order", data.id] });
-      queryClient.invalidateQueries({ queryKey: ["delivery-notes"] });
-    },
-    onError: (error) => {
-      console.error("Error in approvePurchaseOrder mutation:", error);
-      toast.error("Erreur lors de l'approbation du bon de commande");
-    },
   });
+
+  return (id: string) => {
+    approvePurchaseOrderMutation.mutate(id);
+  };
 }

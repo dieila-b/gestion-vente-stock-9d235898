@@ -1,22 +1,46 @@
 
-import React from 'react';
-import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { FileText, Send, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export interface PurchaseHeaderProps {
-  title?: string;
-  description?: string;
+interface PurchaseHeaderProps {
+  onSubmit: () => void;
+  orderNumber?: string;
+  isSubmitting: boolean;
+  isEditing: boolean;  // Ajout de la nouvelle prop
 }
 
-export const PurchaseHeader: React.FC<PurchaseHeaderProps> = ({ 
-  title = "Achats", 
-  description = "Gérez vos commandes et factures d'achat"
-}) => {
+export const PurchaseHeader = ({ onSubmit, orderNumber, isSubmitting, isEditing }: PurchaseHeaderProps) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex flex-col gap-1">
-      <PageHeader>
-        <PageHeader.Title>{title}</PageHeader.Title>
-        <PageHeader.Description>{description}</PageHeader.Description>
-      </PageHeader>
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-2xl font-bold text-gradient">
+          {isEditing ? "Modifier le Bon de Commande" : "Nouveau Bon de Commande"} {orderNumber && `- ${orderNumber}`}
+        </h1>
+        <p className="text-muted-foreground">
+          {isEditing ? "Modifiez votre bon de commande" : "Créez un nouveau bon de commande"} en sélectionnant un client, un fournisseur et des produits
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="neo-blur"
+          onClick={() => navigate("/purchase-orders")}
+        >
+          <X className="w-4 h-4 mr-2" />
+          Annuler
+        </Button>
+        <Button variant="outline" className="neo-blur">
+          <FileText className="w-4 h-4 mr-2" />
+          Aperçu
+        </Button>
+        <Button onClick={onSubmit} className="neo-blur" disabled={isSubmitting}>
+          <Send className="w-4 h-4 mr-2" />
+          {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+        </Button>
+      </div>
     </div>
   );
 };

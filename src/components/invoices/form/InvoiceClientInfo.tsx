@@ -1,8 +1,7 @@
 
-import React from 'react';
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Select,
   SelectContent,
@@ -10,9 +9,6 @@ import {
   SelectTrigger,
   SelectValue 
 } from "@/components/ui/select";
-import { createTableQuery } from '@/hooks/use-supabase-table-extension';
-import { isSelectQueryError } from '@/utils/supabase-helpers';
-import { safeMap } from '@/utils/select-query-helper';
 
 interface InvoiceClientInfoProps {
   formData: {
@@ -26,31 +22,21 @@ interface InvoiceClientInfoProps {
   onPosLocationChange?: (value: string) => void;
 }
 
-export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({ 
+export const InvoiceClientInfo = ({ 
   formData, 
   onInputChange,
   onPosLocationChange 
-}) => {
-  const { data: posLocationList = [], isLoading } = useQuery({
+}: InvoiceClientInfoProps) => {
+  const { data: posLocations } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
-      try {
-        // Get POS locations using the createTableQuery utility
-        const response = await createTableQuery('pos_locations')
-          .select('*')
-          .order('name');
-          
-        const { data, error } = response;
-        if (error) {
-          throw error;
-        }
-        
-        return data || [];
-      } catch (err) {
-        console.error('Error fetching POS locations:', err);
-        toast.error("Failed to load POS locations");
-        return [];
-      }
+      const { data, error } = await supabase
+        .from('pos_locations')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -75,12 +61,11 @@ export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({
             <SelectValue placeholder="Sélectionner un point de vente" />
           </SelectTrigger>
           <SelectContent>
-            {!isSelectQueryError(posLocationList) && Array.isArray(posLocationList) && 
-              posLocationList.map((location: any) => (
-                <SelectItem key={location.id} value={location.id}>
-                  {location.name || 'Unnamed location'}
-                </SelectItem>
-              ))}
+            {posLocations?.map((location) => (
+              <SelectItem key={location.id} value={location.id}>
+                {location.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

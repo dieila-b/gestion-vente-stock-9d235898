@@ -21,8 +21,7 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
           paid_amount,
           remaining_amount,
           payment_status,
-          client:clients(id, company_name, contact_name),
-          items:order_items(id)
+          client:clients(company_name)
         `)
         .in('payment_status', ['pending', 'partial'])
         .gte('created_at', date.from.toISOString())
@@ -36,8 +35,6 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
 
       if (error) throw error;
       
-      console.log("Unpaid invoices data:", data);
-      
       // Transform data to match expected structure in UnpaidInvoicesTable
       return data.map(order => ({
         id: order.id,
@@ -48,8 +45,7 @@ export function useUnpaidInvoices(date: DateRange | undefined, clientId?: string
         amount: order.final_total,
         paid_amount: order.paid_amount,
         remaining_amount: order.remaining_amount,
-        payment_status: order.payment_status,
-        items_count: order.items ? order.items.length : 0
+        payment_status: order.payment_status
       }));
     }
   });

@@ -120,22 +120,21 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
 
       if (orderError) throw orderError;
 
-      const formattedProducts = selectedProducts.map(product => ({
-        order_id: orderData.id,
-        product_id: product.id,
-        name: product.name,
-        quantity: product.quantity,
-        unit_price: product.unitPrice,
-        total_price: product.totalPrice,
-        category: product.category,
-        reference: product.reference,
-        status: product.status,
-        quality_check: product.qualityCheck
-      }));
-
       const { error: productsError } = await supabase
         .from('supplier_order_products')
-        .insert(formattedProducts);
+        .insert(
+          selectedProducts.map(product => ({
+            order_id: orderData.id,
+            name: product.name,
+            quantity: product.quantity,
+            unit_price: product.unitPrice,
+            total_price: product.totalPrice,
+            category: product.category,
+            reference: product.reference,
+            status: product.status,
+            quality_check: product.qualityCheck,
+          }))
+        );
 
       if (productsError) throw productsError;
 

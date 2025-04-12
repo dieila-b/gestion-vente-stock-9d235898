@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { isSelectQueryError, safeArray } from "@/utils/supabase-helpers";
 
 export function useStockCheck(
   setIsUpdating: (value: boolean) => void,
@@ -33,51 +32,39 @@ export function useStockCheck(
       let allItemsAvailable = true;
       let updatedItems = 0;
       
-      // Safely process the items array
-      const items = safeArray(order.items, []);
-      
-      // Check each product
-      for (const item of items) {
-        if (!item || typeof item !== 'object') continue;
-        
-        const productId = item.product_id;
-        if (!productId) continue;
-        
-        // Check available stock
+      // Vérifier chaque produit
+      for (const item of order.items) {
+        // Vérifier stock disponible
         const { data: productData } = await supabase
           .from('catalog')
           .select('stock')
-          .eq('id', productId)
+          .eq('id', item.product_id)
           .single();
           
-        const itemQuantity = item.quantity || 0;
-        const itemStatus = item.status || 'pending';
-        const itemId = item.id;
-          
-        if (productData && productData.stock >= itemQuantity) {
-          // Stock available, update item status
-          if (itemStatus !== 'available') {
+        if (productData && productData.stock >= item.quantity) {
+          // Stock disponible, mettre à jour le statut de l'article
+          if (item.status !== 'available') {
             const { error } = await supabase
               .from('preorder_items')
               .update({ status: 'available' })
-              .eq('id', itemId);
+              .eq('id', item.id);
               
             if (!error) updatedItems++;
           }
         } else {
-          // Update status if product is out of stock
-          let newStatus = itemStatus;
+          // Mettre à jour le statut si le produit est en rupture
+          let newStatus = item.status;
           if (!productData || productData.stock === 0) {
             newStatus = 'out_of_stock';
-          } else if (productData.stock < itemQuantity) {
+          } else if (productData.stock < item.quantity) {
             newStatus = 'pending';
           }
           
-          if (newStatus !== itemStatus) {
+          if (newStatus !== item.status) {
             await supabase
               .from('preorder_items')
               .update({ status: newStatus })
-              .eq('id', itemId);
+              .eq('id', item.id);
           }
           
           if (newStatus !== 'available') {
@@ -86,7 +73,7 @@ export function useStockCheck(
         }
       }
       
-      // If all products are available, update order status
+      // Si tous les produits sont disponibles, mettre à jour le statut de la commande
       if (allItemsAvailable && order.status !== 'delivered' && order.status !== 'paid') {
         await supabase
           .from('preorders')

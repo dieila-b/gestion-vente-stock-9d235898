@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { InvoiceForm } from "./InvoiceForm";
 import { useInvoiceForm } from "@/hooks/use-invoice-form";
@@ -6,25 +7,17 @@ import { useState } from "react";
 import { InvoicePaymentDialog } from "./payments/InvoicePaymentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   const {
-    form,
-    isSubmitting,
+    formData,
     selectedProducts,
-    selectedClient,
-    productSearchQuery,
-    showProductsModal,
-    paymentStatus,
-    paidAmount,
-    addProduct,
-    removeProduct,
-    updateProductQuantity,
-    updateProductPrice,
-    calculateSubtotal,
-    calculateTotal,
-    handleSubmit: submitInvoice
+    handleInputChange,
+    handleAddProduct,
+    handleRemoveProduct,
+    handleUpdateQuantity,
+    handleUpdateDiscount,
+    handleSubmitInvoice,
   } = useInvoiceForm();
 
   const [showPreview, setShowPreview] = useState(false);
@@ -73,61 +66,15 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   };
 
   const handleSubmit = async () => {
-    const formValues = form.getValues();
-    const newInvoice = await submitInvoice(formValues);
+    const newInvoice = await handleSubmitInvoice();
     if (newInvoice?.id) {
       setCurrentInvoiceId(newInvoice.id);
       setShowPreview(true);
     }
   };
 
-  // Create a custom formData object for the InvoiceForm component
-  const formData = {
-    invoiceNumber: form.getValues("issue_date") ? new Date().toISOString() : generateInvoiceNumber(),
-    clientName: selectedClient?.company_name || selectedClient?.contact_name || "",
-    clientEmail: selectedClient?.email || "",
-    amount: calculateTotal().toString(),
-    description: form.getValues("notes") || "",
-    vatRate: "20",
-    signature: "",
-    discount: totalDiscount.toString()
-  };
-
-  // Helper functions
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (name === "clientName" && selectedClient) {
-      // Do nothing, client is selected from dropdown
-    } else if (name === "description") {
-      form.setValue("notes", value);
-    } else {
-      // Other form fields can be handled here
-    }
-  };
-
-  // Handle product-related actions
-  const handleAddProduct = (product: any) => {
-    addProduct(product);
-  };
-
-  const handleRemoveProduct = (productId: string) => {
-    removeProduct(productId);
-  };
-
-  const handleUpdateQuantity = (productId: string, quantity: number) => {
-    updateProductQuantity(productId, quantity);
-  };
-
-  const handleUpdateDiscount = (productId: string, discount: number) => {
-    // Handle discount update
-    const product = selectedProducts.find(p => p.product_id === productId);
-    if (product) {
-      updateProductPrice(productId, product.price, discount);
-    }
-  };
-
   // Ensure payment_status is one of the allowed values
-  const paymentStatusTyped = invoice?.payment_status as 'paid' | 'partial' | 'pending' || 'pending';
+  const paymentStatus = invoice?.payment_status as 'paid' | 'partial' | 'pending' || 'pending';
 
   return (
     <div className="space-y-6">
@@ -155,7 +102,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           discount={totalDiscount}
           total={finalTotal}
           onDownload={() => setShowPreview(false)}
-          paymentStatus={paymentStatusTyped}
+          paymentStatus={paymentStatus}
           paidAmount={invoice?.paid_amount}
           remainingAmount={invoice?.remaining_amount}
           onAddPayment={handleAddPayment}
@@ -175,13 +122,3 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     </div>
   );
 };
-
-// Helper function to generate invoice number
-function generateInvoiceNumber() {
-  const prefix = "INV";
-  const date = new Date();
-  const year = date.getFullYear().toString().slice(-2);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `${prefix}-${year}${month}-${random}`;
-}

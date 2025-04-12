@@ -1,100 +1,144 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card } from "@/components/ui/card";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
-import { createTableQuery } from "@/hooks/use-supabase-table-extension";
-import { StockItemsTable } from "@/components/stocks/stock-table/StockItemsTable";
-import { POSStockHeader } from "@/components/stocks/pos-stock/POSStockHeader";
-import { POSStockLocations } from "@/components/stocks/pos-stock/POSStockLocations";
-import { StockItemsFilter } from "@/components/stocks/pos-stock/StockItemsFilter";
-import { isSelectQueryError } from "@/utils/supabase-helpers";
-import { POSLocation } from "@/types/pos-locations";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Récupérer la liste des points de vente
-  const { data: locations = [], isLoading: isLocationsLoading } = useQuery({
+  const { data: posLocations = [] } = useQuery({
     queryKey: ['pos-locations'],
     queryFn: async () => {
-      const { data, error } = await createTableQuery('pos_locations')
+      const { data, error } = await supabase
+        .from('pos_locations')
         .select('*')
         .order('name');
       
       if (error) throw error;
-      
-      // Transform and filter out any SelectQueryErrors
-      return (data || [])
-        .filter(item => !isSelectQueryError(item))
-        .map(item => ({
-          id: item.id,
-          name: item.name,
-          phone: item.phone,
-          address: item.address,
-          status: item.status,
-          is_active: item.is_active,
-          manager: item.manager,
-          capacity: item.capacity,
-          occupied: item.occupied,
-          surface: item.surface,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          email: item.email
-        })) as POSLocation[];
+      return data;
     }
   });
 
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedLocation, true);
 
-  // Filter stock items based on search query
-  const filteredItems = stockItems.filter(item => {
-    if (isSelectQueryError(item.product)) return false;
-    
-    const productName = item.product?.name || "";
-    const productRef = item.product?.reference || "";
-    
-    return (
-      productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      productRef.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  // Handle selecting a location
-  const handleLocationChange = (locationId: string) => {
-    setSelectedLocation(locationId);
-  };
+  // Filtrer les articles en fonction de la recherche
+  const filteredItems = stockItems.filter(item => 
+    item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6 lg:p-8 space-y-8">
-        <POSStockHeader />
-
-        <POSStockLocations 
-          locations={locations} 
-          selectedLocation={selectedLocation}
-          onSelectLocation={handleLocationChange}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gradient">Liste des Articles</h2>
-          <StockItemsFilter 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            posLocations={locations}
-          />
-
-          <StockItemsTable 
-            items={filteredItems} 
-            isLoading={isLoading} 
-            emptyMessage="Aucun article trouvé dans ce PDV"
-          />
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-gradient">Stock PDV</h1>
+            <p className="text-muted-foreground mt-2">
+              Gestion du stock point de vente
+            </p>
+          </div>
         </div>
+
+        <Card className="enhanced-glass p-6">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold text-gradient">
+                Liste des Articles {selectedLocation !== "_all" && `- ${posLocations.find(loc => loc.id === selectedLocation)?.name}`}
+              </h2>
+              <div className="flex gap-4">
+                <Select
+                  value={selectedLocation}
+                  onValueChange={setSelectedLocation}
+                >
+                  <SelectTrigger className="w-[200px] glass-effect">
+                    <SelectValue placeholder="Sélectionner un PDV" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_all">Tous les PDV</SelectItem>
+                    {posLocations.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input 
+                    placeholder="Rechercher..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 glass-effect"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Article</TableHead>
+                    <TableHead>Référence</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>PDV</TableHead>
+                    <TableHead className="text-right">Quantité</TableHead>
+                    <TableHead className="text-right">Prix unitaire</TableHead>
+                    <TableHead className="text-right">Valeur totale</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-10">
+                        Chargement des données...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-10">
+                        Aucun article trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {item.product?.name}
+                        </TableCell>
+                        <TableCell>{item.product?.reference}</TableCell>
+                        <TableCell>{item.product?.category}</TableCell>
+                        <TableCell>{item.pos_location?.name || "Non assigné"}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">
+                          {item.unit_price?.toLocaleString('fr-FR')} GNF
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.total_value?.toLocaleString('fr-FR')} GNF
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </Card>
       </div>
     </DashboardLayout>
   );

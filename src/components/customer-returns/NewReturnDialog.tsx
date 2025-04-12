@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { 
@@ -9,9 +9,9 @@ import {
   InvoiceItemsList,
   ManualItemsList,
   ReturnNotesField,
-  ReturnItemSummary
+  ReturnItemSummary,
+  useReturnDialog
 } from "./new-return";
-import { useReturnDialog } from "@/components/customer-returns/new-return/useReturnDialog";
 
 interface NewReturnDialogProps {
   isOpen: boolean;
@@ -20,76 +20,35 @@ interface NewReturnDialogProps {
 }
 
 export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogProps) {
-  const returnDialogHook = useReturnDialog();
   const {
-    form,
     clients,
-    invoices,
+    filteredInvoices,
     invoiceItems,
+    products,
     selectedItems,
-    handleClientChange,
-    handleInvoiceChange,
-    addItemToReturn,
-    removeItemFromReturn,
-    onSubmit,
-    isSubmitting,
-    isLoading
-  } = returnDialogHook;
+    newReturn,
+    setClients,
+    fetchInvoices,
+    fetchProducts,
+    handleInputChange,
+    handleSelectChange,
+    handleItemCheckboxChange,
+    handleQuantityChange,
+    handleAddManualProduct,
+    handleRemoveManualProduct,
+    handleManualProductChange,
+    handleSubmitNewReturn,
+    getItemQuantity,
+    getInvoiceItemQuantity
+  } = useReturnDialog(onSuccess, onClose);
 
-  const [selectedInvoiceItems, setSelectedInvoiceItems] = useState<{ [key: string]: boolean }>({});
-
-  // Custom handlers to bridge between the component and the hook
-  const handleItemCheckboxChange = (productId: string, checked: boolean) => {
-    const newSelectedItems = { ...selectedInvoiceItems };
-    newSelectedItems[productId] = checked;
-    setSelectedInvoiceItems(newSelectedItems);
-    
-    // If checked, add to selected items, otherwise remove
-    if (checked) {
-      const item = invoiceItems.find(item => item.product_id === productId);
-      if (item) {
-        addItemToReturn({
-          product_id: item.product_id,
-          quantity: 1,
-          price: item.price
-        });
-      }
-    } else {
-      removeItemFromReturn(productId);
-    }
-  };
-
-  const handleQuantityChange = (productId: string, quantity: number) => {
-    const existingItemIndex = selectedItems.findIndex(item => item.product_id === productId);
-    if (existingItemIndex !== -1) {
-      const updatedItems = [...selectedItems];
-      updatedItems[existingItemIndex].quantity = quantity;
-      // Here we would update the form value
-      form.setValue("items", updatedItems);
-    }
-  };
-
-  const getItemQuantity = (productId: string) => {
-    const item = selectedItems.find(item => item.product_id === productId);
-    return item ? item.quantity : 0;
-  };
-
-  const getInvoiceItemQuantity = (productId: string) => {
-    const item = invoiceItems.find(item => item.product_id === productId);
-    return item ? item.original_quantity : 0;
-  };
-
-  // Load data when dialog opens
+  // Initialize data when dialog opens
   useEffect(() => {
     if (isOpen) {
-      // Nothing to do - clients are already loaded by the hook
+      fetchInvoices();
+      fetchProducts();
     }
   }, [isOpen]);
-
-  const handleSubmitForm = async () => {
-    await onSubmit();
-    onSuccess();
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -104,26 +63,25 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 gap-4">
             <ReturnClientSelect 
-              clientId={form.getValues("client_id") || ""} 
-              onClientChange={handleClientChange}
-              clients={clients}
+              clientId={newReturn.client_id} 
+              onClientChange={(value) => handleSelectChange('client_id', value)} 
             />
 
             <ReturnInvoiceSelect 
-              clientId={form.getValues("client_id") || ""}
-              invoiceId={form.getValues("invoice_id") || ""}
-              onInvoiceChange={handleInvoiceChange}
-              filteredInvoices={invoices}
+              clientId={newReturn.client_id}
+              invoiceId={newReturn.invoice_id}
+              filteredInvoices={filteredInvoices}
+              onInvoiceChange={(value) => handleSelectChange('invoice_id', value)}
             />
 
             <ReturnReasonField 
-              reason={form.getValues("reason") || ""} 
-              onChange={(e) => form.setValue("reason", e.target.value)} 
+              reason={newReturn.reason} 
+              onChange={handleInputChange} 
             />
 
             <InvoiceItemsList 
               invoiceItems={invoiceItems}
-              selectedItems={selectedInvoiceItems}
+              selectedItems={selectedItems}
               onItemCheckboxChange={handleItemCheckboxChange}
               onQuantityChange={handleQuantityChange}
               getItemQuantity={getItemQuantity}
@@ -131,29 +89,19 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
             />
 
             <ManualItemsList 
-              items={selectedItems}
-              products={[]} // Empty array since we're not implementing this feature yet
+              items={newReturn.items}
+              products={products}
               invoiceItems={invoiceItems}
-              onManualProductChange={(index: number, productId: string) => {
-                // Not implemented in this version
-              }}
-              onRemoveManualProduct={(index: number) => {
-                // We need to find the product ID by index
-                if (index >= 0 && index < selectedItems.length) {
-                  const productId = selectedItems[index].product_id;
-                  removeItemFromReturn(productId);
-                }
-              }}
-              onAddManualProduct={() => {
-                // Not implemented in this version
-              }}
+              onManualProductChange={handleManualProductChange}
+              onRemoveManualProduct={handleRemoveManualProduct}
+              onAddManualProduct={handleAddManualProduct}
             />
 
-            <ReturnItemSummary itemsCount={selectedItems.length} />
+            <ReturnItemSummary itemsCount={newReturn.items.length} />
 
             <ReturnNotesField 
-              notes={form.getValues("notes") || ""} 
-              onChange={(e) => form.setValue("notes", e.target.value)} 
+              notes={newReturn.notes} 
+              onChange={handleInputChange} 
             />
           </div>
         </div>
@@ -162,8 +110,8 @@ export function NewReturnDialog({ isOpen, onClose, onSuccess }: NewReturnDialogP
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={handleSubmitForm} disabled={isSubmitting}>
-            {isSubmitting ? "Création..." : "Créer le retour"}
+          <Button onClick={handleSubmitNewReturn}>
+            Créer le retour
           </Button>
         </DialogFooter>
       </DialogContent>

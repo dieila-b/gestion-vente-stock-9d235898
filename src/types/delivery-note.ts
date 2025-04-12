@@ -5,29 +5,24 @@ export interface DeliveryNote {
   created_at: string;
   status: string;
   supplier: {
-    id?: string;
-    name?: string;
-    phone?: string;
-    email?: string;
+    name: string;
+    phone?: string | null;
+    email?: string | null;
   };
   purchase_order: {
-    id?: string;
-    order_number?: string;
-    total_amount?: number;
-  };
+    order_number: string;
+    total_amount: number;
+  } | null;
   items: Array<{
     id: string;
     product_id: string;
-    expected_quantity: number;
-    received_quantity?: number;
-    quantity_ordered?: number;
-    quantity_received?: number;
-    unit_price: number;
-    status?: string;
-    product?: {
-      id: string;
+    quantity_ordered: number;
+    quantity_received: number;
+    unit_price?: number;
+    product: {
       name: string;
-      reference?: string;
+      reference: string;
+      category: string;
     };
   }>;
 }

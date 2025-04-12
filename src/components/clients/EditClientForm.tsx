@@ -25,14 +25,12 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
       email: client.email || '',
       phone: client.phone || '',
       address: client.address || '',
+      credit_limit: client.credit_limit || 0,
       status: client.status,
       client_type: client.client_type || '',
-      city: client.city || '',
-      // Add the missing properties
       whatsapp: client.whatsapp || '',
-      mobile_1: client.mobile_1 || '',
       mobile_2: client.mobile_2 || '',
-      credit_limit: client.credit_limit || 0
+      city: client.city || '',
     }
   );
 

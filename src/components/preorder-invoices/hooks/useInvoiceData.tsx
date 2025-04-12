@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SortColumn, SortDirection } from "./useSorting";
-import { safeMap, isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function useInvoiceData(
   sortColumn: SortColumn, 
@@ -45,9 +44,7 @@ export function useInvoiceData(
       }
 
       const enrichedData = await Promise.all(data.map(async (preorder) => {
-        // Handle the case where items might be a SelectQueryError
-        const items = !isSelectQueryError(preorder.items) ? preorder.items : [];
-        const productIds = safeMap(items, (item: any) => item.product_id, []);
+        const productIds = preorder.items.map((item: any) => item.product_id);
         
         if (productIds.length === 0) {
           return {
@@ -57,7 +54,7 @@ export function useInvoiceData(
         }
         
         const { data: products, error: productsError } = await supabase
-          .from('catalog')
+          .from('products')
           .select('id, name, image')
           .in('id', productIds);
           
@@ -66,14 +63,13 @@ export function useInvoiceData(
           return preorder;
         }
         
-        // Handle the case where items might be a SelectQueryError
-        const enrichedItems = safeMap(items, (item: any) => {
-          const product = products?.find((p: any) => p.id === item.product_id);
+        const enrichedItems = preorder.items.map((item: any) => {
+          const product = products.find((p: any) => p.id === item.product_id);
           return {
             ...item,
             product: product || { id: item.product_id, name: 'Produit inconnu' }
           };
-        }, []);
+        });
         
         return {
           ...preorder,

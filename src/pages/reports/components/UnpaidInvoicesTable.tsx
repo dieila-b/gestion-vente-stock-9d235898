@@ -6,18 +6,12 @@ import { formatGNF } from "@/lib/currency";
 interface UnpaidInvoice {
   id: string;
   created_at: string;
-  client?: { 
-    id?: string;
-    company_name?: string;
-    contact_name?: string;
-  };
-  client_id: string;
+  client?: { company_name?: string };
   invoice_number: string;
   amount: number;
   paid_amount: number;
   remaining_amount: number;
   payment_status: string;
-  items_count?: number;
 }
 
 interface SortConfig {
@@ -32,13 +26,6 @@ interface UnpaidInvoicesTableProps {
 }
 
 export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvoicesTableProps) {
-  const getClientDisplayName = (invoice: UnpaidInvoice) => {
-    if (invoice.client?.contact_name) {
-      return invoice.client.contact_name;
-    }
-    return "Client particulier";
-  };
-
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">Détail des factures</h2>
@@ -55,7 +42,6 @@ export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvo
                 <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
               </TableHead>
               <TableHead>N° Facture</TableHead>
-              <TableHead>Articles</TableHead>
               <TableHead className="text-right" onClick={() => onSort('amount')}>
                 Total
                 <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
@@ -75,9 +61,8 @@ export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvo
             {invoices.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell>{new Date(invoice.created_at).toLocaleDateString('fr-FR')}</TableCell>
-                <TableCell>{getClientDisplayName(invoice)}</TableCell>
+                <TableCell>{invoice.client?.company_name || "Client particulier"}</TableCell>
                 <TableCell>{invoice.invoice_number}</TableCell>
-                <TableCell>{invoice.items_count || 0}</TableCell>
                 <TableCell className="text-right">{formatGNF(invoice.amount)}</TableCell>
                 <TableCell className="text-right text-green-500">
                   {formatGNF(invoice.paid_amount)}
@@ -98,7 +83,7 @@ export function UnpaidInvoicesTable({ invoices, sortConfig, onSort }: UnpaidInvo
             ))}
             {(!invoices || invoices.length === 0) && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   Aucune facture impayée trouvée pour cette période
                 </TableCell>
               </TableRow>

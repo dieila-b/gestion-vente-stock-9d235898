@@ -50,17 +50,6 @@ const Purchase = () => {
     return <div>Chargement...</div>;
   }
 
-  // Create a wrapper function for handleProductSelect to match the expected signature
-  const handleProductSelectWrapper = (index: number, productId: string) => {
-    handleProductSelect(productId);
-  };
-
-  // Create a wrapper function for handleAddProduct to match the expected signature
-  const handleAddProductWrapper = () => {
-    // This will be overridden by the component's implementation
-    // The component should provide its own product selection mechanism
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <PurchaseHeader 
@@ -88,8 +77,8 @@ const Purchase = () => {
         <ProductsList
           selectedProducts={selectedProducts}
           products={products}
-          handleProductSelect={handleProductSelectWrapper}
-          handleAddProduct={handleAddProductWrapper}
+          handleProductSelect={handleProductSelect}
+          handleAddProduct={handleAddProduct}
           handleQuantityChange={handleQuantityChange}
           handlePriceChange={handlePriceChange}
         />

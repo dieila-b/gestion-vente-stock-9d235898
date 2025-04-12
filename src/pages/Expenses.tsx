@@ -1,30 +1,33 @@
 
-import React, { useState } from 'react';
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseIncomeTab } from "@/components/expenses/ExpenseIncomeTab";
 import { ExpenseOutcomeTab } from "@/components/expenses/ExpenseOutcomeTab";
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ExpenseCategoriesTab } from "@/components/expenses/ExpenseCategoriesTab";
 
 export default function Expenses() {
-  const [activeTab, setActiveTab] = useState('income');
-
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Gestion des Finances</h1>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="income">Revenus</TabsTrigger>
-            <TabsTrigger value="expenses">Dépenses</TabsTrigger>
-          </TabsList>
-          
+      <div className="h-full flex flex-col">
+        <Tabs defaultValue="outcome" className="flex-1">
+          <div className="px-4 py-6">
+            <TabsList className="enhanced-glass">
+              <TabsTrigger value="outcome">Sorties</TabsTrigger>
+              <TabsTrigger value="income">Entrées</TabsTrigger>
+              <TabsTrigger value="categories">Catégories</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="outcome">
+            <ExpenseOutcomeTab />
+          </TabsContent>
+
           <TabsContent value="income">
             <ExpenseIncomeTab />
           </TabsContent>
-          
-          <TabsContent value="expenses">
-            <ExpenseOutcomeTab />
+
+          <TabsContent value="categories">
+            <ExpenseCategoriesTab />
           </TabsContent>
         </Tabs>
       </div>

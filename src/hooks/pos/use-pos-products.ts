@@ -1,112 +1,79 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { CartItem, Product } from '@/types/pos';
-import { useState } from 'react';
-import { isSelectQueryError, safeGetProperty } from '@/utils/supabase-helpers';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Product } from "@/types/pos";
 
-export function usePOSProducts(posLocationId: string, selectedCategory: string | null = null, searchTerm: string = '') {
+export function usePOSProducts(selectedPDV: string, selectedCategory: string | null, searchTerm: string) {
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20; // Number of products per page
-  
-  const { data = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['pos-products', posLocationId, selectedCategory, searchTerm, currentPage],
-    enabled: !!posLocationId && posLocationId !== '_all',
-    queryFn: async () => {
-      if (!posLocationId || posLocationId === '_all') {
-        return [];
-      }
+  const itemsPerPage = 16;
 
-      const { data, error } = await supabase
+  // Get stock items for the selected POS location
+  const { data: stockItems = [], refetch: refetchStock, isLoading } = useQuery({
+    queryKey: ['pos-stock', selectedPDV, selectedCategory, searchTerm],
+    queryFn: async () => {
+      let query = supabase
         .from('warehouse_stock')
         .select(`
           *,
           product:catalog(*),
           pos_location:pos_locations(*)
         `)
-        .eq('pos_location_id', posLocationId)
-        .gt('quantity', 0);
+        .is('warehouse_id', null);
 
+      if (selectedPDV !== "_all") {
+        query = query.eq('pos_location_id', selectedPDV);
+      }
+
+      const { data, error } = await query;
+      
       if (error) throw error;
-      return data || [];
+      return data;
     }
   });
 
-  // Format products for use in the POS system
-  const formattedProducts: CartItem[] = data.map(item => {
-    // Set defaults for product data if it's a SelectQueryError
-    const defaultProduct = { 
-      id: item.product_id || "unknown", 
-      name: "Unknown Product", 
-      reference: "", 
-      category: "", 
-      image_url: "" 
-    };
-    
-    const safeProduct = isSelectQueryError(item.product) ? defaultProduct : item.product || defaultProduct;
-    
-    return {
-      id: item.product_id,
-      name: safeGetProperty(safeProduct, 'name', 'Unknown Product'),
-      quantity: 1, // Default quantity for cart
-      price: item.unit_price, // Use unit_price from warehouse_stock
-      stock: item.quantity,
-      category: safeGetProperty(safeProduct, 'category', ''),
-      reference: safeGetProperty(safeProduct, 'reference', ''),
-      image_url: safeGetProperty(safeProduct, 'image_url', ''),
-    };
-  });
+  // Convert stock items to products for the UI
+  const products = stockItems.map(item => ({
+    ...item.product,
+    stock: item.quantity,
+    price: item.price || item.product.price
+  }));
 
   // Filter products based on search term and category
-  const filteredProducts = formattedProducts.filter(product => {
-    const matchesSearch = 
-      !searchTerm || 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.reference && product.reference.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    
     return matchesSearch && matchesCategory;
   });
 
-  // Extract unique categories from products
-  const categories = Array.from(new Set(
-    formattedProducts
-      .map(product => product.category)
-      .filter(Boolean)
-  ));
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  
+  // Extract categories
+  const categories = Array.from(new Set(products.map(product => product.category))).filter(Boolean);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / pageSize);
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
+  // Pagination controls
   const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
 
   const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    setCurrentPage(prev => Math.max(prev - 1, 1));
   };
 
-  const refetchStock = () => refetch();
-
   return {
-    products: paginatedProducts,
+    products,
+    stockItems,
+    refetchStock,
+    currentProducts,
     categories,
-    stockItems: data,
-    isLoading,
-    error,
     currentPage,
     totalPages,
+    isLoading,
     goToNextPage,
     goToPrevPage,
-    refetchStock
   };
 }

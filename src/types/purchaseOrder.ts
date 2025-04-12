@@ -1,6 +1,6 @@
 
 export interface PurchaseOrderItem {
-  id: string; 
+  id: string; // Changed from optional to required
   product_id: string;
   product_code?: string;
   designation?: string;
@@ -8,15 +8,12 @@ export interface PurchaseOrderItem {
   unit_price: number;
   selling_price: number;
   total_price: number;
-  purchase_order_id?: string;
-  product?: any;
 }
 
 export interface PurchaseOrder {
   id: string;
   order_number: string;
   supplier: { 
-    id: string;
     name: string;
     phone?: string | null;
     email?: string | null;
@@ -38,10 +35,6 @@ export interface PurchaseOrder {
   notes: string;
   expected_delivery_date: string;
   warehouse_id: string;
-  warehouse?: {
-    id: string;
-    name: string;
-  };
   paid_amount: number;
   customs_duty?: number;
   delivery_note_id?: string;
