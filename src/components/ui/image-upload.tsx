@@ -29,6 +29,8 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
       setIsUploading(true);
       try {
         await onUpload(file);
+      } catch (error) {
+        console.error("Error during upload:", error);
       } finally {
         setIsUploading(false);
       }

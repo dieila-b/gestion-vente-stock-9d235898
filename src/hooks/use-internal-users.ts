@@ -12,7 +12,7 @@ export const useInternalUsers = () => {
 
   // Vérification du bucket au chargement du composant
   useEffect(() => {
-    const checkAndCreateBucket = async () => {
+    const checkBucket = async () => {
       try {
         // Vérifier si le bucket existe
         const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -24,27 +24,17 @@ export const useInternalUsers = () => {
         
         const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
         
-        if (!bucketExists) {
-          console.log("Bucket 'lovable-uploads' does not exist, attempting to create it");
-          // Tentative de création du bucket
-          const { error: createError } = await supabase.storage
-            .createBucket('lovable-uploads', { public: true });
-          
-          if (createError) {
-            console.error("Error creating bucket:", createError);
-            toast.error("Le bucket de stockage 'lovable-uploads' n'a pas pu être créé. Contactez l'administrateur.");
-          } else {
-            console.log("Bucket 'lovable-uploads' created successfully");
-          }
-        } else {
+        if (bucketExists) {
           console.log("Bucket 'lovable-uploads' exists");
+        } else {
+          console.log("Bucket 'lovable-uploads' does not exist");
         }
       } catch (err) {
         console.error("Error in bucket check:", err);
       }
     };
     
-    checkAndCreateBucket();
+    checkBucket();
   }, []);
 
   const { data: users = [], isLoading, refetch } = useQuery({
@@ -131,7 +121,7 @@ export const useInternalUsers = () => {
       }
       
       // S'assurer que passwordConfirmation[index] existe avant de comparer
-      if (!passwordConfirmation[index]) {
+      if (passwordConfirmation[index] === undefined) {
         toast.error(`Veuillez confirmer le mot de passe pour l'utilisateur ${index + 1}`);
         isValid = false;
         break;

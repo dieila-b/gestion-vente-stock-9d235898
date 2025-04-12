@@ -34,32 +34,6 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
-      // Vérification et création du bucket si nécessaire
-      const { data: buckets, error: bucketsError } = await supabase.storage
-        .listBuckets();
-      
-      if (bucketsError) {
-        console.error("Error checking buckets:", bucketsError);
-        toast.error("Erreur lors de la vérification des buckets");
-        return;
-      }
-      
-      const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
-      
-      if (!bucketExists) {
-        // Tentative de création du bucket
-        const { error: createError } = await supabase.storage
-          .createBucket('lovable-uploads', { public: true });
-        
-        if (createError) {
-          console.error("Error creating bucket:", createError);
-          toast.error("Impossible de créer le bucket de stockage. Veuillez contacter l'administrateur.");
-          return;
-        }
-        
-        console.log("Bucket 'lovable-uploads' created successfully");
-      }
-      
       // Télécharger le fichier
       console.log("Uploading file to path:", filePath);
       const { error: uploadError } = await supabase.storage
@@ -68,7 +42,7 @@ export const UserFormList = ({
       
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
-        toast.error("Erreur lors du téléchargement de l'image");
+        toast.error(`Erreur lors du téléchargement de l'image: ${uploadError.message}`);
         return;
       }
       
@@ -80,9 +54,9 @@ export const UserFormList = ({
       console.log("Image uploaded successfully, public URL:", data.publicUrl);
       onInputChange(index, "photo_url", data.publicUrl);
       toast.success("Image téléchargée avec succès");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in image upload process:", error);
-      toast.error("Erreur lors du processus de téléchargement de l'image");
+      toast.error(`Erreur lors du processus de téléchargement de l'image: ${error.message || error}`);
     }
   };
 
