@@ -25,30 +25,28 @@ export const useUserMutations = (queryClient: QueryClient) => {
       // Show loading toast
       toast.loading("Enregistrement des utilisateurs en cours...");
       
-      // Add UUIDs for each new user and filter out fields that might not exist in the database
-      const usersWithIds = users.map(user => {
-        // Create a copy of the user without fields that might cause issues
-        const { password, ...safeUserData } = user;
+      // Transform users to match the database schema
+      const usersForDb = users.map(user => {
+        // Remove password field as it's not stored in the database table
+        const { password, ...userData } = user;
         
-        // Create a base user object with a generated ID
-        const userWithId: Record<string, any> = {
-          ...safeUserData,
-          id: crypto.randomUUID() // Generate a UUID for each user
+        // Generate UUID for the user
+        const userWithId = {
+          ...userData,
+          id: crypto.randomUUID(),
+          // Ensure email exists - required by database
+          email: userData.email || ''
         };
-        
-        // Only add photo_url if it has a value
-        if (user.photo_url) {
-          userWithId.photo_url = user.photo_url;
-        }
         
         return userWithId;
       });
       
-      console.log("Inserting users:", usersWithIds);
+      console.log("Inserting users:", usersForDb);
       
-      const { data, error } = await supabase
+      // TypeScript now knows our array contains the required properties
+      const { error } = await supabase
         .from('internal_users')
-        .insert(usersWithIds);
+        .insert(usersForDb);
       
       if (error) {
         console.error("Error adding users:", error);
