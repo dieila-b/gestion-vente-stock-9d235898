@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-adapter";
 import { supabase } from "@/integrations/supabase/client";
+import { isSelectQueryError } from "@/utils/supabase-safe-query";
 
 export interface StockMovement {
   id: string;
@@ -9,6 +10,7 @@ export interface StockMovement {
   quantity: number;
   reason?: string;
   created_at: string;
+  created_by?: string;
   product: {
     id: string;
     name: string;
@@ -22,7 +24,6 @@ export interface StockMovement {
     id: string;
     name: string;
   } | null;
-  created_by?: string;
 }
 
 export function useRecentStockMovements() {
@@ -39,7 +40,8 @@ export function useRecentStockMovements() {
             reason,
             created_at,
             product:product_id(id, name, reference),
-            warehouse:warehouse_id(id, name)
+            warehouse:warehouse_id(id, name),
+            pos_location:pos_location_id(id, name)
           `)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -57,22 +59,40 @@ export function useRecentStockMovements() {
 
   // Transform data to match the StockMovement interface
   const transformedMovements: StockMovement[] = Array.isArray(data) 
-    ? data.map((movement) => ({
-        id: movement.id || "",
-        type: (movement.type === "in" || movement.type === "out") ? movement.type : "in",
-        quantity: movement.quantity || 0,
-        reason: movement.reason,
-        created_at: movement.created_at || "",
-        product: movement.product ? {
-          id: movement.product.id || "",
-          name: movement.product.name || "Unknown Product",
-          reference: movement.product.reference
-        } : null,
-        warehouse: movement.warehouse ? {
-          id: movement.warehouse.id || "",
-          name: movement.warehouse.name || "Unknown Warehouse"
-        } : null
-      }))
+    ? data.map((movement) => {
+        // Handle SelectQueryError
+        if (isSelectQueryError(movement)) {
+          return {
+            id: "",
+            type: "in" as "in" | "out",
+            quantity: 0,
+            created_at: "",
+            product: null,
+            warehouse: null
+          };
+        }
+        
+        return {
+          id: movement.id || "",
+          type: (movement.type === "in" || movement.type === "out") ? movement.type : "in",
+          quantity: movement.quantity || 0,
+          reason: movement.reason,
+          created_at: movement.created_at || "",
+          product: movement.product ? {
+            id: movement.product.id || "",
+            name: movement.product.name || "Unknown Product",
+            reference: movement.product.reference
+          } : null,
+          warehouse: movement.warehouse ? {
+            id: movement.warehouse.id || "",
+            name: movement.warehouse.name || "Unknown Warehouse"
+          } : null,
+          pos_location: movement.pos_location ? {
+            id: movement.pos_location.id || "",
+            name: movement.pos_location.name || "Unknown Location"
+          } : undefined
+        };
+      })
     : [];
 
   return {

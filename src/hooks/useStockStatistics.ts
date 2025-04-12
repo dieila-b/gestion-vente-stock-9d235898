@@ -1,8 +1,7 @@
 
-// Make changes only to fix the specific errors
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-adapter";
-import { safeWarehouse } from "@/utils/supabase-safe-query";
+import { safeWarehouse, isSelectQueryError } from "@/utils/supabase-safe-query";
 
 export function useStockStatistics() {
   const { data: warehouseStockData, isLoading: isLoadingWarehouseStock } = useQuery({
@@ -15,7 +14,9 @@ export function useStockStatistics() {
             .select(`
               warehouse_id,
               warehouse:warehouse_id(name),
-              quantity
+              id,
+              quantity,
+              product:product_id(id, name, reference, category)
             `)
         );
         
@@ -35,12 +36,24 @@ export function useStockStatistics() {
     }
     
     return data.map(item => {
+      if (isSelectQueryError(item)) {
+        return {
+          id: "",
+          warehouse_id: "",
+          name: "Unknown Warehouse",
+          quantity: 0,
+          product: null
+        };
+      }
+      
       const warehouse = safeWarehouse(item.warehouse);
       
       return {
-        id: item.warehouse_id,
+        id: item.id || "",
+        warehouse_id: item.warehouse_id || "",
         name: warehouse.name || "Unknown Warehouse",
-        quantity: item.quantity
+        quantity: item.quantity || 0,
+        product: item.product || null
       };
     });
   };
