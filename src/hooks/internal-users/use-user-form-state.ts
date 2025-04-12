@@ -3,6 +3,18 @@ import { useState } from "react";
 import { User } from "@/types/user";
 
 export const useUserFormState = () => {
+  const initialUserState: Omit<User, 'id'> = {
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    role: "employee",
+    address: "",
+    is_active: true,
+    photo_url: "",
+    password: "",
+  };
+
   const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([]);
   const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
   const [passwordConfirmation, setPasswordConfirmation] = useState<{ [key: number]: string }>({});
@@ -26,17 +38,7 @@ export const useUserFormState = () => {
   const handleAddUser = () => {
     setNewUserData([
       ...newUserData,
-      {
-        first_name: "",
-        last_name: "",
-        email: "",
-        phone: "",
-        role: "employee",
-        address: "",
-        is_active: true,
-        photo_url: "",
-        password: "",
-      },
+      { ...initialUserState }
     ]);
   };
 

@@ -4,7 +4,7 @@ import { UserForm } from "./UserForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
-import { Loader2 } from "lucide-react";
+import { Loader2, Save, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 interface UserFormListProps {
@@ -91,44 +91,71 @@ export const UserFormList = ({
   };
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Ajouter de Nouveaux Utilisateurs</h2>
-      {newUserData.map((user, index) => (
-        <UserForm 
-          key={index} 
-          user={user} 
-          index={index}
-          passwordConfirmation={passwordConfirmation[index] || ""}
-          showPassword={showPassword[index] || false}
-          onInputChange={onInputChange}
-          onPasswordConfirmationChange={onPasswordConfirmationChange}
-          onRemove={onRemoveUser}
-          onImageUpload={handleImageUpload}
-          onTogglePasswordVisibility={onTogglePasswordVisibility}
-        />
-      ))}
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Ajouter de Nouveaux Utilisateurs</h2>
       
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <Button variant="outline" size="sm" onClick={onAddUser}>
-          Ajouter un Utilisateur
-        </Button>
-        
-        <Button 
-          type="submit" 
-          variant="default" 
-          disabled={newUserData.length === 0 || isSubmitting}
-          onClick={handleSubmit}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Enregistrement...
-            </>
-          ) : (
-            "Enregistrer les utilisateurs"
-          )}
-        </Button>
-      </div>
+      {newUserData.length === 0 ? (
+        <div className="bg-muted/30 rounded-lg p-8 text-center">
+          <p className="text-muted-foreground mb-4">Aucun utilisateur à ajouter</p>
+          <Button 
+            variant="outline" 
+            onClick={onAddUser}
+            className="mx-auto"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Ajouter un utilisateur
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-6">
+            {newUserData.map((user, index) => (
+              <UserForm 
+                key={index} 
+                user={user} 
+                index={index}
+                passwordConfirmation={passwordConfirmation[index] || ""}
+                showPassword={showPassword[index] || false}
+                onInputChange={onInputChange}
+                onPasswordConfirmationChange={onPasswordConfirmationChange}
+                onRemove={onRemoveUser}
+                onImageUpload={handleImageUpload}
+                onTogglePasswordVisibility={onTogglePasswordVisibility}
+              />
+            ))}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={onAddUser}
+              className="flex items-center"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Ajouter un utilisateur
+            </Button>
+            
+            <Button 
+              variant="default" 
+              disabled={newUserData.length === 0 || isSubmitting}
+              onClick={handleSubmit}
+              className="flex items-center"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Enregistrer les utilisateurs
+                </>
+              )}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

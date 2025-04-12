@@ -6,6 +6,8 @@ import { ProfilePhotoSection } from "./form-sections/ProfilePhotoSection";
 import { PersonalInfoSection } from "./form-sections/PersonalInfoSection";
 import { PasswordSection } from "./form-sections/PasswordSection";
 import { UserRoleSection } from "./form-sections/UserRoleSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 
 interface UserFormProps {
   user: Omit<User, 'id'>;
@@ -31,39 +33,59 @@ export const UserForm = ({
   onTogglePasswordVisibility
 }: UserFormProps) => {
   return (
-    <div className="mb-4 p-4 border rounded-md">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ProfilePhotoSection 
-          user={user} 
-          index={index} 
-          onImageUpload={onImageUpload} 
-        />
-        
-        <PersonalInfoSection 
-          user={user} 
-          index={index} 
-          onInputChange={onInputChange} 
-        />
-        
-        <PasswordSection 
-          user={user}
-          index={index}
-          passwordConfirmation={passwordConfirmation}
-          showPassword={showPassword}
-          onInputChange={onInputChange}
-          onPasswordConfirmationChange={onPasswordConfirmationChange}
-          onTogglePasswordVisibility={onTogglePasswordVisibility}
-        />
-        
-        <UserRoleSection 
-          user={user} 
-          index={index} 
-          onInputChange={onInputChange} 
-        />
-      </div>
-      <Button variant="destructive" size="sm" className="mt-4" onClick={() => onRemove(index)}>
-        Supprimer
-      </Button>
-    </div>
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-lg">
+          {user.first_name || user.last_name 
+            ? `${user.first_name} ${user.last_name}`.trim() 
+            : `Nouvel utilisateur ${index + 1}`}
+        </CardTitle>
+        <Button 
+          variant="destructive" 
+          size="icon" 
+          onClick={() => onRemove(index)}
+          title="Supprimer l'utilisateur"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ProfilePhotoSection 
+            user={user} 
+            index={index} 
+            onImageUpload={onImageUpload} 
+          />
+          
+          <div className="space-y-4">
+            <PersonalInfoSection 
+              user={user} 
+              index={index} 
+              onInputChange={onInputChange} 
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <PasswordSection 
+              user={user}
+              index={index}
+              passwordConfirmation={passwordConfirmation}
+              showPassword={showPassword}
+              onInputChange={onInputChange}
+              onPasswordConfirmationChange={onPasswordConfirmationChange}
+              onTogglePasswordVisibility={onTogglePasswordVisibility}
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <UserRoleSection 
+              user={user} 
+              index={index} 
+              onInputChange={onInputChange} 
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

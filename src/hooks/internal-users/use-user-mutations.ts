@@ -30,20 +30,23 @@ export const useUserMutations = (queryClient: QueryClient) => {
         // Remove password field as it's not stored in the database table
         const { password, ...userData } = user;
         
-        // Generate UUID for the user
-        const userWithId = {
+        // Ensure required fields are present with appropriate types
+        return {
           ...userData,
           id: crypto.randomUUID(),
-          // Ensure email exists - required by database
-          email: userData.email || ''
+          email: userData.email || '',
+          first_name: userData.first_name || '',
+          last_name: userData.last_name || '',
+          role: userData.role || 'employee',
+          is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
+          photo_url: userData.photo_url || null,
+          phone: userData.phone || '',
+          address: userData.address || ''
         };
-        
-        return userWithId;
       });
       
       console.log("Inserting users:", usersForDb);
       
-      // TypeScript now knows our array contains the required properties
       const { error } = await supabase
         .from('internal_users')
         .insert(usersForDb);
