@@ -25,23 +25,24 @@ async function fetchSalesData(
   const startDate = startOfYear(new Date(parseInt(selectedYear)));
   const endDate = endOfYear(startDate);
 
-  // Build the query step by step with explicit typing
-  const query = supabase.from('orders');
-  const selectQuery = query.select<'created_at, final_total', OrderData>('created_at, final_total');
+  // Use a single query string approach to avoid excessive type nesting
+  let queryStr = 'created_at, final_total';
   
-  // Apply filters to the query
-  let filteredQuery = selectQuery
+  // Create the base query
+  const query = supabase.from('orders').select(queryStr);
+  
+  // Apply date filters
+  const dateFiltered = query
     .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString())
-    .order('created_at');
+    .lte('created_at', endDate.toISOString());
   
-  // Apply POS filter if needed
-  if (selectedPOS !== "all") {
-    filteredQuery = filteredQuery.eq('depot', selectedPOS);
-  }
-
+  // Apply order and POS filter if needed
+  const finalQuery = selectedPOS !== "all" 
+    ? dateFiltered.eq('depot', selectedPOS).order('created_at')
+    : dateFiltered.order('created_at');
+  
   // Execute the query
-  const { data: orders, error } = await filteredQuery;
+  const { data: orders, error } = await finalQuery;
 
   if (error) throw error;
 
