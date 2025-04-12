@@ -1,3 +1,4 @@
+
 import { useState, useEffect, FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Eye, EyeOff } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface User {
   id: string;
@@ -41,10 +45,13 @@ interface User {
   role: "admin" | "manager" | "employee";
   address: string;
   is_active: boolean;
+  photo_url?: string;
+  password?: string;
 }
 
 const InternalUsers = () => {
   const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([]);
+  const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading, refetch } = useQuery({
@@ -80,6 +87,8 @@ const InternalUsers = () => {
         role: "employee",
         address: "",
         is_active: true,
+        photo_url: "",
+        password: "",
       },
     ]);
   };
@@ -96,6 +105,37 @@ const InternalUsers = () => {
 
   const handleIsActiveChange = (index: number, isActive: boolean) => {
     handleInputChange(index, "is_active", isActive);
+  };
+
+  const togglePasswordVisibility = (index: number) => {
+    setShowPassword(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `internal-users/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('lovable-uploads')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data } = supabase.storage
+        .from('lovable-uploads')
+        .getPublicUrl(filePath);
+      
+      handleInputChange(index, "photo_url", data.publicUrl);
+      toast.success("Image téléchargée avec succès");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Erreur lors du téléchargement de l'image");
+    }
   };
 
   const fetchUsers = async () => {
@@ -138,7 +178,25 @@ const InternalUsers = () => {
         <h2 className="text-lg font-semibold mb-2">Ajouter de Nouveaux Utilisateurs</h2>
         {newUserData.map((user, index) => (
           <div key={index} className="mb-4 p-4 border rounded-md">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2 flex justify-center mb-4">
+                <div className="w-full max-w-xs">
+                  <Label htmlFor={`photo_${index}`} className="block mb-2 text-center">Photo de Profil</Label>
+                  {user.photo_url ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={user.photo_url} alt={`${user.first_name} ${user.last_name}`} />
+                        <AvatarFallback>{user.first_name?.charAt(0) || ""}{user.last_name?.charAt(0) || ""}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  ) : null}
+                  <ImageUpload 
+                    onUpload={(file) => handleImageUpload(index, file)} 
+                    value={user.photo_url}
+                  />
+                </div>
+              </div>
+              
               <div>
                 <Label htmlFor={`first_name_${index}`}>Prénom</Label>
                 <Input
@@ -176,6 +234,29 @@ const InternalUsers = () => {
                 />
               </div>
               <div>
+                <Label htmlFor={`password_${index}`}>Mot de passe</Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword[index] ? "text" : "password"}
+                    id={`password_${index}`}
+                    value={user.password}
+                    onChange={(e) => handleInputChange(index, "password", e.target.value)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => togglePasswordVisibility(index)}
+                  >
+                    {showPassword[index] ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div>
                 <Label htmlFor={`role_${index}`}>Rôle</Label>
                 <Select onValueChange={(value) => handleRoleChange(index, value as "admin" | "manager" | "employee")}>
                   <SelectTrigger>
@@ -210,7 +291,7 @@ const InternalUsers = () => {
                 </Select>
               </div>
             </div>
-            <Button variant="destructive" size="sm" onClick={() => handleRemoveUser(index)}>
+            <Button variant="destructive" size="sm" className="mt-4" onClick={() => handleRemoveUser(index)}>
               Supprimer
             </Button>
           </div>
