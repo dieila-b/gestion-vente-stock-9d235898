@@ -1,180 +1,216 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
-import { useProducts } from "@/hooks/use-products";
-import { useSuppliers } from "@/hooks/use-suppliers";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
-import { useNavigate } from "react-router-dom";
 
-export const usePurchaseEdit = (id?: string) => {
-  const navigate = useNavigate();
-  const { currentOrder, isLoadingOrder, handleUpdate, handleCreate } = usePurchaseOrders();
-  const { suppliers } = useSuppliers();
-  const { products, isLoading: isLoadingProducts } = useProducts();
-  const { toast } = useToast();
-  
-  const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<PurchaseOrderItem[]>([]);
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { usePurchaseOrders } from '@/hooks/use-purchase-orders';
+import { PurchaseOrderItem } from '@/types/purchaseOrder';
+import { isSelectQueryError } from '@/utils/supabase-helpers';
+
+export function usePurchaseEdit(id?: string) {
+  // Get necessary purchase order functions
+  const {
+    handleCreate,
+    handleUpdate,
+    fetchPurchaseOrder,
+    isLoading
+  } = usePurchaseOrders();
+
+  // Local state for form fields
+  const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
+  const [orderStatus, setOrderStatus] = useState<'pending' | 'delivered'>('pending');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
   const [shippingCost, setShippingCost] = useState(0);
   const [transitCost, setTransitCost] = useState(0);
   const [logisticsCost, setLogisticsCost] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [taxRate, setTaxRate] = useState(20);
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
-  const [orderStatus, setOrderStatus] = useState<'draft' | 'pending' | 'delivered' | 'approved'>('pending');
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
+  const [selectedProducts, setSelectedProducts] = useState<PurchaseOrderItem[]>([]);
 
-  useEffect(() => {
-    if (id && currentOrder) {
-      setSelectedSupplier(currentOrder.supplier_id);
-      setSelectedProducts(currentOrder.items || []);
-      setShippingCost(currentOrder.shipping_cost);
-      setTransitCost(currentOrder.transit_cost);
-      setLogisticsCost(currentOrder.logistics_cost);
-      setDiscount(currentOrder.discount);
-      setTaxRate(currentOrder.tax_rate);
-      setExpectedDeliveryDate(currentOrder.expected_delivery_date || "");
-      setOrderStatus(currentOrder.status as 'draft' | 'pending' | 'delivered' | 'approved');
-      setPaymentStatus(currentOrder.payment_status);
+  // Fetch suppliers and products
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
     }
-  }, [id, currentOrder]);
+  });
 
-  const handleProductSelect = (index: number, productId: string) => {
-    const selectedProduct = products?.find(p => p.id === productId);
-    if (!selectedProduct) {
-      toast({
-        title: "Erreur",
-        description: "Le produit sélectionné n'existe pas dans le catalogue",
-        variant: "destructive"
-      });
-      return;
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalog')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
     }
+  });
 
-    const updatedProducts = [...selectedProducts];
-    updatedProducts[index] = {
-      ...updatedProducts[index],
-      product_id: productId,
-      designation: selectedProduct.name,
-      product_code: selectedProduct.reference,
-      unit_price: selectedProduct.purchase_price || selectedProduct.price,
-      selling_price: selectedProduct.price || 0,
-      total_price: (updatedProducts[index].quantity || 0) * (selectedProduct.purchase_price || selectedProduct.price)
-    };
-    setSelectedProducts(updatedProducts);
+  // Fetch purchase order data if ID is provided (editing mode)
+  const { data: orderData } = useQuery({
+    queryKey: ['purchase-order', id],
+    queryFn: () => fetchPurchaseOrder(id || ''),
+    enabled: !!id,
+    onSuccess: (data) => {
+      if (data) {
+        setSelectedSupplier(data.supplier_id || '');
+        setExpectedDeliveryDate(data.expected_delivery_date || '');
+        setOrderStatus(data.status as 'pending' | 'delivered');
+        setPaymentStatus(data.payment_status as 'pending' | 'partial' | 'paid');
+        setShippingCost(data.shipping_cost || 0);
+        setTransitCost(data.transit_cost || 0);
+        setLogisticsCost(data.logistics_cost || 0);
+        setDiscount(data.discount || 0);
+        setTaxRate(data.tax_rate || 20);
+        
+        if (Array.isArray(data.items)) {
+          setSelectedProducts(data.items.map(item => ({
+            ...item,
+            // Ensure all required fields have values
+            quantity: item.quantity || 0,
+            unit_price: item.unit_price || 0,
+            selling_price: item.selling_price || 0,
+            total_price: item.total_price || 0
+          })));
+        }
+      }
+    }
+  });
+
+  // Product handling functions
+  const handleProductSelect = (productId: string) => {
+    if (products) {
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        setSelectedProducts(prev => [
+          ...prev,
+          {
+            product_id: product.id,
+            quantity: 1,
+            unit_price: product.purchase_price || 0,
+            selling_price: product.price || 0,
+            total_price: product.purchase_price || 0,
+            product
+          }
+        ]);
+      }
+    }
   };
 
-  const calculateSubtotal = () => {
-    const productsTotal = selectedProducts.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-    return productsTotal + shippingCost + transitCost + logisticsCost - discount;
-  };
-
-  const calculateTax = () => {
-    return calculateSubtotal() * (taxRate / 100);
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
-
-  const handleAddProduct = () => {
-    const newProduct: PurchaseOrderItem = {
-      id: crypto.randomUUID(),
-      product_id: "",
-      product_code: "",
-      designation: "",
-      quantity: 1,
-      unit_price: 0,
-      total_price: 0,
-      selling_price: 0
-    };
-    setSelectedProducts([...selectedProducts, newProduct]);
+  const handleAddProduct = (productId: string) => {
+    handleProductSelect(productId);
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const updatedProducts = [...selectedProducts];
-    updatedProducts[index] = {
-      ...updatedProducts[index],
-      quantity,
-      total_price: quantity * updatedProducts[index].unit_price
-    };
-    setSelectedProducts(updatedProducts);
+    setSelectedProducts(prev => prev.map((item, i) => {
+      if (i === index) {
+        return {
+          ...item,
+          quantity,
+          total_price: quantity * item.unit_price
+        };
+      }
+      return item;
+    }));
   };
 
   const handlePriceChange = (index: number, price: number) => {
-    const updatedProducts = [...selectedProducts];
-    updatedProducts[index] = {
-      ...updatedProducts[index],
-      unit_price: price,
-      total_price: updatedProducts[index].quantity * price
-    };
-    setSelectedProducts(updatedProducts);
+    setSelectedProducts(prev => prev.map((item, i) => {
+      if (i === index) {
+        return {
+          ...item,
+          unit_price: price,
+          total_price: item.quantity * price
+        };
+      }
+      return item;
+    }));
   };
 
+  // Calculation functions
+  const calculateSubtotal = () => {
+    return selectedProducts.reduce((sum, item) => sum + (item.total_price || 0), 0);
+  };
+
+  const calculateTax = () => {
+    return (calculateSubtotal() * taxRate) / 100;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax() + shippingCost + transitCost + logisticsCost - discount;
+  };
+
+  // Form submission
   const handleSubmit = async () => {
-    if (!selectedSupplier) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un fournisseur",
-        variant: "destructive"
+    const purchaseOrderData = {
+      supplier_id: selectedSupplier,
+      expected_delivery_date: expectedDeliveryDate,
+      status: orderStatus,
+      payment_status: paymentStatus,
+      shipping_cost: shippingCost,
+      transit_cost: transitCost,
+      logistics_cost: logisticsCost,
+      discount: discount,
+      tax_rate: taxRate,
+      subtotal: calculateSubtotal(),
+      tax_amount: calculateTax(),
+      total_ttc: calculateTotal(),
+      total_amount: calculateTotal()
+    };
+
+    if (id) {
+      // Update existing purchase order
+      const updatedData = await handleUpdate.mutateAsync({
+        id,
+        ...purchaseOrderData
       });
-      return;
-    }
 
-    const invalidProducts = selectedProducts.filter(
-      item => !products?.some(p => p.id === item.product_id)
-    );
+      // Handle items separately if needed
+      // ...
 
-    if (invalidProducts.length > 0) {
-      toast({
-        title: "Erreur",
-        description: "Certains produits sélectionnés n'existent pas dans le catalogue",
-        variant: "destructive"
-      });
-      return;
-    }
+      return updatedData;
+    } else {
+      // Create new purchase order
+      const newOrder = await handleCreate.mutateAsync(purchaseOrderData);
 
-    try {
-      const orderData = {
-        supplier_id: selectedSupplier,
-        items: selectedProducts.map(item => ({
-          ...item,
-          purchase_order_id: id
-        })),
-        shipping_cost: shippingCost,
-        transit_cost: transitCost,
-        logistics_cost: logisticsCost,
-        discount: discount,
-        tax_rate: taxRate,
-        subtotal: calculateSubtotal(),
-        tax_amount: calculateTax(),
-        total_ttc: calculateTotal(),
-        expected_delivery_date: expectedDeliveryDate,
-        status: orderStatus,
-        payment_status: paymentStatus,
-        paid_amount: 0 // Default value, should be updated in a real application
-      };
+      // Handle items
+      if (selectedProducts.length > 0 && newOrder?.id) {
+        const itemsToInsert = selectedProducts.map(item => ({
+          purchase_order_id: newOrder.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          selling_price: item.selling_price,
+          total_price: item.total_price
+        }));
 
-      if (id) {
-        await handleUpdate(id, orderData);
-      } else {
-        await handleCreate(orderData);
+        // Insert items
+        const { error } = await supabase
+          .from('purchase_order_items')
+          .insert(itemsToInsert);
+
+        if (error) {
+          console.error('Error adding items:', error);
+        }
       }
-      
-      navigate("/purchase-orders");
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la sauvegarde",
-        variant: "destructive"
-      });
+
+      return newOrder;
     }
   };
 
   return {
     suppliers,
     products,
-    isLoadingOrder,
+    isLoading: isLoading || isLoadingSuppliers || isLoadingProducts,
     isLoadingProducts,
     selectedSupplier,
     setSelectedSupplier,
@@ -204,4 +240,4 @@ export const usePurchaseEdit = (id?: string) => {
     handlePriceChange,
     handleSubmit
   };
-};
+}

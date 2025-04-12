@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { isSelectQueryError, safeArray, safeGetObject } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 // We'll use a simple helper function for safeGetProperty
-const safeGetProperty = (obj: any, propName: string, defaultValue: any) => {
-  if (!obj || typeof obj !== 'object' || obj.error === true) {
+const safeGetProperty = <T,>(obj: any, propName: string, defaultValue: T): T => {
+  if (!obj || typeof obj !== 'object' || isSelectQueryError(obj)) {
     return defaultValue;
   }
   return obj[propName] !== undefined ? obj[propName] : defaultValue;
@@ -99,50 +99,53 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
         phone: ""
       };
       
-      // Safely get client data
-      const clientData = isSelectQueryError(editOrder.client)
-        ? defaultClient
-        : {
-            id: editOrder.client.id || defaultClient.id,
-            company_name: editOrder.client.company_name || defaultClient.company_name,
-            contact_name: editOrder.client.contact_name || defaultClient.contact_name,
-            status: safeGetProperty(editOrder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier',
-            email: editOrder.client.email || defaultClient.email,
-            phone: editOrder.client.phone || defaultClient.phone
-          };
-      
-      setSelectedClient(clientData);
-      
-      // Safely handle order items
-      const items = safeArray(editOrder.items, []);
-      
-      const cartItems = items.map((item: any) => {
-        // Create default product
-        const defaultProduct = { 
-          id: item.product_id, 
-          name: "Unknown Product", 
-          category: "", 
-          image_url: "" 
+      // Check if client is a SelectQueryError
+      if (isSelectQueryError(editOrder.client)) {
+        setSelectedClient(defaultClient);
+      } else {
+        // If not an error, safely build client data
+        const clientData: Client = {
+          id: safeGetProperty(editOrder.client, 'id', defaultClient.id),
+          company_name: safeGetProperty(editOrder.client, 'company_name', defaultClient.company_name),
+          contact_name: safeGetProperty(editOrder.client, 'contact_name', defaultClient.contact_name),
+          status: safeGetProperty(editOrder.client, 'status', 'particulier') === 'entreprise' ? 'entreprise' : 'particulier',
+          email: safeGetProperty(editOrder.client, 'email', defaultClient.email),
+          phone: safeGetProperty(editOrder.client, 'phone', defaultClient.phone)
         };
         
-        // Safely handle product data
-        const product = isSelectQueryError(item.product)
-          ? defaultProduct
-          : item.product || defaultProduct;
-          
-        return {
-          id: product.id,
-          name: product.name,
-          price: item.price,
-          quantity: item.quantity,
-          discount: item.discount || 0,
-          category: product.category,
-          image: product.image_url,
-          deliveredQuantity: item.delivered_quantity || 0
-        };
-      });
+        setSelectedClient(clientData);
+      }
       
-      setCart(cartItems);
+      // Safely handle order items
+      if (Array.isArray(editOrder.items) && !isSelectQueryError(editOrder.items)) {
+        const cartItems = editOrder.items.map((item: any) => {
+          // Create default product
+          const defaultProduct = { 
+            id: item.product_id, 
+            name: "Unknown Product", 
+            category: "", 
+            image_url: "" 
+          };
+          
+          // Safely handle product data
+          const product = isSelectQueryError(item.product)
+            ? defaultProduct
+            : item.product || defaultProduct;
+            
+          return {
+            id: product.id,
+            name: product.name,
+            price: item.price,
+            quantity: item.quantity,
+            discount: item.discount || 0,
+            category: product.category,
+            image: product.image_url,
+            deliveredQuantity: item.delivered_quantity || 0
+          };
+        });
+        
+        setCart(cartItems);
+      }
     }
   }, [editOrder, setCart, setSelectedClient]);
 

@@ -6,7 +6,7 @@ import { useFetchWarehouses } from './delivery-notes/use-fetch-warehouses';
 export function useDeliveryNotes() {
   const { deliveryNotes, isLoading, filter, setFilter, searchTerm, setSearchTerm, refetch } = useFetchDeliveryNotes();
   const { handleDelete, handleApprove, handleEdit } = useDeliveryNoteMutations();
-  const { warehouses } = useFetchWarehouses();
+  const { data: warehouses } = useFetchWarehouses();
   
   return {
     deliveryNotes,

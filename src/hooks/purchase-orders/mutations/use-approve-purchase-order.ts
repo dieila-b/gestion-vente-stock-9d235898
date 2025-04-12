@@ -62,10 +62,26 @@ export function useApprovePurchaseOrder() {
         if (deliveryItemsError) throw deliveryItemsError;
       }
 
-      // Create the purchase order object to return, including the supplier
-      const supplier = isSelectQueryError(updatedOrder.supplier) 
-        ? { id: '', name: 'Unknown', phone: '', email: '' } 
-        : updatedOrder.supplier || { id: '', name: 'Unknown', phone: '', email: '' };
+      // Create default supplier object for fallback
+      const defaultSupplier = { 
+        id: '', 
+        name: 'Unknown Supplier', 
+        phone: '', 
+        email: '' 
+      };
+
+      // Safely handle supplier data
+      let supplier = defaultSupplier;
+      
+      // Check if supplier data is available and not a SelectQueryError
+      if (updatedOrder.supplier && !isSelectQueryError(updatedOrder.supplier)) {
+        supplier = {
+          id: updatedOrder.supplier.id || '',
+          name: updatedOrder.supplier.name || 'Unknown Supplier',
+          phone: updatedOrder.supplier.phone || '',
+          email: updatedOrder.supplier.email || ''
+        };
+      }
 
       const purchaseOrder: PurchaseOrder = {
         ...updatedOrder,

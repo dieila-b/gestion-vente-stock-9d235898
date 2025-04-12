@@ -21,9 +21,15 @@ export function usePOSLocation() {
 
       if (error) throw error;
 
-      // Filter out any SelectQueryError instances
+      // Filter out any items that aren't POS locations (might be other table types due to type issues)
       return Array.isArray(data) 
-        ? data.filter(location => !isSelectQueryError(location)).map(location => {
+        ? data.filter(item => 
+            // Make sure it has the expected properties of a POSLocation
+            item && 
+            typeof item === 'object' && 
+            'id' in item && 
+            !isSelectQueryError(item)
+          ).map(location => {
             return {
               id: location.id || '',
               name: location.name || '',
@@ -52,20 +58,24 @@ export function usePOSLocation() {
 
       if (error) throw error;
 
-      // Transform the data to match POSLocation
-      return {
-        id: data?.id || '',
-        name: data?.name || '',
-        phone: data?.phone || '',
-        email: data?.email || '',
-        address: data?.address || '',
-        status: data?.status || 'active',
-        is_active: data?.is_active || true,
-        manager: data?.manager || '',
-        capacity: data?.capacity || 0,
-        occupied: data?.occupied || 0,
-        surface: data?.surface || 0
-      } as POSLocation;
+      // Safely handle response data
+      if (data && typeof data === 'object' && !isSelectQueryError(data)) {
+        return {
+          id: data.id || '',
+          name: data.name || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          address: data.address || '',
+          status: data.status || 'active',
+          is_active: data.is_active || true,
+          manager: data.manager || '',
+          capacity: data.capacity || 0,
+          occupied: data.occupied || 0,
+          surface: data.surface || 0
+        } as POSLocation;
+      }
+      
+      throw new Error("Invalid data returned from create operation");
     },
     onSuccess: () => {
       toast.success("Location added successfully");
@@ -88,20 +98,24 @@ export function usePOSLocation() {
 
       if (error) throw error;
 
-      // Transform the data to match POSLocation
-      return {
-        id: data?.id || '',
-        name: data?.name || '',
-        phone: data?.phone || '',
-        email: data?.email || '',
-        address: data?.address || '',
-        status: data?.status || 'active',
-        is_active: data?.is_active || true,
-        manager: data?.manager || '',
-        capacity: data?.capacity || 0,
-        occupied: data?.occupied || 0,
-        surface: data?.surface || 0
-      } as POSLocation;
+      // Safely handle response data
+      if (data && typeof data === 'object' && !isSelectQueryError(data)) {
+        return {
+          id: data.id || '',
+          name: data.name || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          address: data.address || '',
+          status: data.status || 'active',
+          is_active: data.is_active || true,
+          manager: data.manager || '',
+          capacity: data.capacity || 0,
+          occupied: data.occupied || 0,
+          surface: data.surface || 0
+        } as POSLocation;
+      }
+      
+      throw new Error("Invalid data returned from update operation");
     },
     onSuccess: () => {
       toast.success("Location updated successfully");
@@ -131,6 +145,7 @@ export function usePOSLocation() {
     },
   });
 
+  // Handlers
   const handleSubmit = async (formData: Omit<POSLocation, "id">) => {
     if (selectedLocation) {
       // Update existing location
@@ -146,7 +161,7 @@ export function usePOSLocation() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this location?")) {
+    if (window.confirm("Are you sure you want to delete this location?")) {
       await deletePOSLocation.mutateAsync(id);
     }
   };

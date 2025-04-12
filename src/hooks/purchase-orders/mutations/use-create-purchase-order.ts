@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchaseOrder";
 import { toast } from "sonner";
-import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function useCreatePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -12,7 +12,7 @@ export function useCreatePurchaseOrder() {
     try {
       // Ensure we have all required fields
       const newOrderData = {
-        supplier_id: purchaseOrderData.supplier_id || (purchaseOrderData.supplier?.id ?? ""),
+        supplier_id: purchaseOrderData.supplier_id || "",
         order_number: purchaseOrderData.order_number || `PO-${Date.now().toString().slice(-6)}`,
         expected_delivery_date: purchaseOrderData.expected_delivery_date,
         warehouse_id: purchaseOrderData.warehouse_id,
@@ -38,8 +38,7 @@ export function useCreatePurchaseOrder() {
         .insert(newOrderData)
         .select(`
           *,
-          supplier:suppliers(*),
-          warehouse:warehouses(*)
+          supplier:suppliers(*)
         `)
         .single();
 

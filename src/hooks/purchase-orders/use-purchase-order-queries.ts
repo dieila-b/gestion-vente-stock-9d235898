@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchaseOrder";
-import { isSelectQueryError, safeGetProperty } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from "@/utils/supabase-helpers";
 
 export function usePurchaseOrderQueries(
   status: string | null = null,
