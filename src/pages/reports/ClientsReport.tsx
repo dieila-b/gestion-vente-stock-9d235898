@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,25 +28,22 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-// Sort types to handle sorting
 type SortField = 'date' | 'order_id' | 'total' | 'paid' | 'remaining' | null;
 type SortDirection = 'asc' | 'desc';
 
 export default function ClientsReport() {
   const { toast } = useToast();
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [date, setDate] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 7),
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Sorting state
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // Récupérer la liste des clients
   const { data: clients = [], isLoading: isLoadingClients } = useQuery({
     queryKey: ['clients-list'],
     queryFn: async () => {
@@ -61,12 +57,11 @@ export default function ClientsReport() {
     }
   });
 
-  // Récupération des ventes par facture pour le client sélectionné
   const { data: allClientInvoices = [], isLoading } = useQuery({
-    queryKey: ['client-invoices-all', date?.from, date?.to, selectedClient],
-    enabled: !!date?.from && !!date?.to && !!selectedClient,
+    queryKey: ['client-invoices-all', dateRange?.from, dateRange?.to, selectedClient],
+    enabled: !!dateRange?.from && !!dateRange?.to && !!selectedClient,
     queryFn: async () => {
-      if (!date?.from || !date?.to || !selectedClient) return [];
+      if (!dateRange?.from || !dateRange?.to || !selectedClient) return [];
 
       const { data, error } = await supabase
         .from('orders')
@@ -88,16 +83,15 @@ export default function ClientsReport() {
           )
         `)
         .eq('client_id', selectedClient)
-        .gte('created_at', date.from.toISOString())
-        .lte('created_at', date.to.toISOString())
+        .gte('created_at', dateRange.from.toISOString())
+        .lte('created_at', dateRange.to.toISOString())
         .order('created_at');
 
       if (error) throw error;
       return data;
     }
   });
-  
-  // Sort function for invoices
+
   const sortInvoices = (a: any, b: any) => {
     if (!sortField) return 0;
     
@@ -125,36 +119,29 @@ export default function ClientsReport() {
     
     return 0;
   };
-  
-  // Handle sort change
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // Toggle direction if same field
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new field and default to ascending
       setSortField(field);
       setSortDirection('asc');
     }
   };
-  
-  // Get sorted invoices
+
   const sortedInvoices = [...allClientInvoices].sort(sortInvoices);
-  
-  // Pagination
+
   const indexOfLastInvoice = currentPage * itemsPerPage;
   const indexOfFirstInvoice = indexOfLastInvoice - itemsPerPage;
   const clientInvoices = sortedInvoices.slice(indexOfFirstInvoice, indexOfLastInvoice);
   const totalPages = Math.ceil((allClientInvoices?.length || 0) / itemsPerPage);
 
-  // Calcul des totaux
   const totals = allClientInvoices?.reduce((acc, invoice) => ({
     total: acc.total + invoice.final_total,
     paid: acc.paid + invoice.paid_amount,
     remaining: acc.remaining + invoice.remaining_amount
   }), { total: 0, paid: 0, remaining: 0 });
 
-  // Sorting helper to render sort icons
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? 
@@ -183,7 +170,7 @@ export default function ClientsReport() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`rapport-client-${date?.from?.toLocaleDateString('fr-FR')}-${date?.to?.toLocaleDateString('fr-FR')}.pdf`);
+      pdf.save(`rapport-client-${dateRange?.from?.toLocaleDateString('fr-FR')}-${dateRange?.to?.toLocaleDateString('fr-FR')}.pdf`);
 
       toast({
         title: "Export réussi",
@@ -198,15 +185,13 @@ export default function ClientsReport() {
     }
   };
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Handle items per page change
   const handleItemsPerPageChange = (items: number) => {
     setItemsPerPage(items);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   };
 
   if (isLoading && selectedClient) {
@@ -224,7 +209,7 @@ export default function ClientsReport() {
         <div>
           <h1 className="text-2xl font-bold">Synthèse Clients</h1>
           <p className="text-muted-foreground">
-            Rapport détaillé des ventes par facture du {date?.from?.toLocaleDateString('fr-FR')} au {date?.to?.toLocaleDateString('fr-FR')}
+            Rapport détaillé des ventes par facture du {dateRange?.from?.toLocaleDateString('fr-FR')} au {dateRange?.to?.toLocaleDateString('fr-FR')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -270,12 +255,14 @@ export default function ClientsReport() {
 
         <div className="w-96">
           <label className="block text-sm font-medium mb-2">Période</label>
-          <DatePickerWithRange date={date} setDate={setDate} />
+          <DatePickerWithRange
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
       </div>
 
       <div id="client-report" className="space-y-8">
-        {/* Résumé des totaux */}
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-lg bg-white/5">
             <div className="text-sm text-muted-foreground">Total des ventes</div>
@@ -291,7 +278,6 @@ export default function ClientsReport() {
           </div>
         </div>
 
-        {/* Tableau des factures */}
         <div>
           <h2 className="text-lg font-semibold mb-4">Détail des factures</h2>
           <div className="rounded-md border">
@@ -382,7 +368,6 @@ export default function ClientsReport() {
           </div>
         </div>
 
-        {/* Pagination */}
         {allClientInvoices.length > 0 && (
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
@@ -414,15 +399,12 @@ export default function ClientsReport() {
                 </PaginationItem>
                 
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  // Display up to 5 page numbers
                   let pageNumber = i + 1;
                   
-                  // If we have more than 5 pages and we're not at the beginning
                   if (totalPages > 5 && currentPage > 3) {
                     pageNumber = currentPage - 3 + i;
                   }
                   
-                  // Don't show page numbers beyond total pages
                   if (pageNumber <= totalPages) {
                     return (
                       <PaginationItem key={pageNumber}>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +12,6 @@ import { CustomReportHeader } from "./components/CustomReportHeader";
 import { CustomSalesTotals } from "./components/CustomSalesTotals";
 import { CustomProductSalesTable } from "./components/CustomProductSales";
 import { CustomClientSalesTable } from "./components/CustomClientSales";
-// Change from default import to named import
 import { useCustomReportQueries } from "./hooks/useCustomReportQueries";
 
 export default function CustomReport() {
@@ -133,7 +131,10 @@ export default function CustomReport() {
 
         <div className="w-96">
           <label className="block text-sm font-medium mb-2">Période</label>
-          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          <DatePickerWithRange 
+            dateRange={dateRange} 
+            onDateRangeChange={setDateRange} 
+          />
         </div>
       </div>
 
