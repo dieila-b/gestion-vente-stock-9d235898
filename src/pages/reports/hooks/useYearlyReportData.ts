@@ -37,19 +37,19 @@ async function fetchSalesData(
     
     // Execute the appropriate query based on the POS selection
     if (selectedPOS === "all") {
-      // Query for all POS locations
-      const result: QueryResult = await supabase
+      // Query for all POS locations - use explicit type casting to avoid deep inference
+      const result = await supabase
         .from('orders')
         .select('created_at, final_total')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at');
       
-      orders = result.data;
+      orders = result.data as OrderData[] | null;
       error = result.error;
     } else {
-      // Query for a specific POS location
-      const result: QueryResult = await supabase
+      // Query for a specific POS location - use explicit type casting to avoid deep inference
+      const result = await supabase
         .from('orders')
         .select('created_at, final_total')
         .gte('created_at', startDate.toISOString())
@@ -57,7 +57,7 @@ async function fetchSalesData(
         .eq('depot', selectedPOS)
         .order('created_at');
       
-      orders = result.data;
+      orders = result.data as OrderData[] | null;
       error = result.error;
     }
 
