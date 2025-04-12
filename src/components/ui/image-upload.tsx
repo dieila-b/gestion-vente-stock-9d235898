@@ -35,10 +35,10 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
       return false;
     }
     
-    // Check file size - limit to 5MB
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    // Check file size - increased to 20MB
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
     if (file.size > MAX_FILE_SIZE) {
-      setError(`La taille du fichier dépasse la limite de 5MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      setError(`La taille du fichier dépasse la limite de 20MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
       return false;
     }
     
@@ -162,7 +162,7 @@ export const ImageUpload = ({ onUpload, value, disabled }: ImageUploadProps) => 
                     Glissez-déposez une image ici ou cliquez pour parcourir
                   </p>
                   <p className="text-xs text-gray-500">
-                    PNG, JPG jusqu'à 5MB
+                    PNG, JPG jusqu'à 20MB
                   </p>
                 </div>
               </>

@@ -34,11 +34,11 @@ export const UserFormList = ({
   
   const handleImageUpload = async (index: number, file: File) => {
     try {
-      // Check file size - limit to 5MB
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      // Check file size - increased to 20MB
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
       if (file.size > MAX_FILE_SIZE) {
         console.error("File size exceeds limit", file.size);
-        toast.error(`La taille du fichier dépasse la limite de 5MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+        toast.error(`La taille du fichier dépasse la limite de 20MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
         return;
       }
       
