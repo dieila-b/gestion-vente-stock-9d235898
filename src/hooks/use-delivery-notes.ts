@@ -1,42 +1,10 @@
 
-// Placeholder implementation with correct type handling for the delivery notes hook
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-
-export interface DeliveryNote {
-  id: string;
-  delivery_number: string;
-  created_at: string;
-  updated_at: string;
-  notes: string;
-  status: string; // Add status property which was missing
-  supplier: {
-    name: string;
-    phone?: string;
-    email?: string;
-  };
-  purchase_order: {
-    order_number: string;
-    total_amount: number;
-  };
-  items: DeliveryNoteItem[];
-}
-
-export interface DeliveryNoteItem {
-  id: string;
-  product_id: string;
-  quantity_ordered: number;
-  quantity_received: number;
-  unit_price: number;
-  product: {
-    name: string;
-    reference?: string;
-    category?: string;
-  };
-}
+import { DeliveryNote, DeliveryNoteItem } from '@/types/delivery-note';
+import { isSelectQueryError, safeGet } from '@/utils/type-utils';
 
 export function useDeliveryNotes() {
   const { toast } = useToast();
@@ -72,18 +40,25 @@ export function useDeliveryNotes() {
       return data.map(note => ({
         ...note,
         status: note.status || 'pending', // Ensure status is always defined
-        supplier: note.supplier?.error 
+        supplier: isSelectQueryError(note.supplier)
           ? { name: 'Unknown Supplier', phone: '', email: '' } 
           : note.supplier || { name: 'Unknown Supplier', phone: '', email: '' },
-        purchase_order: note.purchase_order?.error
+        purchase_order: isSelectQueryError(note.purchase_order)
           ? { order_number: '', total_amount: 0 }
           : note.purchase_order || { order_number: '', total_amount: 0 },
-        items: (note.items || []).map(item => ({
-          ...item,
-          product: item.product?.error
-            ? { name: 'Unknown Product', reference: '', category: '' }
-            : item.product || { name: 'Unknown Product', reference: '', category: '' }
-        }))
+        items: (note.items || []).map((item: any) => {
+          const safeItem: DeliveryNoteItem = {
+            id: item.id || '',
+            product_id: item.product_id || '',
+            quantity_ordered: item.quantity_ordered || 0,
+            quantity_received: item.quantity_received || 0,
+            unit_price: item.unit_price || 0,
+            product: isSelectQueryError(item.product)
+              ? { name: 'Unknown Product', reference: '', category: '' }
+              : item.product || { name: 'Unknown Product', reference: '', category: '' }
+          };
+          return safeItem;
+        })
       }));
     }
   });
@@ -110,15 +85,51 @@ export function useDeliveryNotes() {
   });
 
   // Create delivery note
-  const createDeliveryNote = async (data: any) => {
+  const createDeliveryNote = async (data: {
+    delivery_number?: string;
+    notes?: string;
+    status?: string;
+    supplier_id?: string;
+    purchase_order_id?: string;
+    items?: Array<{
+      product_id: string;
+      quantity_ordered: number;
+      quantity_received: number;
+      unit_price: number;
+    }>;
+  }) => {
     try {
+      // First, create the delivery note
       const { data: newNote, error } = await supabase
         .from('delivery_notes')
-        .insert(data)
+        .insert({
+          delivery_number: data.delivery_number,
+          notes: data.notes,
+          status: data.status, // Now correctly included in the type
+          supplier_id: data.supplier_id,
+          purchase_order_id: data.purchase_order_id
+        })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Then, create the items if provided
+      if (data.items && data.items.length > 0) {
+        const itemsToInsert = data.items.map(item => ({
+          delivery_note_id: newNote.id,
+          product_id: item.product_id,
+          quantity_ordered: item.quantity_ordered,
+          quantity_received: item.quantity_received,
+          unit_price: item.unit_price
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('delivery_note_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
+      }
 
       toast({
         title: 'Success',

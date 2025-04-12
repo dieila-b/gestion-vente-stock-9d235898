@@ -38,6 +38,19 @@ export function safePurchaseOrder(order: any) {
 }
 
 /**
+ * Creates a safe default object for delivery notes when we encounter SelectQueryError
+ */
+export function safeDeliveryNote(note: any) {
+  if (isSelectQueryError(note)) {
+    return {
+      id: '',
+      delivery_number: '',
+    };
+  }
+  return note || { id: '', delivery_number: '' };
+}
+
+/**
  * Creates a safe default object for products when we encounter SelectQueryError
  */
 export function safeProduct(product: any) {
@@ -60,4 +73,24 @@ export function safeGet<T>(obj: any, property: string, defaultValue: T): T {
     return defaultValue;
   }
   return obj[property] !== undefined ? obj[property] : defaultValue;
+}
+
+/**
+ * Safely handle arrays that could be SelectQueryError
+ */
+export function safeArray<T>(items: any): T[] {
+  if (!items || isSelectQueryError(items)) {
+    return [];
+  }
+  return Array.isArray(items) ? items : [];
+}
+
+/**
+ * Safe type conversion - tries to cast but falls back to default
+ */
+export function safeAs<T>(value: any, defaultValue: T): T {
+  if (value === undefined || value === null || isSelectQueryError(value)) {
+    return defaultValue;
+  }
+  return value as T;
 }

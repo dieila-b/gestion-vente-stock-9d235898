@@ -1,7 +1,8 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
-import { safeGet } from "@/utils/supabase-safe-query";
+import { isSelectQueryError, safeGet } from "@/utils/type-utils";
 
 export interface DailyProductSales {
   product_name: string;
@@ -36,22 +37,35 @@ export function useDailyReportQueries() {
 
       if (error) throw error;
 
-      // Agrégation des quantités par produit
-      const productSales = data.reduce((acc: DailyProductSales[], item) => {
-        const productName = item.products?.map(product => product.name).join(', ') || 'No products';
-        
-        const existingProduct = acc.find(p => p.product_name === productName);
-        
-        if (existingProduct) {
-          existingProduct.total_quantity += item.quantity;
-        } else {
-          acc.push({ product_name: productName, total_quantity: item.quantity });
+      // Process data safely
+      const productSales: DailyProductSales[] = [];
+      
+      data.forEach(item => {
+        // Safely handle product data
+        if (isSelectQueryError(item.products)) {
+          // Skip items with error in product relation
+          return;
         }
         
-        return acc;
-      }, []);
+        // Get product name
+        const productName = Array.isArray(item.products) && item.products.length > 0 
+          ? item.products.map(p => p.name).join(', ') 
+          : 'No products';
+        
+        // Find existing or create new entry
+        const existingIndex = productSales.findIndex(p => p.product_name === productName);
+        
+        if (existingIndex >= 0) {
+          productSales[existingIndex].total_quantity += (item.quantity || 0);
+        } else {
+          productSales.push({
+            product_name: productName,
+            total_quantity: item.quantity || 0
+          });
+        }
+      });
 
-      // Tri par quantité décroissante
+      // Sort by quantity descending
       return productSales.sort((a, b) => b.total_quantity - a.total_quantity);
     }
   });
@@ -68,9 +82,9 @@ export function useDailyReportQueries() {
       if (error) throw error;
 
       return data.reduce((acc, order) => ({
-        total: acc.total + order.final_total,
-        paid: acc.paid + order.paid_amount,
-        remaining: acc.remaining + order.remaining_amount
+        total: acc.total + (order.final_total || 0),
+        paid: acc.paid + (order.paid_amount || 0),
+        remaining: acc.remaining + (order.remaining_amount || 0)
       }), { total: 0, paid: 0, remaining: 0 });
     }
   });
@@ -92,34 +106,42 @@ export function useDailyReportQueries() {
 
       if (error) throw error;
 
-      // Agrégation des ventes par client
-      const salesByClient = data.reduce((acc: DailyClientSales[], order) => {
-        if (!order.client) return acc;
+      // Process safely
+      const salesByClient: DailyClientSales[] = [];
+      
+      data.forEach(order => {
+        if (!order.client || isSelectQueryError(order.client)) return;
         
-        const client: Client = {
-          ...order.client,
-          status: client.status || 'unknown'
+        // Create a safe client object
+        const safeClientData = order.client as any;
+        const clientData: Client = {
+          id: safeClientData.id || '',
+          company_name: safeClientData.company_name || 'Unknown',
+          contact_name: safeClientData.contact_name,
+          email: safeClientData.email,
+          phone: safeClientData.phone,
+          status: safeClientData.status || 'unknown',
+          created_at: safeClientData.created_at || '',
+          updated_at: safeClientData.updated_at || ''
         };
         
-        const existingClient = acc.find(c => c.client.id === client.id);
+        const existingIndex = salesByClient.findIndex(c => c.client.id === clientData.id);
         
-        if (existingClient) {
-          existingClient.total_amount += order.final_total;
-          existingClient.paid_amount += order.paid_amount;
-          existingClient.remaining_amount += order.remaining_amount;
+        if (existingIndex >= 0) {
+          salesByClient[existingIndex].total_amount += (order.final_total || 0);
+          salesByClient[existingIndex].paid_amount += (order.paid_amount || 0);
+          salesByClient[existingIndex].remaining_amount += (order.remaining_amount || 0);
         } else {
-          acc.push({
-            client,
-            total_amount: order.final_total,
-            paid_amount: order.paid_amount,
-            remaining_amount: order.remaining_amount
+          salesByClient.push({
+            client: clientData,
+            total_amount: order.final_total || 0,
+            paid_amount: order.paid_amount || 0,
+            remaining_amount: order.remaining_amount || 0
           });
         }
-        
-        return acc;
-      }, []);
+      });
 
-      // Tri par montant total décroissant
+      // Sort by total amount descending
       return salesByClient.sort((a, b) => b.total_amount - a.total_amount);
     }
   });

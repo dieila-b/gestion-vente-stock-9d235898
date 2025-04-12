@@ -19,6 +19,7 @@ export interface PreorderCartProps {
   discount: number;
   total: number;
   clearCart: () => void;
+  isLoading?: boolean; // Add isLoading as optional
 }
 
 export const PreorderCart: React.FC<PreorderCartProps> = ({
@@ -33,6 +34,7 @@ export const PreorderCart: React.FC<PreorderCartProps> = ({
   discount,
   total,
   clearCart,
+  isLoading = false, // Default to false
 }) => {
   return (
     <Card className="border-none shadow-none">
@@ -127,15 +129,15 @@ export const PreorderCart: React.FC<PreorderCartProps> = ({
       <CardFooter className="flex-col gap-2 p-0 pt-4">
         <Button
           className="w-full"
-          disabled={items.length === 0 || !client}
+          disabled={items.length === 0 || !client || isLoading}
           onClick={onSubmit}
         >
-          Créer la précommande
+          {isLoading ? "Création en cours..." : "Créer la précommande"}
         </Button>
         <Button
           variant="outline"
           className="w-full"
-          disabled={items.length === 0}
+          disabled={items.length === 0 || isLoading}
           onClick={clearCart}
         >
           Vider

@@ -15,6 +15,6 @@ export interface Client {
   notes?: string;
   created_at?: string;
   updated_at?: string;
-  status?: 'particulier' | 'entreprise';
+  status: string; // Changed to match client.ts
   balance?: number;
 }

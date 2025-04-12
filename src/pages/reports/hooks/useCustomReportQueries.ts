@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { Client } from "@/types/client";
+import { isSelectQueryError, safeGet, safeArray } from "@/utils/type-utils";
 
 // Define types for the hook's return values
 export interface SalesByProduct {
@@ -12,18 +13,24 @@ export interface SalesByProduct {
   total_quantity: number;
   total_amount: number;
   category: string;
+  product_name?: string; // Add this to make it compatible with DailyProductSales
 }
 
 export interface PeriodTotals {
   total_sales: number;
   total_items: number;
   average_order: number;
+  total?: number; // Add properties to match expected type in CustomReport
+  paid?: number;
+  remaining?: number;
 }
 
 export interface ClientSale {
   client: Client;
   total_amount: number;
   order_count: number;
+  paid_amount?: number; // Added to make it compatible with DailyClientSales
+  remaining_amount?: number; // Added to make it compatible with DailyClientSales
 }
 
 export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: string = "all") {
@@ -32,6 +39,9 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
     total_sales: 0,
     total_items: 0,
     average_order: 0,
+    total: 0,
+    paid: 0,
+    remaining: 0
   });
   const [clientSales, setClientSales] = useState<ClientSale[]>([]);
   
@@ -58,13 +68,23 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
         .gte('orders.created_at', dateRange.from.toISOString())
         .lte('orders.created_at', dateRange.to.toISOString())
         .eq('orders.status', 'completed');
-        
-      if (selectedPOS !== "all") {
-        // Apply POS filter if a specific one is selected
-        return data?.filter(item => item.orders?.pos_location_id === selectedPOS) || [];
+
+      if (error) {
+        console.error("Error fetching sales data:", error);
+        return [];
       }
       
-      return data || [];
+      // Safely filter data
+      return (data || []).filter(item => {
+        if (selectedPOS === "all") return true;
+        
+        // Safely check pos_location_id
+        if (isSelectQueryError(item.orders)) {
+          return false;
+        }
+        
+        return item.orders?.pos_location_id === selectedPOS;
+      });
     },
     enabled: !!dateRange?.from && !!dateRange?.to,
   });
@@ -90,20 +110,30 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString())
         .eq('status', 'completed');
-        
-      if (selectedPOS !== "all") {
-        // Apply POS filter if a specific one is selected
-        return data?.filter(order => order.pos_location_id === selectedPOS) || [];
+
+      if (error) {
+        console.error("Error fetching client sales data:", error);
+        return [];
       }
       
-      return data || [];
+      // Safely filter data
+      return (data || []).filter(order => {
+        if (selectedPOS === "all") return true;
+        
+        // Check for SelectQueryError
+        if (isSelectQueryError(order)) {
+          return false;
+        }
+        
+        return order.pos_location_id === selectedPOS;
+      });
     },
     enabled: !!dateRange?.from && !!dateRange?.to,
   });
   
   // Process sales data
   useEffect(() => {
-    if (!rawSalesData) return;
+    if (!rawSalesData || !Array.isArray(rawSalesData)) return;
     
     // Map to group sales by product
     const productSalesMap = new Map<string, SalesByProduct>();
@@ -113,8 +143,8 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
     let totalItems = 0;
     
     rawSalesData.forEach((item) => {
-      // Skip items with missing product data
-      if (!item.products) return;
+      // Skip items with missing or error product data
+      if (isSelectQueryError(item.products) || !item.products) return;
       
       const productId = item.product_id;
       const productName = item.products?.name || 'Unknown Product';
@@ -133,6 +163,7 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
         productSalesMap.set(productId, {
           id: productId,
           name: productName,
+          product_name: productName, // Add for compatibility
           category: category,
           total_quantity: quantity,
           total_amount: amount,
@@ -152,24 +183,40 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
       total_sales: totalSales,
       total_items: totalItems,
       average_order: orderCount > 0 ? totalSales / orderCount : 0,
+      total: totalSales,
+      paid: totalSales,
+      remaining: 0
     });
   }, [rawSalesData]);
   
   // Process client data
   useEffect(() => {
-    if (!rawClientData) return;
+    if (!rawClientData || !Array.isArray(rawClientData)) return;
     
     // Map to group sales by client
     const clientSalesMap = new Map<string, ClientSale>();
     
     rawClientData.forEach((order) => {
-      if (!order.client_id) return;
+      // Skip orders with missing client data
+      if (isSelectQueryError(order) || !order.client_id) return;
       
       const clientId = order.client_id;
-      const clientData = order.clients as Client;
       
       // Skip if client data is missing
-      if (!clientData) return;
+      if (isSelectQueryError(order.clients) || !order.clients) return;
+      
+      // Ensure client has required properties
+      const clientData = order.clients;
+      const client: Client = {
+        id: clientData.id || '',
+        company_name: clientData.company_name || 'Unknown Company',
+        contact_name: clientData.contact_name,
+        email: clientData.email,
+        phone: clientData.phone,
+        status: clientData.status || 'unknown', // Ensure status exists
+        created_at: clientData.created_at || '',
+        updated_at: clientData.updated_at || ''
+      };
       
       const amount = Number(order.total) || 0;
       
@@ -179,9 +226,11 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
         existing.order_count += 1;
       } else {
         clientSalesMap.set(clientId, {
-          client: clientData,
+          client,
           total_amount: amount,
-          order_count: 1
+          order_count: 1,
+          paid_amount: amount, // Set for compatibility
+          remaining_amount: 0  // Set for compatibility
         });
       }
     });

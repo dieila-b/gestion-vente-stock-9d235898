@@ -26,7 +26,7 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
       phone: "",
       address: "",
       website: "",
-      status: "En attente",
+      status: "En attente" as "En attente" | "Actif" | "Inactif",
       country: "",
       city: "",
       postal_box: "",
@@ -37,6 +37,12 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
   // Initialize form with supplier data
   useEffect(() => {
     if (supplier) {
+      // Ensure the status is cast to the expected enum values
+      const supplierStatus = supplier.status || "En attente";
+      const validStatus: "En attente" | "Actif" | "Inactif" = 
+        supplierStatus === "Actif" ? "Actif" :
+        supplierStatus === "Inactif" ? "Inactif" : "En attente";
+
       form.reset({
         name: supplier.name || "",
         contact: supplier.contact || "",
@@ -44,7 +50,7 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
         phone: supplier.phone || "",
         address: supplier.address || "",
         website: supplier.website || "",
-        status: supplier.status || "En attente",
+        status: validStatus,
         country: supplier.country || "",
         city: supplier.city || "",
         postal_box: supplier.postal_box || "",

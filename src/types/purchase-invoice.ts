@@ -4,27 +4,27 @@ import { Supplier } from "./supplier";
 export interface PurchaseInvoice {
   id: string;
   invoice_number: string;
+  supplier_id: string;
+  status: string;
   created_at: string;
   updated_at: string;
-  status: string;
-  supplier_id: string;
   total_amount: number;
-  tax_amount?: number;
-  payment_status?: string;
+  tax_amount: number;
+  payment_status: string;
   due_date?: string;
-  paid_amount?: number;
-  discount?: number;
+  paid_amount: number;
+  remaining_amount: number;
+  discount: number;
   notes?: string;
-  shipping_cost?: number;
-  remaining_amount?: number;
-  supplier?: Supplier;
+  shipping_cost: number;
+  supplier: Supplier;
   purchase_order?: {
-    id?: string;
-    order_number?: string;
+    id: string;
+    order_number: string;
   };
   delivery_note?: {
-    id?: string;
-    delivery_number?: string;
+    id: string;
+    delivery_number: string;
   };
 }
 
@@ -36,7 +36,9 @@ export interface PurchaseInvoiceItem {
   unit_price: number;
   total_price: number;
   product: {
+    id: string;
     name: string;
     reference?: string;
+    category?: string;
   };
 }
