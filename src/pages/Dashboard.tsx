@@ -53,12 +53,12 @@ export default function Dashboard() {
 
   // Calculate daily margin based on actual sales
   const calculateDailyMargin = () => {
-    if (!todayOrderData || !catalogProducts) return 0;
+    if (!Array.isArray(todayOrderData) || !Array.isArray(catalogProducts)) return 0;
     
     let totalMargin = 0;
     
     todayOrderData.forEach(order => {
-      if (!order.order_items) return;
+      if (!order.order_items || !Array.isArray(order.order_items)) return;
       
       order.order_items.forEach(item => {
         const catalogProduct = catalogProducts.find(p => p.id === item.product_id);
@@ -75,11 +75,20 @@ export default function Dashboard() {
     return totalMargin;
   };
 
-  // Calculate totals
-  const todaySales = todayOrderData?.reduce((sum, order) => sum + (order.final_total || 0), 0) || 0;
+  // Calculate totals with proper array checks
+  const todaySales = Array.isArray(todayOrderData) 
+    ? todayOrderData.reduce((sum, order) => sum + (order.final_total || 0), 0) 
+    : 0;
+    
   const todayMargin = calculateDailyMargin();
-  const unpaidAmount = unpaidInvoices?.reduce((sum, invoice) => sum + (invoice.remaining_amount || 0), 0) || 0;
-  const monthlyExpensesTotal = monthlyExpenses?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
+  
+  const unpaidAmount = Array.isArray(unpaidInvoices)
+    ? unpaidInvoices.reduce((sum, invoice) => sum + (invoice.remaining_amount || 0), 0) 
+    : 0;
+    
+  const monthlyExpensesTotal = Array.isArray(monthlyExpenses)
+    ? monthlyExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0) 
+    : 0;
 
   const handleUnpaidInvoicesClick = () => {
     navigate('/sales-invoices?filter=unpaid');
@@ -101,7 +110,7 @@ export default function Dashboard() {
         todayMargin={todayMargin}
         unpaidAmount={unpaidAmount}
         monthlyExpensesTotal={monthlyExpensesTotal}
-        catalogLength={catalog?.length || 0}
+        catalogLength={Array.isArray(catalog) ? catalog.length : 0}
         totalStock={totalStock}
         totalStockPurchaseValue={totalStockPurchaseValue}
         totalStockSaleValue={totalStockSaleValue}
@@ -130,4 +139,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

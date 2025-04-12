@@ -60,11 +60,23 @@ export function useRecentStockMovements() {
   // Transform data to match the StockMovement interface
   const transformedMovements: StockMovement[] = Array.isArray(data) 
     ? data.map((movement) => {
+        // Handle null, undefined, or malformed record
+        if (!movement) {
+          return {
+            id: "",
+            type: "in",
+            quantity: 0,
+            created_at: "",
+            product: null,
+            warehouse: null
+          };
+        }
+        
         // Handle SelectQueryError
         if (isSelectQueryError(movement)) {
           return {
             id: "",
-            type: "in" as "in" | "out",
+            type: "in",
             quantity: 0,
             created_at: "",
             product: null,

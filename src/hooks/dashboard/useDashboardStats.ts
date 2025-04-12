@@ -4,7 +4,7 @@ import { db } from "@/utils/db-adapter";
 
 export const useDashboardStats = () => {
   // Fetch orders and order items for today's sales and margin
-  const { data: todayOrderData } = useQuery({
+  const { data: todayOrderData = [] } = useQuery({
     queryKey: ['orders-with-items', 'today'],
     queryFn: async () => {
       const today = new Date();
@@ -28,7 +28,7 @@ export const useDashboardStats = () => {
             .order('created_at', { ascending: false })
         );
         
-        return orders || [];
+        return Array.isArray(orders) ? orders : [];
       } catch (error) {
         console.error("Error fetching today's orders:", error);
         return [];
@@ -37,7 +37,7 @@ export const useDashboardStats = () => {
   });
 
   // Fetch catalog for product purchase prices
-  const { data: catalogProducts } = useQuery({
+  const { data: catalogProducts = [] } = useQuery({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       try {
@@ -46,7 +46,7 @@ export const useDashboardStats = () => {
           query => query.select('id, purchase_price, price')
         );
         
-        return products || [];
+        return Array.isArray(products) ? products : [];
       } catch (error) {
         console.error("Error fetching catalog products:", error);
         return [];
@@ -55,7 +55,7 @@ export const useDashboardStats = () => {
   });
 
   // Fetch unpaid invoices 
-  const { data: unpaidInvoices } = useQuery({
+  const { data: unpaidInvoices = [] } = useQuery({
     queryKey: ['invoices', 'unpaid'],
     queryFn: async () => {
       try {
@@ -64,7 +64,7 @@ export const useDashboardStats = () => {
           query => query.select('*').in('payment_status', ['pending', 'partial'])
         );
         
-        return invoices || [];
+        return Array.isArray(invoices) ? invoices : [];
       } catch (error) {
         console.error("Error fetching unpaid invoices:", error);
         return [];
@@ -73,7 +73,7 @@ export const useDashboardStats = () => {
   });
 
   // Fetch monthly outcome entries
-  const { data: monthlyExpenses } = useQuery({
+  const { data: monthlyExpenses = [] } = useQuery({
     queryKey: ['expenses', 'monthly'],
     queryFn: async () => {
       const firstDayOfMonth = new Date();
@@ -86,7 +86,7 @@ export const useDashboardStats = () => {
           query => query.select('*').gte('created_at', firstDayOfMonth.toISOString())
         );
         
-        return expenses || [];
+        return Array.isArray(expenses) ? expenses : [];
       } catch (error) {
         console.error("Error fetching monthly expenses:", error);
         return [];
