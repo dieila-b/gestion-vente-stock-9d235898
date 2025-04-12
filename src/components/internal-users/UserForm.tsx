@@ -32,6 +32,8 @@ export const UserForm = ({
   onImageUpload,
   onTogglePasswordVisibility
 }: UserFormProps) => {
+  const [isUploadLoading, setIsUploadLoading] = useState(false);
+  
   const handleRoleChange = (role: "admin" | "manager" | "employee") => {
     onInputChange(index, "role", role);
   };
@@ -39,6 +41,17 @@ export const UserForm = ({
   const handleIsActiveChange = (isActive: boolean) => {
     onInputChange(index, "is_active", isActive);
   };
+  
+  const handleImageUploadWithLoading = async (file: File) => {
+    setIsUploadLoading(true);
+    try {
+      await onImageUpload(index, file);
+    } finally {
+      setIsUploadLoading(false);
+    }
+  };
+
+  const passwordsMatch = !user.password || !passwordConfirmation || user.password === passwordConfirmation;
 
   return (
     <div className="mb-4 p-4 border rounded-md">
@@ -55,8 +68,9 @@ export const UserForm = ({
               </div>
             ) : null}
             <ImageUpload 
-              onUpload={(file) => onImageUpload(index, file)} 
+              onUpload={handleImageUploadWithLoading} 
               value={user.photo_url}
+              disabled={isUploadLoading}
             />
           </div>
         </div>
@@ -121,15 +135,22 @@ export const UserForm = ({
           </div>
         </div>
         <div>
-          <Label htmlFor={`password_confirmation_${index}`}>Confirmation du mot de passe</Label>
+          <Label htmlFor={`password_confirmation_${index}`} className={!passwordsMatch ? "text-red-500" : ""}>
+            Confirmation du mot de passe
+          </Label>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               id={`password_confirmation_${index}`}
               value={passwordConfirmation || ""}
               onChange={(e) => onPasswordConfirmationChange(index, e.target.value)}
-              className="pr-10"
+              className={`pr-10 ${!passwordsMatch ? "border-red-500 focus:ring-red-500" : ""}`}
             />
+            {!passwordsMatch && (
+              <p className="text-xs text-red-500 mt-1">
+                Les mots de passe ne correspondent pas
+              </p>
+            )}
           </div>
         </div>
         <div>

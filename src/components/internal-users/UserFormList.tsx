@@ -34,7 +34,7 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
-      // Vérifier d'abord si le bucket existe
+      // Vérification et création du bucket si nécessaire
       const { data: buckets, error: bucketsError } = await supabase.storage
         .listBuckets();
       
@@ -47,9 +47,17 @@ export const UserFormList = ({
       const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
       
       if (!bucketExists) {
-        console.error("Bucket 'lovable-uploads' not found");
-        toast.error("Le bucket de stockage n'existe pas. Veuillez contacter l'administrateur.");
-        return;
+        // Tentative de création du bucket
+        const { error: createError } = await supabase.storage
+          .createBucket('lovable-uploads', { public: true });
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          toast.error("Impossible de créer le bucket de stockage. Veuillez contacter l'administrateur.");
+          return;
+        }
+        
+        console.log("Bucket 'lovable-uploads' created successfully");
       }
       
       // Télécharger le fichier

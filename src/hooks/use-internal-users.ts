@@ -25,8 +25,17 @@ export const useInternalUsers = () => {
         const bucketExists = buckets.some(bucket => bucket.name === 'lovable-uploads');
         
         if (!bucketExists) {
-          console.log("Bucket 'lovable-uploads' does not exist, attempting to create it via API");
-          toast.error("Le bucket de stockage 'lovable-uploads' n'existe pas. Contactez l'administrateur.");
+          console.log("Bucket 'lovable-uploads' does not exist, attempting to create it");
+          // Tentative de création du bucket
+          const { error: createError } = await supabase.storage
+            .createBucket('lovable-uploads', { public: true });
+          
+          if (createError) {
+            console.error("Error creating bucket:", createError);
+            toast.error("Le bucket de stockage 'lovable-uploads' n'a pas pu être créé. Contactez l'administrateur.");
+          } else {
+            console.log("Bucket 'lovable-uploads' created successfully");
+          }
         } else {
           console.log("Bucket 'lovable-uploads' exists");
         }
@@ -93,6 +102,11 @@ export const useInternalUsers = () => {
     const updatedConfirmations = { ...passwordConfirmation };
     delete updatedConfirmations[index];
     setPasswordConfirmation(updatedConfirmations);
+    
+    // Also clean up password visibility state
+    const updatedVisibility = { ...showPassword };
+    delete updatedVisibility[index];
+    setShowPassword(updatedVisibility);
   };
 
   const togglePasswordVisibility = (index: number) => {
@@ -107,28 +121,44 @@ export const useInternalUsers = () => {
   };
 
   const validatePasswords = () => {
+    let isValid = true;
+    
     for (const [index, user] of newUserData.entries()) {
       if (!user.password) {
         toast.error(`L'utilisateur ${index + 1} doit avoir un mot de passe`);
-        return false;
+        isValid = false;
+        break;
+      }
+      
+      // S'assurer que passwordConfirmation[index] existe avant de comparer
+      if (!passwordConfirmation[index]) {
+        toast.error(`Veuillez confirmer le mot de passe pour l'utilisateur ${index + 1}`);
+        isValid = false;
+        break;
       }
       
       if (user.password !== passwordConfirmation[index]) {
         toast.error(`Les mots de passe ne correspondent pas pour l'utilisateur ${index + 1}`);
-        return false;
+        isValid = false;
+        break;
       }
     }
-    return true;
+    
+    return isValid;
   };
 
   const validateRequiredFields = () => {
+    let isValid = true;
+    
     for (const [index, user] of newUserData.entries()) {
       if (!user.first_name || !user.last_name || !user.email) {
         toast.error(`L'utilisateur ${index + 1} doit avoir un prénom, nom et email`);
-        return false;
+        isValid = false;
+        break;
       }
     }
-    return true;
+    
+    return isValid;
   };
 
   const handleBulkInsert = async () => {
@@ -165,6 +195,7 @@ export const useInternalUsers = () => {
       await fetchUsers();
       setNewUserData([]);
       setPasswordConfirmation({});
+      setShowPassword({});
     } catch (error: any) {
       console.error("Exception adding users:", error);
       toast.error(`Exception lors de l'ajout des utilisateurs: ${error.message || error}`);
