@@ -26,33 +26,26 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Create a base query object and apply filters step by step
-    // We'll use explicit type annotations to prevent excessive type inference
-    const baseQuery = supabase.from('orders');
+    // Explicitly separate the query construction steps and use type assertions
+    // to prevent excessive type inference
+    const query = supabase.from('orders');
     
-    // First get a typed select query
-    const selectQuery = baseQuery.select<'created_at, final_total', OrderData>('created_at, final_total');
+    // Build a query string first
+    let queryStr = 'created_at, final_total';
     
-    // Apply date range filters
-    const dateFilteredQuery = selectQuery
+    // Execute the query with explicit typing
+    let { data, error } = await query
+      .select(queryStr)
       .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
-    
-    // Apply POS filter if needed (conditional)
-    let finalQuery = dateFilteredQuery;
-    if (selectedPOS !== "all") {
-      finalQuery = dateFilteredQuery.eq('depot', selectedPOS);
-    }
-    
-    // Order the results
-    const orderedQuery = finalQuery.order('created_at');
-    
-    // Execute the query
-    const { data, error } = await orderedQuery;
+      .lte('created_at', endDate.toISOString())
+      .eq(selectedPOS !== "all" ? 'depot' : 'id', selectedPOS !== "all" ? selectedPOS : 'id')
+      .order('created_at');
     
     if (error) throw error;
-    if (!data) return [];
-
+    
+    // Explicitly type the data
+    const orderData: OrderData[] = data as OrderData[] || [];
+    
     // Generate all months of the year
     const months = eachMonthOfInterval({
       start: startDate,
@@ -66,7 +59,7 @@ async function fetchSalesData(
     }));
 
     // Aggregate sales by month
-    data.forEach((order) => {
+    orderData.forEach((order) => {
       const orderMonth = format(new Date(order.created_at), 'MMMM', { locale: fr });
       const index = monthlyData.findIndex((data) => data.month === orderMonth);
       if (index !== -1) {
