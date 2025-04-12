@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useCustomReportQueries(startDate: string, endDate: string) {
   // Get sales by date
-  const { data: salesByDate = [], isLoadingSalesByDate } = useQuery({
+  const { data: salesByDate = [], isLoading: isLoadingSalesByDate } = useQuery({
     queryKey: ['sales-by-date', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,7 +30,7 @@ export function useCustomReportQueries(startDate: string, endDate: string) {
   });
 
   // Get expense entries - use the correct table name 'expense_entries' instead of 'expenses'
-  const { data: expensesByDate = [], isLoadingExpensesByDate } = useQuery({
+  const { data: expensesByDate = [], isLoading: isLoadingExpensesByDate } = useQuery({
     queryKey: ['expenses-by-date', startDate, endDate],
     queryFn: async () => {
       try {
@@ -61,7 +61,7 @@ export function useCustomReportQueries(startDate: string, endDate: string) {
   });
 
   // Get product sales
-  const { data: productsSold = [], isLoadingProductsSold } = useQuery({
+  const { data: productsSold = [], isLoading: isLoadingProductsSold } = useQuery({
     queryKey: ['products-sold', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase

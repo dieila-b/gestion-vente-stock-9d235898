@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Client } from "@/types/client_unified";
 import { CartItem } from "@/types/pos";
-import { isSelectQueryError } from "@/utils/type-utils";
 
+// Define proper Order type to fix 'never' type issues
 interface OrderData {
   id: string;
   client_id: string;
@@ -97,7 +97,7 @@ const useEditOrder = () => {
             client_type: clientData.client_type || '',
             client_code: clientData.client_code || '',
             // Fallbacks for missing properties
-            status: clientData.client_type || 'active',
+            status: clientData.status || 'active',
           } : null;
 
           setSelectedClient(formattedClient);
@@ -146,6 +146,11 @@ const useEditOrder = () => {
 
     fetchOrderData();
   }, [orderId]);
+
+  // Helper function to check if a response is a SelectQueryError
+  const isSelectQueryError = (data: any): boolean => {
+    return typeof data === 'object' && data !== null && 'code' in data && 'details' in data && 'hint' in data && 'message' in data;
+  };
 
   return {
     orderData,

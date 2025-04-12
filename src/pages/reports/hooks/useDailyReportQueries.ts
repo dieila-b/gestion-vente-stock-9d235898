@@ -8,7 +8,7 @@ export function useDailyReportQueries(date: Date | null) {
   const dateStr = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
 
   // Fetch daily sales data
-  const { data: dailySales = [], isLoadingSales } = useQuery({
+  const { data: dailySales = [], isLoading: isLoadingSales } = useQuery({
     queryKey: ['daily-sales', dateStr],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -23,7 +23,7 @@ export function useDailyReportQueries(date: Date | null) {
   });
 
   // Fetch daily expense data using expense_entries table
-  const { data: dailyExpenses = [], isLoadingExpenses } = useQuery({
+  const { data: dailyExpenses = [], isLoading: isLoadingExpenses } = useQuery({
     queryKey: ['daily-expenses', dateStr],
     queryFn: async () => {
       try {
@@ -43,7 +43,7 @@ export function useDailyReportQueries(date: Date | null) {
   });
 
   // Fetch daily payment data
-  const { data: dailyPayments = [], isLoadingPayments } = useQuery({
+  const { data: dailyPayments = [], isLoading: isLoadingPayments } = useQuery({
     queryKey: ['daily-payments', dateStr],
     queryFn: async () => {
       const { data, error } = await supabase
