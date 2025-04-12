@@ -32,8 +32,15 @@ export const UserFormList = ({
 }: UserFormListProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Cette fonction de téléchargement d'image est désactivée temporairement
+  // car la colonne photo_url dans la table internal_users pose problème
   const handleImageUpload = async (index: number, file: File) => {
     try {
+      toast.info("Le téléchargement d'images est temporairement désactivé");
+      return;
+      
+      /* 
+      // Code commenté jusqu'à résolution du problème
       // Check file size - 20MB
       const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
       if (file.size > MAX_FILE_SIZE) {
@@ -72,6 +79,7 @@ export const UserFormList = ({
       console.log("Image uploaded successfully, public URL:", urlData.publicUrl);
       onInputChange(index, "photo_url", urlData.publicUrl);
       toast.success("Image téléchargée avec succès");
+      */
     } catch (error: any) {
       toast.dismiss();
       console.error("Error in image upload process:", error);

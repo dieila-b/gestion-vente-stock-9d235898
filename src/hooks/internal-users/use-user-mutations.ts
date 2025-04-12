@@ -28,7 +28,7 @@ export const useUserMutations = (queryClient: QueryClient) => {
       // Transform users to match the database schema
       const usersForDb = users.map(user => {
         // Extract password for potential auth signup (not implemented yet)
-        const { password, ...userData } = user;
+        const { password, photo_url, ...userData } = user;
         
         // Create a base object with required fields, ensuring they aren't nullable
         const userDbObject = {
@@ -39,8 +39,8 @@ export const useUserMutations = (queryClient: QueryClient) => {
           role: userData.role || 'employee',
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
           phone: userData.phone || '',
-          address: userData.address || '',
-          photo_url: userData.photo_url || null
+          address: userData.address || ''
+          // photo_url est délibérément omis car il semble causer des problèmes
         };
 
         return userDbObject;
