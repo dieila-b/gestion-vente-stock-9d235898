@@ -82,9 +82,9 @@ export function PreorderCart({
   };
 
   // Fix string to number conversion in parseFloat
-  const handleDiscountChange = (id: string, value: string) => {
-    const discount = parseFloat(value) || 0; // Convert string to number safely
-    onUpdateDiscount(id, discount);
+  const handleDiscountChange = (id: string, value: number) => {
+    // Make sure we're passing a number to onUpdateDiscount
+    onUpdateDiscount(id, value);
   };
 
   return (
@@ -121,7 +121,7 @@ export function PreorderCart({
                   item={item}
                   onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
                   onRemove={() => onRemove(item.id)}
-                  onUpdateDiscount={(discount) => onUpdateDiscount(item.id, discount)}
+                  onUpdateDiscount={(discount) => handleDiscountChange(item.id, discount)}
                   onSetQuantity={onSetQuantity ? (qty) => onSetQuantity(item.id, qty) : undefined}
                 />
               ))

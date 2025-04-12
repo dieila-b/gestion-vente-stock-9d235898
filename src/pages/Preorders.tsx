@@ -17,6 +17,16 @@ import { Client } from "@/types/client_unified";
 import { PreorderInvoiceView } from "@/components/preorder/PreorderInvoiceView";
 import useEditOrder from "@/hooks/use-edit-order";
 import { usePreorderPayment } from "@/components/preorder/hooks/usePreorderPayment";
+import type { CartItem as CartStateItem } from "@/types/CartState";
+import type { CartItem as POSCartItem } from "@/types/pos";
+
+// Create an adapter function to convert between cart item types
+function adaptCartItems(items: POSCartItem[]): CartStateItem[] {
+  return items.map(item => ({
+    ...item,
+    subtotal: (item.price * item.quantity) - (item.discount || 0)
+  }));
+}
 
 export default function Preorders() {
   const navigate = useNavigate();
@@ -123,12 +133,9 @@ export default function Preorders() {
   );
 
   // Replace the cart and state setting functions with updated versions that correctly handle type conversion
-  const handleSetCart = (newCart: any[]) => {
-    // Convert cart items from pos.CartItem to CartState.CartItem format
-    const convertedCart = newCart.map(item => ({
-      ...item,
-      subtotal: (item.price * item.quantity) - (item.discount || 0) // Ensure subtotal is calculated
-    }));
+  const handleSetCart = (newCart: POSCartItem[]) => {
+    // Convert cart items from pos.CartItem to CartState.CartItem format with subtotal
+    const convertedCart = adaptCartItems(newCart);
     setCart(convertedCart);
   };
 
@@ -195,7 +202,7 @@ export default function Preorders() {
           </div>
 
           <PreorderCart
-            items={cart}
+            items={adaptCartItems(cart)}
             onRemove={removeFromCart}
             onUpdateQuantity={updateQuantity}
             onSubmit={() => handleCheckout(validatePreorder)}
@@ -214,7 +221,13 @@ export default function Preorders() {
       </Card>
 
       <PreorderInvoiceView
-        cart={cart}
+        cart={{
+          items: adaptCartItems(cart),
+          subtotal: calculateSubtotal(),
+          total: calculateTotal(),
+          discount: calculateTotalDiscount(),
+          client: currentClient
+        }}
         client={currentClient}
         onRemoveItem={removeFromCart}
         onUpdateQuantity={updateQuantity}

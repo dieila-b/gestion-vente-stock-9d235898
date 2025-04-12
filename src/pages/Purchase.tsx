@@ -1,20 +1,24 @@
+
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { formatGNF } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
+import { isSelectQueryError, safeSupplier } from "@/utils/type-utils";
 
 export default function PurchasePage() {
   const { id, purchase, isLoading, updatePaymentStatus } = usePurchaseEdit();
 
-  // Access purchase data safely using optional chaining
-  const supplierName = purchase?.supplier?.name || 'Unknown Supplier';
+  // Access purchase data safely using optional chaining and check for SelectQueryError
+  const safeSupplier = purchase?.supplier && !isSelectQueryError(purchase.supplier) 
+    ? purchase.supplier 
+    : { name: 'Unknown Supplier' };
+
+  const supplierName = safeSupplier.name || 'Unknown Supplier';
   const orderNumber = purchase?.order_number || 'N/A';
   const totalAmount = purchase?.total_amount || 0;
   const status = purchase?.status || 'pending';
@@ -26,9 +30,9 @@ export default function PurchasePage() {
   const logisticsCost = purchase?.logistics_cost || 0;
   const taxRate = purchase?.tax_rate || 0;
 
-  const handleUpdateStatus = (newStatus: string) => {
+  const handleUpdateStatus = () => {
     if (updatePaymentStatus) {
-      updatePaymentStatus(newStatus);
+      updatePaymentStatus(paymentStatus === 'pending' ? 'paid' : 'pending');
     } else {
       console.error("updatePaymentStatus function is not available");
     }
@@ -104,6 +108,10 @@ export default function PurchasePage() {
                 <Label>Tax Rate</Label>
                 <Input value={taxRate} readOnly />
               </div>
+              
+              <Button onClick={handleUpdateStatus}>
+                {paymentStatus === 'pending' ? 'Mark as Paid' : 'Mark as Pending'}
+              </Button>
             </div>
           </CardContent>
         </Card>

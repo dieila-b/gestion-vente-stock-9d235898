@@ -1,8 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Client } from "@/types/client_unified";
 import { CartItem } from "@/types/pos";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 interface OrderData {
   id: string;
@@ -67,11 +69,19 @@ const useEditOrder = () => {
         }
 
         if (order) {
+          // Check if order is a valid object (not a SelectQueryError)
+          if (isSelectQueryError(order)) {
+            console.error("Order data error:", order);
+            toast.error("Erreur de récupération des données de la commande");
+            setIsLoading(false);
+            return;
+          }
+
           // Format client data
           const clientData = order.client;
 
           // Handle client data with optional properties
-          const formattedClient = clientData ? {
+          const formattedClient = clientData && !isSelectQueryError(clientData) ? {
             id: clientData.id || '',
             contact_name: clientData.contact_name || '',
             company_name: clientData.company_name || '',
@@ -82,30 +92,31 @@ const useEditOrder = () => {
             country: clientData.country || '',
             client_type: clientData.client_type || '',
             client_code: clientData.client_code || '',
-            // Handle optional fields safely
-            mobile_1: clientData.phone || '', // Fallback to phone if mobile_1 is not available
-            mobile_2: clientData.phone || '', // Fallback to phone if mobile_2 is not available
-            whatsapp: clientData.phone || '', // Fallback to phone if whatsapp is not available
-            credit_limit: clientData.balance || 0, // Fallback to balance if credit_limit is not available
-            rc_number: clientData.client_code || '', // Fallback to client_code if rc_number is not available
-            cc_number: clientData.client_code || '', // Fallback to client_code if cc_number is not available
-            status: clientData.client_type || 'active', // Fallback to client_type if status is not available
+            // Provide fallbacks for missing properties
+            mobile_1: clientData.phone || '',
+            mobile_2: clientData.phone || '',
+            whatsapp: clientData.phone || '',
+            credit_limit: clientData.balance || 0,
+            rc_number: clientData.client_code || '',
+            cc_number: clientData.client_code || '',
+            status: clientData.client_type || 'active',
           } : null;
 
           setSelectedClient(formattedClient);
 
           // Format cart items
-          const formattedCart = order.items?.map((item) => ({
-            id: item.product_id,
-            product_id: item.product_id,
-            name: item.product?.name || 'Unknown Product',
-            quantity: item.quantity,
-            price: item.product?.price || 0,
-            discount: 0, // Assuming default discount is 0
-            category: item.product?.category || 'Uncategorized',
-            reference: item.product?.reference || '',
-            image_url: item.product?.image_url || '',
-          })) || [];
+          const formattedCart = !isSelectQueryError(order.items) ? 
+            (order.items?.map((item) => ({
+              id: item.product_id,
+              product_id: item.product_id,
+              name: item.product?.name || 'Unknown Product',
+              quantity: item.quantity,
+              price: item.product?.price || 0,
+              discount: 0, // Assuming default discount is 0
+              category: item.product?.category || 'Uncategorized',
+              reference: item.product?.reference || '',
+              image_url: item.product?.image_url || '',
+            })) || []) : [];
 
           setCart(formattedCart);
 

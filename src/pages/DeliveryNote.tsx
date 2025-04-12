@@ -1,9 +1,10 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useFetchDeliveryNotes } from "@/hooks/use-delivery-notes";
-import { DeliveryNote } from "@/types/delivery-note";
+import type { DeliveryNote as DeliveryNoteType } from "@/types/delivery-note";
 import { EditDeliveryNote } from "@/components/delivery-notes/EditDeliveryNote";
 import { DeliveryNoteView } from "@/components/delivery-notes/DeliveryNoteView";
 
@@ -11,10 +12,10 @@ export default function DeliveryNote() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteType | null>(null);
   const { data: deliveryNotes, isLoading } = useFetchDeliveryNotes();
 
-  useState(() => {
+  useEffect(() => {
     if (deliveryNotes && id) {
       const foundNote = deliveryNotes.find((note) => note.id === id);
       if (foundNote) {
