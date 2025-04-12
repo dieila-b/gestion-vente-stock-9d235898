@@ -1,138 +1,136 @@
 
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Transfer } from "@/types/transfer";
+import { useToast } from "@/components/ui/use-toast";
+import { castToTransfers } from "@/utils/select-query-helper";
 
 export function useTransfersData() {
-  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: transfers = [], isLoading: isLoadingTransfers } = useQuery({
-    queryKey: ['transfers'],
+  const {
+    data: transfers = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["transfers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('stock_transfers')
+        .from("transfers")
         .select(`
           *,
-          source_warehouse:warehouses!stock_transfers_source_warehouse_id_fkey(
-            id,
-            name
-          ),
-          destination_warehouse:warehouses!stock_transfers_destination_warehouse_id_fkey(
-            id,
-            name
-          ),
-          source_pos:pos_locations!stock_transfers_source_pos_id_fkey(
-            id,
-            name
-          ),
-          destination_pos:pos_locations!stock_transfers_destination_pos_id_fkey(
-            id,
-            name
-          ),
-          items:stock_transfer_items(
-            quantity,
-            product:catalog(
-              id,
-              name
-            )
+          source_warehouse:source_warehouse_id(*),
+          destination_warehouse:destination_warehouse_id(*),
+          source_pos:source_pos_id(*),
+          destination_pos:destination_pos_id(*),
+          items:transfer_items(*)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      // Use helper function to handle SelectQueryError
+      return castToTransfers(data || []);
+    },
+  });
+
+  const deleteTransferMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // First delete the items
+      const { error: itemsError } = await supabase
+        .from("transfer_items")
+        .delete()
+        .eq("transfer_id", id);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the transfer
+      const { error } = await supabase.from("transfers").delete().eq("id", id);
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      toast({
+        title: "Transfert supprimé",
+        description: "Le transfert a été supprimé avec succès",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting transfer:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le transfert",
+      });
+    },
+  });
+
+  // Function to fetch a specific transfer by ID
+  const fetchTransferById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("transfers")
+        .select(`
+          *,
+          source_warehouse:source_warehouse_id(*),
+          destination_warehouse:destination_warehouse_id(*),
+          source_pos:source_pos_id(*),
+          destination_pos:destination_pos_id(*),
+          items:transfer_items(
+            *,
+            product:product_id(*)
           )
         `)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les transferts.",
-          variant: "destructive",
-        });
-        throw error;
-      }
-      
-      return data as Transfer[];
-    },
-  });
+        .eq("id", id)
+        .single();
 
-  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery({
-    queryKey: ['warehouses'],
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error fetching transfer:", error);
+      throw error;
+    }
+  };
+
+  // Fetch POS locations for dropdowns
+  const { data: posLocations = [] } = useQuery({
+    queryKey: ["pos-locations-for-dropdown"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('warehouses')
-        .select('*');
-      
-      if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les entrepôts.",
-          variant: "destructive",
-        });
-        throw error;
-      }
-      
+        .from("pos_locations")
+        .select("id, name")
+        .eq("is_active", true);
+
+      if (error) throw error;
       return data;
     },
   });
 
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['products'],
+  // Fetch warehouses for dropdowns
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ["warehouses-for-dropdown"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('catalog')
-        .select('*');
-      
-      if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les produits.",
-          variant: "destructive",
-        });
-        throw error;
-      }
-      
+        .from("warehouses")
+        .select("id, name")
+        .eq("is_active", true);
+
+      if (error) throw error;
       return data;
     },
   });
-
-  const { data: posLocations = [], isLoading: isLoadingPosLocations } = useQuery({
-    queryKey: ['pos_locations'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pos_locations')
-        .select('*');
-      
-      if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les points de vente.",
-          variant: "destructive",
-        });
-        throw error;
-      }
-      
-      return data;
-    },
-  });
-
-  const filteredTransfers = transfers.filter(transfer =>
-    transfer.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transfer.source_warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transfer.destination_warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const isLoading = isLoadingTransfers || isLoadingWarehouses || isLoadingProducts || isLoadingPosLocations;
 
   return {
     transfers,
-    filteredTransfers,
-    warehouses,
-    products,
-    posLocations,
     isLoading,
-    searchQuery,
-    setSearchQuery,
-    queryClient
+    isError,
+    refetch,
+    deleteTransfer: deleteTransferMutation.mutate,
+    fetchTransferById,
+    posLocations,
+    warehouses,
   };
 }

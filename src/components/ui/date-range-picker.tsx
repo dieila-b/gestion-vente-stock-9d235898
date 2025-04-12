@@ -1,11 +1,9 @@
 
-"use client";
-
 import * as React from "react";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { fr } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { fr } from 'date-fns/locale';
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,7 +33,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -43,11 +41,11 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "dd MMMM yyyy", { locale: fr })} -{" "}
-                  {format(date.to, "dd MMMM yyyy", { locale: fr })}
+                  {format(date.from, "dd LLL y", { locale: fr })} -{" "}
+                  {format(date.to, "dd LLL y", { locale: fr })}
                 </>
               ) : (
-                format(date.from, "dd MMMM yyyy", { locale: fr })
+                format(date.from, "dd LLL y", { locale: fr })
               )
             ) : (
               <span>Sélectionner une période</span>
