@@ -47,31 +47,9 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
-      // Check if bucket exists and create it if necessary
-      const { data: buckets } = await supabase.storage.listBuckets();
-      let bucketExists = buckets?.some(bucket => bucket.name === 'lovable-uploads');
-      
-      if (!bucketExists) {
-        console.log("Attempting to create 'lovable-uploads' bucket");
-        const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
-          public: true,
-          fileSizeLimit: 5242880, // 5MB in bytes
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
-        });
-        
-        if (createError) {
-          console.error("Error creating bucket:", createError);
-          toast.error(`Erreur lors de la création du bucket: ${createError.message}`);
-          return;
-        }
-        
-        console.log("Bucket created successfully");
-        bucketExists = true;
-      }
-      
-      // Upload the file
+      // Upload the file directly
       console.log("Uploading file to path:", filePath);
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file);
       
@@ -82,12 +60,12 @@ export const UserFormList = ({
       }
       
       // Get the public URL
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('lovable-uploads')
         .getPublicUrl(filePath);
       
-      console.log("Image uploaded successfully, public URL:", data.publicUrl);
-      onInputChange(index, "photo_url", data.publicUrl);
+      console.log("Image uploaded successfully, public URL:", urlData.publicUrl);
+      onInputChange(index, "photo_url", urlData.publicUrl);
       toast.success("Image téléchargée avec succès");
     } catch (error: any) {
       console.error("Error in image upload process:", error);

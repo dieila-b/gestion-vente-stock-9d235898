@@ -27,11 +27,11 @@ export const useUserMutations = (queryClient: QueryClient) => {
       
       // Transform users to match the database schema
       const usersForDb = users.map(user => {
-        // Remove password field as it's not stored in the database table
+        // Extract password for potential auth signup (not implemented yet)
         const { password, ...userData } = user;
         
         // Create a base object with required fields, ensuring they aren't nullable
-        const dbUser = {
+        return {
           id: crypto.randomUUID(),
           email: userData.email || '',
           first_name: userData.first_name || '',
@@ -40,17 +40,8 @@ export const useUserMutations = (queryClient: QueryClient) => {
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
           phone: userData.phone || '',
           address: userData.address || '',
+          photo_url: userData.photo_url || null
         };
-        
-        // Only add photo_url if it exists and is not empty
-        if (userData.photo_url) {
-          return {
-            ...dbUser,
-            photo_url: userData.photo_url
-          };
-        }
-        
-        return dbUser;
       });
       
       console.log("Inserting users:", usersForDb);
