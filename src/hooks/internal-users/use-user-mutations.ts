@@ -25,14 +25,23 @@ export const useUserMutations = (queryClient: QueryClient) => {
       // Show loading toast
       toast.loading("Enregistrement des utilisateurs en cours...");
       
-      // Add UUIDs for each new user and remove password field for database storage
+      // Add UUIDs for each new user and filter out fields that might not exist in the database
       const usersWithIds = users.map(user => {
-        // Create a copy of the user without the password field
-        const { password, ...userWithoutPassword } = user;
-        return {
-          ...userWithoutPassword,
+        // Create a copy of the user without fields that might cause issues
+        const { password, photo_url, ...safeUserData } = user;
+        
+        // Only include photo_url if it has a value
+        const userWithId = {
+          ...safeUserData,
           id: crypto.randomUUID() // Generate a UUID for each user
         };
+        
+        // Only add photo_url if it has a value
+        if (photo_url) {
+          userWithId.photo_url = photo_url;
+        }
+        
+        return userWithId;
       });
       
       console.log("Inserting users:", usersWithIds);

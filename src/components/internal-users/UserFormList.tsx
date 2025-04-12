@@ -46,7 +46,7 @@ export const UserFormList = ({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
-      // Check if bucket exists, create if not
+      // Check if bucket exists
       const { data: buckets } = await supabase.storage.listBuckets();
       const lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
       
