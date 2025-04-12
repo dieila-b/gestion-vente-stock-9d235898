@@ -1,26 +1,31 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatGNF } from "@/lib/currency";
-import { DailyClientSales } from "../hooks/types";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
+import type { DailyClientSales as DailyClientSalesType } from "../hooks/types";
 
 interface DailyClientSalesProps {
-  clientSales?: DailyClientSales[];
+  clientSales: DailyClientSalesType[];
   isLoading: boolean;
 }
 
 export function DailyClientSales({ clientSales, isLoading }: DailyClientSalesProps) {
   return (
-    <div id="client-sales">
+    <Card className="p-4">
       <h2 className="text-lg font-semibold mb-4">Ventes par client</h2>
-      <div className="rounded-md border">
+      
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : clientSales.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          Aucune vente par client pour cette période
+        </div>
+      ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -28,38 +33,28 @@ export function DailyClientSales({ clientSales, isLoading }: DailyClientSalesPro
               <TableHead className="text-right">Montant total</TableHead>
               <TableHead className="text-right">Montant payé</TableHead>
               <TableHead className="text-right">Reste à payer</TableHead>
+              <TableHead className="text-center">État</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Chargement des données...
+            {clientSales.map((clientSale) => (
+              <TableRow key={clientSale.client_id}>
+                <TableCell className="font-medium">{clientSale.client.company_name}</TableCell>
+                <TableCell className="text-right">{formatGNF(clientSale.total)}</TableCell>
+                <TableCell className="text-right text-green-500">{formatGNF(clientSale.paid_amount)}</TableCell>
+                <TableCell className="text-right text-yellow-500">{formatGNF(clientSale.remaining_amount)}</TableCell>
+                <TableCell className="text-center">
+                  <Badge 
+                    variant={clientSale.remaining_amount === 0 ? "success" : "warning"}
+                  >
+                    {clientSale.remaining_amount === 0 ? "Payé" : "Partiel"}
+                  </Badge>
                 </TableCell>
               </TableRow>
-            ) : clientSales && clientSales.length > 0 ? (
-              clientSales.map((sale, index) => (
-                <TableRow key={index}>
-                  <TableCell>{sale.client.company_name || 'Client inconnu'}</TableCell>
-                  <TableCell className="text-right">{formatGNF(sale.total)}</TableCell>
-                  <TableCell className="text-right text-green-500">
-                    {formatGNF(sale.paid_amount)}
-                  </TableCell>
-                  <TableCell className="text-right text-yellow-500">
-                    {formatGNF(sale.remaining_amount)}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Aucune vente client sur cette période
-                </TableCell>
-              </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
-      </div>
-    </div>
+      )}
+    </Card>
   );
 }

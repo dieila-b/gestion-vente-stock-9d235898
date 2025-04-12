@@ -11,7 +11,7 @@ export interface Client {
   credit_limit?: number;
   rc_number?: string;
   cc_number?: string;
-  status: string;
+  status?: string;
   address?: string;
   city?: string;
   state?: string;

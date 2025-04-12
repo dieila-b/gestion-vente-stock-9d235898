@@ -1,5 +1,4 @@
 
-// Import components and utilities
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,13 +28,13 @@ export default function BankAccounts() {
         .order("name");
 
       if (error) throw error;
-      
+
       // Add currency field with default value if it doesn't exist
-      const accountsWithCurrency = data.map(account => ({
+      const accountsWithCurrency = data.map((account) => ({
         ...account,
         currency: account.currency || 'GNF'
       })) as BankAccount[];
-      
+
       setAccounts(accountsWithCurrency);
     } catch (error) {
       console.error("Error fetching bank accounts:", error);
@@ -46,15 +45,16 @@ export default function BankAccounts() {
 
   const handleCreate = async (account: Partial<BankAccount>) => {
     try {
-      // Ensure currency field is included
+      // Ensure currency field is included and name is required
       const accountWithCurrency = {
         ...account,
-        currency: account.currency || 'GNF'
+        currency: account.currency || 'GNF',
+        name: account.name || ''  // Ensure name is provided
       };
-      
+
       const { error } = await supabase
         .from("bank_accounts")
-        .insert([accountWithCurrency]);
+        .insert(accountWithCurrency);
 
       if (error) throw error;
       await fetchAccounts();
@@ -92,11 +92,10 @@ export default function BankAccounts() {
   };
 
   // Filter accounts based on search text
-  const filteredAccounts = accounts.filter(
-    account => 
-      account.name.toLowerCase().includes(filterText.toLowerCase()) ||
-      (account.bank_name && account.bank_name.toLowerCase().includes(filterText.toLowerCase())) ||
-      (account.account_number && account.account_number.toLowerCase().includes(filterText.toLowerCase()))
+  const filteredAccounts = accounts.filter((account) =>
+    account.name.toLowerCase().includes(filterText.toLowerCase()) ||
+    (account.bank_name && account.bank_name.toLowerCase().includes(filterText.toLowerCase())) ||
+    (account.account_number && account.account_number.toLowerCase().includes(filterText.toLowerCase()))
   );
 
   return (
@@ -114,7 +113,10 @@ export default function BankAccounts() {
         </Button>
       </div>
 
-      <BankAccountFilter filterText={filterText} setFilterText={setFilterText} />
+      <BankAccountFilter
+        filterText={filterText}
+        setFilterText={setFilterText}
+      />
 
       <div className="mt-4">
         <BankAccountsTable
