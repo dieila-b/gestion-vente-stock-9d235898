@@ -1,192 +1,243 @@
 
 import { create } from 'zustand';
-import { CartState, CartItem } from '@/types/CartState';
 import { Client } from '@/types/client';
-import { toast } from 'sonner';
+
+interface CartItem {
+  id: string;
+  product_id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  image_url?: string;
+  discount: number; // Make sure discount is required
+}
+
+export interface CartState {
+  items: CartItem[];
+  client: Client | null;
+  notes: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+}
 
 interface CartStore {
   cart: CartState;
-  addItem: (item: CartItem) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (item: any, currentStock?: number) => void;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  setQuantity: (id: string, quantity: number) => void;
+  updateDiscount: (id: string, discount: number) => void;
   addClient: (client: Client) => void;
   removeClient: () => void;
-  clearCart: () => void;
   updateNotes: (notes: string) => void;
-  updateDiscount: (discount: number) => void;
+  clearCart: () => void;
+  setCart: (items: CartItem[]) => void; // Add this missing method
 }
 
-// Initialize an empty cart state
-const initialCartState: CartState = {
+const initialState: CartState = {
   items: [],
   client: null,
-  discount: 0,
+  notes: '',
   subtotal: 0,
-  total: 0,
-  notes: ''
+  discount: 0,
+  total: 0
 };
 
-// Create the cart store with Zustand
-export const useCartStore = create<CartStore>((set, get) => ({
-  cart: initialCartState,
+const calculateSubtotal = (items: CartItem[]) => {
+  return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+};
 
-  // Add a product to the cart
-  addItem: (newItem: CartItem) => {
-    set((state) => {
-      // Check if the item already exists in the cart
-      const existingItemIndex = state.cart.items.findIndex(
-        (item) => item.product_id === newItem.product_id
-      );
+const calculateDiscount = (items: CartItem[]) => {
+  return items.reduce((sum, item) => sum + (item.discount || 0), 0);
+};
 
-      let updatedItems: CartItem[];
+const calculateTotal = (subtotal: number, discount: number) => {
+  return Math.max(0, subtotal - discount);
+};
 
-      if (existingItemIndex !== -1) {
-        // Update the quantity if the item exists
+export const useCartStore = create<CartStore>((set) => ({
+  cart: initialState,
+  
+  addItem: (item, currentStock = 0) => set((state) => {
+    const existingItem = state.cart.items.find(i => i.id === item.id);
+    
+    let updatedItems = [];
+    
+    if (existingItem) {
+      // Check if we have enough stock before updating
+      const newQuantity = existingItem.quantity + 1;
+      if (currentStock !== undefined && newQuantity > currentStock) {
+        // Not enough stock, don't update
         updatedItems = [...state.cart.items];
-        const existingItem = updatedItems[existingItemIndex];
-        
-        updatedItems[existingItemIndex] = {
-          ...existingItem,
-          quantity: existingItem.quantity + newItem.quantity,
-          subtotal: (existingItem.quantity + newItem.quantity) * existingItem.price
-        };
-        
-        toast.success('Quantité mise à jour dans le panier');
       } else {
-        // Add the new item
-        updatedItems = [...state.cart.items, newItem];
-        toast.success('Produit ajouté au panier');
+        updatedItems = state.cart.items.map(i => 
+          i.id === item.id 
+            ? { ...i, quantity: newQuantity } 
+            : i
+        );
       }
-
-      // Calculate new totals
-      const subtotal = updatedItems.reduce(
-        (sum, item) => sum + (item.price * item.quantity),
-        0
-      );
-
-      const total = subtotal - state.cart.discount;
-
-      return {
-        cart: {
-          ...state.cart,
-          items: updatedItems,
-          subtotal,
-          total
-        }
+    } else {
+      // Add new item with required discount property
+      const newItem = {
+        ...item,
+        quantity: 1,
+        discount: 0, // Ensure discount is set
+        product_id: item.id
       };
-    });
-  },
-
-  // Remove an item from the cart
-  removeItem: (productId: string) => {
-    set((state) => {
-      const updatedItems = state.cart.items.filter(
-        (item) => item.product_id !== productId
-      );
-
-      // Calculate new totals
-      const subtotal = updatedItems.reduce(
-        (sum, item) => sum + (item.price * item.quantity),
-        0
-      );
-
-      const total = subtotal - state.cart.discount;
-
-      toast.info('Produit retiré du panier');
-
-      return {
-        cart: {
-          ...state.cart,
-          items: updatedItems,
-          subtotal,
-          total
-        }
-      };
-    });
-  },
-
-  // Update the quantity of an item
-  updateQuantity: (productId: string, quantity: number) => {
-    set((state) => {
-      const updatedItems = state.cart.items.map((item) => {
-        if (item.product_id === productId) {
-          return {
-            ...item,
-            quantity,
-            subtotal: quantity * item.price
-          };
-        }
-        return item;
-      });
-
-      // Calculate new totals
-      const subtotal = updatedItems.reduce(
-        (sum, item) => sum + (item.price * item.quantity),
-        0
-      );
-
-      const total = subtotal - state.cart.discount;
-
-      return {
-        cart: {
-          ...state.cart,
-          items: updatedItems,
-          subtotal,
-          total
-        }
-      };
-    });
-  },
-
-  // Add a client to the cart
-  addClient: (client: Client) => {
-    set((state) => ({
+      updatedItems = [...state.cart.items, newItem];
+    }
+    
+    const subtotal = calculateSubtotal(updatedItems);
+    const discount = calculateDiscount(updatedItems);
+    const total = calculateTotal(subtotal, discount);
+    
+    return {
       cart: {
         ...state.cart,
-        client
+        items: updatedItems,
+        subtotal,
+        discount,
+        total
       }
-    }));
-  },
-
-  // Remove the client from the cart
-  removeClient: () => {
-    set((state) => ({
+    };
+  }),
+  
+  removeItem: (id) => set((state) => {
+    const updatedItems = state.cart.items.filter(item => item.id !== id);
+    const subtotal = calculateSubtotal(updatedItems);
+    const discount = calculateDiscount(updatedItems);
+    const total = calculateTotal(subtotal, discount);
+    
+    return {
       cart: {
         ...state.cart,
-        client: null
+        items: updatedItems,
+        subtotal,
+        discount,
+        total
       }
-    }));
-  },
-
-  // Clear the entire cart
-  clearCart: () => {
-    set({
-      cart: initialCartState
+    };
+  }),
+  
+  updateQuantity: (id, delta) => set((state) => {
+    const updatedItems = state.cart.items.map(item => {
+      if (item.id === id) {
+        const newQuantity = Math.max(1, item.quantity + delta);
+        return {
+          ...item,
+          quantity: newQuantity
+        };
+      }
+      return item;
     });
-  },
-
-  // Update cart notes
-  updateNotes: (notes: string) => {
-    set((state) => ({
+    
+    const subtotal = calculateSubtotal(updatedItems);
+    const discount = calculateDiscount(updatedItems);
+    const total = calculateTotal(subtotal, discount);
+    
+    return {
       cart: {
         ...state.cart,
-        notes
+        items: updatedItems,
+        subtotal,
+        discount,
+        total
       }
-    }));
-  },
-
-  // Update discount
-  updateDiscount: (discount: number) => {
-    set((state) => {
-      const total = state.cart.subtotal - discount;
-
-      return {
-        cart: {
-          ...state.cart,
-          discount,
-          total
-        }
-      };
+    };
+  }),
+  
+  setQuantity: (id, quantity) => set((state) => {
+    const updatedItems = state.cart.items.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          quantity: Math.max(1, quantity)
+        };
+      }
+      return item;
     });
-  }
+    
+    const subtotal = calculateSubtotal(updatedItems);
+    const discount = calculateDiscount(updatedItems);
+    const total = calculateTotal(subtotal, discount);
+    
+    return {
+      cart: {
+        ...state.cart,
+        items: updatedItems,
+        subtotal,
+        discount,
+        total
+      }
+    };
+  }),
+  
+  updateDiscount: (id, discount) => set((state) => {
+    const updatedItems = state.cart.items.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          discount
+        };
+      }
+      return item;
+    });
+    
+    const subtotal = calculateSubtotal(updatedItems);
+    const totalDiscount = calculateDiscount(updatedItems);
+    const total = calculateTotal(subtotal, totalDiscount);
+    
+    return {
+      cart: {
+        ...state.cart,
+        items: updatedItems,
+        subtotal,
+        discount: totalDiscount,
+        total
+      }
+    };
+  }),
+  
+  addClient: (client) => set((state) => ({
+    cart: {
+      ...state.cart,
+      client
+    }
+  })),
+  
+  removeClient: () => set((state) => ({
+    cart: {
+      ...state.cart,
+      client: null
+    }
+  })),
+  
+  updateNotes: (notes) => set((state) => ({
+    cart: {
+      ...state.cart,
+      notes
+    }
+  })),
+  
+  clearCart: () => set({
+    cart: initialState
+  }),
+  
+  // Add the setCart method
+  setCart: (items) => set((state) => {
+    const subtotal = calculateSubtotal(items);
+    const discount = calculateDiscount(items);
+    const total = calculateTotal(subtotal, discount);
+    
+    return {
+      cart: {
+        ...state.cart,
+        items,
+        subtotal,
+        discount,
+        total
+      }
+    };
+  })
 }));

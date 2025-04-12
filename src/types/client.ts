@@ -1,7 +1,7 @@
 
 export interface Client {
   id: string;
-  company_name: string; // Making this required to match expectations
+  company_name: string; // Required field
   contact_name?: string;
   email?: string;
   phone?: string;

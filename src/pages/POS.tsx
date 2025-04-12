@@ -5,7 +5,7 @@ import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
-import useEditOrder from "@/hooks/use-edit-order"; // Import the default export
+import useEditOrder from "@/hooks/use-edit-order";
 import { Product } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
@@ -130,12 +130,11 @@ export default function POS() {
               items={cart}
               onRemove={removeFromCart}
               onUpdateQuantity={(productId, delta) => {
-                const item = cart.find(item => item.id === productId);
-                if (item) {
-                  updateQuantity(productId, delta);
-                }
+                updateQuantity(productId, delta);
               }}
-              onUpdateDiscount={updateDiscount}
+              onUpdateDiscount={(productId, discount) => {
+                updateDiscount(productId, discount);
+              }}
               subtotal={calculateSubtotal()}
               total={calculateTotal()}
               totalDiscount={calculateTotalDiscount()}

@@ -2,11 +2,85 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ClientSelect } from "@/components/clients/ClientSelect";
-import { ProductSelector } from "@/components/sales/ProductSelector"; // Import the ProductSelector
-import { PreorderCart } from "@/components/sales/PreorderCart"; // Import the PreorderCart
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+// Placeholder components until they're properly implemented
+const ProductSelector = ({ products, isLoading, onAddToCart }: any) => (
+  <div className="bg-card rounded-lg shadow-md p-4">
+    <h2 className="text-lg font-semibold mb-4">Produits</h2>
+    {isLoading ? (
+      <p>Chargement des produits...</p>
+    ) : (
+      <div className="grid grid-cols-2 gap-2">
+        {products.map((product: any) => (
+          <div 
+            key={product.id} 
+            className="p-2 border rounded cursor-pointer hover:bg-accent"
+            onClick={() => onAddToCart(product)}
+          >
+            <p className="font-medium">{product.name}</p>
+            <p className="text-sm text-muted-foreground">{product.price} GNF</p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const PreorderCart = ({ items, onRemoveItem, onQuantityChange, onSubmit, onNotesChange, notes, isLoading }: any) => (
+  <div className="bg-card rounded-lg shadow-md p-4">
+    <h2 className="text-lg font-semibold mb-4">Panier</h2>
+    {items.length === 0 ? (
+      <p className="text-muted-foreground">Votre panier est vide</p>
+    ) : (
+      <div className="space-y-4">
+        {items.map((item: any) => (
+          <div key={item.id} className="flex justify-between items-center">
+            <div>
+              <p>{item.name}</p>
+              <p className="text-sm text-muted-foreground">{item.price} GNF x {item.quantity}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button 
+                className="px-2 py-1 bg-secondary rounded"
+                onClick={() => onQuantityChange(item.id, item.quantity - 1)}
+              >-</button>
+              <span>{item.quantity}</span>
+              <button 
+                className="px-2 py-1 bg-secondary rounded"
+                onClick={() => onQuantityChange(item.id, item.quantity + 1)}
+              >+</button>
+              <button 
+                className="ml-2 text-red-500"
+                onClick={() => onRemoveItem(item.id)}
+              >X</button>
+            </div>
+          </div>
+        ))}
+        
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1">Notes</label>
+          <textarea 
+            className="w-full p-2 border rounded" 
+            value={notes} 
+            onChange={(e) => onNotesChange(e.target.value)}
+          />
+        </div>
+        
+        <button 
+          className="w-full mt-4 py-2 bg-primary text-primary-foreground rounded"
+          onClick={onSubmit}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Traitement...' : 'Valider la commande'}
+        </button>
+      </div>
+    )}
+  </div>
+);
 
 const Sales = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);

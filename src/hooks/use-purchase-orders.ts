@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -96,7 +97,7 @@ export const usePurchaseOrders = () => {
           warehouse_id: data.warehouseId,
           expected_delivery_date: data.expectedDeliveryDate,
           notes: data.notes,
-          order_status: data.orderStatus,
+          status: data.orderStatus, // Changed from 'order_status'
           payment_status: data.paymentStatus,
           paid_amount: data.paidAmount || 0,
           total: data.total,
@@ -143,7 +144,7 @@ export const usePurchaseOrders = () => {
     try {
       const { error } = await supabase
         .from('purchase_orders')
-        .update({ order_status: 'approved' })
+        .update({ status: 'approved' }) // Changed from 'order_status'
         .eq('id', id);
       
       if (error) throw error;
@@ -193,7 +194,7 @@ export const usePurchaseOrders = () => {
           warehouse_id: data.warehouseId,
           expected_delivery_date: data.expectedDeliveryDate,
           notes: data.notes,
-          order_status: data.orderStatus,
+          status: data.orderStatus, // Changed from 'order_status'
           payment_status: data.paymentStatus,
           paid_amount: data.paidAmount || 0,
           total: data.total,

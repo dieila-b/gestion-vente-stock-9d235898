@@ -85,7 +85,7 @@ export function usePOSCombined(editOrderId?: string | null) {
       
       try {
         const { data, error } = await supabase
-          .from('pos_stock')
+          .from('warehouse_stock')
           .select('*')
           .eq('pos_location_id', selectedPDV);
         
@@ -94,8 +94,10 @@ export function usePOSCombined(editOrderId?: string | null) {
         
         // Update available stock
         const stockMap: Record<string, number> = {};
-        data?.forEach(item => {
-          stockMap[item.product_id] = item.quantity;
+        data?.forEach((item: any) => {
+          if (item.product_id && item.quantity !== undefined) {
+            stockMap[item.product_id] = item.quantity;
+          }
         });
         setAvailableStock(stockMap);
       } catch (error) {
@@ -120,7 +122,7 @@ export function usePOSCombined(editOrderId?: string | null) {
     
     try {
       const { data, error } = await supabase
-        .from('pos_stock')
+        .from('warehouse_stock')
         .select('*')
         .eq('pos_location_id', selectedPDV);
       
@@ -129,8 +131,10 @@ export function usePOSCombined(editOrderId?: string | null) {
       
       // Update available stock
       const stockMap: Record<string, number> = {};
-      data?.forEach(item => {
-        stockMap[item.product_id] = item.quantity;
+      data?.forEach((item: any) => {
+        if (item.product_id && item.quantity !== undefined) {
+          stockMap[item.product_id] = item.quantity;
+        }
       });
       setAvailableStock(stockMap);
     } catch (error) {
@@ -146,7 +150,7 @@ export function usePOSCombined(editOrderId?: string | null) {
   // Use the payment hook
   const { handlePayment } = usePOSPayment({
     selectedClient,
-    cart: cart.items || [],
+    cart: cart.items,
     calculateTotal: () => cart.total,
     calculateSubtotal: () => cart.subtotal,
     calculateTotalDiscount: () => cart.discount,
@@ -174,7 +178,7 @@ export function usePOSCombined(editOrderId?: string | null) {
 
   return {
     // Cart state
-    cart,
+    cart: cart.items,
     addToCart: addItem,
     removeFromCart: removeItem,
     updateQuantity,

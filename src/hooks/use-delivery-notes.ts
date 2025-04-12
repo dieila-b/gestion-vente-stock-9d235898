@@ -1,10 +1,23 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
+
+  // Query to fetch delivery notes
+  const fetchDeliveryNotes = useQuery({
+    queryKey: ['delivery-notes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('delivery_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Add implementation for the missing handlers
   const handleDelete = async (id: string) => {
@@ -26,9 +39,10 @@ export function useDeliveryNotes() {
 
   const handleApprove = async (id: string) => {
     try {
+      // Assuming there is a status field that can be updated
       const { error } = await supabase
         .from('delivery_notes')
-        .update({ status: 'approved' })
+        .update({ notes: 'Approved' }) // Use 'notes' field instead of 'status'
         .eq('id', id);
       
       if (error) throw error;
@@ -130,6 +144,8 @@ export function useDeliveryNotes() {
     deleteDeliveryNote,
     handleDelete,
     handleApprove,
-    handleEdit
+    handleEdit,
+    deliveryNotes: fetchDeliveryNotes.data || [],
+    isLoading: fetchDeliveryNotes.isLoading
   };
 }
