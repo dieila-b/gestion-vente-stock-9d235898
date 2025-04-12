@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -66,9 +67,10 @@ export function usePreorderCart() {
   
   // Add the client safely with status property
   const addClient = (client: any) => {
+    // Make sure client has a status
     const clientWithStatus = {
       ...client,
-      status: client.status || 'active'
+      status: client.status || 'particulier'
     };
     
     setCart((prev) => ({

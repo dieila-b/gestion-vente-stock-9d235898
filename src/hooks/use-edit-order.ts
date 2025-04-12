@@ -20,9 +20,10 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
           const editData = JSON.parse(editDataString);
           
           if (editData.client) {
+            // Ensure the client has a status value
             const clientData = {
               ...editData.client,
-              status: editData.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+              status: editData.client.status || 'particulier'
             } as Client;
             setSelectedClient(clientData);
           }
@@ -80,9 +81,10 @@ export function useEditOrder(setSelectedClient: (client: Client | null) => void,
 
   useEffect(() => {
     if (editOrder && editOrder.client) {
+      // Ensure the client has a status value
       const clientData = {
         ...editOrder.client,
-        status: editOrder.client.status === 'entreprise' ? 'entreprise' : 'particulier'
+        status: editOrder.client.status || 'particulier'
       } as Client;
       
       setSelectedClient(clientData);

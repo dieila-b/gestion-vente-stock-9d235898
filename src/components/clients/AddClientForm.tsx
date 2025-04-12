@@ -26,10 +26,14 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     contact_name: "",
     email: "",
     phone: "",
+    mobile_1: "",
+    mobile_2: "",
+    whatsapp: "",
     address: "",
     tax_number: "",
     payment_terms: "",
     credit_limit: 0,
+    city: "",
     status: "particulier",
     client_type: "occasionnel"
   });

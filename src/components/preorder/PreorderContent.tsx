@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSelector } from "@/components/pos/ProductSelector";
@@ -7,7 +6,7 @@ import { Client } from "@/types/client";
 
 interface PreorderContentProps {
   selectedClient: Client | null;
-  onSelectClient: (client: Client | null) => void;
+  onSelectClient: (client: Client) => void;
   cart: any[];
   onUpdateQuantity: (id: string, change: number) => void;
   onRemove: (id: string) => void;
@@ -19,8 +18,8 @@ interface PreorderContentProps {
   onAddToCart: (product: any, quantity?: number) => void;
 }
 
-export function PreorderContent({
-  selectedClient,
+export const PreorderContent = ({ 
+  selectedClient, 
   onSelectClient,
   cart,
   onUpdateQuantity,
@@ -31,13 +30,13 @@ export function PreorderContent({
   clearCart,
   onSetQuantity,
   onAddToCart
-}: PreorderContentProps) {
+}: PreorderContentProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="space-y-8">
         <ClientSelect 
-          selectedClient={selectedClient}
-          onSelectClient={onSelectClient}
+          value={selectedClient} 
+          onChange={onSelectClient}
         />
         <ProductSelector 
           onProductSelect={onAddToCart}
@@ -61,4 +60,4 @@ export function PreorderContent({
       </div>
     </div>
   );
-}
+};

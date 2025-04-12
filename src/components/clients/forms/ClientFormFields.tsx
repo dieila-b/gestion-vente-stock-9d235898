@@ -113,7 +113,21 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">Téléphone</label>
+        <label className="text-sm text-muted-foreground">Téléphone principal</label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            name="phone"
+            value={formData.phone || ''}
+            onChange={onChange}
+            className="pl-10 enhanced-glass"
+            placeholder="+224 123456789"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm text-muted-foreground">Téléphone secondaire</label>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input

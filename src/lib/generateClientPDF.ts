@@ -1,49 +1,46 @@
 
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { Client } from "@/types/client";
+import autoTable from "jspdf-autotable";
 
 export const generateClientPDF = (client: Client) => {
   const doc = new jsPDF();
-
-  // Add title
   doc.setFontSize(20);
   doc.text("Fiche Client", 105, 15, { align: "center" });
 
-  // Add client info
-  doc.setFontSize(12);
-  
-  const clientInfo = [
-    ["Code Client", client.client_code || "-"],
-    ["Nom du contact", client.contact_name || "-"],
-    ["Nom de l'entreprise", client.company_name || "-"],
-    ["Type de client", client.client_type || "occasionnel"],
-    ["Téléphone", client.phone || "-"],
-    ["Mobile 2", client.mobile_2 || "-"],
-    ["WhatsApp", client.whatsapp || "-"],
-    ["Email", client.email || "-"],
-    ["Adresse", client.address || "-"],
-    ["Ville", client.city || "-"],
-    ["Code postal", client.postal_code || "-"],
-    ["Numéro RC", client.rc_number || "-"],
-    ["Numéro CC", client.cc_number || "-"],
-    ["Limite de crédit", `${client.credit_limit || 0} DH`],
+  // Client details as a table
+  const clientDetails = [
+    ["Nom du contact", client.contact_name || ""],
+    ["Nom de l'entreprise", client.company_name || ""],
+    ["Type de client", client.client_type || "Occasionnel"],
+    ["Téléphone", client.phone || ""],
+    ["Téléphone secondaire", client.mobile_2 || ""],
+    ["WhatsApp", client.whatsapp || ""],
+    ["Email", client.email || ""],
+    ["Adresse", client.address || ""],
+    ["Ville", client.city || ""],
+    ["Pays", client.country || ""],
+    ["RC", client.rc_number || ""],
+    ["CC", client.cc_number || ""],
+    ["Limite de crédit", client.credit_limit ? `${client.credit_limit} GNF` : "Non définie"],
+    ["Notes", client.notes || ""],
   ];
 
+  // Filter out empty rows
+  const filteredDetails = clientDetails.filter(
+    ([, value]) => value && value !== ""
+  );
+
   autoTable(doc, {
-    body: clientInfo,
-    theme: 'striped',
-    startY: 30,
-    styles: {
-      fontSize: 10,
-      cellPadding: 5,
-    },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 100 },
-    },
+    startY: 25,
+    head: [["Information", "Détail"]],
+    body: filteredDetails,
+    theme: "striped",
+    headStyles: { fillColor: [41, 128, 185] },
   });
 
   // Save the PDF
-  doc.save(`client-${client.client_code || client.id}.pdf`);
+  const clientName = client.company_name || client.contact_name || "client";
+  const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9]/g, "_");
+  doc.save(`fiche_client_${sanitizedClientName}.pdf`);
 };

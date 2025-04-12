@@ -18,21 +18,20 @@ interface EditClientFormProps {
 export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps) => {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<Omit<Client, 'id' | 'created_at' | 'updated_at'>>(
-    {
-      company_name: client.company_name,
-      contact_name: client.contact_name,
-      email: client.email || '',
-      phone: client.phone || '',
-      address: client.address || '',
-      credit_limit: client.credit_limit || 0,
-      status: client.status,
-      client_type: client.client_type || '',
-      whatsapp: client.whatsapp || '',
-      mobile_2: client.mobile_2 || '',
-      city: client.city || '',
-    }
-  );
+  const [formData, setFormData] = useState<Omit<Client, 'id' | 'created_at' | 'updated_at'>>({
+    company_name: client.company_name,
+    contact_name: client.contact_name,
+    email: client.email || '',
+    phone: client.phone || '',
+    mobile_1: client.mobile_1 || '',
+    mobile_2: client.mobile_2 || '',
+    whatsapp: client.whatsapp || '',
+    address: client.address || '',
+    credit_limit: client.credit_limit || 0,
+    status: client.status,
+    client_type: client.client_type || '',
+    city: client.city || '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

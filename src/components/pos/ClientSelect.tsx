@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Client } from "@/types/client";
@@ -8,13 +9,15 @@ import { UserPlus, Check, UserSearch, AlertCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { AddClientForm } from "@/components/clients/AddClientForm";
+import { toast } from "sonner";
 
 interface ClientSelectProps {
   value: Client | null;
   onChange?: (client: Client | null) => void;
+  selectedClient?: Client | null;
 }
 
-export const ClientSelect = ({ value, onChange }: ClientSelectProps) => {
+export const ClientSelect = ({ value, onChange, selectedClient }: ClientSelectProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
@@ -45,7 +48,7 @@ export const ClientSelect = ({ value, onChange }: ClientSelectProps) => {
   });
 
   const handleSelectClient = (client: Client | null) => {
-    onChange(client);
+    onChange?.(client);
     if (showAddClient) setShowAddClient(false);
   };
 
