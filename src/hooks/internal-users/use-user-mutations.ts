@@ -28,17 +28,17 @@ export const useUserMutations = (queryClient: QueryClient) => {
       // Add UUIDs for each new user and filter out fields that might not exist in the database
       const usersWithIds = users.map(user => {
         // Create a copy of the user without fields that might cause issues
-        const { password, photo_url, ...safeUserData } = user;
+        const { password, ...safeUserData } = user;
         
-        // Only include photo_url if it has a value
-        const userWithId = {
+        // Create a base user object with a generated ID
+        const userWithId: Record<string, any> = {
           ...safeUserData,
           id: crypto.randomUUID() // Generate a UUID for each user
         };
         
         // Only add photo_url if it has a value
-        if (photo_url) {
-          userWithId.photo_url = photo_url;
+        if (user.photo_url) {
+          userWithId.photo_url = user.photo_url;
         }
         
         return userWithId;

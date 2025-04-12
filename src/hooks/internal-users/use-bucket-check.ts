@@ -26,7 +26,9 @@ export const useBucketCheck = () => {
           // Try to create the bucket
           try {
             const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
-              public: true
+              public: true,
+              fileSizeLimit: 5242880, // 5MB in bytes
+              allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
             });
             
             if (createError) {
