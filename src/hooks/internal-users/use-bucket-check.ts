@@ -22,11 +22,32 @@ export const useBucketCheck = () => {
         }
         
         const lovableBucket = buckets.find(bucket => bucket.name === 'lovable-uploads');
-        setBucketExists(!!lovableBucket);
         
         if (!lovableBucket) {
-          console.warn("Le bucket 'lovable-uploads' n'existe pas");
-          toast.warning("Stockage pour les téléchargements d'images non configuré. Les images de profil ne seront pas enregistrées.");
+          console.warn("Le bucket 'lovable-uploads' n'existe pas, tentative de création...");
+          
+          try {
+            const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
+              public: true,
+              fileSizeLimit: 5242880, // 5MB in bytes
+              allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+            });
+            
+            if (createError) {
+              console.error("Error creating bucket:", createError);
+              toast.warning("Impossible de créer le stockage pour les téléchargements d'images. Les images ne fonctionneront pas.");
+            } else {
+              console.log("Bucket 'lovable-uploads' created successfully");
+              setBucketExists(true);
+              toast.success("Stockage pour les téléchargements configuré avec succès");
+            }
+          } catch (createErr) {
+            console.error("Exception creating bucket:", createErr);
+            toast.warning("Stockage non configuré pour les téléchargements d'images");
+          }
+        } else {
+          console.log("Bucket 'lovable-uploads' exists");
+          setBucketExists(true);
         }
       } catch (err) {
         console.error("Exception checking bucket:", err);

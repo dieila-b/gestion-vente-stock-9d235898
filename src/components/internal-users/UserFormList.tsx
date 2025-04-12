@@ -42,23 +42,36 @@ export const UserFormList = ({
         return;
       }
       
-      // Check if bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
-      
-      if (!lovableBucket) {
-        // If bucket doesn't exist, still allow the user to create the profile without an image
-        toast.warning("Le stockage d'images n'est pas configuré. L'image de profil ne sera pas enregistrée.");
-        return;
-      }
-      
+      // Prepare the file information
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `internal-users/${fileName}`;
       
-      // Télécharger le fichier
+      // Check if bucket exists and create it if necessary
+      const { data: buckets } = await supabase.storage.listBuckets();
+      let lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
+      
+      if (!lovableBucket) {
+        console.log("Attempting to create 'lovable-uploads' bucket");
+        const { error: createError, data } = await supabase.storage.createBucket('lovable-uploads', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB in bytes
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+        });
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          toast.error(`Erreur lors de la création du bucket: ${createError.message}`);
+          return;
+        }
+        
+        lovableBucket = data;
+        console.log("Bucket created successfully:", lovableBucket);
+      }
+      
+      // Upload the file
       console.log("Uploading file to path:", filePath);
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file);
       
@@ -68,7 +81,7 @@ export const UserFormList = ({
         return;
       }
       
-      // Obtenir l'URL publique
+      // Get the public URL
       const { data } = supabase.storage
         .from('lovable-uploads')
         .getPublicUrl(filePath);
@@ -78,7 +91,7 @@ export const UserFormList = ({
       toast.success("Image téléchargée avec succès");
     } catch (error: any) {
       console.error("Error in image upload process:", error);
-      toast.warning("Erreur lors du processus de téléchargement de l'image. Le profil sera créé sans photo.");
+      toast.error(`Erreur lors du téléchargement de l'image: ${error.message || error}`);
     }
   };
 
