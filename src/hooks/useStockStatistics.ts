@@ -1,3 +1,4 @@
+
 // Make changes only to fix the specific errors
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-adapter";
@@ -18,7 +19,7 @@ export function useStockStatistics() {
             `)
         );
         
-        return data;
+        return data || []; // Ensure we always return an array
       } catch (error) {
         console.error("Error fetching warehouse stock statistics:", error);
         return [];
@@ -27,6 +28,12 @@ export function useStockStatistics() {
   });
   
   const transformWarehouseData = (data: any[]) => {
+    // Ensure data is an array before attempting to map over it
+    if (!Array.isArray(data)) {
+      console.error("warehouseStockData is not an array:", data);
+      return [];
+    }
+    
     return data.map(item => {
       const warehouse = safeWarehouse(item.warehouse);
       
@@ -38,7 +45,8 @@ export function useStockStatistics() {
     });
   };
   
-  const warehouseStock = transformWarehouseData(warehouseStockData || []);
+  // Ensure warehouseStockData is an array before transforming
+  const warehouseStock = transformWarehouseData(Array.isArray(warehouseStockData) ? warehouseStockData : []);
 
   return {
     warehouseStock,

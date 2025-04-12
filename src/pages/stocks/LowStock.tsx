@@ -1,45 +1,36 @@
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { StockTable } from "@/components/stocks/StockTable";
+import { CircleAlert } from "lucide-react";
 import { useStockStatistics } from "@/hooks/useStockStatistics";
-import { CriticalProductsTable } from "@/components/stocks/CriticalProductsTable";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function LowStock() {
-  const navigate = useNavigate();
-  const { data: stockData = { stats: { inStock: 0, lowStock: 0, outOfStock: 0 }, criticalProducts: [] }, isLoading } = useStockStatistics();
-
-  // Filtrer uniquement les produits en stock faible
-  const lowStockProducts = stockData.criticalProducts.filter(
-    product => product.status === 'low_stock'
-  );
+  const { warehouseStock, isLoadingWarehouseStock } = useStockStatistics();
+  
+  const lowStockItems = Array.isArray(warehouseStock) 
+    ? warehouseStock.filter(item => item.quantity > 0 && item.quantity < 10)
+    : [];
 
   return (
-    <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/stock-status')}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-            <h1 className="text-4xl font-bold text-gradient">Produits en Stock Faible</h1>
-            <p className="text-muted-foreground mt-2">
-              Liste des produits dont le stock est faible
-            </p>
-          </div>
-        </div>
-
-        <CriticalProductsTable 
-          products={lowStockProducts}
-          isLoading={isLoading}
-        />
-      </div>
-    </DashboardLayout>
+    <div className="container py-6">
+      <h1 className="text-2xl font-bold mb-6">Stock Faible</h1>
+      
+      <Card>
+        <CardContent className="p-6">
+          {isLoadingWarehouseStock ? (
+            <div className="flex justify-center items-center h-60">Loading...</div>
+          ) : lowStockItems.length === 0 ? (
+            <EmptyState
+              icon={<CircleAlert className="h-10 w-10 text-muted-foreground" />}
+              title="Aucun article en stock faible"
+              description="Tous les articles ont une quantité suffisante en stock."
+            />
+          ) : (
+            <StockTable items={lowStockItems} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

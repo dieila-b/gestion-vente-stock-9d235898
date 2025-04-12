@@ -1,78 +1,86 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatDateTime } from "@/lib/formatters";
+import { Button } from "@/components/ui/button";
 import { StockMovement } from "@/hooks/dashboard/useRecentStockMovements";
+import { formatDateTime } from "@/lib/formatters";
 import { MovementTypeIcon } from "./MovementTypeIcon";
 
 interface MovementDetailsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   movement: StockMovement | null;
+  open: boolean;
+  onClose: () => void;
 }
 
-export function MovementDetailsDialog({ isOpen, onClose, movement }: MovementDetailsDialogProps) {
+export function MovementDetailsDialog({ movement, open, onClose }: MovementDetailsDialogProps) {
   if (!movement) return null;
 
-  const getLocationInfo = () => {
-    if (movement.type === 'in' && movement.warehouse) {
-      return `Entrepôt: ${movement.warehouse.name}`;
-    } else if (movement.type === 'out' && movement.pos_location) {
-      return `Point de vente: ${movement.pos_location.name}`;
-    } else if (movement.warehouse) {
-      return `Entrepôt: ${movement.warehouse.name}`;
-    } else if (movement.pos_location) {
-      return `Point de vente: ${movement.pos_location.name}`;
-    }
-    return "Emplacement non spécifié";
-  };
-
-  const typeLabel = movement.type === 'in' ? "Entrée de stock" : "Sortie de stock";
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MovementTypeIcon type={movement.type} size={5} />
-            <span>{typeLabel}</span>
-          </DialogTitle>
+          <DialogTitle>Movement Details</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Produit</h4>
-              <p className="font-medium">{movement.product?.name || "N/A"}</p>
+
+        <div className="space-y-4 mt-2">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <MovementTypeIcon type={movement.type} />
+              <span className="text-lg font-semibold">
+                {movement.type === "in" ? "Stock Entry" : "Stock Exit"}
+              </span>
             </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Référence</h4>
-              <p>{movement.product?.reference || "N/A"}</p>
-            </div>
+            <span className="text-lg font-bold">
+              {movement.type === "in" ? "+" : "-"}{movement.quantity}
+            </span>
           </div>
 
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Emplacement</h4>
-            <p>{getLocationInfo()}</p>
-          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Product:</span>
+              <span className="font-medium">{movement.product?.name || "Unknown"}</span>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Quantité</h4>
-              <p className="font-medium">{movement.quantity}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Date/Heure</h4>
-              <p>{formatDateTime(movement.created_at)}</p>
-            </div>
-          </div>
+            {movement.product?.reference && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Reference:</span>
+                <span>{movement.product.reference}</span>
+              </div>
+            )}
 
-          {movement.reason && (
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-1">Motif</h4>
-              <p>{movement.reason}</p>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Warehouse:</span>
+              <span>{movement.warehouse?.name || "Unknown"}</span>
             </div>
-          )}
+
+            {movement.pos_location && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">POS Location:</span>
+                <span>{movement.pos_location.name}</span>
+              </div>
+            )}
+
+            {movement.reason && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Reason:</span>
+                <span>{movement.reason}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Date:</span>
+              <span>{formatDateTime(movement.created_at)}</span>
+            </div>
+
+            {movement.created_by && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Created by:</span>
+                <span>{movement.created_by}</span>
+              </div>
+            )}
+          </div>
         </div>
+
+        <Button onClick={onClose} className="w-full mt-4">Close</Button>
       </DialogContent>
     </Dialog>
   );
