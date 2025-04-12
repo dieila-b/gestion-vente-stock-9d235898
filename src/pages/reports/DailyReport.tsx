@@ -11,10 +11,20 @@ import { SalesTotals } from "./components/SalesTotals";
 
 export default function DailyReport() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const { periodTotals, dailyProducts, dailyClients } = useDailyReportQueries(selectedDate);
+  const { 
+    dailySales, 
+    dailyExpenses, 
+    dailyPayments, 
+    periodTotals, 
+    dailyProducts, 
+    dailyClients,
+    isLoadingSales,
+    isLoadingExpenses,
+    isLoadingPayments
+  } = useDailyReportQueries(selectedDate);
 
-  // Define loading state locally since it's not part of the hook return type
-  const isLoading = false;
+  // Define loading state based on all loading states
+  const isLoading = isLoadingSales || isLoadingExpenses || isLoadingPayments;
 
   return (
     <DashboardLayout>

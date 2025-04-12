@@ -1,52 +1,56 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useCallback } from "react";
-import type { Category } from "@/types/category"; // Fixed casing
+
+// Define Category type inline to avoid import issues
+interface Category {
+  id: string;
+  name: string;
+  type: 'expense' | 'income';
+  created_at?: string;
+}
 
 export function useIncomeCategories() {
-  // Fetch income categories
-  const { data: categories = [], isLoading, error, refetch } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: categories = [], isLoading } = useQuery({
     queryKey: ['income-categories'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('expense_categories')
-          .select('*')
-          .eq('type', 'income');
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .eq('type', 'income')
+        .order('name');
 
-        if (error) throw error;
-        return data as Category[];
-      } catch (error: any) {
-        console.error('Error fetching income categories:', error);
-        toast.error(`Failed to load income categories: ${error.message}`);
-        return [];
-      }
+      if (error) throw error;
+      return data as Category[];
     }
   });
 
-  // Add a new income category
-  const addCategory = useCallback(async (name: string) => {
+  const addCategory = async (name: string) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('expense_categories')
-        .insert({ name, type: 'income' });
+        .insert({ 
+          name, 
+          type: 'income' 
+        })
+        .select()
+        .single();
 
       if (error) throw error;
       
-      toast.success('Income category added successfully');
-      refetch();
-      return true;
-    } catch (error: any) {
-      console.error('Error adding income category:', error);
-      toast.error(`Failed to add income category: ${error.message}`);
-      return false;
+      queryClient.invalidateQueries({ queryKey: ['income-categories'] });
+      return data;
+    } catch (error) {
+      console.error("Error adding income category:", error);
+      toast.error("Erreur lors de l'ajout de la catégorie");
+      return null;
     }
-  }, [refetch]);
+  };
 
-  // Delete a category
-  const deleteCategory = useCallback(async (id: string) => {
+  const deleteCategory = async (id: string) => {
     try {
       const { error } = await supabase
         .from('expense_categories')
@@ -55,21 +59,19 @@ export function useIncomeCategories() {
 
       if (error) throw error;
       
-      toast.success('Income category deleted successfully');
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['income-categories'] });
       return true;
-    } catch (error: any) {
-      console.error('Error deleting income category:', error);
-      toast.error(`Failed to delete income category: ${error.message}`);
+    } catch (error) {
+      console.error("Error deleting income category:", error);
+      toast.error("Erreur lors de la suppression de la catégorie");
       return false;
     }
-  }, [refetch]);
+  };
 
   return {
     categories,
     isLoading,
-    error,
     addCategory,
-    deleteCategory,
+    deleteCategory
   };
 }

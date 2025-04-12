@@ -1,52 +1,56 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useCallback } from "react";
-import type { Category } from "@/types/category"; // Fixed casing
+
+// Define Category type inline to avoid import issues
+interface Category {
+  id: string;
+  name: string;
+  type: 'expense' | 'income';
+  created_at?: string;
+}
 
 export function useOutcomeCategories() {
-  // Fetch outcome categories
-  const { data: categories = [], isLoading, error, refetch } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: categories = [], isLoading } = useQuery({
     queryKey: ['outcome-categories'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('expense_categories')
-          .select('*')
-          .eq('type', 'expense');
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .eq('type', 'expense')
+        .order('name');
 
-        if (error) throw error;
-        return data as Category[];
-      } catch (error: any) {
-        console.error('Error fetching outcome categories:', error);
-        toast.error(`Failed to load outcome categories: ${error.message}`);
-        return [];
-      }
+      if (error) throw error;
+      return data as Category[];
     }
   });
 
-  // Add a new outcome category
-  const addCategory = useCallback(async (name: string) => {
+  const addCategory = async (name: string) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('expense_categories')
-        .insert({ name, type: 'expense' });
+        .insert({ 
+          name, 
+          type: 'expense' 
+        })
+        .select()
+        .single();
 
       if (error) throw error;
       
-      toast.success('Outcome category added successfully');
-      refetch();
-      return true;
-    } catch (error: any) {
-      console.error('Error adding outcome category:', error);
-      toast.error(`Failed to add outcome category: ${error.message}`);
-      return false;
+      queryClient.invalidateQueries({ queryKey: ['outcome-categories'] });
+      return data;
+    } catch (error) {
+      console.error("Error adding outcome category:", error);
+      toast.error("Erreur lors de l'ajout de la catégorie");
+      return null;
     }
-  }, [refetch]);
+  };
 
-  // Delete a category
-  const deleteCategory = useCallback(async (id: string) => {
+  const deleteCategory = async (id: string) => {
     try {
       const { error } = await supabase
         .from('expense_categories')
@@ -55,21 +59,19 @@ export function useOutcomeCategories() {
 
       if (error) throw error;
       
-      toast.success('Outcome category deleted successfully');
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['outcome-categories'] });
       return true;
-    } catch (error: any) {
-      console.error('Error deleting outcome category:', error);
-      toast.error(`Failed to delete outcome category: ${error.message}`);
+    } catch (error) {
+      console.error("Error deleting outcome category:", error);
+      toast.error("Erreur lors de la suppression de la catégorie");
       return false;
     }
-  }, [refetch]);
+  };
 
   return {
     categories,
     isLoading,
-    error,
     addCategory,
-    deleteCategory,
+    deleteCategory
   };
 }

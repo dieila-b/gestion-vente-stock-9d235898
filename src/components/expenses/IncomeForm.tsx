@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Category } from "@/types/category"; // Fixed casing to lowercase
-import { Income } from "@/types/outcome";
+
+interface Category {
+  id: string;
+  name: string;
+  type?: 'expense' | 'income';
+  created_at?: string;
+}
+
+interface Income {
+  id?: string;
+  amount: number;
+  description?: string;
+  category_id: string;
+  created_at?: string;
+}
 
 interface IncomeFormProps {
   onSubmit: (data: Partial<Income>) => Promise<any>;
@@ -29,7 +41,6 @@ export function IncomeForm({ onSubmit, categories, isLoading = false }: IncomeFo
           description,
           category_id: categoryId
         });
-        // Reset form
         setAmount(0);
         setDescription("");
         setCategoryId("");

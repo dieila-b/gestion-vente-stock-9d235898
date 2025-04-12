@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { addDays } from "date-fns";
+import { addDays, format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -21,6 +22,10 @@ export default function CustomReport() {
     from: new Date(),
     to: addDays(new Date(), 7),
   });
+
+  // Format dates for the query
+  const startDateStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
+  const endDateStr = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
 
   // Récupérer la liste des points de vente
   const { data: posLocations = [] } = useQuery({
@@ -43,7 +48,7 @@ export default function CustomReport() {
     isLoading,
     isLoadingSalesProduct,
     isLoadingClients 
-  } = useCustomReportQueries(dateRange, selectedPOS);
+  } = useCustomReportQueries(startDateStr, endDateStr);
 
   const handlePrintClientSales = async () => {
     const element = document.getElementById('client-sales');

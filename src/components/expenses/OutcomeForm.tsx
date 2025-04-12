@@ -6,8 +6,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Category } from "@/types/category"; // Fixed the casing
-import { Outcome } from "@/types/outcome";
+
+// Define types inline to avoid import casing issues
+interface Category {
+  id: string;
+  name: string;
+  type?: 'expense' | 'income';
+  created_at?: string;
+}
+
+interface Outcome {
+  id?: string;
+  amount: number;
+  description?: string;
+  category_id: string;
+  date?: string;
+  payment_method?: string;
+  receipt_number?: string;
+  status?: string;
+  created_at?: string;
+}
 
 interface OutcomeFormProps {
   onSubmit: (data: Partial<Outcome>) => Promise<any>;

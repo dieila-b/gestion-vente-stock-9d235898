@@ -69,16 +69,17 @@ const useEditOrder = () => {
         }
 
         if (order) {
-          // Check for SelectQueryError in client and items
-          const hasClientError = isSelectQueryError(order.client);
-          const hasItemsError = isSelectQueryError(order.items);
-
-          if (hasClientError && hasItemsError) {
-            console.error("Invalid order data structure - both client and items have errors", order);
+          // Check if order is a valid object and not a SelectQueryError
+          if (isSelectQueryError(order)) {
+            console.error("Invalid order data structure:", order);
             toast.error("Erreur de récupération des données de la commande");
             setIsLoading(false);
             return;
           }
+
+          // Safe access with default values
+          const hasClientError = !order.client || isSelectQueryError(order.client);
+          const hasItemsError = !order.items || isSelectQueryError(order.items);
 
           // Format client data if available
           const clientData = hasClientError ? null : order.client;
@@ -104,7 +105,7 @@ const useEditOrder = () => {
           // Format cart items from order items if available
           const formattedCart = hasItemsError ? [] : 
             Array.isArray(order.items) ? 
-              order.items.map((item) => ({
+              order.items.map((item: any) => ({
                 id: item.product_id,
                 product_id: item.product_id,
                 name: item.product?.name || 'Unknown Product',
@@ -120,15 +121,15 @@ const useEditOrder = () => {
 
           // Create a safe order data object
           const safeOrderData: OrderData = {
-            id: order.id,
-            client_id: order.client_id,
+            id: order.id || '',
+            client_id: order.client_id || '',
             total_amount: order.total_amount || 0,
             paid_amount: order.paid_amount || 0,
             remaining_amount: order.remaining_amount || 0,
             status: order.status || 'pending',
             notes: order.notes || '',
-            created_at: order.created_at,
-            updated_at: order.updated_at,
+            created_at: order.created_at || new Date().toISOString(),
+            updated_at: order.updated_at || new Date().toISOString(),
             client: formattedClient,
             items: formattedCart,
           };
