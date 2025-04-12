@@ -1,13 +1,31 @@
 
-import { isSelectQueryError } from "@/utils/supabase-helpers";
+import { isSelectQueryError } from './supabase-helpers';
 
 /**
- * Helper function to safely extract properties from potentially SelectQueryError objects
- * @param obj The object that might be a SelectQueryError
- * @param defaultValue Default value to return if obj is a SelectQueryError
- * @returns The original object or the default value
+ * Safely unwrap a supplier object that might be a SelectQueryError
+ * @param supplier The supplier object or error
+ * @returns A safe supplier object
  */
-export function safelyUnwrapObject<T>(obj: any, defaultValue: T): T {
+export function safeSupplier(supplier: any) {
+  if (isSelectQueryError(supplier)) {
+    return {
+      id: "unknown",
+      name: "Unknown Supplier",
+      phone: "",
+      email: "",
+      // Add other default fields as needed
+    };
+  }
+  return supplier;
+}
+
+/**
+ * Safely cast an object to a specific type with default values
+ * @param obj The object to cast
+ * @param defaultValue Default values to use if obj is an error
+ * @returns The object cast to the desired type
+ */
+export function safeCast<T>(obj: any, defaultValue: T): T {
   if (!obj || isSelectQueryError(obj)) {
     return defaultValue;
   }
@@ -15,95 +33,41 @@ export function safelyUnwrapObject<T>(obj: any, defaultValue: T): T {
 }
 
 /**
- * Helper function to safely get a property from an object that might be a SelectQueryError
- * @param obj The object that might be a SelectQueryError
- * @param propName The property name to access
- * @param defaultValue Default value to return if obj is a SelectQueryError or property doesn't exist
- * @returns The property value or default value
+ * Safely access a property that might be a SelectQueryError
+ * @param obj The object to access
+ * @param key The property key
+ * @param defaultValue The default value to use if obj[key] is an error
+ * @returns The property value or default
  */
-export function safelyGetProperty<T>(obj: any, propName: string, defaultValue: T): T {
-  if (!obj || isSelectQueryError(obj) || obj[propName] === undefined) {
+export function safeProperty<T>(obj: any, key: string, defaultValue: T): T {
+  if (!obj || isSelectQueryError(obj) || !obj[key] || isSelectQueryError(obj[key])) {
     return defaultValue;
   }
-  return obj[propName] as T;
+  return obj[key] as T;
 }
 
 /**
- * Helper function to handle supplier data that might be a SelectQueryError
- * @param supplier The supplier object that might be a SelectQueryError
- * @returns A safe supplier object with default values if needed
+ * Safely map an array that might be a SelectQueryError
+ * @param array The array to map
+ * @param mapFn The mapping function
+ * @returns The mapped array or empty array if input is an error
  */
-export function safeSupplier(supplier: any) {
-  const defaultSupplier = {
-    id: "",
-    name: "Unknown Supplier",
-    phone: "",
-    email: ""
-  };
-
-  return isSelectQueryError(supplier)
-    ? defaultSupplier
-    : {
-        id: safelyGetProperty(supplier, 'id', defaultSupplier.id),
-        name: safelyGetProperty(supplier, 'name', defaultSupplier.name),
-        phone: safelyGetProperty(supplier, 'phone', defaultSupplier.phone),
-        email: safelyGetProperty(supplier, 'email', defaultSupplier.email)
-      };
-}
-
-/**
- * Helper function to handle client data that might be a SelectQueryError
- * @param client The client object that might be a SelectQueryError
- * @returns A safe client object with default values if needed
- */
-export function safeClient(client: any) {
-  const defaultClient = {
-    id: "",
-    company_name: "Unknown Company",
-    contact_name: "Unknown Contact",
-    status: "particulier" as "particulier" | "entreprise",
-    email: "",
-    phone: ""
-  };
-
-  return isSelectQueryError(client) 
-    ? defaultClient
-    : {
-        id: safelyGetProperty(client, 'id', defaultClient.id),
-        company_name: safelyGetProperty(client, 'company_name', defaultClient.company_name),
-        contact_name: safelyGetProperty(client, 'contact_name', defaultClient.contact_name),
-        status: safelyGetProperty(client, 'status', defaultClient.status),
-        email: safelyGetProperty(client, 'email', defaultClient.email),
-        phone: safelyGetProperty(client, 'phone', defaultClient.phone)
-      };
-}
-
-/**
- * Helper function to safely cast an object with a type assertion
- * @param value The value to cast
- * @param defaultValue The default value if casting fails
- * @returns The cast value or default value
- */
-export function safeCast<T>(value: any, defaultValue: T): T {
-  try {
-    if (value === null || value === undefined || isSelectQueryError(value)) {
-      return defaultValue;
-    }
-    return value as T;
-  } catch {
-    return defaultValue;
+export function safeMap<T, R>(array: any, mapFn: (item: T) => R): R[] {
+  if (!array || isSelectQueryError(array) || !Array.isArray(array)) {
+    return [];
   }
+  return array.map(mapFn);
 }
 
 /**
- * Helper function to safely handle arrays that might be a SelectQueryError
- * @param arr The array that might be a SelectQueryError
- * @param defaultValue Default array to return if arr is a SelectQueryError
- * @returns The original array or default array
+ * Safely get a default object if the input is a SelectQueryError
+ * @param obj The input object
+ * @param defaultObj The default object
+ * @returns The input object or default
  */
-export function safeArray<T>(arr: any, defaultValue: T[] = []): T[] {
-  if (!arr || isSelectQueryError(arr) || !Array.isArray(arr)) {
-    return defaultValue;
+export function safeObject<T>(obj: any, defaultObj: T): T {
+  if (!obj || isSelectQueryError(obj)) {
+    return defaultObj;
   }
-  return arr as T[];
+  return obj as T;
 }

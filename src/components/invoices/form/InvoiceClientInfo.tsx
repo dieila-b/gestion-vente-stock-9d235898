@@ -11,7 +11,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { createTableQuery } from '@/hooks/use-supabase-table-extension';
-import { isSelectQueryError, safeMap } from '@/utils/supabase-helpers';
+import { isSelectQueryError } from '@/utils/supabase-helpers';
+import { safeMap } from '@/utils/select-query-helper';
 
 interface InvoiceClientInfoProps {
   formData: {
@@ -74,11 +75,12 @@ export const InvoiceClientInfo: React.FC<InvoiceClientInfoProps> = ({
             <SelectValue placeholder="Sélectionner un point de vente" />
           </SelectTrigger>
           <SelectContent>
-            {Array.isArray(posLocationList) && safeMap(posLocationList, (location: any) => (
-              <SelectItem key={location.id} value={location.id}>
-                {location.name || 'Unnamed location'}
-              </SelectItem>
-            ))}
+            {!isSelectQueryError(posLocationList) && Array.isArray(posLocationList) && 
+              posLocationList.map((location: any) => (
+                <SelectItem key={location.id} value={location.id}>
+                  {location.name || 'Unnamed location'}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>

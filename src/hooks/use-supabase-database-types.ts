@@ -11,7 +11,8 @@ import { isSelectQueryError } from "@/utils/supabase-helpers";
 export function createTableQuery<T extends keyof SupabaseTables>(
   tableName: T
 ) {
-  return supabase.from(tableName);
+  // Use type assertion to work around type issues
+  return supabase.from(tableName as string);
 }
 
 /**
@@ -19,23 +20,28 @@ export function createTableQuery<T extends keyof SupabaseTables>(
  */
 export function useExtendedTables() {
   const getPosLocations = () => {
-    return supabase.from('pos_locations');
+    // Use type assertion to work around type issues
+    return supabase.from('pos_locations' as string);
   };
   
   const getGeographicZones = () => {
-    return supabase.from('geographic_zones');
+    // Use type assertion to work around type issues
+    return supabase.from('geographic_zones' as string);
   };
   
   const getPriceRequests = () => {
-    return supabase.from('price_requests');
+    // Use type assertion to work around type issues
+    return supabase.from('price_requests' as string);
   };
   
   const getDeliveryNoteItems = () => {
-    return supabase.from('delivery_note_items');
+    // Use type assertion to work around type issues
+    return supabase.from('delivery_note_items' as string);
   };
   
   const getSupplierReturnItems = () => {
-    return supabase.from('supplier_return_items');
+    // Use type assertion to work around type issues
+    return supabase.from('supplier_return_items' as string);
   };
   
   // Add more tables as needed

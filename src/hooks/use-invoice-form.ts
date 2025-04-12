@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { castWithDefault } from '@/lib/utils';
 
 export function useInvoiceForm() {
   const navigate = useNavigate();
@@ -75,13 +76,22 @@ export function useInvoiceForm() {
     }));
   };
 
-  const updateProductPrice = (productId, price) => {
+  const updateProductPrice = (productId, price, discount = 0) => {
     setSelectedProducts(prev => prev.map(p => {
       if (p.product_id === productId) {
-        return { ...p, price: Number(price) };
+        return { 
+          ...p, 
+          price: Number(price),
+          discount: Number(discount) || 0
+        };
       }
       return p;
     }));
+  };
+
+  const ensureValidPaymentStatus = (status) => {
+    const validStatuses = ['pending', 'partial', 'paid'];
+    return validStatuses.includes(status) ? status : 'pending';
   };
 
   const handleSubmit = async (values) => {
@@ -113,7 +123,7 @@ export function useInvoiceForm() {
         issue_date: values.issue_date,
         due_date: values.due_date,
         total_amount: calculateTotal(),
-        payment_status: paymentStatus,
+        payment_status: ensureValidPaymentStatus(paymentStatus),
         paid_amount: paidAmount,
         remaining_amount: calculateTotal() - paidAmount,
         status: "completed",
@@ -133,8 +143,8 @@ export function useInvoiceForm() {
         product_id: product.product_id,
         quantity: product.quantity,
         price: product.price,
-        discount: product.discount,
-        total: product.price * product.quantity
+        total: product.price * product.quantity,
+        discount: product.discount || 0
       }));
 
       const { error: itemsError } = await supabase
@@ -162,8 +172,7 @@ export function useInvoiceForm() {
         description: "Invoice created successfully"
       });
 
-      // Navigate to invoice details or list
-      navigate('/invoices');
+      return invoiceData;
     } catch (error) {
       console.error("Error creating invoice:", error);
       toast({
@@ -171,6 +180,7 @@ export function useInvoiceForm() {
         description: "Error creating invoice",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsSubmitting(false);
     }

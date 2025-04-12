@@ -6,6 +6,7 @@ import { usePurchaseOrders } from '@/hooks/use-purchase-orders';
 import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchaseOrder';
 import { isSelectQueryError } from '@/utils/supabase-helpers';
 import { safeSupplier, safeCast } from '@/utils/select-query-helper';
+import { toast } from 'sonner';
 
 export function usePurchaseEdit(id: string) {
   const purchaseOrders = usePurchaseOrders();
@@ -28,7 +29,8 @@ export function usePurchaseEdit(id: string) {
   const { data: order, isLoading: isLoadingOrder } = useQuery({
     queryKey: ["purchase-order", id],
     queryFn: () => purchaseOrders.fetchPurchaseOrder(id),
-    onSuccess: (data) => {
+    enabled: !!id,
+    onSettled: (data) => {
       if (data) {
         // Process supplier data safely
         const supplier = safeSupplier(data.supplier);
@@ -107,7 +109,7 @@ export function usePurchaseEdit(id: string) {
   };
 
   // Handler for adding a product
-  const handleAddProduct = (product) => {
+  const handleAddProduct = (product: any) => {
     const existingProductIndex = selectedProducts.findIndex(
       (p) => p.product_id === product.id
     );
@@ -201,7 +203,7 @@ export function usePurchaseEdit(id: string) {
       };
       
       // Update the order
-      const updatedOrder = await handleUpdate({ id, orderData });
+      const updatedOrder = await handleUpdate(id, orderData);
       
       // Update items by removing old ones and adding new ones
       if (selectedProducts.length > 0) {

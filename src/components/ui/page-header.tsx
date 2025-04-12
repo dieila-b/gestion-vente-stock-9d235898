@@ -39,10 +39,12 @@ const PageHeaderDescription = ({
   );
 };
 
-export const PageHeader: React.FC<PageHeaderProps> & {
-  Title: typeof PageHeaderTitle;
-  Description: typeof PageHeaderDescription;
-} = ({ 
+type PageHeaderComponent = React.FC<PageHeaderProps> & {
+  Title: React.FC<PageHeaderTitleProps>;
+  Description: React.FC<PageHeaderDescriptionProps>;
+};
+
+export const PageHeader: PageHeaderComponent = ({ 
   children, 
   className = ""
 }: PageHeaderProps) => {
