@@ -1,110 +1,113 @@
-
-import { useParams, useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { formatGNF } from "@/lib/currency";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
-import { PurchaseHeader } from "@/components/purchases/edit-order/PurchaseHeader";
-import { SupplierSection } from "@/components/purchases/edit-order/SupplierSection";
-import { OrderDetailsSection } from "@/components/purchases/edit-order/OrderDetailsSection";
-import { ProductsList } from "@/components/purchases/edit-order/ProductsList";
-import { AdditionalCostsSection } from "@/components/purchases/edit-order/AdditionalCostsSection";
-import { OrderSummarySection } from "@/components/purchases/order-form/OrderSummarySection";
 
-const Purchase = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { 
-    suppliers,
-    products,
-    isLoadingOrder,
-    isLoadingProducts,
-    selectedSupplier,
-    setSelectedSupplier,
-    selectedProducts,
-    shippingCost,
-    setShippingCost,
-    transitCost,
-    setTransitCost,
-    logisticsCost,
-    setLogisticsCost,
-    discount,
-    setDiscount,
-    taxRate,
-    setTaxRate,
-    expectedDeliveryDate,
-    setExpectedDeliveryDate,
-    orderStatus,
-    setOrderStatus,
-    paymentStatus,
-    setPaymentStatus,
-    handleProductSelect,
-    handleProductSelectForIndex,
-    calculateSubtotal,
-    calculateTax,
-    calculateTotal,
-    handleAddProduct,
-    handleQuantityChangeByIndex,
-    handlePriceChangeByIndex,
-    handleSubmit
-  } = usePurchaseEdit(id);
+export default function PurchasePage() {
+  const { id, purchase, isLoading, updatePaymentStatus } = usePurchaseEdit();
 
-  if (isLoadingOrder || isLoadingProducts) {
-    return <div>Chargement...</div>;
+  // Access purchase data safely using optional chaining
+  const supplierName = purchase?.supplier?.name || 'Unknown Supplier';
+  const orderNumber = purchase?.order_number || 'N/A';
+  const totalAmount = purchase?.total_amount || 0;
+  const status = purchase?.status || 'pending';
+  const paymentStatus = purchase?.payment_status || 'pending';
+  const expectedDeliveryDate = purchase?.expected_delivery_date || 'N/A';
+  const discount = purchase?.discount || 0;
+  const shippingCost = purchase?.shipping_cost || 0;
+  const transitCost = purchase?.transit_cost || 0;
+  const logisticsCost = purchase?.logistics_cost || 0;
+  const taxRate = purchase?.tax_rate || 0;
+
+  const handleUpdateStatus = (newStatus: string) => {
+    if (updatePaymentStatus) {
+      updatePaymentStatus(newStatus);
+    } else {
+      console.error("updatePaymentStatus function is not available");
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'GNF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  if (isLoading || !purchase) {
+    return (
+      <DashboardLayout>
+        <div>Loading purchase details...</div>
+      </DashboardLayout>
+    );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <PurchaseHeader 
-        id={id} 
-        navigate={navigate} 
-        handleSubmit={handleSubmit} 
-      />
-
-      <Card className="p-6 space-y-6 neo-blur border-white/10">
-        <SupplierSection
-          selectedSupplier={selectedSupplier}
-          setSelectedSupplier={setSelectedSupplier}
-          suppliers={suppliers || []}
-        />
-
-        <OrderDetailsSection
-          expectedDeliveryDate={expectedDeliveryDate}
-          setExpectedDeliveryDate={setExpectedDeliveryDate}
-          orderStatus={orderStatus}
-          setOrderStatus={setOrderStatus}
-          paymentStatus={paymentStatus}
-          setPaymentStatus={setPaymentStatus}
-        />
-
-        <ProductsList
-          selectedProducts={selectedProducts}
-          products={products}
-          handleProductSelect={handleProductSelectForIndex}
-          handleAddProduct={handleAddProduct}
-          handleQuantityChange={handleQuantityChangeByIndex}
-          handlePriceChange={handlePriceChangeByIndex}
-        />
-
-        <AdditionalCostsSection
-          shippingCost={shippingCost}
-          setShippingCost={setShippingCost}
-          transitCost={transitCost}
-          setTransitCost={setTransitCost}
-          logisticsCost={logisticsCost}
-          setLogisticsCost={setLogisticsCost}
-          discount={discount}
-          setDiscount={setDiscount}
-          taxRate={taxRate}
-          setTaxRate={setTaxRate}
-        />
-
-        <OrderSummarySection 
-          subtotal={calculateSubtotal()}
-          tax={calculateTax()}
-          total={calculateTotal()}
-        />
-      </Card>
-    </div>
+    <DashboardLayout>
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchase Order Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label>Order Number</Label>
+                <Input value={orderNumber} readOnly />
+              </div>
+              <div>
+                <Label>Supplier</Label>
+                <Input value={supplierName} readOnly />
+              </div>
+              <div>
+                <Label>Total Amount</Label>
+                <Input value={formatPrice(totalAmount)} readOnly />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Input value={status} readOnly />
+              </div>
+              <div>
+                <Label>Payment Status</Label>
+                <Input value={paymentStatus} readOnly />
+              </div>
+              <div>
+                <Label>Expected Delivery Date</Label>
+                <Input value={expectedDeliveryDate} readOnly />
+              </div>
+              <div>
+                <Label>Discount</Label>
+                <Input value={discount} readOnly />
+              </div>
+              <div>
+                <Label>Shipping Cost</Label>
+                <Input value={shippingCost} readOnly />
+              </div>
+              <div>
+                <Label>Transit Cost</Label>
+                <Input value={transitCost} readOnly />
+              </div>
+              <div>
+                <Label>Logistics Cost</Label>
+                <Input value={logisticsCost} readOnly />
+              </div>
+              <div>
+                <Label>Tax Rate</Label>
+                <Input value={taxRate} readOnly />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
-};
-
-export default Purchase;
+}

@@ -13,24 +13,24 @@ export interface PurchaseInvoice {
   payment_status: string;
   due_date: string;
   paid_amount: number;
+  remaining_amount: number;
   discount: number;
   notes: string;
   shipping_cost: number;
-  remaining_amount: number;
   
   // Nested objects for relations
   supplier?: {
-    id: string;
+    id?: string;
     name: string;
     phone?: string;
     email?: string;
   };
   purchase_order?: {
-    id: string;
-    order_number: string;
+    id?: string;
+    order_number?: string;
   };
   delivery_note?: {
-    id: string;
-    delivery_number: string;
+    id?: string;
+    delivery_number?: string;
   };
 }

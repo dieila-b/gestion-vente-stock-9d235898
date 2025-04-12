@@ -1,128 +1,116 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/types/client_unified";
+import { useSearchParams } from "react-router-dom";
 import { CartItem } from "@/types/CartState";
-import { isSelectQueryError } from "@/utils/type-utils";
+import { Client } from "@/types/client_unified";
 
-export default function useEditOrder(
-  setSelectedClientFn?: React.Dispatch<React.SetStateAction<Client | null>>,
-  setCartFn?: React.Dispatch<React.SetStateAction<CartItem[]>>
-) {
-  const { orderId } = useParams<{ orderId: string }>();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+export default function useEditOrder() {
+  const [searchParams] = useSearchParams();
+  const editOrderId = searchParams.get('editOrder');
+  
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: orderData, isLoading: isOrderLoading } = useQuery({
-    queryKey: ['order', orderId],
+  const { data: orderData } = useQuery({
+    queryKey: ['edit-order', editOrderId],
     queryFn: async () => {
-      if (!orderId) return null;
+      if (!editOrderId) return null;
+      
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('orders')
+        // Fetch the order with its items and client
+        const { data: order, error: orderError } = await supabase
+          .from('preorders')
           .select(`
             *,
             client:clients(*),
-            items:order_items(
-              id,
-              product_id,
-              quantity,
-              price,
+            items:preorder_items(
+              id, 
+              product_id, 
+              quantity, 
+              unit_price, 
               discount,
-              total,
+              total_price,
               product:catalog(*)
             )
           `)
-          .eq('id', orderId)
+          .eq('id', editOrderId)
           .single();
-
-        if (error) throw error;
-        return data;
-      } catch (error: any) {
-        console.error('Error fetching order:', error);
-        setError(error.message || 'Error fetching order');
+        
+        if (orderError) throw orderError;
+        return order;
+      } catch (error) {
+        console.error("Error fetching order for edit:", error);
         return null;
+      } finally {
+        setIsLoading(false);
       }
     },
-    enabled: !!orderId,
+    enabled: !!editOrderId
   });
 
   useEffect(() => {
-    if (!isOrderLoading && orderData) {
-      if (orderData.client && !isSelectQueryError(orderData.client)) {
-        const clientData = orderData.client;
-        // Create client data with safe defaults for potential missing properties
-        const client: Client = {
-          id: clientData.id || '',
-          company_name: clientData.company_name || '',
-          contact_name: clientData.contact_name || '',
-          email: clientData.email || '',
-          phone: clientData.phone || '',
-          mobile_1: clientData.mobile_1 || '',   // Handle potential undefined properties
-          mobile_2: clientData.mobile_2 || '',   // Handle potential undefined properties
-          whatsapp: clientData.whatsapp || '',   // Handle potential undefined properties
-          credit_limit: clientData.credit_limit || 0, // Handle potential undefined properties
-          rc_number: clientData.rc_number || '', // Handle potential undefined properties
-          cc_number: clientData.cc_number || '', // Handle potential undefined properties
-          status: clientData.status || 'active', // Handle potential undefined properties
-          address: clientData.address || '',
-          city: clientData.city || '',
-          state: clientData.state || '',
-          country: clientData.country || '',
-          postal_code: clientData.postal_code || '',
-          balance: clientData.balance || 0,
-          client_type: clientData.client_type || '',
-          client_code: clientData.client_code || '',
-          notes: clientData.notes || '',
-          created_at: clientData.created_at || new Date().toISOString(),
-          updated_at: clientData.updated_at || new Date().toISOString()
+    if (orderData) {
+      // Set the client
+      if (orderData.client) {
+        // Create a client that matches the expected Client type, handling potentially missing properties
+        const clientData = {
+          id: orderData.client.id,
+          company_name: orderData.client.company_name || '',
+          contact_name: orderData.client.contact_name || '',
+          email: orderData.client.email || '',
+          phone: orderData.client.phone || '',
+          address: orderData.client.address || '',
+          city: orderData.client.city || '',
+          postal_code: orderData.client.postal_code || '',
+          country: orderData.client.country || '',
+          balance: orderData.client.balance || 0,
+          client_code: orderData.client.client_code || '',
+          client_type: orderData.client.client_type || '',
+          notes: orderData.client.notes || '',
+          created_at: orderData.client.created_at,
+          updated_at: orderData.client.updated_at,
+          // Set optional fields only if they exist
+          ...(orderData.client.mobile_1 !== undefined && { mobile_1: orderData.client.mobile_1 }),
+          ...(orderData.client.mobile_2 !== undefined && { mobile_2: orderData.client.mobile_2 }),
+          ...(orderData.client.whatsapp !== undefined && { whatsapp: orderData.client.whatsapp }),
+          ...(orderData.client.credit_limit !== undefined && { credit_limit: orderData.client.credit_limit }),
+          ...(orderData.client.rc_number !== undefined && { rc_number: orderData.client.rc_number }),
+          ...(orderData.client.cc_number !== undefined && { cc_number: orderData.client.cc_number }),
+          ...(orderData.client.status !== undefined && { status: orderData.client.status })
         };
-        setSelectedClient(client);
-        if (setSelectedClientFn) {
-          setSelectedClientFn(client);
-        }
+        
+        setSelectedClient(clientData as Client);
       }
-
+      
+      // Set the cart items
       if (orderData.items && Array.isArray(orderData.items)) {
-        const cartItems: CartItem[] = orderData.items.map((item: any) => ({
-          id: item.product_id,
+        const cartItems = orderData.items.map(item => ({
+          id: item.id,
           product_id: item.product_id,
-          name: item.product?.name || 'Unknown Product',
-          price: item.price,
-          quantity: item.quantity,
+          name: item.product?.name || `Unknown Product #${item.product_id}`,
+          price: item.unit_price || 0,
+          quantity: item.quantity || 1,
           discount: item.discount || 0,
-          stock: item.product?.stock || 0,
           category: item.product?.category || '',
-          image_url: item.product?.image_url || '',
-          reference: item.product?.reference || '',
-          created_at: item.product?.created_at || '',
-          updated_at: item.product?.updated_at || '',
-          subtotal: item.price * item.quantity
+          subtotal: (item.unit_price * item.quantity) - (item.discount || 0),
+          stock: item.product?.stock,
+          image_url: item.product?.image_url,
+          reference: item.product?.reference,
         }));
+        
         setCart(cartItems);
-        if (setCartFn) {
-          setCartFn(cartItems);
-        }
       }
-
-      setIsLoading(false);
     }
-  }, [isOrderLoading, orderData, setSelectedClientFn, setCartFn]);
+  }, [orderData]);
 
   return {
-    orderId,
-    isLoading: isLoading || isOrderLoading,
+    editOrderId,
     selectedClient,
-    setSelectedClient,
     cart,
-    setCart,
-    error,
-    orderData,
-    navigate,
+    isLoading
   };
 }

@@ -55,8 +55,7 @@ export function PreorderCart({
     calculateTotals();
   }, [items]);
 
-  // Removed stock-related checks since they are not needed for PreorderCart
-  // and were causing type errors
+  // Remove stock-related checks that were causing type errors
   const hasOutOfStockItems = false;
   const hasLowStockItems = false;
 
@@ -80,6 +79,12 @@ export function PreorderCart({
     if (onSubmit) {
       onSubmit();
     }
+  };
+
+  // Fix string to number conversion in parseFloat
+  const handleDiscountChange = (id: string, value: string) => {
+    const discount = parseFloat(value) || 0; // Convert string to number safely
+    onUpdateDiscount(id, discount);
   };
 
   return (

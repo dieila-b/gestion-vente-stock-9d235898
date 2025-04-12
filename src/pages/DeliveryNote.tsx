@@ -26,11 +26,16 @@ export default function DeliveryNotePage() {
 
   // Use handleDelete and handleApprove functions
   const handleDelete = (id: string) => {
-    return deleteDeliveryNote.mutateAsync(id);
+    return deleteDeliveryNote.mutateAsync(id)
+      .then(() => true) // Make sure it returns a boolean to match the expected type
+      .catch((error) => {
+        console.error("Error deleting delivery note:", error);
+        return false;
+      });
   };
 
-  // Implementation of handleApprove function
-  const handleApprove = async (id: string, warehouseId: string, items: Array<{ id: string; quantity_received: number; }>) => {
+  // Implementation of handleApprove function that only takes id parameter
+  const handleApprove = async (id: string) => {
     try {
       const { error } = await updateDeliveryNote.mutateAsync({
         id,
@@ -73,8 +78,8 @@ export default function DeliveryNotePage() {
     // Safe access to nested properties
     const matchesSearch = searchTerm === "" || 
       note.delivery_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.purchase_order.order_number.toLowerCase().includes(searchTerm.toLowerCase());
+      (note.supplier && note.supplier.name && note.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (note.purchase_order && note.purchase_order.order_number && note.purchase_order.order_number.toLowerCase().includes(searchTerm.toLowerCase()));
     
     return matchesStatus && matchesSearch;
   }) as DeliveryNote[];

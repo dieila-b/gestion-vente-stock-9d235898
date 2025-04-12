@@ -8,6 +8,7 @@ export interface DeliveryNote {
   status: string;  // Added this field
   supplier_id?: string;
   purchase_order_id?: string;
+  error?: boolean; // Add error property which is shown in error messages
   
   // Adding these properties to match the implementation
   supplier?: {

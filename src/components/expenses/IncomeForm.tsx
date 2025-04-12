@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Category } from "@/types/Category";
+import { Category } from "@/types/category"; // Fixed casing to lowercase
 import { Income } from "@/types/outcome";
 
 interface IncomeFormProps {
