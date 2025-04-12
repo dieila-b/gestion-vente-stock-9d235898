@@ -31,8 +31,8 @@ export function useYearlyReportData() {
     }
   });
 
-  // Fetch sales data
-  const fetchSalesData = async () => {
+  // Define the fetch function outside useQuery to help with type inference
+  const fetchSalesData = async (): Promise<SalesData[]> => {
     const startDate = startOfYear(new Date(parseInt(selectedYear)));
     const endDate = endOfYear(startDate);
 
@@ -72,10 +72,11 @@ export function useYearlyReportData() {
       }
     });
 
-    return monthlyData as SalesData[];
+    return monthlyData;
   };
 
-  const { data: salesData = [], isLoading } = useQuery({
+  // Use the explicit return type on salesData
+  const { data: salesData = [], isLoading } = useQuery<SalesData[], Error>({
     queryKey: ['yearly-sales', selectedYear, selectedType, selectedPOS],
     queryFn: fetchSalesData
   });
