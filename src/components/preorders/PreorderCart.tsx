@@ -1,111 +1,148 @@
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
-import { CartItem } from "@/types/CartState";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { formatGNF } from "@/lib/currency";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { CartItem } from '@/types/pos';
+import { formatGNF } from '@/lib/currency';
+import { Client } from '@/types/client';
 
-interface PreorderCartProps {
+export interface PreorderCartProps {
   items: CartItem[];
   onRemoveItem: (id: string) => void;
-  onQuantityChange: (id: string, quantity: number) => void;
-  onSubmit: () => void;
+  onUpdateQuantity?: (id: string, quantity: number) => void; // Made optional
+  onSubmit: () => Promise<void>;
   onNotesChange: (notes: string) => void;
   notes: string;
-  isLoading: boolean;
+  client: Client | null;
+  subtotal: number;
+  discount: number;
+  total: number;
+  clearCart: () => void;
 }
 
-export function PreorderCart({
+export const PreorderCart: React.FC<PreorderCartProps> = ({
   items,
   onRemoveItem,
-  onQuantityChange,
+  onUpdateQuantity,
   onSubmit,
   onNotesChange,
   notes,
-  isLoading
-}: PreorderCartProps) {
-  const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-
+  client,
+  subtotal,
+  discount,
+  total,
+  clearCart,
+}) => {
   return (
-    <Card className="rounded-lg shadow-md">
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <ShoppingCart className="h-5 w-5" />
-          Précommande ({items.length})
-        </div>
-      </div>
-
-      <div className="p-4">
-        <ScrollArea className="h-[250px] mb-4">
-          <div className="space-y-3">
-            {items.length === 0 ? (
-              <div className="text-center text-muted-foreground p-4">
-                Aucun produit dans le panier
-              </div>
-            ) : (
-              items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center border-b pb-2">
+    <Card className="border-none shadow-none">
+      <CardHeader className="px-0">
+        <CardTitle>Précommande</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {items.length === 0 ? (
+          <div className="text-center p-6 border border-dashed rounded-lg">
+            <p className="text-muted-foreground">Aucun produit sélectionné</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="max-h-[400px] overflow-auto">
+              {items.map((item) => (
+                <div key={item.id} className="flex justify-between items-center py-2 border-b">
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-muted-foreground">{formatGNF(item.price)}</div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatGNF(item.price)} × {item.quantity}
+                    </p>
                   </div>
-                  
                   <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => onQuantityChange(item.id, Math.max(1, item.quantity - 1))}
-                    >
-                      -
-                    </Button>
-                    <span className="w-8 text-center">{item.quantity}</span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => onQuantityChange(item.id, item.quantity + 1)}
-                    >
-                      +
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => onRemoveItem(item.id)}
-                      className="text-red-500"
-                    >
-                      ×
-                    </Button>
+                    <div className="text-right">
+                      <p className="font-medium">{formatGNF(item.price * item.quantity)}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        disabled={!onUpdateQuantity}
+                      >
+                        -
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, item.quantity + 1)}
+                        disabled={!onUpdateQuantity}
+                      >
+                        +
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => onRemoveItem(item.id)}
+                      >
+                        ×
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Sous-total:</span>
+                <span>{formatGNF(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Remise:</span>
+                  <span>-{formatGNF(discount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold">
+                <span>Total:</span>
+                <span>{formatGNF(total)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium mb-1">
+                Notes
+              </label>
+              <Textarea
+                id="notes"
+                placeholder="Ajouter des notes sur la précommande..."
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                className="resize-none"
+              />
+            </div>
           </div>
-        </ScrollArea>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Notes</label>
-          <Textarea
-            placeholder="Ajouter des notes pour cette précommande..."
-            value={notes}
-            onChange={(e) => onNotesChange(e.target.value)}
-            className="h-24"
-          />
-        </div>
-
-        <div className="flex justify-between font-semibold text-lg mb-4">
-          <span>Total</span>
-          <span>{formatGNF(subtotal)}</span>
-        </div>
-
-        <Button 
+        )}
+      </CardContent>
+      <CardFooter className="flex-col gap-2 p-0 pt-4">
+        <Button
           className="w-full"
+          disabled={items.length === 0 || !client}
           onClick={onSubmit}
-          disabled={items.length === 0 || isLoading}
         >
-          {isLoading ? "Traitement..." : "Enregistrer la précommande"}
+          Créer la précommande
         </Button>
-      </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled={items.length === 0}
+          onClick={clearCart}
+        >
+          Vider
+        </Button>
+      </CardFooter>
     </Card>
   );
-}
+};
+
+export default PreorderCart;
