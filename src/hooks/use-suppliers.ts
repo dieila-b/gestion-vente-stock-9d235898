@@ -1,36 +1,27 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Supplier } from "@/types/supplier";
-import { useCatalogAuth } from "@/hooks/use-catalog-auth";
+import { Supplier } from "@/types/supplier";
+import { db } from "@/utils/db-adapter";
 import { toast } from "sonner";
 
-export const useSuppliers = () => {
-  const { isAuthenticated } = useCatalogAuth();
-
+export function useSuppliers() {
   const { data: suppliers, isLoading, error } = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('suppliers')
-          .select('*')
-          .order('name');
+        // Use our safe db-adapter
+        const data = await db.query<Supplier[]>('suppliers', 
+          query => query.select('*').order('name', { ascending: true })
+        );
         
-        if (error) {
-          toast.error("Erreur lors du chargement des fournisseurs");
-          throw error;
-        }
-        return data as Supplier[];
+        return data;
       } catch (error) {
         console.error("Error fetching suppliers:", error);
-        throw error;
+        toast.error("Erreur lors du chargement des fournisseurs");
+        return [] as Supplier[];
       }
-    },
-    // Ne pas dépendre de isAuthenticated pour exécuter la requête
-    // car nous simulons l'authentification pour l'instant
-    enabled: true
+    }
   });
 
   return { suppliers, isLoading, error };
-};
+}

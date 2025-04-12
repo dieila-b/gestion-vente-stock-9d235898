@@ -1,8 +1,8 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { CatalogProduct } from "@/types/catalog";
-import { supabase } from "@/integrations/supabase/client";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import { QuoteHeader } from "./form/QuoteHeader";
 import { QuoteProducts } from "./form/QuoteProducts";
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatGNF } from '@/lib/currency';
+import { db } from "@/utils/db-adapter";
 
 interface QuoteFormData {
   quoteNumber: string;
@@ -98,19 +99,19 @@ export function QuoteForm({ formData, setFormData, onClose }: QuoteFormProps) {
     
     try {
       const amount = calculateTotal();
-      const { error } = await supabase
-        .from('quotes')
-        .insert({
-          quote_number: formData.quoteNumber,
-          client_name: formData.clientName,
-          client_email: formData.clientEmail,
-          validity_date: new Date(formData.validityDate).toISOString(),
-          description: formData.notes,
-          amount: amount,
-          status: 'draft'
-        });
+      
+      // Using our DatabaseAdapter instead of direct Supabase calls
+      const result = await db.insert('quotes', {
+        quote_number: formData.quoteNumber,
+        client_name: formData.clientName,
+        client_email: formData.clientEmail,
+        validity_date: new Date(formData.validityDate).toISOString(),
+        description: formData.notes,
+        amount: amount,
+        status: 'draft'
+      });
 
-      if (error) throw error;
+      if (!result) throw new Error("Failed to create quote");
 
       toast.success("Devis créé avec succès !");
       onClose();

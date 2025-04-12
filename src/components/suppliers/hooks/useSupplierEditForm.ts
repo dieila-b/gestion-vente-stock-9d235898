@@ -2,11 +2,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { supplierFormSchema, SupplierFormValues } from "../forms/SupplierFormSchema";
 import { Supplier } from "@/types/supplier";
 import { useEffect } from "react";
+import { db } from "@/utils/db-adapter";
 
 interface UseSupplierEditFormProps {
   onSuccess: () => void;
@@ -56,30 +56,25 @@ export const useSupplierEditForm = ({ onSuccess, supplier }: UseSupplierEditForm
   const updateSupplierMutation = useMutation({
     mutationFn: async (values: SupplierFormValues) => {
       // Only update fields that exist in the database
-      const { data, error } = await supabase
-        .from('suppliers')
-        .update({
-          name: values.name,
-          contact: values.contact,
-          email: values.email,
-          phone: values.phone,
-          address: values.address,
-          website: values.website,
-          status: values.status,
-          country: values.country,
-          city: values.city,
-          postal_box: values.postal_box,
-          landline: values.landline,
-        })
-        .eq('id', supplier.id)
-        .select()
-        .single();
+      const result = await db.update('suppliers', {
+        name: values.name,
+        contact: values.contact,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        website: values.website,
+        status: values.status,
+        country: values.country,
+        city: values.city,
+        postal_box: values.postal_box,
+        landline: values.landline,
+      }, 'id', supplier.id);
 
-      if (error) {
-        console.error("Erreur lors de la modification du fournisseur:", error);
-        throw error;
+      if (!result) {
+        throw new Error("Failed to update supplier");
       }
-      return data;
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
