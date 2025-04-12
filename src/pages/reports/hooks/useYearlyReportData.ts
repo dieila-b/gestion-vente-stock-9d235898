@@ -26,28 +26,28 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Build the query before executing it
-    let query = supabase
+    // Start with a basic query that we'll manually build
+    let queryBuilder = supabase
       .from('orders')
       .select('created_at, final_total')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString());
-      
-    // Add the filter condition based on selectedPOS
+    
+    // Add filter condition if needed
     if (selectedPOS !== "all") {
-      query = query.eq('depot', selectedPOS);
+      queryBuilder = queryBuilder.eq('depot', selectedPOS);
     }
     
-    // Add ordering and then execute the query
-    const { data, error } = await query.order('created_at');
+    // Execute the query with ordering
+    const { data, error } = await queryBuilder.order('created_at');
     
     if (error) throw error;
     
-    // Use a type guard to ensure we have data before proceeding
-    if (!data) return [];
+    // Safely handle the response data
+    if (!data || !Array.isArray(data)) return [];
     
-    // Use type assertion carefully after validating data structure
-    const orderData = data as unknown as OrderData[];
+    // Type assertion after we've validated the data is an array
+    const orderData = data as OrderData[];
     
     // Generate all months of the year
     const months = eachMonthOfInterval({
