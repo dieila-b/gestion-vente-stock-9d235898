@@ -1,63 +1,114 @@
-import React from 'react';
+
+import { useState } from "react";
 import { ClientSelect } from "@/components/pos/ClientSelect";
-import { ProductSelector } from "@/components/pos/ProductSelector";
-import { PreorderCart } from "@/components/sales/PreorderCart";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CartItem, Product } from "@/types/pos";
 import { Client } from "@/types/client";
+import { PreorderInvoiceView } from "./PreorderInvoiceView";
+import { ProductSelector } from "../pos/ProductSelector";
 
 interface PreorderContentProps {
-  selectedClient: Client | null;
-  onSelectClient: (client: Client) => void;
-  cart: any[];
-  onUpdateQuantity: (id: string, change: number) => void;
-  onRemove: (id: string) => void;
-  onUpdateDiscount: (id: string, discount: number) => void;
-  onCheckout: () => void;
+  cart: CartItem[];
+  client: Client | null;
+  onClientSelect: (client: Client) => void;
+  onAddToCart: (product: Product) => void;
+  onRemoveItem: (id: string) => void;
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  onRequestPayment: () => void;
   isLoading: boolean;
-  clearCart: () => void;
-  onSetQuantity: (id: string, quantity: number) => void;
-  onAddToCart: (product: any, quantity?: number) => void;
+  isInvoiceOpen: boolean;
+  setIsInvoiceOpen: (open: boolean) => void;
+  calculateTotal: () => number;
+  calculateSubtotal: () => number;
+  calculateTotalDiscount: () => number;
+  onUpdateDiscount: (id: string, discount: number) => void;
+  notes: string;
+  onUpdateNotes: (notes: string) => void;
 }
 
-export const PreorderContent = ({ 
-  selectedClient, 
-  onSelectClient,
+export function PreorderContent({
   cart,
+  client,
+  onClientSelect,
+  onAddToCart,
+  onRemoveItem,
   onUpdateQuantity,
-  onRemove,
-  onUpdateDiscount,
-  onCheckout,
+  onRequestPayment,
   isLoading,
-  clearCart,
-  onSetQuantity,
-  onAddToCart
-}: PreorderContentProps) => {
+  isInvoiceOpen,
+  setIsInvoiceOpen,
+  calculateTotal,
+  calculateSubtotal,
+  calculateTotalDiscount,
+  onUpdateDiscount,
+  notes,
+  onUpdateNotes
+}: PreorderContentProps) {
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="space-y-8">
-        <ClientSelect 
-          value={selectedClient} 
-          onChange={onSelectClient}
-        />
-        <ProductSelector 
-          onProductSelect={onAddToCart}
-          onAddToCart={onAddToCart}
-          showOutOfStock
-        />
+    <div className="container py-6 max-w-5xl">
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Client Selection */}
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Client</h2>
+          <ClientSelect
+            selectedClient={client}
+            onClientSelect={onClientSelect}
+          />
+        </Card>
+
+        {/* Product Selection */}
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Produits</h2>
+          {showProductSelector ? (
+            <div className="space-y-4">
+              <ProductSelector 
+                onProductSelect={(product) => {
+                  onAddToCart(product);
+                  setShowProductSelector(false);
+                }}
+                showOutOfStock={true}
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => setShowProductSelector(false)}
+                className="w-full"
+              >
+                Annuler
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              onClick={() => setShowProductSelector(true)}
+              className="w-full"
+            >
+              Ajouter des produits
+            </Button>
+          )}
+        </Card>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <PreorderCart 
-          items={cart}
+      {/* Cart/Invoice View */}
+      <div className="mt-6">
+        <PreorderInvoiceView
+          cart={cart}
+          client={client}
+          onRemoveItem={onRemoveItem}
           onUpdateQuantity={onUpdateQuantity}
-          onRemove={onRemove}
-          onUpdateDiscount={onUpdateDiscount}
-          onCheckout={onCheckout}
+          onRequestPayment={onRequestPayment}
           isLoading={isLoading}
-          selectedClient={selectedClient}
-          clearCart={clearCart}
-          onSetQuantity={onSetQuantity}
+          isInvoiceOpen={isInvoiceOpen}
+          setIsInvoiceOpen={setIsInvoiceOpen}
+          calculateTotal={calculateTotal}
+          calculateSubtotal={calculateSubtotal}
+          calculateTotalDiscount={calculateTotalDiscount}
+          onUpdateDiscount={onUpdateDiscount}
+          notes={notes}
+          onUpdateNotes={onUpdateNotes}
         />
       </div>
     </div>
   );
-};
+}

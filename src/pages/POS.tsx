@@ -5,7 +5,7 @@ import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
-import { useEditOrder } from "@/hooks/use-edit-order";
+import useEditOrder from "@/hooks/use-edit-order"; // Changed from named import to default import
 import { Product } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
@@ -112,7 +112,7 @@ export default function POS() {
               )}
               <ClientSelect
                 selectedClient={selectedClient}
-                onSelectClient={setSelectedClient}
+                onClientSelect={setSelectedClient}
               />
             </div>
             
