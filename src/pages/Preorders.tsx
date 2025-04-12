@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,10 +62,7 @@ export default function Preorders() {
   }, [editOrderData, setCurrentClient, setCart]);
 
   useEffect(() => {
-    // Fetch products from your data source here
-    // For example:
     const fetchProducts = async () => {
-      // Replace this with your actual data fetching logic
       const mockProducts: Product[] = [
         {
           id: "1",
@@ -131,17 +127,15 @@ export default function Preorders() {
     setIsLoading
   );
 
-  // Replace the cart and state setting functions with updated versions that correctly handle type conversion
   const handleSetCart = (newCart: POSCartItem[]) => {
-    // Make sure each item has a discount property
     const fixedCart = newCart.map(item => ({
       ...item,
-      discount: item.discount || 0
+      discount: item.discount || 0,
+      category: item.category || "Uncategorized"
     }));
     setCart(fixedCart);
   };
 
-  // Create adapter for updateDiscount to match expected function signature
   const adaptedUpdateDiscount = (id: string, discount: number) => {
     updateDiscount(id, discount);
   };
@@ -162,7 +156,6 @@ export default function Preorders() {
               <Select
                 value={currentClient?.id}
                 onValueChange={(value) => {
-                  // Safely handle client selection
                   if (editOrderData?.selectedClient) {
                     setCurrentClient(editOrderData.selectedClient as any);
                   }

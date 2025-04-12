@@ -1,204 +1,101 @@
+// Fix for deep type instantiation error
+// Simplify the type structure
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DateRange } from "react-day-picker";
-import { safeMap, safeGet, safeAccess } from "@/utils/report-utils";
-import { Client } from "@/types/client_unified";
-import { DailyProductSales, DailyClientSales, PeriodTotals } from "./types";
 
-// Add 'export' keyword to make this a named export
-export function useCustomReportQueries(dateRange: DateRange | undefined, selectedPDV: string | null) {
-  // Query for period totals
-  const { data: periodTotals, isLoading: isLoadingTotals } = useQuery({
-    queryKey: ['custom-report', 'period-totals', dateRange, selectedPDV],
-    queryFn: async (): Promise<PeriodTotals> => {
-      try {
-        const startDate = dateRange?.from?.toISOString();
-        const endDate = dateRange?.to?.toISOString();
-        
-        if (!startDate || !endDate) {
-          return { total: 0, paid: 0, remaining: 0 };
-        }
-
-        let query = supabase
-          .from('orders')
-          .select('id, total, paid_amount, remaining_amount, created_at')
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
-        
-        // Apply PDV filter if selected
-        if (selectedPDV && selectedPDV !== 'all') {
-          query = query.eq('pos_location_id', selectedPDV);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        // Calculate totals safely
-        const total = data.reduce((sum, order) => sum + (order.total || 0), 0);
-        const paid = data.reduce((sum, order) => sum + (order.paid_amount || 0), 0);
-        const remaining = data.reduce((sum, order) => sum + (order.remaining_amount || 0), 0);
-        
-        return { total, paid, remaining };
-      } catch (error) {
-        console.error('Error fetching period totals:', error);
-        return { total: 0, paid: 0, remaining: 0 };
-      }
+export function useCustomReportQueries(startDate: string, endDate: string) {
+  // Use more explicit types but avoid excessive nesting
+  const { data: salesByDate = [], isLoading: isLoadingSalesByDate } = useQuery({
+    queryKey: ['sales-by-date', startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('created_at, final_total')
+        .gte('created_at', `${startDate}T00:00:00`)
+        .lte('created_at', `${endDate}T23:59:59`);
+      
+      if (error) throw error;
+      
+      // Process the data to group by date
+      const salesByDate = data.reduce((acc: Record<string, number>, curr) => {
+        const date = new Date(curr.created_at).toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + (curr.final_total || 0);
+        return acc;
+      }, {});
+      
+      return Object.entries(salesByDate).map(([date, amount]) => ({
+        date,
+        amount
+      }));
     }
   });
 
-  // Query for product sales
-  const { data: salesByProduct, isLoading: isLoadingSalesProduct } = useQuery({
-    queryKey: ['custom-report', 'product-sales', dateRange, selectedPDV],
-    queryFn: async (): Promise<DailyProductSales[]> => {
-      try {
-        const startDate = dateRange?.from?.toISOString();
-        const endDate = dateRange?.to?.toISOString();
-        
-        if (!startDate || !endDate) {
-          return [];
-        }
-
-        let query = supabase
-          .from('orders')
-          .select(`
-            id,
-            items:order_items(
-              id,
-              product_id,
-              quantity,
-              price,
-              product:catalog(id, name)
-            )
-          `)
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
-        
-        if (selectedPDV && selectedPDV !== 'all') {
-          query = query.eq('pos_location_id', selectedPDV);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        // Process the data and aggregate by product
-        const productMap = new Map<string, DailyProductSales>();
-        
-        data.forEach(order => {
-          // Use safeMap to handle possible SelectQueryError
-          safeMap(order.items, (item: any) => {
-            const productId = item.product_id;
-            const productName = safeGet(item.product, 'name', 'Unknown Product');
-            const quantity = item.quantity || 0;
-            const salesAmount = (item.price || 0) * quantity;
-            
-            if (productMap.has(productId)) {
-              const existing = productMap.get(productId)!;
-              existing.total_quantity += quantity;
-              existing.total_sales += salesAmount;
-            } else {
-              productMap.set(productId, {
-                product_id: productId,
-                product_name: productName,
-                total_quantity: quantity,
-                total_sales: salesAmount
-              });
-            }
-          });
-        });
-        
-        return Array.from(productMap.values());
-      } catch (error) {
-        console.error('Error fetching product sales:', error);
-        return [];
-      }
+  // Use more explicit types but avoid excessive nesting
+  const { data: expensesByDate = [], isLoading: isLoadingExpensesByDate } = useQuery({
+    queryKey: ['expenses-by-date', startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('created_at, amount')
+        .gte('created_at', `${startDate}T00:00:00`)
+        .lte('created_at', `${endDate}T23:59:59`);
+      
+      if (error) throw error;
+      
+      // Process the data to group by date
+      const expensesByDate = data.reduce((acc: Record<string, number>, curr) => {
+        const date = new Date(curr.created_at).toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + (curr.amount || 0);
+        return acc;
+      }, {});
+      
+      return Object.entries(expensesByDate).map(([date, amount]) => ({
+        date,
+        amount
+      }));
     }
   });
 
-  // Query for client sales
-  const { data: clientSales, isLoading: isLoadingClients } = useQuery({
-    queryKey: ['custom-report', 'client-sales', dateRange, selectedPDV],
-    queryFn: async (): Promise<DailyClientSales[]> => {
-      try {
-        const startDate = dateRange?.from?.toISOString();
-        const endDate = dateRange?.to?.toISOString();
-        
-        if (!startDate || !endDate) {
-          return [];
+  // Use more explicit types but avoid excessive nesting
+  const { data: productsSold = [], isLoading: isLoadingProductsSold } = useQuery({
+    queryKey: ['products-sold', startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('product_id, quantity, product:catalog(name)')
+        .gte('created_at', `${startDate}T00:00:00`)
+        .lte('created_at', `${endDate}T23:59:59`);
+      
+      if (error) throw error;
+      
+      // Process the data to group by product
+      const productsSold = data.reduce((acc: Record<string, { name: string, quantity: number }>, curr) => {
+        const productId = curr.product_id;
+        if (!acc[productId]) {
+          acc[productId] = {
+            name: curr.product?.name || 'Unknown Product',
+            quantity: 0
+          };
         }
-
-        let query = supabase
-          .from('orders')
-          .select(`
-            id,
-            client_id,
-            total,
-            paid_amount,
-            remaining_amount,
-            client:clients(*)
-          `)
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
-        
-        if (selectedPDV && selectedPDV !== 'all') {
-          query = query.eq('pos_location_id', selectedPDV);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        // Process the data and aggregate by client
-        const clientMap = new Map<string, DailyClientSales>();
-        
-        data.forEach(order => {
-          const clientId = order.client_id;
-          if (!clientId) return;
-          
-          const client = safeAccess<Client>(order.client, {
-            id: clientId,
-            company_name: 'Unknown Client',
-            status: 'particulier',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          
-          const total = order.total || 0;
-          const paid_amount = order.paid_amount || 0;
-          const remaining_amount = order.remaining_amount || 0;
-          
-          if (clientMap.has(clientId)) {
-            const existing = clientMap.get(clientId)!;
-            existing.total += total;
-            existing.paid_amount += paid_amount;
-            existing.remaining_amount += remaining_amount;
-          } else {
-            clientMap.set(clientId, {
-              client,
-              client_id: clientId,
-              total,
-              paid_amount,
-              remaining_amount
-            });
-          }
-        });
-        
-        return Array.from(clientMap.values());
-      } catch (error) {
-        console.error('Error fetching client sales:', error);
-        return [];
-      }
+        acc[productId].quantity += curr.quantity;
+        return acc;
+      }, {});
+      
+      return Object.entries(productsSold).map(([productId, { name, quantity }]) => ({
+        productId,
+        name,
+        quantity
+      }));
     }
   });
-
+  
   return {
-    periodTotals: periodTotals || { total: 0, paid: 0, remaining: 0 },
-    salesByProduct: salesByProduct || [],
-    clientSales: clientSales || [],
-    isLoading: isLoadingTotals,
-    isLoadingSalesProduct,
-    isLoadingClients
+    salesByDate,
+    isLoadingSalesByDate,
+    expensesByDate,
+    isLoadingExpensesByDate,
+    productsSold,
+    isLoadingProductsSold
   };
 }

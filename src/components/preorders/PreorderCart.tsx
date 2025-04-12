@@ -1,4 +1,3 @@
-
 // Using the same implementation as pos/PreorderCart.tsx to maintain consistency
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,6 @@ export function PreorderCart({
     calculateTotals();
   }, [items]);
 
-  // Remove stock-related checks that were causing type errors
   const hasOutOfStockItems = false;
   const hasLowStockItems = false;
 
@@ -82,9 +80,7 @@ export function PreorderCart({
     }
   };
 
-  // Fix string to number conversion
   const handleDiscountChange = (id: string, value: number) => {
-    // Ensure we're passing a number to onUpdateDiscount
     onUpdateDiscount(id, Number(value));
   };
 
@@ -121,7 +117,8 @@ export function PreorderCart({
                   key={item.id}
                   item={{
                     ...item,
-                    discount: item.discount || 0  // Ensure discount is always provided
+                    discount: item.discount || 0,
+                    category: item.category || "Uncategorized"
                   }}
                   onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
                   onRemove={() => onRemove(item.id)}

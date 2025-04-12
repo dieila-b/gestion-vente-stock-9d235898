@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { db } from "./db-adapter";
@@ -85,16 +84,14 @@ export function safeSupplier(supplier: any): Supplier {
       id: '',
       name: 'Erreur de chargement',
       phone: '',
-      email: '',
-      created_at: new Date().toISOString()
+      email: ''
     };
   }
   return supplier || { 
     id: '', 
     name: 'Fournisseur inconnu', 
     phone: '', 
-    email: '',
-    created_at: new Date().toISOString()
+    email: '' 
   };
 }
 
@@ -192,21 +189,15 @@ export function safeBankAccount(account: any): BankAccount {
     return {
       id: '',
       name: 'Compte inconnu',
-      bank_name: '',
-      account_type: 'checking',
-      current_balance: 0,
-      initial_balance: 0,
-      created_at: new Date().toISOString()
+      account_number: '',
+      current_balance: 0
     };
   }
   return account || { 
     id: '', 
     name: 'Compte inconnu', 
-    bank_name: '', 
-    account_type: 'checking', 
-    current_balance: 0, 
-    initial_balance: 0,
-    created_at: new Date().toISOString()
+    account_number: '', 
+    current_balance: 0
   };
 }
 
@@ -220,12 +211,8 @@ export function safeDeliveryNote(deliveryNote: any): DeliveryNote {
       delivery_number: 'BL-0000',
       status: 'pending',
       created_at: new Date().toISOString(),
-      supplier: safeSupplier(null),
-      purchase_order: {
-        order_number: '',
-        total_amount: 0
-      },
-      items: []
+      updated_at: new Date().toISOString(),
+      notes: ''
     };
   }
   return deliveryNote || {
@@ -233,12 +220,8 @@ export function safeDeliveryNote(deliveryNote: any): DeliveryNote {
     delivery_number: 'BL-0000',
     status: 'pending',
     created_at: new Date().toISOString(),
-    supplier: safeSupplier(null),
-    purchase_order: {
-      order_number: '',
-      total_amount: 0
-    },
-    items: []
+    updated_at: new Date().toISOString(),
+    notes: ''
   };
 }
 

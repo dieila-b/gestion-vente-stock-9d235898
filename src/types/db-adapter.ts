@@ -24,13 +24,33 @@ export interface DeliveryNote {
   updated_at: string;
   notes: string;
   status: string;
+  supplier_id?: string;
+  purchase_order_id?: string;
+  
+  // Relations - these are optional to handle errors
+  supplier?: {
+    name: string;
+    phone?: string;
+    email?: string;
+    error?: boolean;
+  };
+  purchase_order?: {
+    order_number: string;
+    total_amount: number;
+    error?: boolean;
+  };
+  items?: any[];
 }
 
 export interface BankAccount {
   id: string;
   name: string;
+  bank_name?: string;
   account_number: string;
   current_balance: number;
+  initial_balance?: number;
+  account_type?: string;
+  created_at?: string;
 }
 
 export interface Supplier {
@@ -38,4 +58,5 @@ export interface Supplier {
   name: string;
   phone?: string;
   email?: string;
+  created_at?: string;
 }

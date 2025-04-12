@@ -27,6 +27,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 type SortField = 'date' | 'order_id' | 'total' | 'paid' | 'remaining' | null;
 type SortDirection = 'asc' | 'desc';
@@ -194,6 +195,13 @@ export default function ClientsReport() {
     setCurrentPage(1);
   };
 
+  const getProductName = (item: any) => {
+    if (!item.product || isSelectQueryError(item.product)) {
+      return "Unknown Product";
+    }
+    return item.product.name || "Unnamed Product";
+  };
+
   if (isLoading && selectedClient) {
     return (
       <div className="p-6">
@@ -327,7 +335,7 @@ export default function ClientsReport() {
                       <div className="space-y-1">
                         {invoice.items.map((item, index) => (
                           <div key={index} className="text-sm text-muted-foreground">
-                            {item.quantity}x {item.products?.name || 'Produit inconnu'} ({formatGNF(item.price)})
+                            {item.quantity}x {getProductName(item)} ({formatGNF(item.price)})
                           </div>
                         ))}
                       </div>

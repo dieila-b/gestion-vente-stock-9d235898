@@ -69,19 +69,22 @@ const useEditOrder = () => {
         }
 
         if (order) {
-          // Check if order has expected properties
-          if (!order || !order.client || !order.items) {
-            console.error("Invalid order data structure", order);
+          // Check for SelectQueryError in client and items
+          const hasClientError = isSelectQueryError(order.client);
+          const hasItemsError = isSelectQueryError(order.items);
+
+          if (hasClientError && hasItemsError) {
+            console.error("Invalid order data structure - both client and items have errors", order);
             toast.error("Erreur de récupération des données de la commande");
             setIsLoading(false);
             return;
           }
 
-          // Format client data
-          const clientData = order.client;
+          // Format client data if available
+          const clientData = hasClientError ? null : order.client;
 
           // Handle client data with optional properties
-          const formattedClient = clientData && !isSelectQueryError(clientData) ? {
+          const formattedClient = clientData ? {
             id: clientData.id || '',
             contact_name: clientData.contact_name || '',
             company_name: clientData.company_name || '',
@@ -98,27 +101,39 @@ const useEditOrder = () => {
 
           setSelectedClient(formattedClient);
 
-          // Format cart items from order items
-          const formattedCart = Array.isArray(order.items) ? 
-            order.items.map((item) => ({
-              id: item.product_id,
-              product_id: item.product_id,
-              name: item.product?.name || 'Unknown Product',
-              quantity: item.quantity,
-              price: item.product?.price || 0,
-              discount: 0, // Default discount
-              category: item.product?.category || 'Uncategorized',
-              reference: item.product?.reference || '',
-              image_url: item.product?.image_url || '',
-            })) : [];
+          // Format cart items from order items if available
+          const formattedCart = hasItemsError ? [] : 
+            Array.isArray(order.items) ? 
+              order.items.map((item) => ({
+                id: item.product_id,
+                product_id: item.product_id,
+                name: item.product?.name || 'Unknown Product',
+                quantity: item.quantity,
+                price: item.product?.price || 0,
+                discount: 0, // Default discount
+                category: item.product?.category || 'Uncategorized',
+                reference: item.product?.reference || '',
+                image_url: item.product?.image_url || '',
+              })) : [];
 
           setCart(formattedCart);
 
-          setOrderData({
-            ...order,
+          // Create a safe order data object
+          const safeOrderData: OrderData = {
+            id: order.id,
+            client_id: order.client_id,
+            total_amount: order.total_amount || 0,
+            paid_amount: order.paid_amount || 0,
+            remaining_amount: order.remaining_amount || 0,
+            status: order.status || 'pending',
+            notes: order.notes || '',
+            created_at: order.created_at,
+            updated_at: order.updated_at,
             client: formattedClient,
             items: formattedCart,
-          });
+          };
+
+          setOrderData(safeOrderData);
         }
       } catch (error: any) {
         console.error("Error fetching order data:", error);
