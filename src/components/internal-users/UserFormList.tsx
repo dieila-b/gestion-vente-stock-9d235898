@@ -49,11 +49,11 @@ export const UserFormList = ({
       
       // Check if bucket exists and create it if necessary
       const { data: buckets } = await supabase.storage.listBuckets();
-      let lovableBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
+      let bucketExists = buckets?.some(bucket => bucket.name === 'lovable-uploads');
       
-      if (!lovableBucket) {
+      if (!bucketExists) {
         console.log("Attempting to create 'lovable-uploads' bucket");
-        const { error: createError, data } = await supabase.storage.createBucket('lovable-uploads', {
+        const { error: createError } = await supabase.storage.createBucket('lovable-uploads', {
           public: true,
           fileSizeLimit: 5242880, // 5MB in bytes
           allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
@@ -65,8 +65,8 @@ export const UserFormList = ({
           return;
         }
         
-        lovableBucket = data;
-        console.log("Bucket created successfully:", lovableBucket);
+        console.log("Bucket created successfully");
+        bucketExists = true;
       }
       
       // Upload the file
