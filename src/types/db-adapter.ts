@@ -134,6 +134,9 @@ export interface DeliveryNote {
 
 export interface ResultOne {
   id: string;
+  delivery_number?: string;
+  notes?: string;
+  items?: any[];
   [key: string]: any;
 }
 

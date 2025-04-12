@@ -1,9 +1,6 @@
-
-import { useState, useEffect } from "react";
-import { ClientSelect } from "@/components/pos/ClientSelect";
-import { ProductSelector } from "@/components/pos/ProductSelector";
-import { PreorderCart } from "@/components/sales/PreorderCart";
-import { Client } from "@/types/client";
+import React, { useState } from "react";
+import { ClientSelect } from "@/components/clients/ClientSelect";
+import { Client } from "@/types/Client";
 import { useCart } from "@/hooks/use-cart";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +11,6 @@ export default function Sales() {
   const { cart, updateQuantity, removeFromCart, updateDiscount, clearCart, addToCart, setQuantity } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Use the preorder status hook to monitor and update preorder statuses
   const { pendingPreorders } = usePreorderStatus();
 
   const handleCheckout = async () => {
@@ -25,7 +21,6 @@ export default function Sales() {
 
     setIsLoading(true);
     try {
-      // Determine if any items in cart have availability issues
       const preorderItems = cart.map(item => {
         let status = 'available';
         if (!item.stock || item.stock === 0) {
@@ -46,7 +41,6 @@ export default function Sales() {
         };
       });
       
-      // Determine overall status based on items
       const allItemsAvailable = preorderItems.every(item => item.status === 'available');
       const preorderStatus = allItemsAvailable ? 'available' : 'pending';
       
@@ -55,7 +49,6 @@ export default function Sales() {
         return acc + (unitPriceAfterDiscount * item.quantity);
       }, 0);
 
-      // Créer la précommande
       const { data: preorder, error } = await supabase
         .from('preorders')
         .insert([{
@@ -70,7 +63,6 @@ export default function Sales() {
 
       if (error) throw error;
 
-      // Créer les articles de la précommande
       const preorderItemsWithId = preorderItems.map(item => ({
         ...item,
         preorder_id: preorder.id
@@ -82,7 +74,6 @@ export default function Sales() {
 
       if (itemsError) throw itemsError;
 
-      // Update stock for available items
       for (const item of cart) {
         if (item.stock && item.stock >= item.quantity) {
           const { error: stockError } = await supabase
@@ -129,7 +120,7 @@ export default function Sales() {
         <div className="space-y-8">
           <ClientSelect 
             selectedClient={selectedClient}
-            onSelectClient={setSelectedClient}
+            onClientSelect={setSelectedClient}
           />
           <ProductSelector 
             onProductSelect={addToCart}

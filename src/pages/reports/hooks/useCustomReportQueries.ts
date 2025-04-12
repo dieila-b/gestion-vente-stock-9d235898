@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
-import { Client } from "@/types/client";
+import { Client } from "@/types/Client";
+import { safeGet } from "@/utils/supabase-safe-query";
 
 export interface DailyProductSales {
   product_name: string;
@@ -67,7 +68,10 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
 
       // Regrouper par produit et calculer les totaux
       const productSales = orderItems.reduce((acc: DailyProductSales[], item) => {
-        const productName = item.products?.name || 'Produit inconnu';
+        const productName = (item.products && typeof item.products === 'object') 
+          ? (item.products.name || 'Produit inconnu') 
+          : 'Produit inconnu';
+          
         const existingProduct = acc.find(p => p.product_name === productName);
         
         if (existingProduct) {
@@ -157,7 +161,7 @@ export function useCustomReportQueries(dateRange?: DateRange, selectedPOS: strin
         
         const client: Client = {
           ...order.client,
-          status: order.client.status as 'particulier' | 'entreprise'
+          status: (order.client.status as 'particulier' | 'entreprise') || 'particulier'
         };
         
         const existingClient = acc.find(c => c.client.id === client.id);

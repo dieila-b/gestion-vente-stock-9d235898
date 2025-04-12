@@ -1,75 +1,67 @@
 
-import { DateRange } from "react-day-picker";
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { ClientSelect } from "@/components/pos/ClientSelect";
-import { Client } from "@/types/client";
+import { useToast } from "@/components/ui/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { ClientSelect, ClientSelectProps } from "@/components/clients/ClientSelect";
+import { Client } from "@/types/Client";
 
 interface UnpaidReportHeaderProps {
-  date: DateRange | undefined;
-  setDate: (date: DateRange | undefined) => void;
   selectedClient: Client | null;
-  setSelectedClient: (client: Client | null) => void;
-  onPrint: () => void;
-  onExport: () => void;
+  onSelectClient: (client: Client) => void;
+  onClearFilter: () => void;
+  handlePrint: () => void;
+  handleExport: () => void;
 }
 
 export function UnpaidReportHeader({ 
-  date, 
-  setDate, 
   selectedClient,
-  setSelectedClient,
-  onPrint, 
-  onExport 
+  onSelectClient,
+  onClearFilter,
+  handlePrint,
+  handleExport
 }: UnpaidReportHeaderProps) {
   return (
-    <>
-      <div className="flex justify-between items-start">
+    <div>
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold">Factures Clients Impayées</h1>
-          <p className="text-muted-foreground mt-1">
-            {selectedClient ? (
-              <>Client: {selectedClient.company_name || selectedClient.contact_name}</>
-            ) : (
-              <>Tous les clients</>
-            )}
-          </p>
+          <h1 className="text-2xl font-bold">Factures Impayées</h1>
           <p className="text-muted-foreground">
-            Période: du {date?.from?.toLocaleDateString('fr-FR')} au {date?.to?.toLocaleDateString('fr-FR')}
+            Liste de toutes les factures avec un solde restant
           </p>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline"
-            onClick={onPrint}
+            onClick={handlePrint}
           >
             <Printer className="h-4 w-4 mr-2" />
             Imprimer
           </Button>
           <Button 
             variant="outline"
-            onClick={onExport}
+            onClick={handleExport}
           >
             <Download className="h-4 w-4 mr-2" />
             Exporter PDF
           </Button>
         </div>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium mb-2">Période</label>
-          <DatePickerWithRange date={date} setDate={setDate} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Client</label>
-          <ClientSelect
-            selectedClient={selectedClient}
-            onSelectClient={setSelectedClient}
-          />
+      
+      <div className="mb-6">
+        <h2 className="text-sm font-medium mb-2">Filtrer par client</h2>
+        <div className="flex gap-2 items-center">
+          <div className="flex-1">
+            <ClientSelect 
+              selectedClient={selectedClient} 
+              onClientSelect={onSelectClient}
+              onClearClient={onClearFilter}
+            />
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
