@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,22 +25,21 @@ async function fetchSalesData(
   const endDate = endOfYear(startDate);
 
   try {
-    // Build the query in steps using explicit function calls
-    // to avoid complex type inference chains
-    const baseQuery = supabase.from('orders').select('created_at, final_total');
+    // Simplify query building to avoid deep type instantiation
+    // Use any to break the deep type inference chain
+    let query: any = supabase.from('orders').select('created_at, final_total');
     
     // Apply date range filters
-    const dateRangeQuery = baseQuery
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
+    query = query.gte('created_at', startDate.toISOString());
+    query = query.lte('created_at', endDate.toISOString());
     
     // Apply location filter if needed
-    const filteredQuery = selectedPOS !== "all" 
-      ? dateRangeQuery.eq('depot', selectedPOS)
-      : dateRangeQuery;
+    if (selectedPOS !== "all") {
+      query = query.eq('depot', selectedPOS);
+    }
     
     // Execute the final query
-    const { data, error } = await filteredQuery.order('created_at');
+    const { data, error } = await query.order('created_at');
     
     if (error) throw error;
     
