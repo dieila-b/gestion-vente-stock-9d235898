@@ -18,6 +18,18 @@ interface AddClientFormProps {
 
 type ClientFormData = Omit<Client, 'id' | 'created_at' | 'updated_at'>;
 
+// Fonction pour générer un code client basé sur le nom et un nombre aléatoire
+const generateClientCode = (clientName: string): string => {
+  // Prendre les 3 premiers caractères du nom (ou moins si le nom est plus court)
+  const prefix = clientName.trim().toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3);
+  
+  // Générer un nombre aléatoire à 4 chiffres
+  const randomNumber = Math.floor(1000 + Math.random() * 9000);
+  
+  // Combiner le préfixe et le nombre aléatoire
+  return `${prefix}${randomNumber}`;
+};
+
 export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -72,10 +84,20 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     }
 
     try {
-      console.log("Submitting client data:", formData);
+      // Générer un code client basé sur le nom de l'entreprise ou du contact
+      const nameForCode = formData.status === 'entreprise' ? formData.company_name : formData.contact_name;
+      const clientCode = generateClientCode(nameForCode);
+      
+      // Ajouter le code client aux données du formulaire
+      const clientDataWithCode = {
+        ...formData,
+        client_code: clientCode
+      };
+      
+      console.log("Submitting client data:", clientDataWithCode);
       
       // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
-      const result = await db.insert('clients', formData);
+      const result = await db.insert('clients', clientDataWithCode);
 
       if (!result) {
         throw new Error("Échec de l'ajout du client");
