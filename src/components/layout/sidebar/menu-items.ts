@@ -1,192 +1,287 @@
 
-import { 
-  Home, Package, Store, Warehouse, Users, FileText,
-  Box, BarChart3, FileEdit, CreditCard, Receipt, PiggyBank, 
-  ArrowUpCircle, ArrowDownCircle, Wallet, Building2, ClipboardList,
-  Truck, FileOutput, PackageX, ArrowRightLeft, Database,
-  Calendar, CalendarRange, BanknoteIcon, PackagePlus, FileCheck
-} from "lucide-react";
+import {
+  BadgeDollarSign,
+  Building,
+  Building2,
+  CreditCard,
+  DollarSign,
+  FileText,
+  Home,
+  LayoutDashboard,
+  Library,
+  ListChecks,
+  Package,
+  PackageCheck,
+  PackageOpen,
+  PackagePlus,
+  PackageX,
+  ReceiptText,
+  RefreshCcw,
+  ShoppingCart,
+  TrendingUp,
+  Truck,
+  Users,
+  Warehouse
+} from "lucide-react"
 
-export const menuItems = [
+export type MenuItem = {
+  label: string
+  href: string
+  icon: React.ComponentType
+  submenu?: MenuItem[]
+}
+
+export const menuItems: MenuItem[] = [
   {
-    label: "Tableau de Bord",
-    icon: Home,
-    path: "/"
+    label: 'Tableau de bord',
+    href: '/dashboard',
+    icon: LayoutDashboard,
   },
   {
-    label: "Gestion des Stocks",
+    label: 'Points de vente',
+    href: '/pos',
+    icon: ShoppingCart,
+    submenu: [
+      {
+        label: 'Point de vente',
+        href: '/pos',
+        icon: ShoppingCart,
+      },
+      {
+        label: 'Ventes',
+        href: '/sales',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Factures',
+        href: '/sales-invoices',
+        icon: ReceiptText,
+      },
+      {
+        label: 'Précommandes',
+        href: '/preorders',
+        icon: DollarSign,
+      },
+      {
+        label: 'Factures de précommande',
+        href: '/preorder-invoices',
+        icon: FileText,
+      },
+      {
+        label: 'Points de vente',
+        href: '/pos-locations',
+        icon: Building,
+      }
+    ]
+  },
+  {
+    label: 'Achats',
+    href: '/purchase',
+    icon: BadgeDollarSign,
+    submenu: [
+      {
+        label: 'Commandes',
+        href: '/purchase-order',
+        icon: BadgeDollarSign,
+      },
+      {
+        label: 'Bons de livraison',
+        href: '/delivery-note',
+        icon: Truck,
+      },
+      {
+        label: 'Factures d\'achat',
+        href: '/purchase-invoice',
+        icon: FileText,
+      }
+    ]
+  },
+  {
+    label: 'Stock',
+    href: '/stocks',
     icon: Package,
     submenu: [
-      { 
-        label: "État des stocks",
-        icon: BarChart3,
-        path: "/stock-status"
+      {
+        label: 'Vue d\'ensemble',
+        href: '/stocks',
+        icon: Package,
       },
       {
-        label: "Stocks",
-        icon: Box,
-        submenu: [
-          {
-            label: "Stock Principal",
-            icon: Warehouse,
-            path: "/stocks/main"
-          },
-          {
-            label: "Stock PDV",
-            icon: Store,
-            path: "/stocks/pos"
-          },
-          {
-            label: "Entrées",
-            icon: ArrowUpCircle,
-            path: "/stocks/in"
-          },
-          {
-            label: "Sorties",
-            icon: ArrowDownCircle,
-            path: "/stocks/out"
-          }
-        ]
-      },
-      {
-        label: "Entrepôts",
-        icon: Warehouse,
-        path: "/warehouses"
-      },
-      {
-        label: "Transferts",
-        icon: ArrowRightLeft,
-        path: "/transfers"
-      },
-      {
-        label: "Catalogue",
-        icon: FileText,
-        path: "/catalog"
-      }
-    ]
-  },
-  {
-    label: "Synthèses",
-    icon: BarChart3,
-    submenu: [
-      {
-        label: "Quotidienne",
-        icon: Calendar,
-        path: "/reports/daily"
-      },
-      {
-        label: "Mensuelle",
-        icon: Calendar,
-        path: "/reports/monthly"
-      },
-      {
-        label: "Annuelle",
-        icon: Calendar,
-        path: "/reports/yearly"
-      },
-      {
-        label: "Date à Date",
-        icon: CalendarRange,
-        path: "/reports/custom"
-      },
-      {
-        label: "Clients",
-        icon: Users,
-        path: "/reports/clients"
-      },
-      {
-        label: "Factures Impayées",
-        icon: BanknoteIcon,
-        path: "/reports/unpaid"
-      }
-    ]
-  },
-  {
-    label: "Achat",
-    icon: ClipboardList,
-    submenu: [
-      {
-        label: "Bon de commande",
-        icon: FileText,
-        path: "/purchase-orders"
-      },
-      {
-        label: "Bon de livraison",
-        icon: Truck,
-        path: "/delivery-note"
-      },
-      {
-        label: "Facture d'achat",
-        icon: FileOutput,
-        path: "/purchase-invoice"
-      },
-      {
-        label: "Retours fournisseurs",
+        label: 'Stock épuisé',
+        href: '/stocks/out-of-stock',
         icon: PackageX,
-        path: "/supplier-returns"
-      }
-    ]
-  },
-  {
-    label: "Vente & Facturation",
-    icon: CreditCard,
-    submenu: [
-      {
-        label: "Vente au Comptoir",
-        icon: Store,
-        path: "/pos"
       },
       {
-        label: "Factures de vente",
-        icon: Receipt,
-        path: "/sales-invoices"
+        label: 'Stock faible',
+        href: '/stocks/low-stock',
+        icon: PackageOpen,
       },
       {
-        label: "Précommande",
+        label: 'Entrées de stock',
+        href: '/stocks/stock-in',
         icon: PackagePlus,
-        path: "/preorders"
       },
       {
-        label: "Factures de Précommande",
-        icon: FileCheck,
-        path: "/preorder-invoices"
-      },
-      {
-        label: "Versement",
-        icon: BanknoteIcon,
-        path: "/payments"
-      },
-      {
-        label: "Devis",
-        icon: FileEdit,
-        path: "/quotes"
-      },
-      {
-        label: "Retours clients",
+        label: 'Sorties de stock',
+        href: '/stocks/stock-out',
         icon: PackageX,
-        path: "/customer-returns"
+      },
+      {
+        label: 'Stock PDV',
+        href: '/stocks/pos-stock',
+        icon: PackageCheck,
+      },
+      {
+        label: 'Transferts',
+        href: '/transfers',
+        icon: RefreshCcw,
+      },
+      {
+        label: 'Retours clients',
+        href: '/customer-returns',
+        icon: RefreshCcw,
+      },
+      {
+        label: 'Retours fournisseurs',
+        href: '/supplier-returns',
+        icon: RefreshCcw,
+      },
+      {
+        label: 'Entrepôts',
+        href: '/warehouses',
+        icon: Warehouse,
+      },
+      {
+        label: 'Zones géographiques',
+        href: '/stock-location',
+        icon: Building2,
       }
     ]
   },
   {
-    label: "Comptabilité",
-    icon: PiggyBank,
+    label: 'Catalogue',
+    href: '/catalog',
+    icon: Library,
     submenu: [
       {
-        label: "Caisses",
-        icon: Wallet,
-        path: "/cash-registers"
+        label: 'Produits',
+        href: '/catalog',
+        icon: Library,
       },
       {
-        label: "Comptes Bancaires",
-        icon: Building2,
-        path: "/bank-accounts"
-      },
-      {
-        label: "Dépenses",
-        icon: Receipt,
-        path: "/expenses"
+        label: 'Unités',
+        href: '/product-units',
+        icon: Package,
       }
     ]
+  },
+  {
+    label: 'Devis',
+    href: '/quotes',
+    icon: FileText,
+  },
+  {
+    label: 'Commandes',
+    href: '/orders',
+    icon: ListChecks,
+  },
+  {
+    label: 'Factures',
+    href: '/invoices',
+    icon: FileText,
+  },
+  {
+    label: 'Clients',
+    href: '/clients',
+    icon: Users,
+  },
+  {
+    label: 'Fournisseurs',
+    href: '/suppliers',
+    icon: Truck,
+  },
+  {
+    label: 'Finances',
+    href: '/expenses',
+    icon: DollarSign,
+    submenu: [
+      {
+        label: 'Vue d\'ensemble',
+        href: '/expenses',
+        icon: DollarSign,
+      },
+      {
+        label: 'Recettes',
+        href: '/expense-income',
+        icon: DollarSign,
+      },
+      {
+        label: 'Dépenses',
+        href: '/expense-outcome',
+        icon: DollarSign,
+      },
+      {
+        label: 'Paiements',
+        href: '/payments',
+        icon: CreditCard,
+      },
+      {
+        label: 'Comptes bancaires',
+        href: '/bank-accounts',
+        icon: Building,
+      },
+      {
+        label: 'Caisses',
+        href: '/cash-registers',
+        icon: CreditCard,
+      }
+    ]
+  },
+  {
+    label: 'Rapports',
+    href: '/reports/yearly',
+    icon: TrendingUp,
+    submenu: [
+      {
+        label: 'Rapport annuel',
+        href: '/reports/yearly',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Rapport mensuel',
+        href: '/reports/monthly',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Rapport journalier',
+        href: '/reports/daily',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Rapport clients',
+        href: '/reports/clients',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Factures impayées',
+        href: '/reports/unpaid',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Rapport personnalisé',
+        href: '/reports/custom',
+        icon: TrendingUp,
+      }
+    ]
+  },
+  {
+    label: 'Personnel',
+    href: '/users',
+    icon: Users,
+  },
+  {
+    label: 'Home',
+    href: '/',
+    icon: Home,
   }
-];
+]
