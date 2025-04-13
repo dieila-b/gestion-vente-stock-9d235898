@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EditUserDialogProps {
   user: User;
@@ -30,6 +31,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const [userData, setUserData] = useState<User>({ ...user });
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: keyof User, value: any) => {
@@ -43,8 +45,16 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     setShowPassword((prev) => !prev);
   };
 
+  const passwordsMatch = !newPassword || !passwordConfirmation || newPassword === passwordConfirmation;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (newPassword && !passwordsMatch) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -203,7 +213,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                     type={showPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Laisser vide pour ne pas changer"
+                    placeholder="Laissez vide pour ne pas modifier"
                     className="pr-10 bg-[#1e1e1e] border-gray-700 text-white"
                   />
                   <Button 
@@ -217,6 +227,29 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                   </Button>
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label 
+                  htmlFor="password_confirmation" 
+                  className={!passwordsMatch ? "text-destructive" : "text-gray-300"}
+                >
+                  Confirmation du mot de passe
+                </Label>
+                <Input
+                  id="password_confirmation"
+                  type={showPassword ? "text" : "password"}
+                  value={passwordConfirmation}
+                  onChange={(e) => setPasswordConfirmation(e.target.value)}
+                  placeholder="Confirmation du mot de passe"
+                  className={`bg-[#1e1e1e] border-gray-700 text-white ${!passwordsMatch ? "border-destructive" : ""}`}
+                />
+              </div>
+              
+              <Alert className="bg-amber-100/20 border-amber-200/30 text-amber-500">
+                <AlertDescription>
+                  Note: Laissez les champs vides si vous ne souhaitez pas modifier le mot de passe.
+                </AlertDescription>
+              </Alert>
             </TabsContent>
           </Tabs>
           
@@ -231,7 +264,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || (newPassword && !passwordsMatch)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               {isSubmitting ? "Enregistrement..." : "Enregistrer"}
