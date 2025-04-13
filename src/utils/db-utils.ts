@@ -1,6 +1,5 @@
-
-import { db } from "@/utils/db-adapter";
-import { safeGet } from "@/utils/supabase-safe-query";
+import { db } from "./db-core";
+import { safeGet } from "./supabase-safe-query";
 
 // A utility function to check if a table exists in the database
 export async function checkTableExists(tableName: string): Promise<boolean> {

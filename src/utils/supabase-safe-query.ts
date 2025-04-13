@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { db } from "./db-adapter";
+import { db } from "./db-core";
 import { BankAccount, DeliveryNote, Supplier, SelectQueryError } from "@/types/db-adapter";
 
 /**
