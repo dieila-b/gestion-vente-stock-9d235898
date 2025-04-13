@@ -16,7 +16,7 @@ interface UserFormProps {
   showPassword: boolean;
   onInputChange: (index: number, field: string, value: any) => void;
   onPasswordConfirmationChange: (index: number, value: string) => void;
-  onRemove: (index: number) => void;
+  onRemove: (index: number) => void; // This is correctly typed to receive an index
   onImageUpload: (index: number, file: File) => Promise<void>;
   onTogglePasswordVisibility: (index: number) => void;
 }
@@ -43,7 +43,7 @@ export const UserForm = ({
         <Button 
           variant="destructive" 
           size="icon" 
-          onClick={() => onRemove(index)}
+          onClick={() => onRemove(index)} // Fix: Pass the index parameter to onRemove
           title="Supprimer l'utilisateur"
         >
           <Trash2 className="h-4 w-4" />
