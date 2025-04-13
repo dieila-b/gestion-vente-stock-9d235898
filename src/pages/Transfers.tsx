@@ -6,6 +6,9 @@ import { TransferDialog } from '@/components/transfers/TransferDialog';
 import { useTransfers } from '@/hooks/use-transfers';
 import { useTransferForm } from '@/hooks/use-transfer-form';
 import { Transfer } from '@/types/transfer';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { transferFormSchema, TransferFormValues } from '@/components/transfers/schemas/transfer-form-schema';
 
 export default function TransfersPage() {
   const {
@@ -39,10 +42,22 @@ export default function TransfersPage() {
     setExistingFormData,
   } = useTransferForm(refetch);
 
+  // Setup the form with zod validation
+  const form = useForm<TransferFormValues>({
+    resolver: zodResolver(transferFormSchema),
+    defaultValues: {
+      transfer_type: "depot_to_depot",
+      status: "pending",
+      transfer_date: new Date().toISOString().split("T")[0],
+      quantity: 1,
+    },
+  });
+
   // Create wrappers for the handlers
-  const handleFormSubmitWrapper = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await handleFormSubmit(e);
+  const handleFormSubmitWrapper = async (values: TransferFormValues) => {
+    console.log("Form values submitted:", values);
+    // Handle form submission with the values
+    await handleFormSubmit({ preventDefault: () => {} } as React.FormEvent);
     setIsDialogOpen(false);
     setEditingTransfer(null);
   };
@@ -82,22 +97,14 @@ export default function TransfersPage() {
       
       {isDialogOpen && (
         <TransferDialog
-          open={isDialogOpen}
-          onClose={() => {
-            setIsDialogOpen(false);
-            resetForm();
-          }}
-          formState={formState}
-          isSubmitting={isSubmitting}
-          warehouses={warehouses}
-          posLocations={posLocations}
-          products={products}
-          onSourceWarehouseChange={handleSourceWarehouseChange}
-          onDestinationWarehouseChange={handleDestinationWarehouseChange}
-          onProductSelect={handleProductSelect}
-          onQuantityChange={handleQuantityChange}
+          form={form}
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
           onSubmit={handleFormSubmitWrapper}
-          isEditing={!!editingTransfer}
+          editingTransfer={editingTransfer}
+          warehouses={warehouses}
+          products={products}
+          posLocations={posLocations}
         />
       )}
     </div>
