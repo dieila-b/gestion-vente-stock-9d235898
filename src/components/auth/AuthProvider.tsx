@@ -59,23 +59,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
       
-      if (data && data.authenticated) {
-        const userData = data.user as User;
-        
-        // Stocker les informations utilisateur
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Sauvegarder dans le localStorage pour persister la session
-        localStorage.setItem('authUser', JSON.stringify(userData));
-        
-        setLoading(false);
-        return { success: true, message: "Connexion réussie." };
+      // Vérification du type et de la structure de la réponse
+      if (data && typeof data === 'object' && 'authenticated' in data) {
+        if (data.authenticated === true && 'user' in data) {
+          const userData = data.user as User;
+          
+          // Stocker les informations utilisateur
+          setUser(userData);
+          setIsAuthenticated(true);
+          
+          // Sauvegarder dans le localStorage pour persister la session
+          localStorage.setItem('authUser', JSON.stringify(userData));
+          
+          setLoading(false);
+          return { success: true, message: "Connexion réussie." };
+        } else {
+          setLoading(false);
+          // Utilisons une vérification plus sûre pour accéder à l'erreur
+          const errorMessage = (typeof data === 'object' && data && 'error' in data) 
+            ? String(data.error) 
+            : "Email ou mot de passe incorrect.";
+            
+          return { 
+            success: false, 
+            message: errorMessage
+          };
+        }
       } else {
         setLoading(false);
         return { 
           success: false, 
-          message: data.error || "Email ou mot de passe incorrect." 
+          message: "Format de réponse inattendu." 
         };
       }
     } catch (error: any) {
