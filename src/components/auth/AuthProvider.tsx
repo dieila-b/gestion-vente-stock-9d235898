@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
@@ -15,13 +14,36 @@ type AuthContextType = {
 // Create the context with a default value
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(isDevelopment);
+  const [loading, setLoading] = useState(!isDevelopment);
+  const [user, setUser] = useState<User | null>(() => {
+    if (isDevelopment) {
+      // Provide a default user in development mode
+      return {
+        id: "dev-user",
+        first_name: "Dev",
+        last_name: "User",
+        email: "dev@example.com",
+        phone: "",
+        role: "admin",
+        address: "",
+        is_active: true,
+      };
+    }
+    return null;
+  });
 
   // Check if the user is already authenticated (from localStorage)
   useEffect(() => {
+    // Skip authentication check in development mode
+    if (isDevelopment) {
+      return;
+    }
+
     const checkAuth = async () => {
       const storedUser = localStorage.getItem('authUser');
       
@@ -43,6 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    // Auto-login in development mode
+    if (isDevelopment) {
+      return { success: true, message: "Mode développement: Connexion automatique." };
+    }
+
     setLoading(true);
     
     try {
@@ -116,6 +143,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const logout = async () => {
+    // In development mode, keep the dev user
+    if (isDevelopment) {
+      toast.success("Déconnexion simulée en mode développement.");
+      return;
+    }
+
     setLoading(true);
     
     // Remove authentication data

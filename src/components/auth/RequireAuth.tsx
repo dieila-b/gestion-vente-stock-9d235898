@@ -2,9 +2,17 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
+
+  // In development mode, we always allow access
+  if (isDevelopment) {
+    return <>{children}</>;
+  }
 
   // Display a loading indicator while checking authentication
   if (loading) {

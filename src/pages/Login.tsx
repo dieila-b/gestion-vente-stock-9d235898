@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 export default function Login() {
   const navigate = useNavigate();
   const { login, loading, isAuthenticated } = useAuth();
@@ -17,9 +20,21 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Effect for automatic redirect in development mode
+  useEffect(() => {
+    if (isDevelopment) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
+
   // If user is already authenticated, redirect to dashboard
   if (isAuthenticated && !loading) {
     navigate("/dashboard");
+    return null;
+  }
+
+  // If we're in development mode, we shouldn't actually render the login form
+  if (isDevelopment) {
     return null;
   }
 
