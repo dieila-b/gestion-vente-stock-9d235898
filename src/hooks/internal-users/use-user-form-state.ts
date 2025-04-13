@@ -1,9 +1,12 @@
 
 import { useState } from "react";
 import { User } from "@/types/user";
+import { toast } from "sonner";
+import { useImageUpload } from "./use-image-upload";
 
 export const useUserFormState = () => {
-  const initialUserState: Omit<User, 'id'> = {
+  // État initial pour un nouvel utilisateur
+  const emptyUser: Omit<User, 'id'> = {
     first_name: "",
     last_name: "",
     email: "",
@@ -11,76 +14,79 @@ export const useUserFormState = () => {
     role: "employee",
     address: "",
     is_active: true,
-    photo_url: "",
-    password: "",
+    password: ""
   };
 
-  const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([]);
-  const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
-  const [passwordConfirmation, setPasswordConfirmation] = useState<{ [key: number]: string }>({});
+  // États
+  const [newUserData, setNewUserData] = useState<Omit<User, 'id'>[]>([{ ...emptyUser }]);
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Hook pour l'upload d'image
+  const { uploadImage } = useImageUpload();
 
-  const handleInputChange = (index: number, field: string, value: any) => {
-    const updatedData = [...newUserData];
-    updatedData[index] = {
-      ...updatedData[index],
-      [field]: value,
-    };
-    setNewUserData(updatedData);
+  // Gestionnaires d'événements
+  const handleInputChange = (
+    index: number,
+    field: keyof Omit<User, 'id'>,
+    value: string | boolean | "admin" | "manager" | "employee"
+  ) => {
+    setNewUserData(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      };
+      return updated;
+    });
   };
 
-  const handlePasswordConfirmationChange = (index: number, value: string) => {
-    setPasswordConfirmation(prev => ({
-      ...prev,
-      [index]: value
-    }));
+  const handlePasswordConfirmationChange = (value: string) => {
+    setPasswordConfirmation(value);
   };
 
   const handleAddUser = () => {
-    setNewUserData([
-      ...newUserData,
-      { ...initialUserState }
-    ]);
+    setNewUserData(prev => [...prev, { ...emptyUser }]);
   };
 
   const handleRemoveUser = (index: number) => {
-    const updatedData = [...newUserData];
-    updatedData.splice(index, 1);
-    setNewUserData(updatedData);
-
-    // Also clean up password confirmation state
-    const updatedConfirmations = { ...passwordConfirmation };
-    delete updatedConfirmations[index];
-    setPasswordConfirmation(updatedConfirmations);
-    
-    // Also clean up password visibility state
-    const updatedVisibility = { ...showPassword };
-    delete updatedVisibility[index];
-    setShowPassword(updatedVisibility);
+    setNewUserData(prev => prev.filter((_, i) => i !== index));
   };
 
-  const togglePasswordVisibility = (index: number) => {
-    setShowPassword(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    try {
+      const url = await uploadImage(file);
+      
+      if (url) {
+        handleInputChange(index, 'photo_url', url);
+        toast.success("Image téléchargée avec succès");
+      }
+    } catch (error: any) {
+      console.error("Erreur lors du téléchargement de l'image:", error);
+      toast.error(`Erreur lors du téléchargement: ${error.message || "Une erreur s'est produite"}`);
+    }
   };
 
   const resetFormState = () => {
-    setNewUserData([]);
-    setPasswordConfirmation({});
-    setShowPassword({});
+    setNewUserData([{ ...emptyUser }]);
+    setPasswordConfirmation("");
+    setShowPassword(false);
   };
 
   return {
     newUserData,
-    showPassword,
     passwordConfirmation,
+    showPassword,
     handleInputChange,
     handlePasswordConfirmationChange,
     handleAddUser,
     handleRemoveUser,
     togglePasswordVisibility,
-    resetFormState,
-    setNewUserData
+    handleImageUpload,
+    resetFormState
   };
 };

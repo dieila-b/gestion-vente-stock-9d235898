@@ -1,6 +1,6 @@
 
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./useAuth";
 
 // Détermine si l'application est en mode production
 const isProduction = import.meta.env.MODE === 'production';
@@ -9,12 +9,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  // Si nous sommes en mode développement, autoriser l'accès sans authentification
-  if (!isProduction) {
-    return <>{children}</>;
-  }
-
-  // Afficher un indicateur de chargement pendant la vérification de l'authentification
+  // Si nous sommes en train de charger, afficher un indicateur de chargement
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -26,10 +21,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
-  if (!isAuthenticated) {
+  // En mode production, vérifier l'authentification
+  if (isProduction && !isAuthenticated) {
+    // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // En mode développement ou si l'utilisateur est authentifié, afficher les enfants
   return <>{children}</>;
 }

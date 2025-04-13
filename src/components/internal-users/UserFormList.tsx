@@ -1,180 +1,115 @@
 
 import { Button } from "@/components/ui/button";
-import { UserForm } from "./UserForm";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { PersonalInfoSection } from "./form-sections/PersonalInfoSection";
+import { PasswordSection } from "./form-sections/PasswordSection";
+import { UserRoleSection } from "./form-sections/UserRoleSection";
+import { ProfilePhotoSection } from "./form-sections/ProfilePhotoSection";
 import { User } from "@/types/user";
-import { Loader2, Save, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { Plus, Save, X } from "lucide-react";
 
 interface UserFormListProps {
   newUserData: Omit<User, 'id'>[];
-  passwordConfirmation: { [key: number]: string };
-  showPassword: { [key: number]: boolean };
+  passwordConfirmation: string;
+  showPassword: boolean;
+  onInputChange: (index: number, field: keyof Omit<User, 'id'>, value: string | boolean | "admin" | "manager" | "employee") => void;
+  onPasswordConfirmationChange: (value: string) => void;
   onAddUser: () => void;
-  onBulkInsert: () => Promise<void>;
-  onInputChange: (index: number, field: string, value: any) => void;
-  onPasswordConfirmationChange: (index: number, value: string) => void;
   onRemoveUser: (index: number) => void;
-  onTogglePasswordVisibility: (index: number) => void;
+  onBulkInsert: () => Promise<void>;
+  onTogglePasswordVisibility: () => void;
+  onImageUpload?: (index: number, file: File) => Promise<void>;
 }
 
-export const UserFormList = ({ 
-  newUserData, 
+export const UserFormList = ({
+  newUserData,
   passwordConfirmation,
   showPassword,
-  onAddUser, 
-  onBulkInsert, 
   onInputChange,
   onPasswordConfirmationChange,
+  onAddUser,
   onRemoveUser,
-  onTogglePasswordVisibility
+  onBulkInsert,
+  onTogglePasswordVisibility,
+  onImageUpload
 }: UserFormListProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const handleImageUpload = async (index: number, file: File) => {
-    try {
-      // Check file size - 20MB
-      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
-      if (file.size > MAX_FILE_SIZE) {
-        console.error("File size exceeds limit", file.size);
-        toast.error(`La taille du fichier dépasse la limite de 20MB. Taille actuelle: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-        return;
-      }
-      
-      // Prepare the file information
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `internal-users/${fileName}`;
-      
-      toast.loading("Téléchargement de l'image en cours...");
-      
-      // Upload the file with debugging
-      console.log("Uploading file to path:", filePath);
-      console.log("File size:", file.size, "bytes");
-      console.log("File type:", file.type);
-      
-      // List buckets first to verify
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      console.log("Available buckets:", buckets);
-      
-      if (bucketsError) {
-        console.error("Error listing buckets:", bucketsError);
-        toast.dismiss();
-        toast.error(`Erreur lors de la vérification des buckets: ${bucketsError.message}`);
-        return;
-      }
-      
-      // Now upload the file
-      const { error: uploadError, data } = await supabase.storage
-        .from('lovable-uploads')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
-      if (uploadError) {
-        console.error("Error uploading image:", uploadError);
-        toast.dismiss();
-        toast.error(`Erreur lors du téléchargement de l'image: ${uploadError.message}`);
-        return;
-      }
-      
-      toast.dismiss();
-      
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('lovable-uploads')
-        .getPublicUrl(filePath);
-      
-      console.log("Image uploaded successfully, public URL:", urlData.publicUrl);
-      onInputChange(index, "photo_url", urlData.publicUrl);
-      toast.success("Image téléchargée avec succès");
-    } catch (error: any) {
-      toast.dismiss();
-      console.error("Error in image upload process:", error);
-      toast.error(`Erreur lors du téléchargement de l'image: ${error.message || error}`);
-    }
-  };
-
-  const handleSubmit = async () => {
-    console.log("Starting user submission with data:", newUserData);
-    setIsSubmitting(true);
-    try {
-      await onBulkInsert();
-    } catch (error) {
-      console.error("Error in form submission:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onBulkInsert();
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Ajouter de Nouveaux Utilisateurs</h2>
-      
-      {newUserData.length === 0 ? (
-        <div className="bg-muted/30 rounded-lg p-8 text-center">
-          <p className="text-muted-foreground mb-4">Aucun utilisateur à ajouter</p>
-          <Button 
-            variant="outline" 
-            onClick={onAddUser}
-            className="mx-auto"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Ajouter un utilisateur
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-6">
-            {newUserData.map((user, index) => (
-              <UserForm 
-                key={index} 
-                user={user} 
-                index={index}
-                passwordConfirmation={passwordConfirmation[index] || ""}
-                showPassword={showPassword[index] || false}
-                onInputChange={onInputChange}
-                onPasswordConfirmationChange={onPasswordConfirmationChange}
-                onRemove={onRemoveUser}
-                onImageUpload={handleImageUpload}
-                onTogglePasswordVisibility={onTogglePasswordVisibility}
-              />
-            ))}
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={onAddUser}
-              className="flex items-center"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Ajouter un utilisateur
-            </Button>
-            
-            <Button 
-              variant="default" 
-              disabled={newUserData.length === 0 || isSubmitting}
-              onClick={handleSubmit}
-              className="flex items-center"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enregistrement...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Enregistrer les utilisateurs
-                </>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Ajouter des utilisateurs</h2>
+        <Button variant="outline" onClick={onAddUser} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Ajouter un utilisateur
+        </Button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {newUserData.map((user, index) => (
+          <Card key={index} className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base font-medium">
+                Utilisateur {index + 1}
+              </CardTitle>
+              {newUserData.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  onClick={() => onRemoveUser(index)}
+                  className="h-8 w-8 text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
-          </div>
-        </>
-      )}
+            </CardHeader>
+            <CardContent className="pt-4 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {onImageUpload && (
+                  <ProfilePhotoSection
+                    user={user}
+                    index={index}
+                    onImageUpload={onImageUpload}
+                  />
+                )}
+                
+                <PersonalInfoSection
+                  user={user}
+                  index={index}
+                  onInputChange={onInputChange}
+                />
+                
+                <PasswordSection
+                  index={index}
+                  password={user.password || ""}
+                  passwordConfirmation={index === 0 ? passwordConfirmation : ""}
+                  showPassword={showPassword}
+                  onInputChange={onInputChange}
+                  onPasswordConfirmationChange={onPasswordConfirmationChange}
+                  onTogglePasswordVisibility={onTogglePasswordVisibility}
+                />
+                
+                <UserRoleSection
+                  user={user}
+                  index={index}
+                  onInputChange={onInputChange}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        <CardFooter className="flex justify-end pt-6">
+          <Button type="submit" className="gap-2">
+            <Save className="h-4 w-4" />
+            Enregistrer les utilisateurs
+          </Button>
+        </CardFooter>
+      </form>
     </div>
   );
 };
