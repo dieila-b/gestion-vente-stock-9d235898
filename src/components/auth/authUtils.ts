@@ -76,11 +76,54 @@ export const handleForgotPassword = async (email: string) => {
   }
   
   try {
-    // Au lieu d'utiliser rpc qui nécessite une fonction existante côté serveur,
-    // simulons simplement la demande pour le moment
-    // Plus tard, une vraie fonction RPC pourra être implémentée côté serveur
+    // Vérifions d'abord si l'email existe dans la table internal_users
+    const { data: users, error: userCheckError } = await supabase
+      .from('internal_users')
+      .select('email')
+      .eq('email', email)
+      .eq('is_active', true)
+      .maybeSingle();
     
-    // Simulons une réponse positive (généralement, on ne veut pas révéler si l'email existe ou non)
+    if (userCheckError) {
+      console.error("Erreur lors de la vérification de l'email:", userCheckError);
+      return { 
+        success: false, 
+        message: "Une erreur s'est produite lors de la vérification de l'email." 
+      };
+    }
+    
+    if (!users) {
+      // Ne pas révéler si l'email existe ou non pour des raisons de sécurité
+      return { 
+        success: true, 
+        message: "Si cette adresse email est associée à un compte, vous recevrez un email de réinitialisation." 
+      };
+    }
+    
+    // On génère un token temporaire pour la réinitialisation
+    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // Le token expire après 1 heure
+    
+    // On stocke le token en base de données (dans une transaction pour la sécurité)
+    const { error: updateError } = await supabase.rpc('create_password_reset_token', {
+      user_email: email,
+      token_value: resetToken,
+      expires_at: expiresAt.toISOString()
+    });
+    
+    if (updateError) {
+      console.error("Erreur lors de la création du token de réinitialisation:", updateError);
+      return { 
+        success: false, 
+        message: "Une erreur s'est produite lors de la demande de réinitialisation." 
+      };
+    }
+    
+    // En production, ici nous enverrions un email avec un lien de réinitialisation contenant le token
+    // Pour l'instant, nous simulons cet envoi
+    console.log(`[SIMULATION] Email de réinitialisation envoyé à ${email} avec le token: ${resetToken}`);
+    
     return { 
       success: true, 
       message: "Si cette adresse email est associée à un compte, vous recevrez un email de réinitialisation." 
