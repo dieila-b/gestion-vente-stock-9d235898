@@ -1,56 +1,35 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User } from "@/types/user";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { User } from "@/types/user";
 
-interface UserFormProps {
-  user: User;
-  onSave: (user: User) => void;
+interface UserInfoTabProps {
+  formData: User;
   isLoading: boolean;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRoleChange: (value: string) => void;
+  handleActiveChange: (checked: boolean) => void;
 }
 
-export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
-  const [formData, setFormData] = useState<User>({...user});
-  
-  const handleInputChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: e.target.value
-    }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-  
-  const handleRoleChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value as "admin" | "manager" | "employee"
-    }));
-  };
-  
-  const handleActiveChange = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      is_active: checked
-    }));
-  };
-  
+export const UserInfoTab = ({
+  formData,
+  isLoading,
+  handleInputChange,
+  handleRoleChange,
+  handleActiveChange
+}: UserInfoTabProps) => {
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first_name">Prénom</Label>
           <Input
             id="first_name"
+            name="first_name"
             value={formData.first_name}
-            onChange={handleInputChange("first_name")}
+            onChange={handleInputChange}
             disabled={isLoading}
           />
         </div>
@@ -59,8 +38,9 @@ export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
           <Label htmlFor="last_name">Nom</Label>
           <Input
             id="last_name"
+            name="last_name"
             value={formData.last_name}
-            onChange={handleInputChange("last_name")}
+            onChange={handleInputChange}
             disabled={isLoading}
           />
         </div>
@@ -70,9 +50,32 @@ export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          name="email"
           type="email"
           value={formData.email}
-          onChange={handleInputChange("email")}
+          onChange={handleInputChange}
+          disabled={isLoading}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="phone">Téléphone</Label>
+        <Input
+          id="phone"
+          name="phone"
+          value={formData.phone || ''}
+          onChange={handleInputChange}
+          disabled={isLoading}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="address">Adresse</Label>
+        <Input
+          id="address"
+          name="address"
+          value={formData.address || ''}
+          onChange={handleInputChange}
           disabled={isLoading}
         />
       </div>
@@ -82,6 +85,7 @@ export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
         <Select 
           value={formData.role} 
           onValueChange={handleRoleChange}
+          disabled={isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un rôle" />
@@ -100,12 +104,9 @@ export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
           id="is_active"
           checked={formData.is_active}
           onCheckedChange={handleActiveChange}
+          disabled={isLoading}
         />
       </div>
-      
-      <Button type="submit" disabled={isLoading}>
-        Enregistrer
-      </Button>
-    </form>
+    </div>
   );
 };
