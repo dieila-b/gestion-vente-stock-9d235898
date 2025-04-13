@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
@@ -40,7 +41,7 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'credit_limit' ? parseFloat(value) || 0 : value
+      [name]: name === 'credit_limit' ? (parseFloat(value) || 0) : value
     }));
   };
 
@@ -57,19 +58,38 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Filter out empty fields to prevent issues with default values
+    const dataToSubmit = Object.entries(formData).reduce((acc, [key, value]) => {
+      // Include all non-empty string values and numbers
+      if ((typeof value === 'string' && value.trim() !== '') || 
+          (typeof value === 'number') || 
+          key === 'status' || 
+          key === 'client_type') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
     try {
-      const { error } = await supabase
+      console.log("Submitting client data:", dataToSubmit);
+      
+      const { data, error } = await supabase
         .from('clients')
-        .insert(formData);
+        .insert(dataToSubmit)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding client:', error);
+        throw error;
+      }
 
+      console.log("Client created successfully:", data);
       toast.success("Client ajouté avec succès");
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding client:', error);
-      toast.error("Erreur lors de l'ajout du client");
+      toast.error(`Erreur lors de l'ajout du client: ${error.message || 'Erreur inconnue'}`);
     } finally {
       setIsLoading(false);
     }

@@ -162,6 +162,7 @@ export type Database = {
         Row: {
           address: string | null
           balance: number | null
+          cc_number: string | null
           city: string | null
           client_code: string | null
           client_type: string | null
@@ -169,17 +170,24 @@ export type Database = {
           contact_name: string | null
           country: string | null
           created_at: string | null
+          credit_limit: number | null
           email: string | null
           id: string
+          mobile_1: string | null
           notes: string | null
+          payment_terms: string | null
           phone: string | null
           postal_code: string | null
+          rc_number: string | null
           state: string | null
+          tax_number: string | null
           updated_at: string | null
+          whatsapp: string | null
         }
         Insert: {
           address?: string | null
           balance?: number | null
+          cc_number?: string | null
           city?: string | null
           client_code?: string | null
           client_type?: string | null
@@ -187,17 +195,24 @@ export type Database = {
           contact_name?: string | null
           country?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           email?: string | null
           id?: string
+          mobile_1?: string | null
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           postal_code?: string | null
+          rc_number?: string | null
           state?: string | null
+          tax_number?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Update: {
           address?: string | null
           balance?: number | null
+          cc_number?: string | null
           city?: string | null
           client_code?: string | null
           client_type?: string | null
@@ -205,13 +220,19 @@ export type Database = {
           contact_name?: string | null
           country?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           email?: string | null
           id?: string
+          mobile_1?: string | null
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           postal_code?: string | null
+          rc_number?: string | null
           state?: string | null
+          tax_number?: string | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
