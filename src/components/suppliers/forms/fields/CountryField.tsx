@@ -43,6 +43,8 @@ export const CountryField = ({ form }: CountryFieldProps) => {
           <Select
             onValueChange={(value) => {
               field.onChange(value);
+              // We need to set the value in the form so that the watched value is updated immediately
+              form.setValue("country", value);
               // Reset city when country changes
               form.setValue("city", "");
             }}
