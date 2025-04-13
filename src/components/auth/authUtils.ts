@@ -27,10 +27,10 @@ export const authenticateUser = async (email: string, password: string) => {
         // Conversion sécurisée en utilisant un typage intermédiaire
         const userObj = data.user as Record<string, any>;
         const userData: User = {
-          id: String(userObj.id),
+          id: String(userObj.id || ''),
           first_name: String(userObj.first_name || ''),
           last_name: String(userObj.last_name || ''),
-          email: String(userObj.email),
+          email: String(userObj.email || ''),
           phone: String(userObj.phone || ''),
           role: (userObj.role as 'admin' | 'manager' | 'employee') || 'employee',
           address: String(userObj.address || ''),
