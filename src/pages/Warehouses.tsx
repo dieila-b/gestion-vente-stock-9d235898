@@ -62,7 +62,7 @@ export default function Warehouses() {
         );
         
         if (data && data.length > 0) {
-          setWarehouses(data);
+          setWarehouses(data as Warehouse[]);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des entrepôts:', error);
@@ -93,7 +93,7 @@ export default function Warehouses() {
       const newWarehouse = await db.insert('warehouses', warehouseData);
       
       if (newWarehouse) {
-        setWarehouses([...warehouses, newWarehouse]);
+        setWarehouses([...warehouses, newWarehouse as Warehouse]);
         toast.success("Entrepôt ajouté avec succès");
         setIsDialogOpen(false);
       } else {
