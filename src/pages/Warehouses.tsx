@@ -67,7 +67,6 @@ export default function Warehouses() {
   const [selectedWarehouse, setSelectedWarehouse] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialiser le formulaire avec react-hook-form et zod validator
   const form = useForm<WarehouseFormValues>({
     resolver: zodResolver(warehouseSchema),
     defaultValues: {
@@ -81,14 +80,12 @@ export default function Warehouses() {
     }
   });
 
-  // Filtrer les entrepôts selon le terme de recherche
   const filteredWarehouses = warehouses.filter(warehouse => 
     warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     warehouse.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
     warehouse.manager.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculer les statistiques
   const totalWarehouses = warehouses.length;
   const totalCapacity = warehouses.reduce((acc, warehouse) => acc + warehouse.capacity, 0);
   const totalOccupied = warehouses.reduce((acc, warehouse) => acc + warehouse.occupied, 0);
@@ -105,7 +102,6 @@ export default function Warehouses() {
     }
   };
 
-  // Charger les données initiales des entrepôts depuis Supabase
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
@@ -128,19 +124,22 @@ export default function Warehouses() {
     fetchWarehouses();
   }, []);
 
-  // Gérer la soumission du formulaire
   const onSubmit = async (values: WarehouseFormValues) => {
     setIsSubmitting(true);
     try {
-      // Préparer les données à envoyer
       const warehouseData = {
-        ...values,
-        occupied: 0, // Par défaut, un nouvel entrepôt est vide
+        name: values.name,
+        location: values.location,
+        capacity: values.capacity,
+        surface: values.surface,
+        manager: values.manager,
+        status: values.status,
+        is_active: values.is_active,
+        occupied: 0
       };
 
       console.log("Données de l'entrepôt à envoyer:", warehouseData);
 
-      // Ajouter l'entrepôt dans Supabase
       const { data, error } = await supabase
         .from('warehouses')
         .insert(warehouseData)
@@ -151,13 +150,11 @@ export default function Warehouses() {
         throw error;
       }
       
-      // Ajouter l'entrepôt à l'état local
       if (data && data.length > 0) {
         setWarehouses([...warehouses, data[0]]);
         toast.success("Entrepôt ajouté avec succès");
       }
 
-      // Fermer la modal et réinitialiser le formulaire
       setIsDialogOpen(false);
       form.reset();
     } catch (error) {
@@ -318,7 +315,6 @@ export default function Warehouses() {
         </div>
       </Card>
 
-      {/* Dialog pour ajouter/modifier un entrepôt */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md glass-panel">
           <DialogHeader>
