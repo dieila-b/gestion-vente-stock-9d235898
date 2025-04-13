@@ -149,7 +149,7 @@ export default function POSLocations() {
         </div>
         
         <POSLocationsTable
-          locations={filteredLocations || []}
+          locations={filteredLocations || []} 
           onEdit={onEditLocation}
           onDelete={onDeleteLocation}
         />

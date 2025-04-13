@@ -9,7 +9,7 @@ export function usePOSLocationsMutations() {
 
   // Create POS location
   const { mutate: createLocation, isPending: isCreating } = useMutation({
-    mutationFn: async (locationData: Omit<POSLocation, "id">) => {
+    mutationFn: async (locationData: Omit<POSLocation, "id" | "created_at" | "updated_at">) => {
       try {
         console.log("Creating location with data:", locationData);
         
