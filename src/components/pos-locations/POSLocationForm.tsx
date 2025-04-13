@@ -74,6 +74,41 @@ export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFor
         />
       </div>
       
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="surface">Surface (m²)</Label>
+          <Input
+            id="surface"
+            name="surface"
+            type="number"
+            defaultValue={location?.surface || 0}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="capacity">Capacité</Label>
+          <Input
+            id="capacity"
+            name="capacity"
+            type="number"
+            defaultValue={location?.capacity || 0}
+            required
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="occupied">Occupation</Label>
+        <Input
+          id="occupied"
+          name="occupied"
+          type="number"
+          defaultValue={location?.occupied || 0}
+          required
+        />
+      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="phone">Téléphone</Label>
         <Input
