@@ -67,7 +67,6 @@ export function transformClient(item: any): Client {
     email: safeGet(item, 'email', ''),
     phone: safeGet(item, 'phone', ''),
     mobile_1: safeGet(item, 'mobile_1', ''),
-    mobile_2: safeGet(item, 'mobile_2', ''),
     whatsapp: safeGet(item, 'whatsapp', ''),
     address: safeGet(item, 'address', ''),
     city: safeGet(item, 'city', ''),

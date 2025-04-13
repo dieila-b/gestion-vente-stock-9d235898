@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Pencil, Printer } from "lucide-react";
@@ -37,7 +36,7 @@ export const ClientsTable = ({
 
   // Get client phone number with fallbacks
   const getClientPhone = (client: Client) => {
-    return client.phone || client.mobile_1 || client.mobile_2 || client.whatsapp || '-';
+    return client.phone || client.mobile_1 || client.whatsapp || '-';
   };
 
   return (

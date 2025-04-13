@@ -27,7 +27,7 @@ export const ClientsHeader = ({ setIsAddClientOpen, clients }: ClientsHeaderProp
       const tableData = clients.map(client => [
         client.client_code || "-",
         client.contact_name,
-        client.phone || client.mobile_1 || client.mobile_2 || client.whatsapp || "-",
+        client.phone || client.mobile_1 || client.whatsapp || "-",
         client.client_type || "occasionnel",
         client.address || "-",
       ]);

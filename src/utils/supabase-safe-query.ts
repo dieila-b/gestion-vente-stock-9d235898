@@ -31,7 +31,6 @@ export function safeClient(client: any): {
   email?: string;
   phone?: string;
   mobile_1?: string;
-  mobile_2?: string;
   whatsapp?: string;
   credit_limit?: number;
   rc_number?: string;
@@ -48,7 +47,6 @@ export function safeClient(client: any): {
       email: '',
       phone: '',
       mobile_1: '',
-      mobile_2: '',
       whatsapp: '',
       credit_limit: 0,
       rc_number: '',
