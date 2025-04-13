@@ -22,266 +22,272 @@ import {
   Truck,
   Users,
   Warehouse
-} from "lucide-react"
+} from "lucide-react";
+import { LucideProps } from "lucide-react";
+import React from "react";
+
+export type IconComponent = React.ForwardRefExoticComponent<
+  Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
+>;
 
 export type MenuItem = {
-  label: string
-  href: string
-  icon: React.ComponentType
-  submenu?: MenuItem[]
+  label: string;
+  path?: string;
+  icon: IconComponent;
+  submenu?: MenuItem[];
 }
 
 export const menuItems: MenuItem[] = [
   {
     label: 'Tableau de bord',
-    href: '/dashboard',
+    path: '/dashboard',
     icon: LayoutDashboard,
   },
   {
     label: 'Points de vente',
-    href: '/pos',
+    path: '/pos',
     icon: ShoppingCart,
     submenu: [
       {
         label: 'Point de vente',
-        href: '/pos',
+        path: '/pos',
         icon: ShoppingCart,
       },
       {
         label: 'Ventes',
-        href: '/sales',
+        path: '/sales',
         icon: TrendingUp,
       },
       {
         label: 'Factures',
-        href: '/sales-invoices',
+        path: '/sales-invoices',
         icon: ReceiptText,
       },
       {
         label: 'Précommandes',
-        href: '/preorders',
+        path: '/preorders',
         icon: DollarSign,
       },
       {
         label: 'Factures de précommande',
-        href: '/preorder-invoices',
+        path: '/preorder-invoices',
         icon: FileText,
       },
       {
         label: 'Points de vente',
-        href: '/pos-locations',
+        path: '/pos-locations',
         icon: Building,
       }
     ]
   },
   {
     label: 'Achats',
-    href: '/purchase',
+    path: '/purchase',
     icon: BadgeDollarSign,
     submenu: [
       {
         label: 'Commandes',
-        href: '/purchase-order',
+        path: '/purchase-order',
         icon: BadgeDollarSign,
       },
       {
         label: 'Bons de livraison',
-        href: '/delivery-note',
+        path: '/delivery-note',
         icon: Truck,
       },
       {
         label: 'Factures d\'achat',
-        href: '/purchase-invoice',
+        path: '/purchase-invoice',
         icon: FileText,
       }
     ]
   },
   {
     label: 'Stock',
-    href: '/stocks',
+    path: '/stocks',
     icon: Package,
     submenu: [
       {
         label: 'Vue d\'ensemble',
-        href: '/stocks',
+        path: '/stocks',
         icon: Package,
       },
       {
         label: 'Stock épuisé',
-        href: '/stocks/out-of-stock',
+        path: '/stocks/out-of-stock',
         icon: PackageX,
       },
       {
         label: 'Stock faible',
-        href: '/stocks/low-stock',
+        path: '/stocks/low-stock',
         icon: PackageOpen,
       },
       {
         label: 'Entrées de stock',
-        href: '/stocks/stock-in',
+        path: '/stocks/stock-in',
         icon: PackagePlus,
       },
       {
         label: 'Sorties de stock',
-        href: '/stocks/stock-out',
+        path: '/stocks/stock-out',
         icon: PackageX,
       },
       {
         label: 'Stock PDV',
-        href: '/stocks/pos-stock',
+        path: '/stocks/pos-stock',
         icon: PackageCheck,
       },
       {
         label: 'Transferts',
-        href: '/transfers',
+        path: '/transfers',
         icon: RefreshCcw,
       },
       {
         label: 'Retours clients',
-        href: '/customer-returns',
+        path: '/customer-returns',
         icon: RefreshCcw,
       },
       {
         label: 'Retours fournisseurs',
-        href: '/supplier-returns',
+        path: '/supplier-returns',
         icon: RefreshCcw,
       },
       {
         label: 'Entrepôts',
-        href: '/warehouses',
+        path: '/warehouses',
         icon: Warehouse,
       },
       {
         label: 'Zones géographiques',
-        href: '/stock-location',
+        path: '/stock-location',
         icon: Building2,
       }
     ]
   },
   {
     label: 'Catalogue',
-    href: '/catalog',
+    path: '/catalog',
     icon: Library,
     submenu: [
       {
         label: 'Produits',
-        href: '/catalog',
+        path: '/catalog',
         icon: Library,
       },
       {
         label: 'Unités',
-        href: '/product-units',
+        path: '/product-units',
         icon: Package,
       }
     ]
   },
   {
     label: 'Devis',
-    href: '/quotes',
+    path: '/quotes',
     icon: FileText,
   },
   {
     label: 'Commandes',
-    href: '/orders',
+    path: '/orders',
     icon: ListChecks,
   },
   {
     label: 'Factures',
-    href: '/invoices',
+    path: '/invoices',
     icon: FileText,
   },
   {
     label: 'Clients',
-    href: '/clients',
+    path: '/clients',
     icon: Users,
   },
   {
     label: 'Fournisseurs',
-    href: '/suppliers',
+    path: '/suppliers',
     icon: Truck,
   },
   {
     label: 'Finances',
-    href: '/expenses',
+    path: '/expenses',
     icon: DollarSign,
     submenu: [
       {
         label: 'Vue d\'ensemble',
-        href: '/expenses',
+        path: '/expenses',
         icon: DollarSign,
       },
       {
         label: 'Recettes',
-        href: '/expense-income',
+        path: '/expense-income',
         icon: DollarSign,
       },
       {
         label: 'Dépenses',
-        href: '/expense-outcome',
+        path: '/expense-outcome',
         icon: DollarSign,
       },
       {
         label: 'Paiements',
-        href: '/payments',
+        path: '/payments',
         icon: CreditCard,
       },
       {
         label: 'Comptes bancaires',
-        href: '/bank-accounts',
+        path: '/bank-accounts',
         icon: Building,
       },
       {
         label: 'Caisses',
-        href: '/cash-registers',
+        path: '/cash-registers',
         icon: CreditCard,
       }
     ]
   },
   {
     label: 'Rapports',
-    href: '/reports/yearly',
+    path: '/reports/yearly',
     icon: TrendingUp,
     submenu: [
       {
         label: 'Rapport annuel',
-        href: '/reports/yearly',
+        path: '/reports/yearly',
         icon: TrendingUp,
       },
       {
         label: 'Rapport mensuel',
-        href: '/reports/monthly',
+        path: '/reports/monthly',
         icon: TrendingUp,
       },
       {
         label: 'Rapport journalier',
-        href: '/reports/daily',
+        path: '/reports/daily',
         icon: TrendingUp,
       },
       {
         label: 'Rapport clients',
-        href: '/reports/clients',
+        path: '/reports/clients',
         icon: TrendingUp,
       },
       {
         label: 'Factures impayées',
-        href: '/reports/unpaid',
+        path: '/reports/unpaid',
         icon: TrendingUp,
       },
       {
         label: 'Rapport personnalisé',
-        href: '/reports/custom',
+        path: '/reports/custom',
         icon: TrendingUp,
       }
     ]
   },
   {
     label: 'Personnel',
-    href: '/users',
+    path: '/users',
     icon: Users,
   },
   {
     label: 'Home',
-    href: '/',
+    path: '/',
     icon: Home,
   }
-]
+];
