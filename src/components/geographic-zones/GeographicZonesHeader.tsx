@@ -1,38 +1,29 @@
 
-import { MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { Map, Plus } from "lucide-react";
 
 interface GeographicZonesHeaderProps {
   onAddClick: () => void;
 }
 
-export function GeographicZonesHeader({ onAddClick }: GeographicZonesHeaderProps) {
+export const GeographicZonesHeader = ({ onAddClick }: GeographicZonesHeaderProps) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="flex items-center justify-between"
-    >
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-primary/10">
-          <MapPin className="h-8 w-8 text-primary" />
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <div className="p-2 rounded-full bg-primary/10">
+          <Map className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">
-            Zone Géographie
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Zones Géographiques</h1>
           <p className="text-muted-foreground">
-            Gestion des régions, zones et emplacements
+            Gérez les pays, régions, villes et zones d'entrepôt.
           </p>
         </div>
       </div>
-
       <Button onClick={onAddClick}>
         <Plus className="mr-2 h-4 w-4" />
-        Ajouter une zone
+        Nouvelle Zone
       </Button>
-    </motion.div>
+    </div>
   );
-}
+};

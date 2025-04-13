@@ -1,123 +1,141 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { GeographicZone, ParentZone } from "@/types/geographic";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { GeographicZone } from '@/types/geographic-zone';
 
-export function useGeographicZones() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+export const useGeographicZones = () => {
+  const [zones, setZones] = useState<GeographicZone[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedZone, setSelectedZone] = useState<GeographicZone | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const { data: zones, refetch } = useQuery({
-    queryKey: ["geographic-zones"],
-    queryFn: async () => {
+  const fetchZones = async () => {
+    setIsLoading(true);
+    try {
       const { data, error } = await supabase
-        .from("geographic_zones")
-        .select("*")
-        .order("name");
-
-      if (error) {
-        toast.error("Erreur lors du chargement des zones géographiques");
-        throw error;
-      }
-
-      return data as GeographicZone[];
-    },
-  });
-
-  const { data: parentZones } = useQuery({
-    queryKey: ["parent-zones"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("geographic_zones")
-        .select("id, name, type")
-        .in("type", ["region", "zone"])
-        .order("name");
+        .from('geographic_zones')
+        .select('*')
+        .order('name');
 
       if (error) throw error;
-      return data as ParentZone[];
-    },
-  });
+      setZones(data || []);
+    } catch (error: any) {
+      console.error('Error fetching zones:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les zones géographiques',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const zoneData = {
-      name: formData.get("name") as string,
-      type: formData.get("type") as GeographicZone["type"],
-      parent_id: formData.get("parent_id") as string || null,
-      description: formData.get("description") as string || null,
-    };
+  useEffect(() => {
+    fetchZones();
+  }, []);
 
+  const handleSubmit = async (data: any) => {
     try {
-      if (selectedZone) {
-        const { error } = await supabase
-          .from("geographic_zones")
-          .update(zoneData)
-          .eq("id", selectedZone.id);
-
-        if (error) throw error;
-        toast.success("Zone géographique mise à jour avec succès");
+      let error;
+      
+      if (data.id) {
+        // Update
+        const { error: updateError } = await supabase
+          .from('geographic_zones')
+          .update({ 
+            name: data.name,
+            type: data.type,
+            parent_id: data.parent_id,
+          })
+          .eq('id', data.id);
+        
+        error = updateError;
       } else {
-        const { error } = await supabase
-          .from("geographic_zones")
-          .insert([zoneData]);
-
-        if (error) throw error;
-        toast.success("Zone géographique ajoutée avec succès");
+        // Insert
+        const { error: insertError } = await supabase
+          .from('geographic_zones')
+          .insert({ 
+            name: data.name,
+            type: data.type,
+            parent_id: data.parent_id,
+          });
+        
+        error = insertError;
       }
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: data.id ? 'Zone mise à jour avec succès' : 'Zone créée avec succès',
+      });
 
       setIsAddDialogOpen(false);
       setSelectedZone(null);
-      refetch();
-    } catch (error) {
-      toast.error("Une erreur est survenue");
-      console.error(error);
+      fetchZones();
+    } catch (error: any) {
+      console.error('Error saving zone:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder la zone géographique',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleDelete = async (zone: GeographicZone) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette zone ?")) return;
-
+  const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("geographic_zones")
+        .from('geographic_zones')
         .delete()
-        .eq("id", zone.id);
+        .eq('id', id);
 
       if (error) throw error;
-      toast.success("Zone géographique supprimée avec succès");
-      refetch();
-    } catch (error) {
-      toast.error("Une erreur est survenue lors de la suppression");
-      console.error(error);
+
+      toast({
+        title: 'Succès',
+        description: 'Zone supprimée avec succès',
+      });
+
+      fetchZones();
+    } catch (error: any) {
+      console.error('Error deleting zone:', error);
+      toast({
+        title: 'Erreur',
+        description: "Impossible de supprimer la zone. Assurez-vous qu'elle n'est pas utilisée ailleurs.",
+        variant: 'destructive',
+      });
     }
   };
 
-  const getZoneTypeName = (type: GeographicZone["type"]) => {
-    switch (type) {
-      case "region":
-        return "Région";
-      case "zone":
-        return "Zone";
-      case "emplacement":
-        return "Emplacement";
-      default:
-        return type;
-    }
+  const getZoneTypeName = (type: string): string => {
+    const types: Record<string, string> = {
+      country: 'Pays',
+      state: 'État/Province',
+      city: 'Ville',
+      district: 'Quartier',
+      warehouse_zone: "Zone d'entrepôt",
+    };
+    return types[type] || type;
   };
 
-  const getParentName = (parentId: string | undefined) => {
-    if (!parentId || !parentZones) return "-";
-    const parent = parentZones.find(zone => zone.id === parentId);
-    return parent ? parent.name : "-";
+  const getParentName = (parentId: string | null): string => {
+    if (!parentId) return '';
+    const parent = zones.find(z => z.id === parentId);
+    return parent ? parent.name : '';
   };
+
+  // Get zones that can be parents (not including the currently selected zone)
+  const parentZones = selectedZone 
+    ? zones.filter(zone => zone.id !== selectedZone.id) 
+    : zones;
 
   return {
     zones,
-    parentZones,
+    isLoading,
     selectedZone,
     setSelectedZone,
     isAddDialogOpen,
@@ -125,6 +143,7 @@ export function useGeographicZones() {
     handleSubmit,
     handleDelete,
     getZoneTypeName,
-    getParentName
+    getParentName,
+    parentZones,
   };
-}
+};
