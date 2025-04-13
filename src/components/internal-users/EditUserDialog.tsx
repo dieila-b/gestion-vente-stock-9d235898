@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface EditUserDialogProps {
   user: User;
@@ -31,6 +32,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleInputChange = (field: keyof User, value: any) => {
     setUserData((prev) => ({
@@ -41,6 +43,41 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      
+      // Generate a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `profile-photos/${fileName}`;
+      
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('lovable-uploads')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL of the uploaded file
+      const { data } = supabase.storage
+        .from('lovable-uploads')
+        .getPublicUrl(filePath);
+      
+      // Update the user data with the new photo URL
+      handleInputChange('photo_url', data.publicUrl);
+      
+      toast.success("Photo de profil téléchargée avec succès");
+    } catch (error: any) {
+      console.error("Erreur lors du téléchargement de l'image:", error);
+      toast.error(`Erreur: ${error.message || "Une erreur est survenue"}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,6 +147,17 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             </TabsList>
             
             <TabsContent value="informations" className="space-y-4">
+              <div className="mb-6 flex justify-center">
+                <div className="w-full max-w-xs">
+                  <Label htmlFor="photo" className="block mb-2 text-center text-gray-300">Photo de profil</Label>
+                  <ImageUpload 
+                    value={userData.photo_url} 
+                    onUpload={handleImageUpload}
+                    disabled={isUploading || isSubmitting}
+                  />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name" className="text-gray-300">Prénom</Label>
@@ -231,7 +279,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               {isSubmitting ? "Enregistrement..." : "Enregistrer"}
