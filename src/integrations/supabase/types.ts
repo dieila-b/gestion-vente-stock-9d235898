@@ -520,7 +520,7 @@ export type Database = {
           created_at?: string | null
           email: string
           first_name?: string | null
-          id: string
+          id?: string
           is_active?: boolean | null
           last_name?: string | null
           password?: string | null

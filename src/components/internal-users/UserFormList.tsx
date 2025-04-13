@@ -98,9 +98,12 @@ export const UserFormList = ({
   };
 
   const handleSubmit = async () => {
+    console.log("Starting user submission with data:", newUserData);
     setIsSubmitting(true);
     try {
       await onBulkInsert();
+    } catch (error) {
+      console.error("Error in form submission:", error);
     } finally {
       setIsSubmitting(false);
     }

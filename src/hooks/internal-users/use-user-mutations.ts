@@ -32,7 +32,7 @@ export const useUserMutations = (queryClient: QueryClient) => {
         
         // Create a base object with required fields, ensuring they aren't nullable
         return {
-          id: crypto.randomUUID(),
+          // Removed the explicit ID assignment to let the database generate it
           email: userData.email || '',
           first_name: userData.first_name || '',
           last_name: userData.last_name || '',
@@ -40,15 +40,17 @@ export const useUserMutations = (queryClient: QueryClient) => {
           is_active: typeof userData.is_active === 'boolean' ? userData.is_active : true,
           phone: userData.phone || '',
           address: userData.address || '',
-          photo_url: userData.photo_url || null
+          photo_url: userData.photo_url || null,
+          password: password || '' // Store password in the database (in a real application, this should be hashed)
         };
       });
       
       console.log("Inserting users:", usersForDb);
       
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('internal_users')
-        .insert(usersForDb);
+        .insert(usersForDb)
+        .select();
       
       if (error) {
         console.error("Error adding users:", error);
@@ -57,6 +59,7 @@ export const useUserMutations = (queryClient: QueryClient) => {
         return;
       }
       
+      console.log("Users added successfully:", data);
       toast.dismiss();
       toast.success("Utilisateurs ajoutés avec succès");
       await queryClient.refetchQueries({ queryKey: ['internal-users'] });
