@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Buildings, ShoppingBag, Warehouse, ArrowUpDown } from "lucide-react";
+import { Building, ShoppingBag, Warehouse, ArrowUpDown } from "lucide-react"; // Changed 'Buildings' to 'Building'
 import { 
   Cell,
   Label,
