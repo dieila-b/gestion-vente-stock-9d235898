@@ -14,16 +14,21 @@ export function usePOSLocation() {
   const { data: locations = [], isLoading, isError } = useQuery({
     queryKey: ["pos-locations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pos_locations")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching POS locations:", error);
+      try {
+        const { data, error } = await supabase
+          .from("pos_locations")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching POS locations:", error);
+          throw error;
+        }
+        return data as POSLocation[];
+      } catch (error) {
+        console.error("Failed to fetch POS locations:", error);
         throw error;
       }
-      return data as POSLocation[];
     }
   });
 
@@ -31,19 +36,15 @@ export function usePOSLocation() {
   const { mutate: createLocation, isPending: isCreating } = useMutation({
     mutationFn: async (locationData: Omit<POSLocation, "id">) => {
       try {
-        // Fix: ensure is_active is properly set from the status switch
+        console.log("Creating location with data:", locationData);
+        
+        // S'assurer que is_active est correctement défini comme booléen
         const dataToInsert = {
           ...locationData,
-          is_active: !!locationData.is_active
+          is_active: locationData.is_active === "true" || locationData.is_active === true,
+          status: locationData.status || (locationData.is_active ? "active" : "inactive")
         };
 
-        // Set status based on is_active
-        if (dataToInsert.status === undefined) {
-          dataToInsert.status = dataToInsert.is_active ? "active" : "inactive";
-        }
-
-        console.log("Creating POS location with data:", dataToInsert);
-        
         const { data, error } = await supabase
           .from("pos_locations")
           .insert([dataToInsert])
@@ -52,6 +53,10 @@ export function usePOSLocation() {
         if (error) {
           console.error("Supabase error creating location:", error);
           throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          throw new Error("No data returned after insert");
         }
         
         return data[0];
@@ -75,21 +80,21 @@ export function usePOSLocation() {
   const { mutate: updateLocation, isPending: isEditing } = useMutation({
     mutationFn: async (location: POSLocation) => {
       try {
-        // Ensure boolean value for is_active
+        // S'assurer que is_active est correctement défini comme booléen
         const dataToUpdate = {
           name: location.name,
           address: location.address,
           phone: location.phone,
           email: location.email,
           manager: location.manager,
-          status: location.is_active ? "active" : "inactive",
-          is_active: !!location.is_active,
+          status: location.is_active === true || location.is_active === "true" ? "active" : "inactive",
+          is_active: location.is_active === true || location.is_active === "true",
           capacity: location.capacity || 0,
           occupied: location.occupied || 0,
           surface: location.surface || 0
         };
 
-        console.log("Updating POS location:", dataToUpdate);
+        console.log("Updating location:", dataToUpdate);
         
         const { data, error } = await supabase
           .from("pos_locations")
@@ -151,6 +156,7 @@ export function usePOSLocation() {
 
   // Handle form submission
   const handleSubmit = (data: POSLocation) => {
+    console.log("Submitting data:", data);
     if (selectedLocation?.id) {
       updateLocation({
         ...data,
@@ -168,11 +174,6 @@ export function usePOSLocation() {
     }
   };
 
-  // Close dialog helper
-  const closeEditDialog = () => {
-    setIsAddDialogOpen(false);
-  };
-
   return {
     locations,
     isLoading,
@@ -188,6 +189,6 @@ export function usePOSLocation() {
     setIsAddDialogOpen,
     handleSubmit,
     handleDelete,
-    closeEditDialog
+    closeEditDialog: () => setIsAddDialogOpen(false)
   };
 }

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { POSLocation } from "@/types/pos-locations";
 import { Switch } from "@/components/ui/switch";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 
 interface POSLocationFormProps {
   location: POSLocation | null;
@@ -15,21 +15,38 @@ interface POSLocationFormProps {
 export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFormProps) {
   const [isActive, setIsActive] = useState<boolean>(location?.is_active !== false);
   
+  // Réinitialiser isActive lorsque location change
+  useEffect(() => {
+    setIsActive(location?.is_active !== false);
+  }, [location]);
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Ensure is_active status is correctly passed with the form
+    // Créer un champ caché pour is_active s'il n'existe pas déjà
     const form = e.currentTarget;
     const formElement = form.elements.namedItem('is_active') as HTMLInputElement;
+    
     if (formElement) {
       formElement.value = String(isActive);
     } else {
-      // If element doesn't exist, create a hidden input
       const hiddenInput = document.createElement('input');
       hiddenInput.type = 'hidden';
       hiddenInput.name = 'is_active';
       hiddenInput.value = String(isActive);
       form.appendChild(hiddenInput);
+    }
+
+    // Ajouter également un champ caché pour status basé sur is_active
+    const statusElement = form.elements.namedItem('status') as HTMLInputElement;
+    if (statusElement) {
+      statusElement.value = isActive ? 'active' : 'inactive';
+    } else {
+      const statusInput = document.createElement('input');
+      statusInput.type = 'hidden';
+      statusInput.name = 'status';
+      statusInput.value = isActive ? 'active' : 'inactive';
+      form.appendChild(statusInput);
     }
     
     onSubmit(e);
@@ -88,13 +105,13 @@ export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFor
       
       <div className="flex items-center space-x-2">
         <Switch
-          id="status"
-          name="status"
+          id="status-switch"
           checked={isActive}
           onCheckedChange={setIsActive}
         />
-        <Label htmlFor="status">Actif</Label>
+        <Label htmlFor="status-switch">Actif</Label>
         <input type="hidden" name="is_active" value={String(isActive)} />
+        <input type="hidden" name="status" value={isActive ? "active" : "inactive"} />
       </div>
       
       <div className="flex justify-end space-x-2 pt-4">

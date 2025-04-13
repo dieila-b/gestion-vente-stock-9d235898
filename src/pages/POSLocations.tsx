@@ -35,7 +35,7 @@ export default function POSLocations() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    // Construct location object from form data
+    // Construire l'objet location à partir des données du formulaire
     const locationData: Partial<POSLocation> = {
       name: formData.get('name') as string,
       address: formData.get('address') as string,
