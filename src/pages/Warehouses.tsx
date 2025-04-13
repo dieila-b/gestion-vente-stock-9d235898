@@ -55,7 +55,6 @@ export default function Warehouses() {
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        // Removed the generic type argument from db.query
         const data = await db.query('warehouses', 
           (query) => query.select('*').order('name', { ascending: true }),
           []
@@ -84,24 +83,59 @@ export default function Warehouses() {
         manager: values.manager,
         status: values.status || 'Actif',
         is_active: values.is_active,
-        occupied: 0
       };
 
-      console.log("Données de l'entrepôt à envoyer:", warehouseData);
+      // If we're editing an existing warehouse
+      if (selectedWarehouse) {
+        // Add occupied to the update data but don't modify it
+        const updateData = {
+          ...warehouseData,
+          occupied: selectedWarehouse.occupied // Preserve the current occupied value
+        };
 
-      // Removed the generic type argument from db.insert
-      const newWarehouse = await db.insert('warehouses', warehouseData);
-      
-      if (newWarehouse) {
-        setWarehouses([...warehouses, newWarehouse as Warehouse]);
-        toast.success("Entrepôt ajouté avec succès");
-        setIsDialogOpen(false);
+        console.log("Mise à jour de l'entrepôt:", updateData);
+        
+        // Update the existing warehouse
+        const updatedWarehouse = await db.update(
+          'warehouses', 
+          updateData, 
+          'id', 
+          selectedWarehouse.id
+        );
+        
+        if (updatedWarehouse) {
+          // Update the warehouses state by replacing the edited warehouse
+          setWarehouses(warehouses.map(w => 
+            w.id === selectedWarehouse.id ? updatedWarehouse as Warehouse : w
+          ));
+          toast.success("Entrepôt mis à jour avec succès");
+          setIsDialogOpen(false);
+        } else {
+          toast.error("Erreur lors de la mise à jour de l'entrepôt");
+        }
       } else {
-        toast.error("Erreur lors de l'ajout de l'entrepôt");
+        // Creating a new warehouse
+        const newWarehouseData = {
+          ...warehouseData,
+          occupied: 0 // Only set occupied to 0 for new warehouses
+        };
+        
+        console.log("Création d'un nouvel entrepôt:", newWarehouseData);
+        
+        // Insert a new warehouse
+        const newWarehouse = await db.insert('warehouses', newWarehouseData);
+        
+        if (newWarehouse) {
+          setWarehouses([...warehouses, newWarehouse as Warehouse]);
+          toast.success("Entrepôt ajouté avec succès");
+          setIsDialogOpen(false);
+        } else {
+          toast.error("Erreur lors de l'ajout de l'entrepôt");
+        }
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'entrepôt:', error);
-      toast.error("Erreur lors de l'ajout de l'entrepôt");
+      console.error('Erreur lors de l\'opération sur l\'entrepôt:', error);
+      toast.error("Erreur lors de l'opération sur l'entrepôt");
     } finally {
       setIsSubmitting(false);
     }
