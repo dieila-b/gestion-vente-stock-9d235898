@@ -46,12 +46,22 @@ export function useTransfers() {
 
     const filtered = transfers.filter(transfer => 
       transfer.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.source_warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.destination_warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      transfer.source_warehouse?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transfer.destination_warehouse?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
     setFilteredTransfers(filtered);
   }, [searchQuery, transfers]);
+
+  // Debug logs to check warehouses and posLocations
+  useEffect(() => {
+    console.log("useTransfers hook data:", {
+      warehouses: warehouses?.length,
+      warehouses_data: warehouses,
+      posLocations: posLocations?.length,
+      posLocations_data: posLocations,
+    });
+  }, [warehouses, posLocations]);
 
   return {
     transfers,

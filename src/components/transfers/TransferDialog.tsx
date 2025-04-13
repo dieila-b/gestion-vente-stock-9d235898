@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormField } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { Transfer } from "@/types/transfer";
@@ -44,7 +44,9 @@ export const TransferDialog = ({
   useEffect(() => {
     console.log("TransferDialog rendering with:", {
       warehouses: warehouses?.length,
+      warehouses_data: warehouses,
       posLocations: posLocations?.length,
+      posLocations_data: posLocations,
       transferType,
       productId,
       sourceWarehouseId,
@@ -77,11 +79,14 @@ export const TransferDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="glass-panel border-0 max-w-2xl">
+      <DialogContent className="border border-gray-300 bg-background max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gradient">
+          <DialogTitle className="text-2xl font-bold">
             {!!editingTransfer ? "Modifier le transfert" : "Créer un nouveau transfert"}
           </DialogTitle>
+          <DialogDescription>
+            Remplissez les informations ci-dessous pour {!!editingTransfer ? "modifier" : "créer"} un transfert.
+          </DialogDescription>
         </DialogHeader>
         <div className="max-h-[80vh] overflow-y-auto">
           <Form {...form}>

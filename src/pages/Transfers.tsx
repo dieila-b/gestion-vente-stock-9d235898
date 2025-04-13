@@ -9,8 +9,11 @@ import { Transfer } from '@/types/transfer';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { transferFormSchema, TransferFormValues } from '@/components/transfers/schemas/transfer-form-schema';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function TransfersPage() {
+  const { toast } = useToast();
+  
   const {
     transfers,
     filteredTransfers,
@@ -59,6 +62,7 @@ export default function TransfersPage() {
       warehouses: warehouses?.length,
       warehouses_data: warehouses,
       posLocations: posLocations?.length,
+      posLocations_data: posLocations,
       products: products?.length,
     });
   }, [warehouses, posLocations, products]);
@@ -66,10 +70,26 @@ export default function TransfersPage() {
   // Create wrappers for the handlers
   const handleFormSubmitWrapper = async (values: TransferFormValues) => {
     console.log("Form values submitted:", values);
-    // Handle form submission with the values
-    await handleFormSubmit({ preventDefault: () => {} } as React.FormEvent);
-    setIsDialogOpen(false);
-    setEditingTransfer(null);
+    try {
+      // Handle form submission with the values
+      await handleFormSubmit({ preventDefault: () => {} } as React.FormEvent);
+      setIsDialogOpen(false);
+      setEditingTransfer(null);
+      
+      toast({
+        title: "Succès",
+        description: editingTransfer 
+          ? "Le transfert a été modifié avec succès" 
+          : "Le transfert a été créé avec succès",
+      });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la soumission du formulaire",
+      });
+    }
   };
 
   const handleEdit = async (transfer: Transfer) => {
@@ -86,6 +106,12 @@ export default function TransfersPage() {
 
   const handleNewTransferClick = () => {
     resetForm();
+    form.reset({
+      transfer_type: "depot_to_depot",
+      status: "pending",
+      transfer_date: new Date().toISOString().split("T")[0],
+      quantity: 1,
+    });
     setEditingTransfer(null);
     setIsDialogOpen(true);
   };

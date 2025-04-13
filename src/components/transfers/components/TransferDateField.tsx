@@ -1,24 +1,24 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { TransferFormValues } from "../schemas/transfer-form-schema";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useState } from "react";
 
 interface TransferDateFieldProps {
   form: UseFormReturn<TransferFormValues>;
 }
 
 export const TransferDateField = ({ form }: TransferDateFieldProps) => {
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
   return (
     <FormField
       control={form.control}
@@ -26,18 +26,18 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>Date du transfert</FormLabel>
-          <Popover>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full pl-3 text-left font-normal glass-effect",
+                    "w-full pl-3 text-left font-normal bg-background/95 border border-gray-300",
                     !field.value && "text-muted-foreground"
                   )}
                 >
                   {field.value ? (
-                    format(new Date(field.value), "dd MMMM yyyy", { locale: fr })
+                    format(new Date(field.value), "P", { locale: fr })
                   ) : (
                     <span>Sélectionner une date</span>
                   )}
@@ -45,13 +45,21 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-background/95 backdrop-blur-md border-white/10" align="start">
+            <PopoverContent 
+              className="w-auto p-0 z-[9999] bg-background border border-gray-300" 
+              align="start"
+            >
               <Calendar
                 mode="single"
                 selected={field.value ? new Date(field.value) : undefined}
-                onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                onSelect={(date) => {
+                  if (date) {
+                    field.onChange(date.toISOString().split("T")[0]);
+                  }
+                  setIsCalendarOpen(false);
+                }}
+                disabled={(date) => date < new Date("1900-01-01")}
                 initialFocus
-                className="p-3 pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
