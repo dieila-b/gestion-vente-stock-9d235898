@@ -69,44 +69,6 @@ export const ContactFields = ({ form }: ContactFieldsProps) => {
           </FormItem>
         )}
       />
-
-      <FormField
-        control={form.control}
-        name="phone"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Téléphone Mobile</FormLabel>
-            <FormControl>
-              <Input
-                type="tel"
-                placeholder={watchedCountry ? getPhoneCodeForCountry(watchedCountry) + " XX XX XX XX" : "+XX X XX XX XX XX"}
-                className="glass-effect"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="landline"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Téléphone Fixe</FormLabel>
-            <FormControl>
-              <Input
-                type="tel"
-                placeholder={watchedCountry ? getPhoneCodeForCountry(watchedCountry) + " XX XX XX XX" : "+XX X XX XX XX XX"}
-                className="glass-effect"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </>
   );
 };

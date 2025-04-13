@@ -8,6 +8,7 @@ import {
   CompanyNameField,
   ContactFields,
   CountryField,
+  PhoneFields,
   StatusField,
   WebsiteField
 } from "./fields";
@@ -47,6 +48,9 @@ export const SupplierFormFields = ({ form, showSupplierCode = false }: SupplierF
       
       {/* Pays placé juste après Email */}
       <CountryField form={form} />
+      
+      {/* Téléphones après le pays */}
+      <PhoneFields form={form} watchedCountry={watchedCountry} />
       
       <CityField form={form} watchedCountry={watchedCountry} cities={cities} />
       <AddressFields form={form} />

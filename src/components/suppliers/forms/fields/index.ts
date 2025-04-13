@@ -4,6 +4,7 @@ export * from './CityField';
 export * from './CompanyNameField';
 export * from './ContactFields';
 export * from './CountryField';
+export * from './PhoneFields';
 export * from './StatusField';
 export * from './SupplierCodeField';
 export * from './WebsiteField';
