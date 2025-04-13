@@ -64,7 +64,7 @@ export const GeographicZoneForm = ({
   const handleParentChange = (value: string) => {
     setFormData({
       ...formData,
-      parent_id: value,
+      parent_id: value === "none" ? null : value,
     });
   };
 
@@ -138,15 +138,19 @@ export const GeographicZoneForm = ({
         <div className="space-y-2">
           <Label htmlFor="parent">Parent</Label>
           <Select
-            value={formData.parent_id || undefined}
+            value={formData.parent_id || "none"}
             onValueChange={handleParentChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un parent" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">Aucun parent</SelectItem>
               {availableParents.map((zone) => (
-                <SelectItem key={zone.id} value={zone.id || "placeholder-id"}>
+                <SelectItem 
+                  key={zone.id} 
+                  value={zone.id || "placeholder-id"}
+                >
                   {zone.name} ({getZoneTypeName(zone.type)})
                 </SelectItem>
               ))}

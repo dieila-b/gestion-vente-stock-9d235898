@@ -48,7 +48,7 @@ export const useGeographicZones = () => {
           .update({ 
             name: data.name,
             type: data.type,
-            parent_id: data.parent_id,
+            parent_id: data.parent_id || null, // Ensure parent_id is null if empty
           })
           .eq('id', data.id);
         
@@ -60,7 +60,7 @@ export const useGeographicZones = () => {
           .insert({ 
             name: data.name,
             type: data.type,
-            parent_id: data.parent_id,
+            parent_id: data.parent_id || null, // Ensure parent_id is null if empty
           });
         
         error = insertError;
