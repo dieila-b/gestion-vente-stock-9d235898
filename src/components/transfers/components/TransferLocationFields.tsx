@@ -35,7 +35,7 @@ export const TransferLocationFields = ({
                     <SelectValue placeholder="Sélectionnez le dépôt source" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10" align="center" position="item-aligned">
                   {warehouses && warehouses.length > 0 ? (
                     warehouses.map((warehouse) => (
                       <SelectItem key={warehouse.id} value={warehouse.id}>
@@ -69,7 +69,7 @@ export const TransferLocationFields = ({
                     <SelectValue placeholder="Sélectionnez le point de vente source" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10" align="center" position="item-aligned">
                   {posLocations && posLocations.length > 0 ? (
                     posLocations.map((pos) => (
                       <SelectItem key={pos.id} value={pos.id}>
@@ -103,7 +103,7 @@ export const TransferLocationFields = ({
                     <SelectValue placeholder="Sélectionnez le dépôt de destination" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10" align="center" position="item-aligned">
                   {warehouses && warehouses.length > 0 ? (
                     warehouses.map((warehouse) => (
                       <SelectItem 
@@ -141,7 +141,7 @@ export const TransferLocationFields = ({
                     <SelectValue placeholder="Sélectionnez le point de vente" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10" align="center" position="item-aligned">
                   {posLocations && posLocations.length > 0 ? (
                     posLocations.map((pos) => (
                       <SelectItem key={pos.id} value={pos.id}>

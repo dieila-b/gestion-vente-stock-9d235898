@@ -53,6 +53,16 @@ export default function TransfersPage() {
     },
   });
 
+  // Debug logs
+  useEffect(() => {
+    console.log("TransfersPage data:", {
+      warehouses: warehouses?.length,
+      warehouses_data: warehouses,
+      posLocations: posLocations?.length,
+      products: products?.length,
+    });
+  }, [warehouses, posLocations, products]);
+
   // Create wrappers for the handlers
   const handleFormSubmitWrapper = async (values: TransferFormValues) => {
     console.log("Form values submitted:", values);
@@ -102,9 +112,9 @@ export default function TransfersPage() {
           onOpenChange={setIsDialogOpen}
           onSubmit={handleFormSubmitWrapper}
           editingTransfer={editingTransfer}
-          warehouses={warehouses}
-          products={products}
-          posLocations={posLocations}
+          warehouses={warehouses || []}
+          products={products || []}
+          posLocations={posLocations || []}
         />
       )}
     </div>

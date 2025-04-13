@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormField } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { Transfer } from "@/types/transfer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TransferFormValues } from "./schemas/transfer-form-schema";
 import { TransferDateField } from "./components/TransferDateField";
 import { TransferStatusField } from "./components/TransferStatusField";
@@ -39,6 +39,17 @@ export const TransferDialog = ({
   const sourceWarehouseId = form.watch('source_warehouse_id');
   const sourcePosId = form.watch('source_pos_id');
   const [availableQuantity, setAvailableQuantity] = useState<number | null>(null);
+
+  // Debugging logs
+  useEffect(() => {
+    console.log("TransferDialog rendering with:", {
+      warehouses: warehouses?.length,
+      posLocations: posLocations?.length,
+      transferType,
+      productId,
+      sourceWarehouseId,
+    });
+  }, [warehouses, posLocations, transferType, productId, sourceWarehouseId]);
 
   const handleTransferTypeChange = (value: string) => {
     const newType = value as "depot_to_pos" | "pos_to_depot" | "depot_to_depot";
@@ -91,14 +102,14 @@ export const TransferDialog = ({
 
                 <TransferLocationFields
                   form={form}
-                  warehouses={warehouses}
-                  posLocations={posLocations}
+                  warehouses={warehouses || []}
+                  posLocations={posLocations || []}
                   transferType={transferType}
                 />
 
                 <TransferProductFields
                   form={form}
-                  products={products}
+                  products={products || []}
                   availableQuantity={availableQuantity}
                 />
 
