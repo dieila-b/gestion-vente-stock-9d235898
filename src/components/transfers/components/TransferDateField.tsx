@@ -31,7 +31,7 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full pl-3 text-left font-normal bg-background/95 border border-gray-300",
+                    "w-full pl-3 text-left font-normal bg-white border border-gray-300",
                     !field.value && "text-muted-foreground"
                   )}
                 >
@@ -45,7 +45,7 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
               </FormControl>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-auto p-0 z-[99999] bg-white border border-gray-300" 
+              className="w-auto p-0 z-[999999] bg-white border border-gray-300" 
               align="start"
             >
               <Calendar

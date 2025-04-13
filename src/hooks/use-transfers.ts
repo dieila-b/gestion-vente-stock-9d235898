@@ -56,16 +56,16 @@ export function useTransfers() {
   // Add a mock warehouse if none exists for development purposes
   useEffect(() => {
     console.log("Raw warehouses data:", warehouses);
-    if (warehouses && warehouses.length === 0) {
-      console.log("No warehouses found, adding mock data for development");
-      // This is just for development to ensure the dropdown has data
-      const mockWarehouses = [
-        { id: 'warehouse1', name: 'Entrepôt Principal' },
-        { id: 'warehouse2', name: 'Entrepôt Secondaire' }
-      ];
-      console.log("Added mock warehouses:", mockWarehouses);
+    console.log("Raw pos locations data:", posLocations);
+    
+    if (!warehouses || warehouses.length === 0) {
+      console.log("No warehouses found, using mock data");
     }
-  }, [warehouses]);
+    
+    if (!posLocations || posLocations.length === 0) {
+      console.log("No POS locations found, using mock data");
+    }
+  }, [warehouses, posLocations]);
 
   return {
     transfers,
@@ -79,7 +79,7 @@ export function useTransfers() {
     refetch,
     deleteTransfer,
     fetchTransferById,
-    posLocations,
-    warehouses,
+    posLocations: posLocations || [],
+    warehouses: warehouses || [],
   };
 }

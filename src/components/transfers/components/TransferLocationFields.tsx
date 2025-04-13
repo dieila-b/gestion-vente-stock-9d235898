@@ -1,3 +1,4 @@
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
@@ -26,7 +27,7 @@ export const TransferLocationFields = ({
     console.log("TransferLocationFields warehouses length:", warehouses?.length || 0);
     
     // If no warehouses, add mock data for development
-    const warehousesToUse = warehouses?.length > 0 
+    const warehousesToUse = Array.isArray(warehouses) && warehouses.length > 0 
       ? warehouses 
       : [
           { id: 'warehouse1', name: 'Entrepôt Principal' },
@@ -36,7 +37,7 @@ export const TransferLocationFields = ({
     setSafeWarehouses(warehousesToUse);
 
     // If no POS locations, add mock data for development
-    const posToUse = posLocations?.length > 0 
+    const posToUse = Array.isArray(posLocations) && posLocations.length > 0 
       ? posLocations 
       : [
           { id: 'pos1', name: 'Point de Vente 1' },
@@ -61,15 +62,14 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-background/95 border border-gray-300">
+                  <SelectTrigger className="bg-white border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le dépôt source" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[9999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
                   sideOffset={4}
-                  align="start"
                 >
                   {safeWarehouses.map((warehouse) => (
                     <SelectItem key={warehouse.id} value={warehouse.id}>
@@ -100,15 +100,14 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-background/95 border border-gray-300">
+                  <SelectTrigger className="bg-white border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le point de vente source" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[9999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
                   sideOffset={4}
-                  align="start"
                 >
                   {safePosLocations.map((pos) => (
                     <SelectItem key={pos.id} value={pos.id}>
@@ -139,15 +138,14 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-background/95 border border-gray-300">
+                  <SelectTrigger className="bg-white border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le dépôt de destination" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[9999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
                   sideOffset={4}
-                  align="start"
                 >
                   {safeWarehouses.map((warehouse) => (
                     <SelectItem 
@@ -182,15 +180,14 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-background/95 border border-gray-300">
+                  <SelectTrigger className="bg-white border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le point de vente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[9999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
                   sideOffset={4}
-                  align="start"
                 >
                   {safePosLocations.map((pos) => (
                     <SelectItem key={pos.id} value={pos.id}>
