@@ -5,10 +5,64 @@ import { User } from "@/types/user";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { EditUserFormProps } from "./types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { UserRound, Loader2 } from "lucide-react";
 
-export function UserInfoTab({ userData, onInputChange }: EditUserFormProps) {
+export function UserInfoTab({ 
+  userData, 
+  onInputChange,
+  isImageUploading,
+  onPhotoUpload
+}: EditUserFormProps) {
+  
+  const getInitials = () => {
+    const first = userData.first_name?.charAt(0) || "";
+    const last = userData.last_name?.charAt(0) || "";
+    
+    return first || last ? `${first}${last}` : <UserRound className="h-6 w-6" />;
+  };
+
   return (
     <div className="space-y-4">
+      {/* Profile Photo Section */}
+      <div className="mb-6 flex flex-col items-center">
+        <Label htmlFor="photo" className="block mb-4 text-center text-gray-300">
+          Photo de profil
+        </Label>
+        
+        <div className="mb-4">
+          <Avatar className="h-24 w-24">
+            {isImageUploading ? (
+              <AvatarFallback className="bg-[#1e1e1e] border-gray-700">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </AvatarFallback>
+            ) : (
+              <>
+                <AvatarImage 
+                  src={userData.photo_url || ""} 
+                  alt={`${userData.first_name} ${userData.last_name}`} 
+                />
+                <AvatarFallback className="bg-[#1e1e1e] border-gray-700 text-gray-300">
+                  {getInitials()}
+                </AvatarFallback>
+              </>
+            )}
+          </Avatar>
+        </div>
+        
+        <Card className="w-full max-w-xs bg-[#1e1e1e] border-gray-700">
+          <CardContent className="pt-4">
+            <ImageUpload 
+              onUpload={onPhotoUpload} 
+              value={userData.photo_url}
+              disabled={isImageUploading}
+            />
+          </CardContent>
+        </Card>
+      </div>
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first_name" className="text-gray-300">Prénom</Label>

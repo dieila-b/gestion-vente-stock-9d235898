@@ -22,11 +22,13 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     newPassword,
     passwordConfirmation,
     isSubmitting,
+    isImageUploading,
     passwordsMatch,
     handleInputChange,
     handlePasswordChange,
     handlePasswordConfirmationChange,
     togglePasswordVisibility,
+    handlePhotoUpload,
     handleSubmit
   } = useEditUser(user, onOpenChange);
 
@@ -46,11 +48,13 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             newPassword={newPassword}
             passwordConfirmation={passwordConfirmation}
             isSubmitting={isSubmitting}
+            isImageUploading={isImageUploading}
             passwordsMatch={passwordsMatch}
             onInputChange={handleInputChange}
             onPasswordChange={handlePasswordChange}
             onPasswordConfirmationChange={handlePasswordConfirmationChange}
             onTogglePasswordVisibility={togglePasswordVisibility}
+            onPhotoUpload={handlePhotoUpload}
           />
         </form>
       </DialogContent>

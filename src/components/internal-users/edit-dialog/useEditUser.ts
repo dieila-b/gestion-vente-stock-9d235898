@@ -4,6 +4,7 @@ import { User } from "@/types/user";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { v4 as uuidv4 } from "uuid";
 
 export function useEditUser(user: User, onOpenChange: (open: boolean) => void) {
   const queryClient = useQueryClient();
@@ -12,6 +13,7 @@ export function useEditUser(user: User, onOpenChange: (open: boolean) => void) {
   const [newPassword, setNewPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const handleInputChange = (field: keyof User, value: any) => {
     setUserData((prev) => ({
@@ -25,6 +27,54 @@ export function useEditUser(user: User, onOpenChange: (open: boolean) => void) {
   };
 
   const passwordsMatch = !newPassword || !passwordConfirmation || newPassword === passwordConfirmation;
+
+  const handlePhotoUpload = async (file: File) => {
+    try {
+      setIsImageUploading(true);
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `internal-users/${fileName}`;
+      
+      // Check if a bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      
+      // Look for lovable-uploads bucket
+      const uploadsBucket = buckets?.find(bucket => bucket.name === 'lovable-uploads');
+      
+      if (!uploadsBucket) {
+        throw new Error('Storage bucket not found');
+      }
+      
+      // Upload the file
+      const { error: uploadError } = await supabase.storage
+        .from('lovable-uploads')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data } = supabase.storage
+        .from('lovable-uploads')
+        .getPublicUrl(filePath);
+      
+      // Update user data with new photo URL
+      handleInputChange('photo_url', data.publicUrl);
+      
+      toast.success('Photo de profil téléchargée avec succès');
+    } catch (error: any) {
+      console.error('Erreur lors du téléchargement de la photo:', error);
+      toast.error(`Erreur: ${error.message || "Une erreur est survenue"}`);
+    } finally {
+      setIsImageUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,11 +134,13 @@ export function useEditUser(user: User, onOpenChange: (open: boolean) => void) {
     newPassword,
     passwordConfirmation,
     isSubmitting,
+    isImageUploading,
     passwordsMatch,
     handleInputChange,
     handlePasswordChange: setNewPassword,
     handlePasswordConfirmationChange: setPasswordConfirmation,
     togglePasswordVisibility,
+    handlePhotoUpload,
     handleSubmit
   };
 }

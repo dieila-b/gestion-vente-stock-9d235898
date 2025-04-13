@@ -11,11 +11,13 @@ export function EditUserForm({
   passwordConfirmation,
   showPassword, 
   isSubmitting,
+  isImageUploading,
   passwordsMatch,
   onInputChange, 
   onPasswordChange,
   onPasswordConfirmationChange,
-  onTogglePasswordVisibility
+  onTogglePasswordVisibility,
+  onPhotoUpload
 }: EditUserFormProps) {
   
   return (
@@ -37,11 +39,13 @@ export function EditUserForm({
             newPassword={newPassword}
             passwordConfirmation={passwordConfirmation}
             isSubmitting={isSubmitting}
+            isImageUploading={isImageUploading}
             onInputChange={onInputChange}
             onPasswordChange={onPasswordChange}
             onPasswordConfirmationChange={onPasswordConfirmationChange}
             onTogglePasswordVisibility={onTogglePasswordVisibility}
             passwordsMatch={passwordsMatch}
+            onPhotoUpload={onPhotoUpload}
           />
         </TabsContent>
         
