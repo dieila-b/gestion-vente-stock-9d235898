@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,7 +23,6 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
     email: client.email || '',
     phone: client.phone || '',
     mobile_1: client.mobile_1 || '',
-    mobile_2: client.mobile_2 || '',
     whatsapp: client.whatsapp || '',
     address: client.address || '',
     credit_limit: client.credit_limit || 0,

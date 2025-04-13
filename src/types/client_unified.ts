@@ -3,7 +3,6 @@ export interface Client {
   id: string;
   company_name: string;
   contact_name?: string;
-  first_name?: string; // Added new field for first name
   email?: string;
   phone?: string;
   address?: string;
@@ -18,7 +17,6 @@ export interface Client {
   created_at?: string;
   updated_at?: string;
   mobile_1?: string;
-  mobile_2?: string;
   whatsapp?: string;
   credit_limit?: number;
   rc_number?: string;

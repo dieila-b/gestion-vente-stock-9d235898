@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
@@ -24,11 +23,9 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
   const [formData, setFormData] = useState<ClientFormData>({
     company_name: "",
     contact_name: "",
-    first_name: "",
     email: "",
     phone: "",
     mobile_1: "",
-    mobile_2: "",
     whatsapp: "",
     address: "",
     tax_number: "",

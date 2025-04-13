@@ -3,11 +3,9 @@ export interface Client {
   id: string;
   company_name: string; // Required field
   contact_name?: string;
-  first_name?: string; // Added new field for first name
   email?: string;
   phone?: string;
   mobile_1?: string;
-  mobile_2?: string;
   whatsapp?: string;
   address?: string;
   city?: string;
@@ -22,8 +20,8 @@ export interface Client {
   rc_number?: string;
   cc_number?: string;
   payment_terms?: string;
-  created_at?: string; // Making this optional to match client_unified
+  created_at?: string;
   updated_at?: string;
-  status?: string; // Making this optional to match client_unified
+  status?: string;
   balance?: number;
 }

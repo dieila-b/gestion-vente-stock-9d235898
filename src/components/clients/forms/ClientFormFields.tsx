@@ -1,6 +1,6 @@
 
 import { Input } from "@/components/ui/input";
-import { Building2, Mail, Phone, MapPin, Wallet, UserCircle, Building, User } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Wallet, Building } from "lucide-react";
 import { Client } from "@/types/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -72,20 +72,6 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">Prénom</label>
-        <div className="relative">
-          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            name="first_name"
-            value={formData.first_name || ''}
-            onChange={onChange}
-            className="pl-10 enhanced-glass"
-            placeholder="John"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
         <label className="text-sm text-muted-foreground">Nom de l'entreprise</label>
         <div className="relative">
           <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -136,20 +122,6 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
           <Input
             name="phone"
             value={formData.phone || ''}
-            onChange={onChange}
-            className="pl-10 enhanced-glass"
-            placeholder="+224 123456789"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">Téléphone secondaire</label>
-        <div className="relative">
-          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            name="mobile_2"
-            value={formData.mobile_2 || ''}
             onChange={onChange}
             className="pl-10 enhanced-glass"
             placeholder="+224 123456789"
