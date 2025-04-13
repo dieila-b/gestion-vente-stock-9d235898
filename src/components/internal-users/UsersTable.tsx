@@ -6,7 +6,8 @@ import { User } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Check, X } from "lucide-react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
+import { UserActionsMenu } from "./UserActionsMenu";
 
 interface UsersTableProps {
   users: User[];
@@ -96,6 +97,14 @@ export const UsersTable = ({ users, isLoading }: UsersTableProps) => {
         if (!createdAt) return "-";
         
         return format(new Date(createdAt), "dd MMMM yyyy, HH:mm", { locale: fr });
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const user = row.original;
+        return <UserActionsMenu user={user} />;
       },
     },
   ];
