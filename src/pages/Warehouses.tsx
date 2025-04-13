@@ -7,7 +7,7 @@ import { Search, Warehouse, Archive, Building } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { usePOSLocationsQuery } from "@/hooks/pos-locations/use-pos-locations-query";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -142,7 +142,7 @@ export default function Warehouses() {
       // Ajouter l'entrepôt dans Supabase
       const { data, error } = await supabase
         .from('warehouses')
-        .insert([warehouseData])
+        .insert(warehouseData)
         .select();
       
       if (error) throw error;
@@ -321,6 +321,9 @@ export default function Warehouses() {
             <DialogTitle className="text-xl font-bold">
               {selectedWarehouse ? "Modifier l'entrepôt" : "Ajouter un nouvel entrepôt"}
             </DialogTitle>
+            <DialogDescription>
+              Remplissez les informations ci-dessous pour {selectedWarehouse ? "modifier" : "ajouter"} un entrepôt.
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
