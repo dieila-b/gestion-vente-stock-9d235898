@@ -105,15 +105,18 @@ export const handleForgotPassword = async (email: string) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Le token expire après 1 heure
     
-    // On stocke le token en base de données (dans une transaction pour la sécurité)
-    const { error: updateError } = await supabase.rpc('create_password_reset_token', {
-      user_email: email,
-      token_value: resetToken,
-      expires_at: expiresAt.toISOString()
-    });
+    // Utilisez INSERT dans la table password_reset_tokens au lieu d'un RPC
+    const { error: insertError } = await supabase
+      .from('password_reset_tokens')
+      .insert({
+        user_email: email,
+        token: resetToken,
+        expires_at: expiresAt.toISOString(),
+        used: false
+      });
     
-    if (updateError) {
-      console.error("Erreur lors de la création du token de réinitialisation:", updateError);
+    if (insertError) {
+      console.error("Erreur lors de la création du token de réinitialisation:", insertError);
       return { 
         success: false, 
         message: "Une erreur s'est produite lors de la demande de réinitialisation." 
