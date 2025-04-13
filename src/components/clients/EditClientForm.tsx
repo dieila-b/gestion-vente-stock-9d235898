@@ -101,7 +101,7 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
       console.log("Updating client data:", dataToUpdate);
       
       // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
-      const result = await db.update<Client>('clients', dataToUpdate, 'id', id);
+      const result = await db.update('clients', dataToUpdate, 'id', id);
 
       if (!result) {
         throw new Error("Échec de la mise à jour du client");

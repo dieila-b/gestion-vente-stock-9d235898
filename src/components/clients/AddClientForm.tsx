@@ -75,7 +75,7 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
       console.log("Submitting client data:", formData);
       
       // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
-      const result = await db.insert<Client>('clients', formData);
+      const result = await db.insert('clients', formData);
 
       if (!result) {
         throw new Error("Échec de l'ajout du client");

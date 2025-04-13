@@ -21,7 +21,7 @@ const ClientsPage = () => {
     queryFn: async () => {
       try {
         // Utiliser l'adaptateur db pour récupérer les clients
-        const data = await db.query<Client[]>(
+        const data = await db.query(
           'clients',
           q => q.select('*').order('created_at', { ascending: false }),
           []
