@@ -8,7 +8,6 @@ import POS from "./pages/POS";
 import Sales from "./pages/Sales";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "sonner";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import RequireAuth from "./components/auth/RequireAuth";
@@ -53,7 +52,6 @@ import DailyReport from "./pages/reports/DailyReport";
 import ClientsReport from "./pages/reports/ClientsReport";
 import UnpaidReport from "./pages/reports/UnpaidReport";
 import CustomReport from "./pages/reports/CustomReport";
-import { queryClient } from "./main";
 
 function App() {
   return (

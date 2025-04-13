@@ -1,97 +1,72 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { LucideIcon, LucideProps } from "lucide-react";
-import {
-  SidebarMenuItem as BaseSidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { MenuItem } from "./menu-items";
+import { SidebarMenu, SidebarMenuItem as SidebarMenuItemComponent, SidebarMenuButton } from "@/components/ui/sidebar";
 
-type IconComponent = React.ForwardRefExoticComponent<
-  Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
->;
-
-interface MenuItem {
-  label: string;
-  icon: IconComponent;
-  path?: string;
-  submenu?: MenuItem[];
+interface SidebarMenuItemProps extends MenuItem {
+  level?: number;
 }
 
-export function SidebarMenuItem({ label, icon: Icon, path, submenu }: MenuItem) {
+export function SidebarMenuItem({
+  label,
+  path,
+  icon: Icon,
+  submenu,
+  level = 0,
+}: SidebarMenuItemProps) {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  
-  if (!submenu) {
-    return (
-      <BaseSidebarMenuItem>
-        <SidebarMenuButton asChild>
-          <Link 
-            to={path!} 
-            className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-purple-900/50 hover:to-pink-900/30 rounded-lg group transition-all duration-300"
-          >
-            <Icon className="h-5 w-5 text-purple-300 group-hover:text-purple-200 group-hover:scale-110 transition-all duration-300" />
-            <span className="text-gray-200 group-hover:text-purple-200 transition-colors">{label}</span>
-          </Link>
-        </SidebarMenuButton>
-      </BaseSidebarMenuItem>
-    );
-  }
+  const isActive = path ? location.pathname === path : false;
+  const hasSubmenu = submenu && submenu.length > 0;
 
-  const renderSubmenuItem = (item: MenuItem) => {
-    if (item.submenu) {
-      return (
-        <SidebarMenuItem 
-          key={item.label}
-          label={item.label}
-          icon={item.icon}
-          submenu={item.submenu}
-        />
-      );
+  const toggleSubMenu = () => {
+    if (hasSubmenu) {
+      setIsOpen(!isOpen);
     }
-
-    return (
-      <SidebarMenuSubItem 
-        key={item.path}
-        className="transform transition-transform duration-300 hover:translate-x-1"
-      >
-        <SidebarMenuSubButton asChild>
-          <Link 
-            to={item.path!}
-            className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-purple-900/50 hover:to-pink-900/30 rounded-lg group transition-all duration-300"
-          >
-            <item.icon className="h-4 w-4 text-purple-300 group-hover:text-purple-200 group-hover:scale-110 transition-all duration-300" />
-            <span className="text-gray-300 group-hover:text-purple-200 transition-colors text-sm">{item.label}</span>
-          </Link>
-        </SidebarMenuSubButton>
-      </SidebarMenuSubItem>
-    );
   };
 
   return (
-    <BaseSidebarMenuItem>
-      <SidebarMenuButton
-        className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-purple-900/50 hover:to-pink-900/30 rounded-lg group transition-all duration-300 w-full"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <Icon className={`h-5 w-5 text-purple-300 group-hover:text-purple-200 transition-all duration-300 ${isOpen ? 'scale-110' : ''}`} />
-        <span className="text-gray-200 group-hover:text-purple-200 transition-colors flex-1">{label}</span>
-        <svg
-          className={`w-4 h-4 text-purple-300 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </SidebarMenuButton>
-      <SidebarMenuSub 
-        className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} py-2 pl-4 space-y-1 border-l border-purple-900/30 ml-3`}
-      >
-        {submenu.map((subItem) => renderSubmenuItem(subItem))}
-      </SidebarMenuSub>
-    </BaseSidebarMenuItem>
+    <>
+      <SidebarMenuItemComponent className={isActive ? "bg-slate-700/50" : ""}>
+        {hasSubmenu ? (
+          <button
+            onClick={toggleSubMenu}
+            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-slate-700/50"
+          >
+            <span className="flex items-center gap-2">
+              {Icon && <Icon className="h-4 w-4" />}
+              <span>{label}</span>
+            </span>
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+        ) : (
+          <SidebarMenuButton asChild>
+            <Link
+              to={path || "#"}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-slate-700/50"
+            >
+              {Icon && <Icon className="h-4 w-4" />}
+              <span>{label}</span>
+            </Link>
+          </SidebarMenuButton>
+        )}
+      </SidebarMenuItemComponent>
+
+      {hasSubmenu && isOpen && (
+        <div className={`ml-${level > 0 ? 6 : 3} border-l border-slate-700/50 pl-3`}>
+          <SidebarMenu>
+            {submenu.map((item) => (
+              <SidebarMenuItem key={item.label} {...item} level={level + 1} />
+            ))}
+          </SidebarMenu>
+        </div>
+      )}
+    </>
   );
 }
