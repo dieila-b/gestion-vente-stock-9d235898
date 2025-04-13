@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useSuppliers } from "@/hooks/use-suppliers";
-import { UserPlus, Search, Package } from "lucide-react";
+import { UserPlus, Search, Package, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddSupplierDialog } from "@/components/suppliers/AddSupplierDialog";
 import { SupplierCard } from "@/components/suppliers/SupplierCard";
@@ -88,9 +88,17 @@ const Suppliers = () => {
             Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="h-[200px] animate-pulse enhanced-glass" />
             ))
+          ) : suppliers?.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Database className="w-12 h-12 mb-4 text-muted-foreground/50" />
+              <p className="text-lg font-medium">Aucun fournisseur trouvé</p>
+              <p className="text-sm max-w-md text-center mt-2">
+                La table des fournisseurs n'existe pas encore ou est vide. Vous pouvez ajouter un nouveau fournisseur pour commencer.
+              </p>
+            </div>
           ) : filteredSuppliers?.length === 0 ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              Aucun fournisseur trouvé
+              Aucun fournisseur ne correspond à votre recherche
             </div>
           ) : (
             filteredSuppliers?.map((supplier) => (
@@ -116,4 +124,3 @@ const Suppliers = () => {
 };
 
 export default Suppliers;
-

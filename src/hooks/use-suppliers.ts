@@ -9,11 +9,19 @@ export function useSuppliers() {
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
-        // Use our safe db-adapter instead of direct supabase query
-        const data = await db.query(
-          'suppliers',
-          query => query.select('*').order('name', { ascending: true })
-        );
+        // Check if the suppliers table exists
+        let data;
+        try {
+          // Use our safe db-adapter instead of direct supabase query
+          data = await db.query(
+            'suppliers',
+            query => query.select('*').order('name', { ascending: true })
+          );
+        } catch (err) {
+          console.error("Error fetching suppliers:", err);
+          // Return empty array if table doesn't exist
+          return [] as Supplier[];
+        }
         
         // Make sure we have a valid array of suppliers
         if (Array.isArray(data)) {
@@ -32,7 +40,7 @@ export function useSuppliers() {
         
         return [] as Supplier[];
       } catch (error) {
-        console.error("Error fetching suppliers:", error);
+        console.error("Error in suppliers hook:", error);
         toast.error("Erreur lors du chargement des fournisseurs");
         return [] as Supplier[];
       }
