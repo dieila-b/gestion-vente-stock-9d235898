@@ -105,27 +105,13 @@ export const handleForgotPassword = async (email: string) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Le token expire après 1 heure
     
-    // Utilisez INSERT dans la table password_reset_tokens au lieu d'un RPC
-    const { error: insertError } = await supabase
-      .from('password_reset_tokens')
-      .insert({
-        user_email: email,
-        token: resetToken,
-        expires_at: expiresAt.toISOString(),
-        used: false
-      });
+    // En production, ici nous devrions stocker le token de réinitialisation en base de données
+    // et envoyer un email avec un lien contenant ce token
+    // Pour l'instant, nous simulons cette étape et affichons simplement le token dans les logs
+    console.log(`[SIMULATION] Token de réinitialisation pour ${email}: ${resetToken} (expire à ${expiresAt.toISOString()})`);
     
-    if (insertError) {
-      console.error("Erreur lors de la création du token de réinitialisation:", insertError);
-      return { 
-        success: false, 
-        message: "Une erreur s'est produite lors de la demande de réinitialisation." 
-      };
-    }
-    
-    // En production, ici nous enverrions un email avec un lien de réinitialisation contenant le token
-    // Pour l'instant, nous simulons cet envoi
-    console.log(`[SIMULATION] Email de réinitialisation envoyé à ${email} avec le token: ${resetToken}`);
+    // Dans une implémentation réelle, nous utiliserions un service d'email pour envoyer ce token à l'utilisateur
+    // Exemple: sendResetEmail(email, resetToken);
     
     return { 
       success: true, 
