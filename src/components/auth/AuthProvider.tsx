@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  // Vérifier si l'utilisateur est déjà authentifié (à partir du localStorage)
+  // Check if the user is already authenticated (from localStorage)
   useEffect(() => {
     const checkAuth = async () => {
       const storedUser = localStorage.getItem('authUser');
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(userData);
           setIsAuthenticated(true);
         } catch (error) {
-          console.error("Erreur lors de la récupération des données utilisateur:", error);
+          console.error("Error retrieving user data:", error);
           localStorage.removeItem('authUser');
         }
       }
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        console.error("Erreur d'authentification:", error);
+        console.error("Authentication error:", error);
         setLoading(false);
         return { 
           success: false, 
@@ -60,10 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
       
-      // Vérification du type et de la structure de la réponse
+      // Check the response type and structure
       if (data && typeof data === 'object' && 'authenticated' in data) {
         if (data.authenticated === true && 'user' in data) {
-          // Conversion sécurisée en utilisant un typage intermédiaire
+          // Safe conversion using intermediate typing
           const userObj = data.user as Record<string, any>;
           const userData: User = {
             id: String(userObj.id),
@@ -77,18 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             photo_url: userObj.photo_url ? String(userObj.photo_url) : undefined
           };
           
-          // Stocker les informations utilisateur
+          // Store user information
           setUser(userData);
           setIsAuthenticated(true);
           
-          // Sauvegarder dans le localStorage pour persister la session
+          // Save in localStorage to persist the session
           localStorage.setItem('authUser', JSON.stringify(userData));
           
           setLoading(false);
           return { success: true, message: "Connexion réussie." };
         } else {
           setLoading(false);
-          // Utilisons une vérification plus sûre pour accéder à l'erreur
+          // Use a safer check for accessing the error
           const errorMessage = (typeof data === 'object' && data && 'error' in data) 
             ? String(data.error) 
             : "Email ou mot de passe incorrect.";
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
     } catch (error: any) {
-      console.error("Exception lors de l'authentification:", error);
+      console.error("Exception during authentication:", error);
       setLoading(false);
       return { 
         success: false, 
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setLoading(true);
     
-    // Supprimer les données d'authentification
+    // Remove authentication data
     localStorage.removeItem('authUser');
     setUser(null);
     setIsAuthenticated(false);

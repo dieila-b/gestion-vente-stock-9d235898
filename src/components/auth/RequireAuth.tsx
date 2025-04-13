@@ -6,7 +6,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  // Afficher un indicateur de chargement pendant la vérification de l'authentification
+  // Display a loading indicator while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -18,7 +18,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
+  // Redirect to login page if user is not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

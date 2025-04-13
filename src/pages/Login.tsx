@@ -17,7 +17,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Si l'utilisateur est déjà authentifié, le rediriger vers la page d'accueil
+  // If user is already authenticated, redirect to dashboard
   if (isAuthenticated && !loading) {
     navigate("/dashboard");
     return null;
