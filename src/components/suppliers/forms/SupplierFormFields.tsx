@@ -39,10 +39,15 @@ export const SupplierFormFields = ({ form, showSupplierCode = false }: SupplierF
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* N'afficher le champ SupplierCodeField que si explicitement demandé */}
+      {/* Réorganisation des champs pour placer Pays juste après Email */}
       <CompanyNameField form={form} />
+      
+      {/* Le champ ContactFields contient Contact et Email */}
       <ContactFields form={form} />
+      
+      {/* Pays placé juste après Email */}
       <CountryField form={form} />
+      
       <CityField form={form} watchedCountry={watchedCountry} cities={cities} />
       <AddressFields form={form} />
       <WebsiteField form={form} />
