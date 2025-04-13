@@ -62,7 +62,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Vérification du type et de la structure de la réponse
       if (data && typeof data === 'object' && 'authenticated' in data) {
         if (data.authenticated === true && 'user' in data) {
-          const userData = data.user as User;
+          // Conversion sécurisée en utilisant un typage intermédiaire
+          const userObj = data.user as Record<string, any>;
+          const userData: User = {
+            id: String(userObj.id),
+            first_name: String(userObj.first_name || ''),
+            last_name: String(userObj.last_name || ''),
+            email: String(userObj.email),
+            phone: String(userObj.phone || ''),
+            role: (userObj.role as 'admin' | 'manager' | 'employee') || 'employee',
+            address: String(userObj.address || ''),
+            is_active: Boolean(userObj.is_active ?? true),
+            photo_url: userObj.photo_url ? String(userObj.photo_url) : undefined
+          };
           
           // Stocker les informations utilisateur
           setUser(userData);
