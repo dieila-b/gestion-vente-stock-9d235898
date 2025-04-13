@@ -41,8 +41,8 @@ export function usePOSLocation() {
         // S'assurer que is_active est correctement défini comme booléen
         const dataToInsert = {
           ...locationData,
-          is_active: locationData.is_active === "true" || locationData.is_active === true,
-          status: locationData.status || (locationData.is_active ? "active" : "inactive")
+          is_active: locationData.is_active === true || String(locationData.is_active) === "true",
+          status: locationData.is_active === true || String(locationData.is_active) === "true" ? "active" : "inactive"
         };
 
         const { data, error } = await supabase
@@ -87,8 +87,8 @@ export function usePOSLocation() {
           phone: location.phone,
           email: location.email,
           manager: location.manager,
-          status: location.is_active === true || location.is_active === "true" ? "active" : "inactive",
-          is_active: location.is_active === true || location.is_active === "true",
+          status: location.is_active === true || String(location.is_active) === "true" ? "active" : "inactive",
+          is_active: location.is_active === true || String(location.is_active) === "true",
           capacity: location.capacity || 0,
           occupied: location.occupied || 0,
           surface: location.surface || 0
