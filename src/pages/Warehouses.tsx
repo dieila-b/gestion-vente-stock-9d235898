@@ -9,6 +9,7 @@ import { WarehouseStats } from "@/components/warehouses/WarehouseStats";
 import { WarehouseSearch } from "@/components/warehouses/WarehouseSearch";
 import { WarehouseTable, Warehouse } from "@/components/warehouses/WarehouseTable";
 import { WarehouseForm, WarehouseFormValues } from "@/components/warehouses/WarehouseForm";
+import { db } from "@/utils/db-adapter";
 
 export default function Warehouses() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -33,21 +34,31 @@ export default function Warehouses() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer cet entrepôt?")) {
-      setWarehouses(warehouses.filter(warehouse => warehouse.id !== id));
+      try {
+        const success = await db.delete('warehouses', 'id', id);
+        
+        if (success) {
+          setWarehouses(warehouses.filter(warehouse => warehouse.id !== id));
+          toast.success("Entrepôt supprimé avec succès");
+        } else {
+          toast.error("Erreur lors de la suppression de l'entrepôt");
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression de l\'entrepôt:', error);
+        toast.error("Erreur lors de la suppression de l'entrepôt");
+      }
     }
   };
 
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const { data, error } = await supabase
-          .from('warehouses')
-          .select('*')
-          .order('name', { ascending: true });
-        
-        if (error) throw error;
+        const data = await db.query<Warehouse[]>('warehouses', 
+          (query) => query.select('*').order('name', { ascending: true }),
+          []
+        );
         
         if (data && data.length > 0) {
           setWarehouses(data);
@@ -70,29 +81,22 @@ export default function Warehouses() {
         capacity: values.capacity,
         surface: values.surface,
         manager: values.manager,
-        status: values.status,
+        status: values.status || 'Actif',
         is_active: values.is_active,
         occupied: 0
       };
 
       console.log("Données de l'entrepôt à envoyer:", warehouseData);
 
-      const { data, error } = await supabase
-        .from('warehouses')
-        .insert(warehouseData)
-        .select();
+      const newWarehouse = await db.insert<Warehouse>('warehouses', warehouseData);
       
-      if (error) {
-        console.error("Erreur Supabase:", error);
-        throw error;
-      }
-      
-      if (data && data.length > 0) {
-        setWarehouses([...warehouses, data[0]]);
+      if (newWarehouse) {
+        setWarehouses([...warehouses, newWarehouse]);
         toast.success("Entrepôt ajouté avec succès");
+        setIsDialogOpen(false);
+      } else {
+        toast.error("Erreur lors de l'ajout de l'entrepôt");
       }
-
-      setIsDialogOpen(false);
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'entrepôt:', error);
       toast.error("Erreur lors de l'ajout de l'entrepôt");
