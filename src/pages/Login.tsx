@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -9,23 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
-// Check if we're in development mode
-const DEV_MODE = import.meta.env.DEV;
-
 export default function Login() {
   const navigate = useNavigate();
   const { login, loading, isAuthenticated } = useAuth();
-  const [email, setEmail] = useState(DEV_MODE ? "dev@example.com" : "");
-  const [password, setPassword] = useState(DEV_MODE ? "password" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  // Auto-login in development mode on first render
-  useEffect(() => {
-    if (DEV_MODE && !isAuthenticated && !loading) {
-      handleSubmit(new Event('autoLogin') as any);
-    }
-  }, [loading]);
 
   // If user is already authenticated, redirect to dashboard
   if (isAuthenticated && !loading) {
@@ -67,9 +57,7 @@ export default function Login() {
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
           <CardDescription>
-            {DEV_MODE 
-              ? "Mode développement - Authentification automatique" 
-              : "Entrez vos identifiants pour accéder à l'application"}
+            Entrez vos identifiants pour accéder à l'application
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,7 +79,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
-                  disabled={isSubmitting || DEV_MODE}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -107,7 +95,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
-                  disabled={isSubmitting || DEV_MODE}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -115,17 +103,12 @@ export default function Login() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isSubmitting || loading || DEV_MODE}
+              disabled={isSubmitting || loading}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connexion en cours...
-                </>
-              ) : DEV_MODE ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connexion automatique...
                 </>
               ) : (
                 "Se connecter"
@@ -134,13 +117,7 @@ export default function Login() {
           </form>
         </CardContent>
         <CardFooter className="text-center text-sm text-muted-foreground">
-          {DEV_MODE ? (
-            <div className="w-full p-2 bg-yellow-100 text-yellow-800 rounded">
-              Mode développement activé - Authentification automatique
-            </div>
-          ) : (
-            "Seuls les utilisateurs internes autorisés peuvent se connecter."
-          )}
+          Seuls les utilisateurs internes autorisés peuvent se connecter.
         </CardFooter>
       </Card>
     </div>

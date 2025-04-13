@@ -15,34 +15,13 @@ type AuthContextType = {
 // Create the context with a default value
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Constant to check if we're in dev mode and want to bypass auth
-const DEV_MODE = import.meta.env.DEV;
-const BYPASS_AUTH = DEV_MODE;
-
-// Test user for development
-const TEST_USER: User = {
-  id: "dev-user-123",
-  first_name: "Dev",
-  last_name: "User",
-  email: "dev@example.com",
-  phone: "123-456-7890",
-  role: "admin",
-  address: "Dev Address",
-  is_active: true,
-  photo_url: undefined
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(BYPASS_AUTH);
-  const [loading, setLoading] = useState(!BYPASS_AUTH);
-  const [user, setUser] = useState<User | null>(BYPASS_AUTH ? TEST_USER : null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Check if the user is already authenticated (from localStorage) - only in production
+  // Check if the user is already authenticated (from localStorage)
   useEffect(() => {
-    if (BYPASS_AUTH) {
-      return; // Skip auth check in dev mode
-    }
-    
     const checkAuth = async () => {
       const storedUser = localStorage.getItem('authUser');
       
@@ -64,13 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    // In development mode, always succeed with test user
-    if (BYPASS_AUTH) {
-      setUser(TEST_USER);
-      setIsAuthenticated(true);
-      return { success: true, message: "Connexion réussie (mode développement)" };
-    }
-    
     setLoading(true);
     
     try {
@@ -145,14 +117,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const logout = async () => {
     setLoading(true);
-    
-    if (BYPASS_AUTH) {
-      // In dev mode, we just reset to the test user
-      setUser(TEST_USER);
-      toast.success("Vous avez été déconnecté avec succès (mode développement)");
-      setLoading(false);
-      return;
-    }
     
     // Remove authentication data
     localStorage.removeItem('authUser');
