@@ -1,39 +1,51 @@
-import { useState } from "react";
+
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStockStats } from "@/hooks/dashboard/useStockStats";
-import { useWarehouseDistribution } from "@/hooks/dashboard/useWarehouseDistribution";
 import { useCategoryDistribution } from "@/hooks/dashboard/useCategoryDistribution";
 import { useStockAlerts } from "@/hooks/dashboard/useStockAlerts";
 import { formatGNF } from "@/lib/currency";
-import { CircleDollarSign, History, Package, TrendingUp } from "lucide-react";
+import { CircleDollarSign, Package, TrendingUp, History } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from "recharts";
 import { StockAlertsList } from "@/components/stocks/StockAlertsList";
 import { RecentMovements } from "@/components/stocks/RecentMovements";
-
-// Couleurs pour le graphique
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B', '#6BCB77', '#4D96FF'];
+import { StockStatusHeader } from "@/components/stocks/StockStatusHeader";
+import { StockStatisticsCards } from "@/components/stocks/StockStatisticsCards";
+import { StockLocationStats } from "@/components/stocks/StockLocationStats";
+import { useStockLocations } from "@/hooks/useStockLocations";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function StockStatus() {
   const [activeTab, setActiveTab] = useState("apercu");
   const { totalStock, totalStockPurchaseValue, totalStockSaleValue, globalStockMargin, marginPercentage } = useStockStats();
-  const { data: warehouseDistribution, isLoading: isLoadingDistribution } = useWarehouseDistribution();
-  const { data: categoryDistribution, isLoading: isLoadingCategories } = useCategoryDistribution();
-  const { data: stockAlerts, isLoading: isLoadingAlerts } = useStockAlerts();
+  const { data: categoryDistribution, isLoading: isLoadingCategories, refetch: refetchCategories } = useCategoryDistribution();
+  const { data: stockAlerts, isLoading: isLoadingAlerts, refetch: refetchAlerts } = useStockAlerts();
+  const { data: locationData = [], isLoading: isLoadingLocations, refetch: refetchLocations } = useStockLocations();
   
-  // État pour gérer le secteur actif dans le graphique des entrepôts
-  const [activeWarehouseIndex, setActiveWarehouseIndex] = useState(0);
+  const queryClient = useQueryClient();
+  
   // État pour gérer le secteur actif dans le graphique des catégories
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
-
-  // Fonction pour gérer le survol des secteurs (entrepôts)
-  const onWarehousePieEnter = (_: any, index: number) => {
-    setActiveWarehouseIndex(index);
-  };
 
   // Fonction pour gérer le survol des secteurs (catégories)
   const onCategoryPieEnter = (_: any, index: number) => {
     setActiveCategoryIndex(index);
+  };
+
+  // Fonction pour actualiser toutes les données
+  const refreshData = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+    refetchCategories();
+    refetchAlerts();
+    refetchLocations();
+  }, [queryClient, refetchCategories, refetchAlerts, refetchLocations]);
+
+  // Statistiques des stocks
+  const stockStats = {
+    inStock: totalStock,
+    lowStock: stockAlerts?.filter(alert => alert.alert_type === 'low_stock').length || 0,
+    outOfStock: stockAlerts?.filter(alert => alert.alert_type === 'out_of_stock').length || 0
   };
 
   // Rendu du secteur actif (avec effet de survol)
@@ -85,18 +97,22 @@ export default function StockStatus() {
     );
   };
 
+  // Couleurs pour le graphique
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B', '#6BCB77', '#4D96FF'];
+
   return (
     <div className="p-8 space-y-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">État des Stocks</h1>
-        <p className="text-muted-foreground">
-          Visualisez l'état actuel de vos stocks et leur valorisation
-        </p>
-      </div>
+      <StockStatusHeader onRefresh={refreshData} />
+
+      <StockStatisticsCards 
+        isLoading={isLoadingAlerts} 
+        stats={stockStats} 
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
+        <TabsList className="enhanced-glass">
           <TabsTrigger value="apercu">Aperçu Général</TabsTrigger>
+          <TabsTrigger value="emplacements">Par Emplacement</TabsTrigger>
           <TabsTrigger value="alerts">Alertes</TabsTrigger>
           <TabsTrigger value="mouvements">Mouvements Récents</TabsTrigger>
         </TabsList>
@@ -169,93 +185,55 @@ export default function StockStatus() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="enhanced-glass">
-              <CardHeader>
-                <CardTitle>Répartition par Entrepôt</CardTitle>
-                <CardDescription>
-                  Distribution des stocks par emplacement
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  {isLoadingDistribution ? (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-muted-foreground">Données en cours de chargement...</p>
-                    </div>
-                  ) : warehouseDistribution && warehouseDistribution.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          activeIndex={activeWarehouseIndex}
-                          activeShape={renderActiveShape}
-                          data={warehouseDistribution}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          onMouseEnter={onWarehousePieEnter}
-                        >
-                          {warehouseDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-muted-foreground">Aucune donnée disponible</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="enhanced-glass">
-              <CardHeader>
-                <CardTitle>Répartition par Catégorie</CardTitle>
-                <CardDescription>
-                  Distribution des stocks par catégorie de produits
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  {isLoadingCategories ? (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-muted-foreground">Données en cours de chargement...</p>
-                    </div>
-                  ) : categoryDistribution && categoryDistribution.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          activeIndex={activeCategoryIndex}
-                          activeShape={renderActiveShape}
-                          data={categoryDistribution}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          onMouseEnter={onCategoryPieEnter}
-                        >
-                          {categoryDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-muted-foreground">Aucune donnée disponible</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="enhanced-glass">
+            <CardHeader>
+              <CardTitle>Répartition par Catégorie</CardTitle>
+              <CardDescription>
+                Distribution des stocks par catégorie de produits
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                {isLoadingCategories ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Données en cours de chargement...</p>
+                  </div>
+                ) : categoryDistribution && categoryDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        activeIndex={activeCategoryIndex}
+                        activeShape={renderActiveShape}
+                        data={categoryDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        onMouseEnter={onCategoryPieEnter}
+                      >
+                        {categoryDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">Aucune donnée disponible</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="emplacements">
+          <StockLocationStats 
+            data={locationData}
+            isLoading={isLoadingLocations}
+          />
         </TabsContent>
         
         <TabsContent value="alerts">
