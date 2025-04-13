@@ -10,6 +10,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message: string }>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -143,6 +144,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
   };
+
+  // Nouvelle fonction pour gérer les demandes de réinitialisation de mot de passe
+  const forgotPassword = async (email: string) => {
+    if (!isProduction) {
+      // En mode développement, simuler une réinitialisation réussie
+      return { success: true, message: "Demande de réinitialisation simulée en mode développement." };
+    }
+    
+    try {
+      // Appel à la fonction RPC de Supabase pour gérer la réinitialisation
+      const { data, error } = await supabase.rpc('request_password_reset', {
+        email_input: email
+      });
+      
+      if (error) {
+        console.error("Erreur lors de la demande de réinitialisation:", error);
+        return { 
+          success: false, 
+          message: "Une erreur s'est produite lors de la demande de réinitialisation." 
+        };
+      }
+      
+      // Vérification de la réponse
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (data.success === true) {
+          return { 
+            success: true, 
+            message: "Un email de réinitialisation a été envoyé si l'adresse existe dans notre système." 
+          };
+        } else {
+          // Message générique pour éviter de révéler l'existence du compte
+          return { 
+            success: false, 
+            message: data.message || "Un problème est survenu. Veuillez réessayer."
+          };
+        }
+      }
+      
+      // Réponse par défaut
+      return { 
+        success: true, 
+        message: "Si cette adresse email est associée à un compte, vous recevrez un email de réinitialisation." 
+      };
+      
+    } catch (error: any) {
+      console.error("Exception lors de la demande de réinitialisation:", error);
+      return { 
+        success: false, 
+        message: "Une erreur inattendue s'est produite." 
+      };
+    }
+  };
   
   const logout = async () => {
     setLoading(true);
@@ -164,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, user, login, logout, forgotPassword }}>
       {children}
     </AuthContext.Provider>
   );
