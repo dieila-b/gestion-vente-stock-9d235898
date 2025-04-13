@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
 import { POSLocationForm } from "@/components/pos-locations/POSLocationForm";
@@ -24,23 +23,19 @@ export default function POSLocations() {
   
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Adapter function to handle the location parameter
   const onEditLocation = (location: POSLocation) => {
     setSelectedLocation(location);
     setIsAddDialogOpen(true);
   };
 
-  // Adapter function to handle string id parameter
   const onDeleteLocation = (location: POSLocation) => {
     handleDelete(location.id);
   };
 
-  // Helper function to adapt the form event to POSLocation for handleSubmit
   const onSubmitForm = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    // Construire l'objet location à partir des données du formulaire
     const locationData: Partial<POSLocation> = {
       name: formData.get('name') as string,
       address: formData.get('address') as string,
@@ -61,11 +56,9 @@ export default function POSLocations() {
     handleSubmit(locationData as POSLocation);
   };
 
-  // Calculer les statistiques totales
   const totalLocations = locations?.length || 0;
   const totalSurface = locations?.reduce((total, loc) => total + (loc.surface || 0), 0) || 0;
   
-  // Calculer le taux d'occupation moyen
   let occupationRate = 0;
   if (totalLocations > 0) {
     const totalCapacity = locations?.reduce((total, loc) => total + (loc.capacity || 0), 0) || 0;
@@ -73,7 +66,6 @@ export default function POSLocations() {
     occupationRate = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
   }
 
-  // Filtrer les emplacements en fonction du terme de recherche
   const filteredLocations = locations?.filter(location => 
     location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     location.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,12 +75,11 @@ export default function POSLocations() {
   return (
     <div className="p-4 space-y-6">
       <PageHeader>
-        <PageHeader.Title>Points de Vente</PageHeader.Title>
-        <PageHeader.Description>Gérez les emplacements de vos points de vente</PageHeader.Description>
+        <PageHeader.Title>Entrepôts</PageHeader.Title>
+        <PageHeader.Description>Gérez les emplacements de vos entrepôts</PageHeader.Description>
       </PageHeader>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Carte Total Entrepôts */}
         <Card className="glass-panel p-4">
           <div className="flex justify-between">
             <div>
@@ -102,7 +93,6 @@ export default function POSLocations() {
           </div>
         </Card>
         
-        {/* Carte Surface Totale */}
         <Card className="glass-panel p-4">
           <div className="flex justify-between">
             <div>
@@ -116,7 +106,6 @@ export default function POSLocations() {
           </div>
         </Card>
         
-        {/* Carte Taux Occupation Moyen */}
         <Card className="glass-panel p-4">
           <div className="flex justify-between">
             <div>
@@ -133,13 +122,13 @@ export default function POSLocations() {
       
       <Card className="glass-panel p-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-primary">Liste des Points de Vente</h2>
+          <h2 className="text-xl font-bold text-primary">Liste des Entrepôts</h2>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher un point de vente..."
+                placeholder="Rechercher un entrepôt..."
                 className="pl-9 w-[300px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,7 +142,7 @@ export default function POSLocations() {
               }}
             >
               <span className="text-lg font-bold">+</span>
-              <span>Nouveau point de vente</span>
+              <span>Nouveau entrepôt</span>
             </button>
           </div>
         </div>
@@ -169,7 +158,7 @@ export default function POSLocations() {
         <DialogContent className="sm:max-w-md glass-panel">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {selectedLocation ? "Modifier le point de vente" : "Ajouter un nouveau point de vente"}
+              {selectedLocation ? "Modifier l'entrepôt" : "Ajouter un nouveau entrepôt"}
             </DialogTitle>
           </DialogHeader>
           <POSLocationForm
