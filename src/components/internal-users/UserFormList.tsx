@@ -38,6 +38,11 @@ export const UserFormList = ({
     await onBulkInsert();
   };
 
+  // Update the PasswordSection to correctly handle the passwordConfirmation
+  const handlePasswordConfirmationChange = (value: string) => {
+    onPasswordConfirmationChange(value);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -89,7 +94,7 @@ export const UserFormList = ({
                   passwordConfirmation={index === 0 ? passwordConfirmation : ""}
                   showPassword={showPassword}
                   onInputChange={onInputChange}
-                  onPasswordConfirmationChange={onPasswordConfirmationChange}
+                  onPasswordConfirmationChange={handlePasswordConfirmationChange}
                   onTogglePasswordVisibility={onTogglePasswordVisibility}
                 />
                 

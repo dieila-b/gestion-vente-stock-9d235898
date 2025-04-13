@@ -1,116 +1,120 @@
 
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import { User } from "@/types/user";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PasswordSectionProps {
-  user: Omit<User, 'id'>;
   index: number;
+  password: string;
   passwordConfirmation: string;
   showPassword: boolean;
-  onInputChange: (index: number, field: string, value: any) => void;
-  onPasswordConfirmationChange: (index: number, value: string) => void;
-  onTogglePasswordVisibility: (index: number) => void;
+  onInputChange: (index: number, field: keyof Omit<User, 'id'>, value: string) => void;
+  onPasswordConfirmationChange: (value: string) => void;
+  onTogglePasswordVisibility: () => void;
 }
 
 export const PasswordSection = ({
-  user,
   index,
+  password,
   passwordConfirmation,
   showPassword,
   onInputChange,
   onPasswordConfirmationChange,
   onTogglePasswordVisibility
 }: PasswordSectionProps) => {
-  const passwordsMatch = !user.password || !passwordConfirmation || user.password === passwordConfirmation;
-  const passwordStrength = user.password 
-    ? user.password.length < 6 
-      ? "faible" 
-      : user.password.length < 10 
-        ? "moyen" 
-        : "fort"
-    : "";
-
-  const getStrengthColor = () => {
-    switch(passwordStrength) {
-      case "faible": return "bg-red-500";
-      case "moyen": return "bg-yellow-500";
-      case "fort": return "bg-green-500";
-      default: return "bg-transparent";
-    }
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onInputChange(index, 'password', value);
+    
+    // Calculate password strength (simple version)
+    let strength = 0;
+    if (value.length > 6) strength += 1;
+    if (value.length > 10) strength += 1;
+    if (/[A-Z]/.test(value)) strength += 1;
+    if (/[0-9]/.test(value)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(value)) strength += 1;
+    
+    setPasswordStrength(strength);
   };
-
+  
   return (
-    <>
-      <h3 className="text-sm font-medium mb-3">Sécurité</h3>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor={`password_${index}`}>Mot de passe</Label>
-          <div className="relative">
-            <Input
-              type={showPassword ? "text" : "password"}
-              id={`password_${index}`}
-              value={user.password}
-              onChange={(e) => onInputChange(index, "password", e.target.value)}
-              className="pl-9 pr-10"
-              placeholder="Mot de passe"
-            />
-            <Lock className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => onTogglePasswordVisibility(index)}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-gray-500" />
-              ) : (
-                <Eye className="h-4 w-4 text-gray-500" />
-              )}
-            </button>
-          </div>
-          
-          {user.password && (
-            <div className="mt-1">
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div className={`h-full ${getStrengthColor()}`} style={{ width: user.password.length > 12 ? '100%' : `${user.password.length * 8}%` }}></div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Force du mot de passe: {passwordStrength}
-              </p>
-            </div>
-          )}
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor={`password_${index}`}>Mot de passe</Label>
+        <div className="relative">
+          <Input
+            id={`password_${index}`}
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={handlePasswordChange}
+            className="pr-10"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            className="absolute right-0 top-0 h-full px-3"
+            onClick={onTogglePasswordVisibility}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-
-        <div className="space-y-2">
+        
+        {password && (
+          <div className="mt-1">
+            <div className="h-1 w-full bg-gray-200 rounded-full mt-2">
+              <div
+                className={`h-1 rounded-full ${
+                  passwordStrength <= 1
+                    ? "bg-red-500"
+                    : passwordStrength <= 3
+                    ? "bg-yellow-500"
+                    : "bg-green-500"
+                }`}
+                style={{ width: `${(passwordStrength / 5) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {passwordStrength <= 1
+                ? "Faible"
+                : passwordStrength <= 3
+                ? "Moyen"
+                : "Fort"}
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {index === 0 && (
+        <div>
           <Label 
-            htmlFor={`password_confirmation_${index}`} 
-            className={!passwordsMatch ? "text-destructive" : ""}
+            htmlFor="password_confirmation"
+            className={password && passwordConfirmation && password !== passwordConfirmation ? "text-destructive" : ""}
           >
             Confirmation du mot de passe
           </Label>
-          <div className="relative">
-            <Input
-              type={showPassword ? "text" : "password"}
-              id={`password_confirmation_${index}`}
-              value={passwordConfirmation || ""}
-              onChange={(e) => onPasswordConfirmationChange(index, e.target.value)}
-              className={`pl-9 ${!passwordsMatch ? "border-destructive focus:ring-destructive" : ""}`}
-              placeholder="Confirmation"
-            />
-            <Lock className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-          </div>
-          
-          {!passwordsMatch && (
-            <Alert variant="destructive" className="py-2 mt-2">
-              <AlertDescription className="text-xs">
-                Les mots de passe ne correspondent pas
-              </AlertDescription>
-            </Alert>
+          <Input
+            id="password_confirmation"
+            type={showPassword ? "text" : "password"}
+            value={passwordConfirmation}
+            onChange={(e) => onPasswordConfirmationChange(e.target.value)}
+            className={password && passwordConfirmation && password !== passwordConfirmation ? "border-destructive" : ""}
+          />
+          {password && passwordConfirmation && password !== passwordConfirmation && (
+            <p className="text-xs text-destructive mt-1">
+              Les mots de passe ne correspondent pas
+            </p>
           )}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 };

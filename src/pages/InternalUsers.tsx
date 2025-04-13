@@ -2,7 +2,7 @@
 import { UserFormList } from "@/components/internal-users/UserFormList";
 import { UsersTable } from "@/components/internal-users/UsersTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useInternalUsers } from "@/hooks/use-internal-users";
+import { useInternalUsers } from "@/hooks/internal-users";
 
 const InternalUsers = () => {
   const { 
@@ -18,7 +18,8 @@ const InternalUsers = () => {
     handleBulkInsert,
     togglePasswordVisibility,
     onDeleteUser,
-    onEditUser
+    onEditUser,
+    handleImageUpload
   } = useInternalUsers();
 
   return (
@@ -51,6 +52,7 @@ const InternalUsers = () => {
             onPasswordConfirmationChange={handlePasswordConfirmationChange}
             onRemoveUser={handleRemoveUser}
             onTogglePasswordVisibility={togglePasswordVisibility}
+            onImageUpload={handleImageUpload}
           />
         </TabsContent>
       </Tabs>
