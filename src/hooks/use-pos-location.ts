@@ -1,166 +1,26 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { usePOSLocationsQuery } from "./pos-locations/use-pos-locations-query";
+import { usePOSLocationsMutations } from "./pos-locations/use-pos-locations-mutations";
+import { usePOSLocationDialog } from "./pos-locations/use-pos-location-dialog";
 import { POSLocation } from "@/types/pos-locations";
 
 export function usePOSLocation() {
-  const queryClient = useQueryClient();
-  const [selectedLocation, setSelectedLocation] = useState<POSLocation | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  // Fetch all POS locations
-  const { data: locations = [], isLoading, isError } = useQuery({
-    queryKey: ["pos-locations"],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("pos_locations")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (error) {
-          console.error("Error fetching POS locations:", error);
-          throw error;
-        }
-        return data as POSLocation[];
-      } catch (error) {
-        console.error("Failed to fetch POS locations:", error);
-        throw error;
-      }
-    }
-  });
-
-  // Create POS location
-  const { mutate: createLocation, isPending: isCreating } = useMutation({
-    mutationFn: async (locationData: Omit<POSLocation, "id">) => {
-      try {
-        console.log("Creating location with data:", locationData);
-        
-        // Ensure is_active is properly defined as boolean
-        const dataToInsert = {
-          ...locationData,
-          is_active: typeof locationData.is_active === 'string' 
-            ? locationData.is_active === 'true' 
-            : Boolean(locationData.is_active),
-          status: typeof locationData.is_active === 'string' 
-            ? locationData.is_active === 'true' ? 'active' : 'inactive'
-            : locationData.is_active ? 'active' : 'inactive'
-        };
-
-        const { data, error } = await supabase
-          .from("pos_locations")
-          .insert([dataToInsert])
-          .select();
-        
-        if (error) {
-          console.error("Supabase error creating location:", error);
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          throw new Error("No data returned after insert");
-        }
-        
-        return data[0];
-      } catch (error) {
-        console.error("Error creating location:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Point de vente créé avec succès");
-      setIsAddDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error("Detailed error during creation:", error);
-      toast.error(`Erreur lors de la création: ${error instanceof Error ? error.message : "erreur inconnue"}`);
-    }
-  });
-
-  // Update POS location
-  const { mutate: updateLocation, isPending: isEditing } = useMutation({
-    mutationFn: async (location: POSLocation) => {
-      try {
-        // Ensure is_active is properly defined as boolean
-        const dataToUpdate = {
-          name: location.name,
-          address: location.address,
-          phone: location.phone,
-          email: location.email,
-          manager: location.manager,
-          status: typeof location.is_active === 'string' 
-            ? location.is_active === 'true' ? 'active' : 'inactive'
-            : location.is_active ? 'active' : 'inactive',
-          is_active: typeof location.is_active === 'string' 
-            ? location.is_active === 'true' 
-            : Boolean(location.is_active),
-          capacity: location.capacity || 0,
-          occupied: location.occupied || 0,
-          surface: location.surface || 0
-        };
-
-        console.log("Updating location:", dataToUpdate);
-        
-        const { data, error } = await supabase
-          .from("pos_locations")
-          .update(dataToUpdate)
-          .eq("id", location.id)
-          .select();
-        
-        if (error) {
-          console.error("Supabase error updating location:", error);
-          throw error;
-        }
-        
-        return data[0];
-      } catch (error) {
-        console.error("Error updating location:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Point de vente mis à jour avec succès");
-      setIsAddDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error("Detailed error during update:", error);
-      toast.error(`Erreur lors de la mise à jour: ${error instanceof Error ? error.message : "erreur inconnue"}`);
-    }
-  });
-
-  // Delete POS location
-  const { mutate: deleteLocationMutation } = useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        const { error } = await supabase
-          .from("pos_locations")
-          .delete()
-          .eq("id", id);
-        
-        if (error) {
-          console.error("Supabase error deleting location:", error);
-          throw error;
-        }
-        
-        return id;
-      } catch (error) {
-        console.error("Error deleting location:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Point de vente supprimé avec succès");
-    },
-    onError: (error) => {
-      console.error("Detailed error during deletion:", error);
-      toast.error(`Erreur lors de la suppression: ${error instanceof Error ? error.message : "erreur inconnue"}`);
-    }
-  });
+  const { locations, isLoading, isError } = usePOSLocationsQuery();
+  const { 
+    createLocation, 
+    updateLocation, 
+    deleteLocation, 
+    isCreating, 
+    isEditing 
+  } = usePOSLocationsMutations();
+  
+  const { 
+    selectedLocation, 
+    setSelectedLocation, 
+    isAddDialogOpen, 
+    setIsAddDialogOpen,
+    closeEditDialog
+  } = usePOSLocationDialog();
 
   // Handle form submission
   const handleSubmit = (data: POSLocation) => {
@@ -170,15 +30,17 @@ export function usePOSLocation() {
         ...data,
         id: selectedLocation.id
       });
+      setIsAddDialogOpen(false);
     } else {
       createLocation(data);
+      setIsAddDialogOpen(false);
     }
   };
 
   // Handle delete
   const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce point de vente?")) {
-      deleteLocationMutation(id);
+    if (confirm("Êtes-vous sûr de vouloir supprimer cet entrepôt?")) {
+      deleteLocation(id);
     }
   };
 
@@ -190,13 +52,13 @@ export function usePOSLocation() {
     editingLocation: selectedLocation ?? {} as POSLocation,
     createLocation,
     updateLocation,
-    deleteLocationMutation,
+    deleteLocation,
     selectedLocation,
     setSelectedLocation,
     isAddDialogOpen,
     setIsAddDialogOpen,
     handleSubmit,
     handleDelete,
-    closeEditDialog: () => setIsAddDialogOpen(false)
+    closeEditDialog
   };
 }
