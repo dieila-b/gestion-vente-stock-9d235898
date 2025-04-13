@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+// Détermine si l'application est en mode production
+const isProduction = import.meta.env.MODE === 'production';
+
 export default function Login() {
   const navigate = useNavigate();
   const { login, loading, isAuthenticated } = useAuth();
@@ -16,6 +19,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // En mode développement, rediriger automatiquement vers le dashboard
+  if (!isProduction) {
+    navigate("/dashboard");
+    return null;
+  }
 
   // Si l'utilisateur est déjà authentifié, le rediriger vers la page d'accueil
   if (isAuthenticated && !loading) {

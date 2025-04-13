@@ -14,14 +14,38 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Détermine si l'application est en mode production
+const isProduction = import.meta.env.MODE === 'production';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  // Vérifier si l'utilisateur est déjà authentifié (à partir du localStorage)
+  // En mode développement, définit un utilisateur par défaut
   useEffect(() => {
-    const checkAuth = async () => {
+    const initAuth = async () => {
+      if (!isProduction) {
+        // Utilisateur fictif pour le développement
+        const devUser: User = {
+          id: "dev-user-id",
+          first_name: "Dev",
+          last_name: "User",
+          email: "dev@example.com",
+          phone: "1234567890",
+          role: "admin",
+          address: "Dev Address",
+          is_active: true,
+          photo_url: undefined
+        };
+        
+        setUser(devUser);
+        setIsAuthenticated(true);
+        setLoading(false);
+        return;
+      }
+      
+      // En production, vérifier si l'utilisateur est déjà authentifié (à partir du localStorage)
       const storedUser = localStorage.getItem('authUser');
       
       if (storedUser) {
@@ -38,10 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     };
 
-    checkAuth();
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
+    // En mode développement, simule une connexion réussie
+    if (!isProduction) {
+      // Déjà authentifié en mode développement
+      return { success: true, message: "Connexion réussie en mode développement." };
+    }
+    
     setLoading(true);
     
     try {
@@ -116,6 +146,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const logout = async () => {
     setLoading(true);
+    
+    if (!isProduction) {
+      // Ne rien faire en mode développement, maintenir l'utilisateur fictif
+      setLoading(false);
+      toast.success("Déconnexion simulée en mode développement.");
+      return;
+    }
     
     // Supprimer les données d'authentification
     localStorage.removeItem('authUser');

@@ -2,9 +2,17 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
+// Détermine si l'application est en mode production
+const isProduction = import.meta.env.MODE === 'production';
+
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
+
+  // Si nous sommes en mode développement, autoriser l'accès sans authentification
+  if (!isProduction) {
+    return <>{children}</>;
+  }
 
   // Afficher un indicateur de chargement pendant la vérification de l'authentification
   if (loading) {
