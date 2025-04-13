@@ -1544,7 +1544,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      authenticate_internal_user: {
+        Args: { email_input: string; password_input: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
