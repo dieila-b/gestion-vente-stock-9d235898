@@ -11,7 +11,7 @@ import Clients from "@/pages/Clients";
 import Suppliers from "@/pages/Suppliers";
 import Orders from "@/pages/Orders";
 import Settings from "@/pages/Settings";
-import Login from "@/pages/Login";
+import Login from "@/pages/auth/Login";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import RequireAuth from "@/components/auth/RequireAuth";
 import Products from "@/pages/Products";

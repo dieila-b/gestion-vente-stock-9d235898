@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { LoginForm } from "@/pages/auth/LoginForm";
-import { ForgotPasswordForm } from "@/pages/auth/ForgotPasswordForm";
+import { useAuth } from "@/components/auth/useAuth";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 // Détermine si l'application est en mode production
 const isProduction = import.meta.env.MODE === 'production';
