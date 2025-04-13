@@ -3,6 +3,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { SupplierFormValues } from "../SupplierFormSchema";
+import { getPhoneCodeForCountry } from "./countryUtils";
+import { useEffect } from "react";
 
 interface PhoneFieldsProps {
   form: UseFormReturn<SupplierFormValues>;
@@ -10,6 +12,25 @@ interface PhoneFieldsProps {
 }
 
 export const PhoneFields = ({ form, watchedCountry }: PhoneFieldsProps) => {
+  useEffect(() => {
+    if (watchedCountry) {
+      const phoneCode = getPhoneCodeForCountry(watchedCountry);
+      
+      // Récupérer les valeurs actuelles des champs téléphone
+      const currentPhone = form.getValues("phone") || "";
+      const currentLandline = form.getValues("landline") || "";
+      
+      // Mettre à jour uniquement si vide ou si contient un autre code pays
+      if (!currentPhone || currentPhone.startsWith("+")) {
+        form.setValue("phone", phoneCode + " ");
+      }
+      
+      if (!currentLandline || currentLandline.startsWith("+")) {
+        form.setValue("landline", phoneCode + " ");
+      }
+    }
+  }, [watchedCountry, form]);
+
   return (
     <>
       <FormField
