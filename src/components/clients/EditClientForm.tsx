@@ -81,7 +81,20 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
     e.preventDefault();
     setIsLoading(true);
 
-    // Prepare data for update, filter out id
+    // Vérification des données obligatoires
+    if (formData.status === 'société' && !formData.company_name.trim()) {
+      toast.error("Le nom de la société est requis pour les clients de type société");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.contact_name.trim()) {
+      toast.error("Le nom du contact est requis");
+      setIsLoading(false);
+      return;
+    }
+
+    // Préparer les données pour la mise à jour
     const { id, ...dataToUpdate } = formData;
 
     try {

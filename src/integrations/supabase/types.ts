@@ -180,6 +180,7 @@ export type Database = {
           postal_code: string | null
           rc_number: string | null
           state: string | null
+          status: string | null
           tax_number: string | null
           updated_at: string | null
           whatsapp: string | null
@@ -205,6 +206,7 @@ export type Database = {
           postal_code?: string | null
           rc_number?: string | null
           state?: string | null
+          status?: string | null
           tax_number?: string | null
           updated_at?: string | null
           whatsapp?: string | null
@@ -230,6 +232,7 @@ export type Database = {
           postal_code?: string | null
           rc_number?: string | null
           state?: string | null
+          status?: string | null
           tax_number?: string | null
           updated_at?: string | null
           whatsapp?: string | null

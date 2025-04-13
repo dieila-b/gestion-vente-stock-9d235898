@@ -58,24 +58,25 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Filter out empty fields to prevent issues with default values
-    const dataToSubmit = Object.entries(formData).reduce((acc, [key, value]) => {
-      // Include all non-empty string values and numbers
-      if ((typeof value === 'string' && value.trim() !== '') || 
-          (typeof value === 'number') || 
-          key === 'status' || 
-          key === 'client_type') {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, any>);
+    // Vérification des données obligatoires
+    if (formData.status === 'société' && !formData.company_name.trim()) {
+      toast.error("Le nom de la société est requis pour les clients de type société");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.contact_name.trim()) {
+      toast.error("Le nom du contact est requis");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      console.log("Submitting client data:", dataToSubmit);
+      console.log("Submitting client data:", formData);
       
       const { data, error } = await supabase
         .from('clients')
-        .insert(dataToSubmit)
+        .insert(formData)
         .select();
 
       if (error) {
