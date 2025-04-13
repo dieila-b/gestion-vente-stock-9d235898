@@ -28,19 +28,23 @@ export const TransferLocationFields = ({
               <FormLabel>Dépôt source</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger className="glass-effect">
                     <SelectValue placeholder="Sélectionnez le dépôt source" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  {warehouses.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                  {warehouses && warehouses.length > 0 ? (
+                    warehouses.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>Aucun entrepôt disponible</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -58,19 +62,23 @@ export const TransferLocationFields = ({
               <FormLabel>Point de vente source</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger className="glass-effect">
                     <SelectValue placeholder="Sélectionnez le point de vente source" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  {posLocations.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                  {posLocations && posLocations.length > 0 ? (
+                    posLocations.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>Aucun point de vente disponible</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -88,23 +96,27 @@ export const TransferLocationFields = ({
               <FormLabel>Dépôt de destination</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger className="glass-effect">
                     <SelectValue placeholder="Sélectionnez le dépôt de destination" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  {warehouses.map((warehouse) => (
-                    <SelectItem 
-                      key={warehouse.id} 
-                      value={warehouse.id}
-                      disabled={transferType === 'depot_to_depot' && warehouse.id === form.watch('source_warehouse_id')}
-                    >
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                  {warehouses && warehouses.length > 0 ? (
+                    warehouses.map((warehouse) => (
+                      <SelectItem 
+                        key={warehouse.id} 
+                        value={warehouse.id}
+                        disabled={transferType === 'depot_to_depot' && warehouse.id === form.watch('source_warehouse_id')}
+                      >
+                        {warehouse.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>Aucun entrepôt disponible</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -122,19 +134,23 @@ export const TransferLocationFields = ({
               <FormLabel>Point de vente de destination</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger className="glass-effect">
                     <SelectValue placeholder="Sélectionnez le point de vente" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  {posLocations.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-background/95 backdrop-blur-md border-white/10 z-[9999]">
+                  {posLocations && posLocations.length > 0 ? (
+                    posLocations.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>Aucun point de vente disponible</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
