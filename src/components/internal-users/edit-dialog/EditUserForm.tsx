@@ -47,6 +47,7 @@ export function EditUserForm({
             onTogglePasswordVisibility={onTogglePasswordVisibility}
             passwordsMatch={passwordsMatch}
             onPhotoUpload={onPhotoUpload}
+            onCancel={onCancel}
           />
         </TabsContent>
         
@@ -62,6 +63,7 @@ export function EditUserForm({
             onPasswordConfirmationChange={onPasswordConfirmationChange}
             onTogglePasswordVisibility={onTogglePasswordVisibility}
             passwordsMatch={passwordsMatch}
+            onCancel={onCancel}
           />
         </TabsContent>
       </Tabs>
