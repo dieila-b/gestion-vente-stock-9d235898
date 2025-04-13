@@ -1,10 +1,8 @@
-
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Warehouse } from "./WarehouseTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,8 +14,7 @@ export const warehouseSchema = z.object({
   capacity: z.coerce.number().min(1, { message: "La capacité doit être d'au moins 1" }),
   manager: z.string().min(2, { message: "Le nom du manager est requis" }),
   surface: z.coerce.number().min(1, { message: "La surface doit être d'au moins 1m²" }),
-  status: z.string().default("Actif"),
-  is_active: z.boolean().default(true)
+  status: z.string().default("Actif")
 });
 
 export type WarehouseFormValues = z.infer<typeof warehouseSchema>;
@@ -43,8 +40,7 @@ export function WarehouseForm({
       capacity: selectedWarehouse?.capacity || 0,
       surface: selectedWarehouse?.surface || 0,
       manager: selectedWarehouse?.manager || "",
-      status: selectedWarehouse?.status || "Actif",
-      is_active: selectedWarehouse?.is_active !== false // default to true if not set
+      status: selectedWarehouse?.status || "Actif"
     }
   });
 
@@ -156,28 +152,6 @@ export function WarehouseForm({
                 </SelectContent>
               </Select>
               <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="is_active"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-              <div className="space-y-0.5">
-                <FormLabel>Actif</FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Définir si l'entrepôt est actuellement actif
-                </div>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  className="data-[state=checked]:bg-purple-600"
-                />
-              </FormControl>
             </FormItem>
           )}
         />

@@ -12,7 +12,6 @@ export interface Warehouse {
   occupied: number;
   status: string;
   surface?: number;
-  is_active?: boolean;
 }
 
 interface WarehouseTableProps {
@@ -51,16 +50,16 @@ export function WarehouseTable({ warehouses, onEdit, onDelete }: WarehouseTableP
                     <Badge 
                       variant="outline" 
                       className={`${
-                        warehouse.status === 'Actif' && warehouse.is_active
+                        warehouse.status === 'Actif'
                           ? 'border-green-500 text-green-500' 
                           : warehouse.status === 'En maintenance'
                           ? 'border-yellow-500 text-yellow-500'
-                          : warehouse.status === 'Fermé' || !warehouse.is_active
+                          : warehouse.status === 'Fermé'
                           ? 'border-red-500 text-red-500'
                           : 'border-blue-500 text-blue-500'
                       }`}
                     >
-                      {warehouse.status} {!warehouse.is_active ? '(Inactif)' : ''}
+                      {warehouse.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

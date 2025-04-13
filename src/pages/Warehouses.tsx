@@ -82,23 +82,17 @@ export default function Warehouses() {
         surface: values.surface,
         manager: values.manager,
         status: values.status || 'Actif',
-        is_active: values.is_active,
+        is_active: values.status === 'Actif' // Set is_active based on status
       };
 
       // If we're editing an existing warehouse
       if (selectedWarehouse) {
-        // Add occupied to the update data but don't modify it
-        const updateData = {
-          ...warehouseData,
-          occupied: selectedWarehouse.occupied // Preserve the current occupied value
-        };
-
-        console.log("Mise à jour de l'entrepôt:", updateData);
+        console.log("Mise à jour de l'entrepôt:", warehouseData);
         
         // Update the existing warehouse
         const updatedWarehouse = await db.update(
           'warehouses', 
-          updateData, 
+          warehouseData, 
           'id', 
           selectedWarehouse.id
         );
