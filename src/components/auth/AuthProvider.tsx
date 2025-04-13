@@ -12,6 +12,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
+// Create the context with a default value
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -126,17 +127,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success("Vous avez été déconnecté avec succès.");
   };
 
+  const contextValue: AuthContextType = {
+    isAuthenticated, 
+    loading, 
+    user, 
+    login, 
+    logout
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, user, login, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+// Export the hook separately
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}

@@ -1,74 +1,62 @@
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Separator } from "@/components/ui/separator";
 
-export const SidebarFooter = () => {
+export function SidebarFooter() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
+    await logout();
+    navigate('/login');
   };
 
-  if (!user) return null;
-
-  // Créer les initiales pour l'avatar
-  const initials = `${user.first_name?.charAt(0) || ""}${user.last_name?.charAt(0) || ""}`;
-  
-  // Formater le nom complet
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "Utilisateur";
-  
-  // Formater le rôle pour l'affichage
-  const formattedRole = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Employé";
+  const handleSettings = () => {
+    navigate('/settings');
+  };
 
   return (
-    <div className="mt-auto p-4">
-      <Separator className="mb-4" />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
-            {user.photo_url ? <AvatarImage src={user.photo_url} alt={fullName} /> : null}
-            <AvatarFallback>{initials || "U"}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="font-medium text-sm">{fullName}</span>
-            <span className="text-xs text-muted-foreground">{formattedRole}</span>
-          </div>
+    <div className="mt-auto p-4 border-t border-muted/20">
+      <div className="flex items-center mb-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden">
+          {user?.photo_url ? (
+            <img 
+              src={user.photo_url} 
+              alt={`${user.first_name} ${user.last_name}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span>{user?.first_name?.charAt(0) || ''}{user?.last_name?.charAt(0) || ''}</span>
+          )}
         </div>
-        <div className="flex space-x-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/settings")}
-            title="Paramètres"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            title="Déconnexion"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+        <div className="ml-3 overflow-hidden">
+          <p className="text-sm font-medium truncate">{user?.first_name} {user?.last_name}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
         </div>
+      </div>
+      
+      <div className="flex space-x-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex-1 text-xs" 
+          onClick={handleSettings}
+        >
+          <Settings className="mr-1 h-3 w-3" />
+          Paramètres
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex-1 text-xs text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-1 h-3 w-3" />
+          Déconnexion
+        </Button>
       </div>
     </div>
   );
-};
+}
