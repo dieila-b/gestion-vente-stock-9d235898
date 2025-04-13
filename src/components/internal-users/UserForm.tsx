@@ -1,111 +1,91 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { User } from "@/types/user";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
-import { Switch } from "@/components/ui/switch";
+import { ProfilePhotoSection } from "./form-sections/ProfilePhotoSection";
+import { PersonalInfoSection } from "./form-sections/PersonalInfoSection";
+import { PasswordSection } from "./form-sections/PasswordSection";
+import { UserRoleSection } from "./form-sections/UserRoleSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 
 interface UserFormProps {
-  user: User;
-  onSave: (user: User) => void;
-  isLoading: boolean;
+  user: Omit<User, 'id'>;
+  index: number;
+  passwordConfirmation: string;
+  showPassword: boolean;
+  onInputChange: (index: number, field: string, value: any) => void;
+  onPasswordConfirmationChange: (index: number, value: string) => void;
+  onRemove: (index: number) => void;
+  onImageUpload: (index: number, file: File) => Promise<void>;
+  onTogglePasswordVisibility: (index: number) => void;
 }
 
-export const UserForm = ({ user, onSave, isLoading }: UserFormProps) => {
-  const [formData, setFormData] = useState<User>({...user});
-  
-  const handleInputChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: e.target.value
-    }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-  
-  const handleRoleChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value as "admin" | "manager" | "employee"
-    }));
-  };
-  
-  const handleActiveChange = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      is_active: checked
-    }));
-  };
-  
+export const UserForm = ({ 
+  user, 
+  index, 
+  passwordConfirmation, 
+  showPassword,
+  onInputChange, 
+  onPasswordConfirmationChange,
+  onRemove, 
+  onImageUpload,
+  onTogglePasswordVisibility
+}: UserFormProps) => {
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="first_name">Prénom</Label>
-          <Input
-            id="first_name"
-            value={formData.first_name}
-            onChange={handleInputChange("first_name")}
-            disabled={isLoading}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="last_name">Nom</Label>
-          <Input
-            id="last_name"
-            value={formData.last_name}
-            onChange={handleInputChange("last_name")}
-            disabled={isLoading}
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={handleInputChange("email")}
-          disabled={isLoading}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="role">Rôle</Label>
-        <Select 
-          value={formData.role} 
-          onValueChange={handleRoleChange}
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-lg">
+          {user.first_name || user.last_name 
+            ? `${user.first_name} ${user.last_name}`.trim() 
+            : `Nouvel utilisateur ${index + 1}`}
+        </CardTitle>
+        <Button 
+          variant="destructive" 
+          size="icon" 
+          onClick={() => onRemove(index)}
+          title="Supprimer l'utilisateur"
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un rôle" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Administrateur</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="employee">Employé</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="flex items-center justify-between">
-        <Label htmlFor="is_active">Utilisateur actif</Label>
-        <Switch
-          id="is_active"
-          checked={formData.is_active}
-          onCheckedChange={handleActiveChange}
-        />
-      </div>
-      
-      <Button type="submit" disabled={isLoading}>
-        Enregistrer
-      </Button>
-    </form>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ProfilePhotoSection 
+            user={user} 
+            index={index} 
+            onImageUpload={onImageUpload} 
+          />
+          
+          <div className="space-y-4">
+            <PersonalInfoSection 
+              user={user} 
+              index={index} 
+              onInputChange={onInputChange} 
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <PasswordSection 
+              user={user}
+              index={index}
+              passwordConfirmation={passwordConfirmation}
+              showPassword={showPassword}
+              onInputChange={onInputChange}
+              onPasswordConfirmationChange={onPasswordConfirmationChange}
+              onTogglePasswordVisibility={onTogglePasswordVisibility}
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <UserRoleSection 
+              user={user} 
+              index={index} 
+              onInputChange={onInputChange} 
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

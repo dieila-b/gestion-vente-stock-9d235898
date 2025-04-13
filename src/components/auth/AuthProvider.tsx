@@ -63,8 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Sauvegarder dans le localStorage pour persister la session
         localStorage.setItem('authUser', JSON.stringify(result.userData));
-        
-        toast.success("Connexion réussie");
       }
       
       setLoading(false);

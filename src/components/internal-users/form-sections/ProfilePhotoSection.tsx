@@ -19,16 +19,11 @@ export const ProfilePhotoSection = ({
   onImageUpload 
 }: ProfilePhotoSectionProps) => {
   const [isUploadLoading, setIsUploadLoading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleImageUploadWithLoading = async (file: File) => {
     setIsUploadLoading(true);
-    setUploadError(null);
     try {
       await onImageUpload(index, file);
-    } catch (error: any) {
-      setUploadError(error.message || "Erreur lors du téléchargement");
-      console.error("Erreur lors du téléchargement de l'image:", error);
     } finally {
       setIsUploadLoading(false);
     }
@@ -72,11 +67,8 @@ export const ProfilePhotoSection = ({
           <ImageUpload 
             onUpload={handleImageUploadWithLoading} 
             value={user.photo_url}
-            disabled={isUploadLoading}
+            disabled={false}
           />
-          {uploadError && (
-            <p className="text-sm text-destructive mt-2">{uploadError}</p>
-          )}
         </CardContent>
       </Card>
     </div>

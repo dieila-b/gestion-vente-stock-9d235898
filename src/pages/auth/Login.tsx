@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/components/auth/useAuth";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -11,24 +11,18 @@ const isProduction = import.meta.env.MODE === 'production';
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login, loading, isAuthenticated, forgotPassword } = useAuth();
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
 
-  // Récupérer l'URL de redirection (si elle existe)
-  const from = location.state?.from?.pathname || "/dashboard";
-
-  // Vérifier si l'utilisateur est déjà authentifié
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      navigate(from, { replace: true });
-    } else if (!isProduction) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate, from]);
-
-  // En mode développement, ne pas afficher la page de connexion
+  // En mode développement, rediriger automatiquement vers le dashboard
   if (!isProduction) {
+    navigate("/dashboard");
+    return null;
+  }
+
+  // Si l'utilisateur est déjà authentifié, le rediriger vers la page d'accueil
+  if (isAuthenticated && !loading) {
+    navigate("/dashboard");
     return null;
   }
 

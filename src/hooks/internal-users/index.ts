@@ -26,7 +26,6 @@ export const useInternalUsers = () => {
     handleAddUser,
     handleRemoveUser,
     togglePasswordVisibility,
-    handleImageUpload,
     resetFormState
   } = useUserFormState();
 
@@ -69,7 +68,6 @@ export const useInternalUsers = () => {
     togglePasswordVisibility,
     handleBulkInsert,
     onDeleteUser,
-    onEditUser,
-    handleImageUpload
+    onEditUser
   };
 };
