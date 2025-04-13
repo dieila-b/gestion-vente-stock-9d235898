@@ -17,7 +17,7 @@ export const ContactFields = ({ form }: ContactFieldsProps) => {
     if (watchedCountry) {
       const phoneCode = getPhoneCodeForCountry(watchedCountry);
       
-      // Si les champs de téléphone sont vides ou contiennent seulement un autre indicatif, mettre à jour
+      // Only update phone fields if they're empty or if they contain another country code
       const currentPhone = form.getValues("phone") || "";
       const currentLandline = form.getValues("landline") || "";
       

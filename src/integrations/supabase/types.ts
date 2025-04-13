@@ -1418,6 +1418,90 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact: string | null
+          country: string | null
+          created_at: string | null
+          delivery_score: number | null
+          email: string | null
+          id: string
+          landline: string | null
+          name: string
+          orders_count: number | null
+          pending_orders: number | null
+          performance_score: number | null
+          phone: string | null
+          postal_box: string | null
+          product_categories: Json | null
+          products_count: number | null
+          quality_score: number | null
+          rating: number | null
+          reliability: number | null
+          status: string | null
+          total_revenue: number | null
+          updated_at: string | null
+          verified: boolean | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          country?: string | null
+          created_at?: string | null
+          delivery_score?: number | null
+          email?: string | null
+          id?: string
+          landline?: string | null
+          name: string
+          orders_count?: number | null
+          pending_orders?: number | null
+          performance_score?: number | null
+          phone?: string | null
+          postal_box?: string | null
+          product_categories?: Json | null
+          products_count?: number | null
+          quality_score?: number | null
+          rating?: number | null
+          reliability?: number | null
+          status?: string | null
+          total_revenue?: number | null
+          updated_at?: string | null
+          verified?: boolean | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          country?: string | null
+          created_at?: string | null
+          delivery_score?: number | null
+          email?: string | null
+          id?: string
+          landline?: string | null
+          name?: string
+          orders_count?: number | null
+          pending_orders?: number | null
+          performance_score?: number | null
+          phone?: string | null
+          postal_box?: string | null
+          product_categories?: Json | null
+          products_count?: number | null
+          quality_score?: number | null
+          rating?: number | null
+          reliability?: number | null
+          status?: string | null
+          total_revenue?: number | null
+          updated_at?: string | null
+          verified?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       warehouse_stock: {
         Row: {
           created_at: string | null
