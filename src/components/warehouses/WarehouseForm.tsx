@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Warehouse } from "./WarehouseTable";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Schéma de validation pour le formulaire d'entrepôt
 export const warehouseSchema = z.object({
@@ -138,9 +139,22 @@ export function WarehouseForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Statut</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Actif" defaultValue="Actif" />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionner un statut" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Actif">Actif</SelectItem>
+                  <SelectItem value="En maintenance">En maintenance</SelectItem>
+                  <SelectItem value="Fermé">Fermé</SelectItem>
+                  <SelectItem value="En construction">En construction</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -161,6 +175,7 @@ export function WarehouseForm({
                 <Switch
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  className="data-[state=checked]:bg-purple-600"
                 />
               </FormControl>
             </FormItem>

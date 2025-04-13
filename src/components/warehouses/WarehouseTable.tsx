@@ -1,6 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle } from "lucide-react";
 
 export interface Warehouse {
   id: string;
@@ -32,6 +34,7 @@ export function WarehouseTable({ warehouses, onEdit, onDelete }: WarehouseTableP
             <TableHead>Occupation</TableHead>
             <TableHead>Manager</TableHead>
             <TableHead>Statut</TableHead>
+            <TableHead>Actif</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -47,9 +50,27 @@ export function WarehouseTable({ warehouses, onEdit, onDelete }: WarehouseTableP
                   <TableCell>{occupationRate}%</TableCell>
                   <TableCell>{warehouse.manager}</TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {warehouse.status === 'active' ? 'Actif' : 'Inactif'}
-                    </span>
+                    <Badge 
+                      variant="outline" 
+                      className={`${
+                        warehouse.status === 'Actif' 
+                          ? 'border-green-500 text-green-500' 
+                          : warehouse.status === 'En maintenance'
+                          ? 'border-yellow-500 text-yellow-500'
+                          : warehouse.status === 'Fermé'
+                          ? 'border-red-500 text-red-500'
+                          : 'border-blue-500 text-blue-500'
+                      }`}
+                    >
+                      {warehouse.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {warehouse.is_active ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex space-x-2 justify-end">
@@ -85,7 +106,7 @@ export function WarehouseTable({ warehouses, onEdit, onDelete }: WarehouseTableP
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={8} className="text-center py-8">
                 <p className="text-muted-foreground">Aucun entrepôt trouvé</p>
                 <p className="text-sm text-muted-foreground mt-1">Essayez d'ajuster votre recherche ou d'ajouter un nouvel entrepôt</p>
               </TableCell>
