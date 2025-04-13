@@ -38,11 +38,11 @@ export function usePOSLocation() {
       try {
         console.log("Creating location with data:", locationData);
         
-        // S'assurer que is_active est correctement défini comme booléen
+        // Ensure is_active is properly defined as boolean
         const dataToInsert = {
           ...locationData,
-          is_active: locationData.is_active === true || String(locationData.is_active) === "true",
-          status: locationData.is_active === true || String(locationData.is_active) === "true" ? "active" : "inactive"
+          is_active: locationData.is_active === true || locationData.is_active === "true",
+          status: locationData.is_active === true || locationData.is_active === "true" ? "active" : "inactive"
         };
 
         const { data, error } = await supabase
@@ -80,15 +80,15 @@ export function usePOSLocation() {
   const { mutate: updateLocation, isPending: isEditing } = useMutation({
     mutationFn: async (location: POSLocation) => {
       try {
-        // S'assurer que is_active est correctement défini comme booléen
+        // Ensure is_active is properly defined as boolean
         const dataToUpdate = {
           name: location.name,
           address: location.address,
           phone: location.phone,
           email: location.email,
           manager: location.manager,
-          status: location.is_active === true || String(location.is_active) === "true" ? "active" : "inactive",
-          is_active: location.is_active === true || String(location.is_active) === "true",
+          status: location.is_active === true || location.is_active === "true" ? "active" : "inactive",
+          is_active: location.is_active === true || location.is_active === "true",
           capacity: location.capacity || 0,
           occupied: location.occupied || 0,
           surface: location.surface || 0
