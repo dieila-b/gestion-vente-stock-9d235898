@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { LucideIcon, LucideProps } from "lucide-react";
 import {
   SidebarMenuItem as BaseSidebarMenuItem,
@@ -17,20 +17,19 @@ type IconComponent = React.ForwardRefExoticComponent<
 interface MenuItem {
   label: string;
   icon: IconComponent;
-  href?: string;
+  path?: string;
   submenu?: MenuItem[];
 }
 
-export function SidebarMenuItem({ label, icon: Icon, href, submenu }: MenuItem) {
+export function SidebarMenuItem({ label, icon: Icon, path, submenu }: MenuItem) {
   const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
   
   if (!submenu) {
     return (
       <BaseSidebarMenuItem>
         <SidebarMenuButton asChild>
           <Link 
-            to={href!} 
+            to={path!} 
             className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-purple-900/50 hover:to-pink-900/30 rounded-lg group transition-all duration-300"
           >
             <Icon className="h-5 w-5 text-purple-300 group-hover:text-purple-200 group-hover:scale-110 transition-all duration-300" />
@@ -55,12 +54,12 @@ export function SidebarMenuItem({ label, icon: Icon, href, submenu }: MenuItem) 
 
     return (
       <SidebarMenuSubItem 
-        key={item.href}
+        key={item.path}
         className="transform transition-transform duration-300 hover:translate-x-1"
       >
         <SidebarMenuSubButton asChild>
           <Link 
-            to={item.href!}
+            to={item.path!}
             className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-purple-900/50 hover:to-pink-900/30 rounded-lg group transition-all duration-300"
           >
             <item.icon className="h-4 w-4 text-purple-300 group-hover:text-purple-200 group-hover:scale-110 transition-all duration-300" />

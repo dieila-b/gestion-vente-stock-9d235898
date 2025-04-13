@@ -1,118 +1,128 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Index from "./pages/Index";
-import Catalog from "./pages/Catalog";
-import POS from "./pages/POS";
-import Sales from "./pages/Sales";
-import NotFound from "./pages/NotFound";
-import { Toaster } from "sonner";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { AuthProvider } from "./components/auth/AuthProvider";
-import RequireAuth from "./components/auth/RequireAuth";
-import ProductUnits from "./pages/ProductUnits";
-import Clients from "./pages/Clients";
-import InternalUsers from "./pages/InternalUsers";
-import Expenses from "./pages/Expenses";
-import Orders from "./pages/Orders";
-import Payments from "./pages/Payments";
-import StockStatus from "./pages/StockLocation";
-import Suppliers from "./pages/Suppliers";
-import ExpenseIncome from "./pages/ExpenseIncome";
-import ExpenseOutcome from "./pages/ExpenseOutcome";
-import BankAccounts from "./pages/BankAccounts";
-import CashRegisters from "./pages/CashRegisters";
-import Purchase from "./pages/Purchase";
-import Quotes from "./pages/Quotes";
-import Invoices from "./pages/Invoices";
-import SalesInvoices from "./pages/SalesInvoices";
-import CustomerReturns from "./pages/CustomerReturns";
-import SupplierReturns from "./pages/SupplierReturns";
-import Transfers from "./pages/Transfers";
-import MainStock from "./pages/stocks/MainStock";
-import OutOfStock from "./pages/stocks/OutOfStock";
-import LowStock from "./pages/stocks/LowStock";
-import StockIn from "./pages/stocks/StockIn";
-import StockOut from "./pages/stocks/StockOut";
-import POSStock from "./pages/stocks/POSStock";
-import PurchaseOrder from "./pages/PurchaseOrder";
-import DeliveryNote from "./pages/DeliveryNote";
-import EditDeliveryNote from "./pages/EditDeliveryNote";
-import PurchaseInvoice from "./pages/PurchaseInvoice";
-import PreorderInvoices from "./pages/PreorderInvoices";
-import Preorders from "./pages/Preorders";
-import POSLocations from "./pages/POSLocations";
-import Warehouses from "./pages/Warehouses";
+import { Routes, Route } from "react-router-dom";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import Dashboard from "@/pages/Dashboard";
+import Catalog from "@/pages/Catalog";
+import POS from "@/pages/POS";
+import Sales from "@/pages/Sales";
+import Payments from "@/pages/Payments";
+import Preorders from "@/pages/Preorders";
+import Clients from "@/pages/Clients";
+import Suppliers from "@/pages/Suppliers";
+import Orders from "@/pages/Orders";
+import Settings from "@/pages/Settings";
+import Login from "@/pages/Login";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import RequireAuth from "@/components/auth/RequireAuth";
+import Products from "@/pages/Products";
+import PriceRequests from "@/pages/PriceRequests";
+import StockStatus from "@/pages/StockStatus";
+import Warehouses from "@/pages/Warehouses";
+import Transfers from "@/pages/Transfers";
+import PreorderInvoices from "@/pages/PreorderInvoices";
+import NewPurchaseOrder from "@/pages/NewPurchaseOrder";
+import InternalUsers from "@/pages/InternalUsers"; 
+import StockLocation from "@/pages/StockLocation"; 
+import POSLocations from "@/pages/POSLocations"; 
+import Index from "@/pages/Index";
 
-// Reports
-import YearlyReport from "./pages/reports/YearlyReport";
-import MonthlyReport from "./pages/reports/MonthlyReport";
-import DailyReport from "./pages/reports/DailyReport";
-import ClientsReport from "./pages/reports/ClientsReport";
+// Reports imports
+import DailyReport from "@/pages/reports/DailyReport";
+import MonthlyReport from "@/pages/reports/MonthlyReport";
+import YearlyReport from "@/pages/reports/YearlyReport";
+import CustomReport from "@/pages/reports/CustomReport";
+import ClientsReport from "@/pages/reports/ClientsReport";
 import UnpaidReport from "./pages/reports/UnpaidReport";
-import CustomReport from "./pages/reports/CustomReport";
+
+// Stock pages imports
+import MainStock from "@/pages/stocks/MainStock";
+import POSStock from "@/pages/stocks/POSStock";
+import StockIn from "@/pages/stocks/StockIn";
+import StockOut from "@/pages/stocks/StockOut";
+
+// Purchase pages imports
+import PurchaseOrder from "@/pages/PurchaseOrder";
+import DeliveryNote from "@/pages/DeliveryNote";
+import PurchaseInvoice from "@/pages/PurchaseInvoice";
+import SupplierReturns from "@/pages/SupplierReturns";
+
+// Sales & Billing pages imports
+import SalesInvoices from "@/pages/SalesInvoices";
+import Quotes from "@/pages/Quotes";
+import CustomerReturns from "@/pages/CustomerReturns";
+
+// Accounting pages imports
+import CashRegisters from "@/pages/CashRegisters";
+import BankAccounts from "@/pages/BankAccounts";
+import Expenses from "@/pages/Expenses";
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/404" element={<NotFound />} />
-        
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-        <Route path="/catalog" element={<RequireAuth><Catalog /></RequireAuth>} />
-        <Route path="/pos" element={<RequireAuth><POS /></RequireAuth>} />
-        <Route path="/sales" element={<RequireAuth><Sales /></RequireAuth>} />
-        <Route path="/product-units" element={<RequireAuth><ProductUnits /></RequireAuth>} />
-        <Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
-        <Route path="/users" element={<RequireAuth><InternalUsers /></RequireAuth>} />
-        <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
-        <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
-        <Route path="/payments" element={<RequireAuth><Payments /></RequireAuth>} />
-        <Route path="/stock-location" element={<RequireAuth><StockStatus /></RequireAuth>} />
-        <Route path="/suppliers" element={<RequireAuth><Suppliers /></RequireAuth>} />
-        <Route path="/expense-income" element={<RequireAuth><ExpenseIncome /></RequireAuth>} />
-        <Route path="/expense-outcome" element={<RequireAuth><ExpenseOutcome /></RequireAuth>} />
-        <Route path="/bank-accounts" element={<RequireAuth><BankAccounts /></RequireAuth>} />
-        <Route path="/cash-registers" element={<RequireAuth><CashRegisters /></RequireAuth>} />
-        <Route path="/purchase" element={<RequireAuth><Purchase /></RequireAuth>} />
-        <Route path="/quotes" element={<RequireAuth><Quotes /></RequireAuth>} />
-        <Route path="/invoices" element={<RequireAuth><Invoices /></RequireAuth>} />
-        <Route path="/sales-invoices" element={<RequireAuth><SalesInvoices /></RequireAuth>} />
-        <Route path="/customer-returns" element={<RequireAuth><CustomerReturns /></RequireAuth>} />
-        <Route path="/supplier-returns" element={<RequireAuth><SupplierReturns /></RequireAuth>} />
-        <Route path="/transfers" element={<RequireAuth><Transfers /></RequireAuth>} />
-        <Route path="/stocks" element={<RequireAuth><MainStock /></RequireAuth>} />
-        <Route path="/stocks/out-of-stock" element={<RequireAuth><OutOfStock /></RequireAuth>} />
-        <Route path="/stocks/low-stock" element={<RequireAuth><LowStock /></RequireAuth>} />
-        <Route path="/stocks/stock-in" element={<RequireAuth><StockIn /></RequireAuth>} />
-        <Route path="/stocks/stock-out" element={<RequireAuth><StockOut /></RequireAuth>} />
-        <Route path="/stocks/pos-stock" element={<RequireAuth><POSStock /></RequireAuth>} />
-        <Route path="/purchase-order" element={<RequireAuth><PurchaseOrder /></RequireAuth>} />
-        <Route path="/delivery-note" element={<RequireAuth><DeliveryNote /></RequireAuth>} />
-        <Route path="/delivery-note/:id" element={<RequireAuth><EditDeliveryNote /></RequireAuth>} />
-        <Route path="/purchase-invoice" element={<RequireAuth><PurchaseInvoice /></RequireAuth>} />
-        <Route path="/preorder-invoices" element={<RequireAuth><PreorderInvoices /></RequireAuth>} />
-        <Route path="/preorders" element={<RequireAuth><Preorders /></RequireAuth>} />
-        <Route path="/pos-locations" element={<RequireAuth><POSLocations /></RequireAuth>} />
-        <Route path="/warehouses" element={<RequireAuth><Warehouses /></RequireAuth>} />
-        
-        {/* Report Routes */}
-        <Route path="/reports/yearly" element={<RequireAuth><YearlyReport /></RequireAuth>} />
-        <Route path="/reports/monthly" element={<RequireAuth><MonthlyReport /></RequireAuth>} />
-        <Route path="/reports/daily" element={<RequireAuth><DailyReport /></RequireAuth>} />
-        <Route path="/reports/clients" element={<RequireAuth><ClientsReport /></RequireAuth>} />
-        <Route path="/reports/unpaid" element={<RequireAuth><UnpaidReport /></RequireAuth>} />
-        <Route path="/reports/custom" element={<RequireAuth><CustomReport /></RequireAuth>} />
-        
-        {/* Redirects */}
-        <Route path="*" element={<Navigate to="/404" replace />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/*" element={
+          <RequireAuth>
+            <DashboardLayout>
+              <Routes>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="catalog" element={<Catalog />} />
+                <Route path="pos" element={<POS />} />
+                <Route path="sales" element={<Sales />} />
+                <Route path="preorders" element={<Preorders />} />
+                <Route path="preorder-invoices" element={<PreorderInvoices />} />
+                <Route path="payments" element={<Payments />} />
+                <Route path="clients" element={<Clients />} />
+                <Route path="suppliers" element={<Suppliers />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="price-requests" element={<PriceRequests />} />
+                <Route path="products" element={<Products />} />
+                <Route path="settings" element={<Settings />} />
+                
+                {/* Stock Management Routes */}
+                <Route path="stock-status" element={<StockStatus />} />
+                <Route path="stocks/main" element={<MainStock />} />
+                <Route path="stocks/pos" element={<POSStock />} />
+                <Route path="stocks/in" element={<StockIn />} />
+                <Route path="stocks/out" element={<StockOut />} />
+                <Route path="warehouses" element={<Warehouses />} />
+                <Route path="transfers" element={<Transfers />} />
+                
+                {/* Reports Routes */}
+                <Route path="reports/daily" element={<DailyReport />} />
+                <Route path="reports/monthly" element={<MonthlyReport />} />
+                <Route path="reports/yearly" element={<YearlyReport />} />
+                <Route path="reports/custom" element={<CustomReport />} />
+                <Route path="reports/clients" element={<ClientsReport />} />
+                <Route path="reports/unpaid" element={<UnpaidReport />} />
+                
+                {/* Purchase Routes */}
+                <Route path="purchase-orders" element={<PurchaseOrder />} />
+                <Route path="purchase-orders/new" element={<NewPurchaseOrder />} />
+                <Route path="delivery-note" element={<DeliveryNote />} />
+                <Route path="purchase-invoice" element={<PurchaseInvoice />} />
+                <Route path="supplier-returns" element={<SupplierReturns />} />
+                
+                {/* Sales & Billing Routes */}
+                <Route path="sales-invoices" element={<SalesInvoices />} />
+                <Route path="quotes" element={<Quotes />} />
+                <Route path="customer-returns" element={<CustomerReturns />} />
+                
+                {/* Accounting Routes */}
+                <Route path="cash-registers" element={<CashRegisters />} />
+                <Route path="bank-accounts" element={<BankAccounts />} />
+                <Route path="expenses" element={<Expenses />} />
+                
+                {/* Settings Routes */}
+                <Route path="stock-location" element={<StockLocation />} />
+                <Route path="pos-locations" element={<POSLocations />} />
+                <Route path="internal-users" element={<InternalUsers />} />
+              </Routes>
+            </DashboardLayout>
+          </RequireAuth>
+        } />
       </Routes>
-      <Toaster position="top-right" richColors />
-      <ReactQueryDevtools initialIsOpen={false} />
     </AuthProvider>
   );
 }
