@@ -7,17 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { User } from "@/types/user";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileSection } from "./form-sections/ProfileSection";
-import { BasicInfoSection } from "./form-sections/BasicInfoSection";
-import { RoleSection } from "./form-sections/RoleSection";
-import { PasswordSection } from "./form-sections/PasswordSection";
-import { DialogFormActions } from "./form-sections/DialogFormActions";
 
 interface EditUserDialogProps {
   user: User;
@@ -31,7 +31,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleInputChange = (field: keyof User, value: any) => {
     setUserData((prev) => ({
@@ -90,11 +89,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     }
   };
 
-  const handleImageUpload = (url: string) => {
-    handleInputChange('photo_url', url);
-    setIsUploading(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-[#121212] text-white border-gray-800">
@@ -116,39 +110,132 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             </TabsList>
             
             <TabsContent value="informations" className="space-y-4">
-              <ProfileSection 
-                photoUrl={userData.photo_url} 
-                onImageUpload={handleImageUpload} 
-                disabled={isSubmitting}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="text-gray-300">Prénom</Label>
+                  <Input
+                    id="first_name"
+                    value={userData.first_name}
+                    onChange={(e) => handleInputChange("first_name", e.target.value)}
+                    required
+                    className="bg-[#1e1e1e] border-gray-700 text-white"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="text-gray-300">Nom</Label>
+                  <Input
+                    id="last_name"
+                    value={userData.last_name}
+                    onChange={(e) => handleInputChange("last_name", e.target.value)}
+                    required
+                    className="bg-[#1e1e1e] border-gray-700 text-white"
+                  />
+                </div>
+              </div>
               
-              <BasicInfoSection 
-                userData={userData} 
-                onInputChange={handleInputChange} 
-              />
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={userData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  required
+                  className="bg-[#1e1e1e] border-gray-700 text-white"
+                />
+              </div>
               
-              <RoleSection 
-                userData={userData} 
-                onInputChange={handleInputChange} 
-              />
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-300">Téléphone</Label>
+                <Input
+                  id="phone"
+                  value={userData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="bg-[#1e1e1e] border-gray-700 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address" className="text-gray-300">Adresse</Label>
+                <Input
+                  id="address"
+                  value={userData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className="bg-[#1e1e1e] border-gray-700 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-gray-300">Rôle</Label>
+                <Select
+                  value={userData.role}
+                  onValueChange={(value) => handleInputChange("role", value)}
+                >
+                  <SelectTrigger id="role" className="bg-[#1e1e1e] border-gray-700 text-white">
+                    <SelectValue placeholder="Sélectionner un rôle" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1e1e1e] border-gray-700 text-white">
+                    <SelectItem value="admin">Administrateur</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="employee">Employé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_active"
+                  checked={userData.is_active}
+                  onCheckedChange={(checked) => handleInputChange("is_active", checked)}
+                  className="data-[state=checked]:bg-purple-500"
+                />
+                <Label htmlFor="is_active" className="text-gray-300">Utilisateur actif</Label>
+              </div>
             </TabsContent>
             
             <TabsContent value="password" className="space-y-4">
-              <PasswordSection 
-                showPassword={showPassword}
-                newPassword={newPassword}
-                onPasswordChange={setNewPassword}
-                onTogglePasswordVisibility={togglePasswordVisibility}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-300">Nouveau mot de passe</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Laisser vide pour ne pas changer"
+                    className="pr-10 bg-[#1e1e1e] border-gray-700 text-white"
+                  />
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon"
+                    className="absolute right-0 top-0 h-full text-gray-400"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
           
           <DialogFooter className="mt-6 gap-2">
-            <DialogFormActions 
-              isSubmitting={isSubmitting}
-              isUploading={isUploading}
-              onCancel={() => onOpenChange(false)}
-            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800"
+            >
+              Annuler
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isSubmitting ? "Enregistrement..." : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
