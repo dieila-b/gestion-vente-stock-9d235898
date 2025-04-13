@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { handleDbError, createErrorProxy } from "./db-error-handler";
 
@@ -51,7 +50,8 @@ export async function query<T = any>(
     
     // Handle the special case where the query is a count query
     if (count !== undefined && (data === null || data.length === 0)) {
-      return { count } as unknown as T[];
+      // Return an array with a single object containing the count
+      return [{ count } as unknown as T];
     }
     
     return data || fallbackData;

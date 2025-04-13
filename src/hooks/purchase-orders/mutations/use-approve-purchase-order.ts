@@ -10,13 +10,18 @@ export function useApprovePurchaseOrder() {
     mutationFn: async (orderId: string) => {
       try {
         // Get the purchase order details
-        const order = await db.query(
+        const orderResult = await db.query(
           'purchase_orders',
           query => query
             .select('id, status, supplier_id, total_amount, deleted')
             .eq('id', orderId)
             .single()
         );
+
+        // Check if order exists and extract it from array if needed
+        const order = Array.isArray(orderResult) && orderResult.length > 0 
+          ? orderResult[0] 
+          : orderResult;
 
         if (!order || order.deleted) {
           throw new Error('Commande non trouvée ou supprimée');
@@ -45,7 +50,7 @@ export function useApprovePurchaseOrder() {
         }
 
         // Get updated order
-        const updatedOrder = await db.query(
+        const updatedOrderResult = await db.query(
           'purchase_orders',
           query => query
             .select('*')
@@ -53,12 +58,17 @@ export function useApprovePurchaseOrder() {
             .single()
         );
 
+        // Extract updated order from array if needed
+        const updatedOrder = Array.isArray(updatedOrderResult) && updatedOrderResult.length > 0 
+          ? updatedOrderResult[0] 
+          : updatedOrderResult;
+
         if (!updatedOrder) {
           throw new Error('Impossible de récupérer la commande mise à jour');
         }
 
         // Find an active warehouse
-        const warehouseData = await db.query(
+        const warehouseDataResult = await db.query(
           'warehouses',
           query => query
             .select('id')
@@ -66,6 +76,11 @@ export function useApprovePurchaseOrder() {
             .limit(1)
             .single()
         );
+
+        // Extract warehouse from array if needed
+        const warehouseData = Array.isArray(warehouseDataResult) && warehouseDataResult.length > 0 
+          ? warehouseDataResult[0] 
+          : warehouseDataResult;
 
         if (!warehouseData || !warehouseData.id) {
           throw new Error('Aucun entrepôt actif trouvé');

@@ -14,7 +14,18 @@ export const useClientStats = () => {
           query => query.select('id', { count: 'exact', head: true })
         );
         
-        return result.count || 0;
+        // The result might be an object with count property or an array
+        if (Array.isArray(result) && result.length > 0 && 'count' in result[0]) {
+          return result[0].count || 0;
+        }
+        
+        // If it's directly an object with count property
+        if (result && typeof result === 'object' && 'count' in result) {
+          return result.count || 0;
+        }
+        
+        // Fallback: return the length of the array
+        return Array.isArray(result) ? result.length : 0;
       } catch (error) {
         console.error("Error fetching clients count:", error);
         return 0;

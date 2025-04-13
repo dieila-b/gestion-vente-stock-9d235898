@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-adapter";
 import { safeSupplier } from "@/utils/supabase-safe-query";
@@ -23,7 +24,7 @@ export function usePurchaseOrderQueries() {
 
           return orders.map((order: any) => {
             // Format supplier data using our safe accessor
-            const supplier = safeSupplier(order.supplier);
+            const supplier = safeSupplier(order.supplier || {});
             
             return {
               ...order,
@@ -48,7 +49,7 @@ export function usePurchaseOrderQueries() {
       queryKey: ['purchase-order', id],
       queryFn: async () => {
         try {
-          const order = await db.query(
+          const orderResult = await db.query(
             'purchase_orders',
             query => query
               .select(`
@@ -65,12 +66,17 @@ export function usePurchaseOrderQueries() {
             null
           );
 
+          // Extract order from array if needed
+          const order = Array.isArray(orderResult) && orderResult.length > 0 
+            ? orderResult[0] 
+            : orderResult;
+
           if (!order) {
             throw new Error("Purchase order not found");
           }
 
           // Format supplier data using our safe accessor
-          const supplier = safeSupplier(order.supplier);
+          const supplier = safeSupplier(order.supplier || {});
           
           // Add extra attributes that the UI expects
           return {
@@ -116,7 +122,7 @@ export function usePurchaseOrderQueries() {
 
           return orders.map((order: any) => {
             // Format supplier data using our safe accessor
-            const supplier = safeSupplier(order.supplier);
+            const supplier = safeSupplier(order.supplier || {});
             
             return {
               ...order,
