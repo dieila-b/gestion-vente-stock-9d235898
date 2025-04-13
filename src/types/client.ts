@@ -3,6 +3,7 @@ export interface Client {
   id: string;
   company_name: string; // Required field
   contact_name?: string;
+  first_name?: string; // Added new field for first name
   email?: string;
   phone?: string;
   mobile_1?: string;

@@ -24,6 +24,7 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
   const [formData, setFormData] = useState<ClientFormData>({
     company_name: "",
     contact_name: "",
+    first_name: "",
     email: "",
     phone: "",
     mobile_1: "",
@@ -49,7 +50,9 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
+      // Clear company_name if client is individual
+      ...(name === 'status' && value === 'particulier' ? { company_name: "" } : {})
     }));
   };
 
