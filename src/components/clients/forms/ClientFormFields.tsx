@@ -26,14 +26,13 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       <div className="space-y-2">
         <label className="text-sm text-muted-foreground">Statut Client</label>
         <Select
-          value={formData.status || "none"}
+          value={formData.status || "particulier"}
           onValueChange={handleSelectChange("status")}
         >
           <SelectTrigger className="enhanced-glass">
             <SelectValue placeholder="Sélectionner un statut" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Non spécifié</SelectItem>
             <SelectItem value="particulier">Particulier</SelectItem>
             <SelectItem value="entreprise">Entreprise</SelectItem>
           </SelectContent>
@@ -43,14 +42,13 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       <div className="space-y-2">
         <label className="text-sm text-muted-foreground">Type de Client</label>
         <Select
-          value={formData.client_type || "none"}
+          value={formData.client_type || "occasionnel"}
           onValueChange={handleSelectChange("client_type")}
         >
           <SelectTrigger className="enhanced-glass">
             <SelectValue placeholder="Sélectionner un type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Non spécifié</SelectItem>
             <SelectItem value="occasionnel">Occasionnel</SelectItem>
             <SelectItem value="grossiste">Grossiste</SelectItem>
             <SelectItem value="semi-grossiste">Semi-Grossiste</SelectItem>
@@ -72,13 +70,16 @@ export const ClientFormFields = ({ formData, onChange, onSelectChange }: ClientF
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">Nom de l'entreprise</label>
+        <label className="text-sm text-muted-foreground">
+          {isIndividual ? "Nom de l'entreprise" : "Nom de l'entreprise *"}
+        </label>
         <div className="relative">
           <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             name="company_name"
             value={formData.company_name}
             onChange={onChange}
+            required={!isIndividual}
             className={`pl-10 enhanced-glass ${isIndividual ? 'bg-gray-200 opacity-50' : ''}`}
             placeholder="Entreprise ABC"
             disabled={isIndividual}

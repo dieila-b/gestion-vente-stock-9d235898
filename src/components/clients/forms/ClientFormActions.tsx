@@ -22,7 +22,7 @@ export const ClientFormActions = ({ onClose, isLoading, submitLabel = "Créer le
         type="submit"
         disabled={isLoading}
       >
-        {isLoading ? "Modification..." : submitLabel}
+        {isLoading ? "Traitement en cours..." : submitLabel}
       </Button>
     </div>
   );

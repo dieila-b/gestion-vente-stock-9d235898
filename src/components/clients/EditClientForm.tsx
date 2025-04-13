@@ -82,7 +82,7 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
     setIsLoading(true);
 
     // Vérification des données obligatoires
-    if (formData.status === 'société' && !formData.company_name.trim()) {
+    if (formData.status === 'entreprise' && !formData.company_name.trim()) {
       toast.error("Le nom de la société est requis pour les clients de type société");
       setIsLoading(false);
       return;
@@ -151,6 +151,7 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
                 <ClientFormActions 
                   onClose={onClose}
                   isLoading={isLoading}
+                  submitLabel="Mettre à jour"
                 />
               </form>
             </Card>

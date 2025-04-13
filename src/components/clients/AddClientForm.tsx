@@ -59,7 +59,7 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     setIsLoading(true);
 
     // Vérification des données obligatoires
-    if (formData.status === 'société' && !formData.company_name.trim()) {
+    if (formData.status === 'entreprise' && !formData.company_name.trim()) {
       toast.error("Le nom de la société est requis pour les clients de type société");
       setIsLoading(false);
       return;
@@ -74,18 +74,18 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
     try {
       console.log("Submitting client data:", formData);
       
-      const { data, error } = await supabase
+      // Pour le débogage, désactivons temporairement les sélections après insertion
+      const { error } = await supabase
         .from('clients')
-        .insert(formData)
-        .select();
+        .insert(formData);
 
       if (error) {
         console.error('Error adding client:', error);
         throw error;
       }
 
-      console.log("Client created successfully:", data);
       toast.success("Client ajouté avec succès");
+      // Invalidation de la requête pour rafraîchir la liste des clients
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       onClose();
     } catch (error: any) {
