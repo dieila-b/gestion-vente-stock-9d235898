@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -139,13 +138,18 @@ export default function Warehouses() {
         occupied: 0, // Par défaut, un nouvel entrepôt est vide
       };
 
+      console.log("Données de l'entrepôt à envoyer:", warehouseData);
+
       // Ajouter l'entrepôt dans Supabase
       const { data, error } = await supabase
         .from('warehouses')
         .insert(warehouseData)
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        throw error;
+      }
       
       // Ajouter l'entrepôt à l'état local
       if (data && data.length > 0) {
