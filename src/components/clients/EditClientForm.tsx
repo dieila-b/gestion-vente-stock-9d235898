@@ -4,12 +4,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Client } from "@/types/client";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ClientFormHeader } from "./forms/ClientFormHeader";
 import { ClientFormFields } from "./forms/ClientFormFields";
 import { ClientFormActions } from "./forms/ClientFormActions";
+import { db } from "@/utils/db-adapter";
 
 interface EditClientFormProps {
   client: Client;
@@ -100,14 +100,11 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
     try {
       console.log("Updating client data:", dataToUpdate);
       
-      const { error } = await supabase
-        .from('clients')
-        .update(dataToUpdate)
-        .eq('id', id);
+      // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
+      const result = await db.update<Client>('clients', dataToUpdate, 'id', id);
 
-      if (error) {
-        console.error('Error updating client:', error);
-        throw error;
+      if (!result) {
+        throw new Error("Échec de la mise à jour du client");
       }
 
       toast.success("Client modifié avec succès");

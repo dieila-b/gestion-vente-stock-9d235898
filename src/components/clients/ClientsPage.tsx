@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { AddClientForm } from "@/components/clients/AddClientForm";
 import { EditClientForm } from "@/components/clients/EditClientForm";
 import { ClientsHeader } from "./ClientsHeader";
 import { ClientsToolbar } from "./ClientsToolbar";
 import { ClientsTable } from "./ClientsTable";
+import { db } from "@/utils/db-adapter";
 
 const ClientsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,21 +19,24 @@ const ClientsPage = () => {
   const { data: clients, isLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
+      try {
+        // Utiliser l'adaptateur db pour récupérer les clients
+        const data = await db.query<Client[]>(
+          'clients',
+          q => q.select('*').order('created_at', { ascending: false }),
+          []
+        );
+        
+        // Add default status if not present to conform to Client type
+        return (data || []).map(client => ({
+          ...client,
+          status: client.status || "particulier" 
+        })) as Client[];
+      } catch (error: any) {
         toast.error("Erreur lors du chargement des clients");
-        throw error;
+        console.error("Error loading clients:", error);
+        return [];
       }
-
-      // Add default status if not present to conform to Client type
-      return (data as any[]).map(client => ({
-        ...client,
-        status: client.status || "active" 
-      })) as Client[];
     }
   });
 
