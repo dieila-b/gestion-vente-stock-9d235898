@@ -55,7 +55,8 @@ export default function Warehouses() {
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
-        const data = await db.query<Warehouse[]>('warehouses', 
+        // Removed the generic type argument from db.query
+        const data = await db.query('warehouses', 
           (query) => query.select('*').order('name', { ascending: true }),
           []
         );
@@ -88,7 +89,8 @@ export default function Warehouses() {
 
       console.log("Données de l'entrepôt à envoyer:", warehouseData);
 
-      const newWarehouse = await db.insert<Warehouse>('warehouses', warehouseData);
+      // Removed the generic type argument from db.insert
+      const newWarehouse = await db.insert('warehouses', warehouseData);
       
       if (newWarehouse) {
         setWarehouses([...warehouses, newWarehouse]);

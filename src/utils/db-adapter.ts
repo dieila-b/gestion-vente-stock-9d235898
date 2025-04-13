@@ -79,11 +79,11 @@ export class DatabaseAdapter {
    * @param fallbackData Data to return in case of error
    * @returns The query result or fallback data
    */
-  static async query<T>(
+  static async query(
     tableName: string,
     queryFn: (queryBuilder: any) => any,
-    fallbackData: T = [] as unknown as T
-  ): Promise<T> {
+    fallbackData: any = []
+  ): Promise<any> {
     try {
       const queryBuilder = this.table(tableName);
       const { data, error, count } = await queryFn(queryBuilder);
@@ -96,10 +96,10 @@ export class DatabaseAdapter {
       
       // Handle the special case where the query is a count query
       if (count !== undefined && (data === null || data.length === 0)) {
-        return { count } as unknown as T;
+        return { count };
       }
       
-      return (data as T) || fallbackData;
+      return data || fallbackData;
     } catch (err) {
       console.error(`Exception querying ${tableName}:`, err);
       toast.error(`Erreur lors de la requête à ${tableName}`);
@@ -114,10 +114,10 @@ export class DatabaseAdapter {
    * @param data The data to insert
    * @returns The insert result or null in case of error
    */
-  static async insert<T>(
+  static async insert(
     tableName: string, 
     data: any
-  ): Promise<T | null> {
+  ): Promise<any | null> {
     try {
       const { data: result, error } = await this.table(tableName).insert(data).select();
       
@@ -129,10 +129,10 @@ export class DatabaseAdapter {
       
       // Handle both array and single object responses
       if (Array.isArray(result) && result.length > 0) {
-        return result[0] as T;
+        return result[0];
       }
       
-      return (result as T) || null;
+      return result || null;
     } catch (err) {
       console.error(`Exception inserting into ${tableName}:`, err);
       toast.error(`Erreur lors de l'insertion dans ${tableName}`);
@@ -149,12 +149,12 @@ export class DatabaseAdapter {
    * @param matchValue The value to match for the update
    * @returns The update result or null in case of error
    */
-  static async update<T>(
+  static async update(
     tableName: string, 
     data: any, 
     matchColumn: string, 
     matchValue: any
-  ): Promise<T | null> {
+  ): Promise<any | null> {
     try {
       const { data: result, error } = await this.table(tableName)
         .update(data)
@@ -169,10 +169,10 @@ export class DatabaseAdapter {
       
       // Handle both array and single object responses
       if (Array.isArray(result) && result.length > 0) {
-        return result[0] as T;
+        return result[0];
       }
       
-      return (result as T) || null;
+      return result || null;
     } catch (err) {
       console.error(`Exception updating ${tableName}:`, err);
       toast.error(`Erreur lors de la mise à jour dans ${tableName}`);
