@@ -1,5 +1,6 @@
 
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full pl-3 text-left font-normal bg-white border border-gray-300",
+                    "w-full pl-3 text-left font-normal bg-background/95 border border-gray-300",
                     !field.value && "text-muted-foreground"
                   )}
                 >
@@ -45,7 +46,7 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
               </FormControl>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-auto p-0 z-[999999] bg-white border border-gray-300" 
+              className="w-auto p-0 z-[9999] bg-background border border-gray-300" 
               align="start"
             >
               <Calendar

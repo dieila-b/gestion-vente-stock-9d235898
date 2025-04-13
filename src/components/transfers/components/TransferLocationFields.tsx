@@ -21,30 +21,12 @@ export const TransferLocationFields = ({
   const [safeWarehouses, setSafeWarehouses] = useState<any[]>([]);
   const [safePosLocations, setSafePosLocations] = useState<any[]>([]);
 
-  // Log warehouse data for debugging
+  // Ensure we always have arrays even if the props are undefined
   useEffect(() => {
     console.log("TransferLocationFields received warehouses:", warehouses);
-    console.log("TransferLocationFields warehouses length:", warehouses?.length || 0);
-    
-    // If no warehouses, add mock data for development
-    const warehousesToUse = Array.isArray(warehouses) && warehouses.length > 0 
-      ? warehouses 
-      : [
-          { id: 'warehouse1', name: 'Entrepôt Principal' },
-          { id: 'warehouse2', name: 'Entrepôt Secondaire' }
-        ];
-    
-    setSafeWarehouses(warehousesToUse);
-
-    // If no POS locations, add mock data for development
-    const posToUse = Array.isArray(posLocations) && posLocations.length > 0 
-      ? posLocations 
-      : [
-          { id: 'pos1', name: 'Point de Vente 1' },
-          { id: 'pos2', name: 'Point de Vente 2' }
-        ];
-    
-    setSafePosLocations(posToUse);
+    console.log("TransferLocationFields received posLocations:", posLocations);
+    setSafeWarehouses(warehouses || []);
+    setSafePosLocations(posLocations || []);
   }, [warehouses, posLocations]);
 
   return (
@@ -62,21 +44,22 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-white border border-gray-300">
+                  <SelectTrigger className="bg-background/95 border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le dépôt source" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[9999] bg-background border border-gray-300 shadow-lg"
                   sideOffset={4}
                 >
-                  {safeWarehouses.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
-                  {safeWarehouses.length === 0 && (
+                  {safeWarehouses.length > 0 ? (
+                    safeWarehouses.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))
+                  ) : (
                     <SelectItem value="no-data" disabled>Aucun entrepôt disponible</SelectItem>
                   )}
                 </SelectContent>
@@ -100,21 +83,22 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-white border border-gray-300">
+                  <SelectTrigger className="bg-background/95 border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le point de vente source" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[9999] bg-background border border-gray-300 shadow-lg"
                   sideOffset={4}
                 >
-                  {safePosLocations.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </SelectItem>
-                  ))}
-                  {safePosLocations.length === 0 && (
+                  {safePosLocations.length > 0 ? (
+                    safePosLocations.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </SelectItem>
+                    ))
+                  ) : (
                     <SelectItem value="no-data" disabled>Aucun point de vente disponible</SelectItem>
                   )}
                 </SelectContent>
@@ -138,25 +122,26 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-white border border-gray-300">
+                  <SelectTrigger className="bg-background/95 border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le dépôt de destination" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[9999] bg-background border border-gray-300 shadow-lg"
                   sideOffset={4}
                 >
-                  {safeWarehouses.map((warehouse) => (
-                    <SelectItem 
-                      key={warehouse.id} 
-                      value={warehouse.id}
-                      disabled={transferType === 'depot_to_depot' && warehouse.id === form.watch('source_warehouse_id')}
-                    >
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
-                  {safeWarehouses.length === 0 && (
+                  {safeWarehouses.length > 0 ? (
+                    safeWarehouses.map((warehouse) => (
+                      <SelectItem 
+                        key={warehouse.id} 
+                        value={warehouse.id}
+                        disabled={transferType === 'depot_to_depot' && warehouse.id === form.watch('source_warehouse_id')}
+                      >
+                        {warehouse.name}
+                      </SelectItem>
+                    ))
+                  ) : (
                     <SelectItem value="no-data" disabled>Aucun entrepôt disponible</SelectItem>
                   )}
                 </SelectContent>
@@ -180,21 +165,22 @@ export const TransferLocationFields = ({
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger className="bg-white border border-gray-300">
+                  <SelectTrigger className="bg-background/95 border border-gray-300">
                     <SelectValue placeholder="Sélectionnez le point de vente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent 
                   position="popper" 
-                  className="z-[999999] bg-white border border-gray-300 shadow-lg"
+                  className="z-[9999] bg-background border border-gray-300 shadow-lg"
                   sideOffset={4}
                 >
-                  {safePosLocations.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </SelectItem>
-                  ))}
-                  {safePosLocations.length === 0 && (
+                  {safePosLocations.length > 0 ? (
+                    safePosLocations.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </SelectItem>
+                    ))
+                  ) : (
                     <SelectItem value="no-data" disabled>Aucun point de vente disponible</SelectItem>
                   )}
                 </SelectContent>

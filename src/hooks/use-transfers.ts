@@ -53,18 +53,14 @@ export function useTransfers() {
     setFilteredTransfers(filtered);
   }, [searchQuery, transfers]);
 
-  // Add a mock warehouse if none exists for development purposes
+  // Debug logs to check warehouses and posLocations
   useEffect(() => {
-    console.log("Raw warehouses data:", warehouses);
-    console.log("Raw pos locations data:", posLocations);
-    
-    if (!warehouses || warehouses.length === 0) {
-      console.log("No warehouses found, using mock data");
-    }
-    
-    if (!posLocations || posLocations.length === 0) {
-      console.log("No POS locations found, using mock data");
-    }
+    console.log("useTransfers hook data:", {
+      warehouses: warehouses?.length,
+      warehouses_data: warehouses,
+      posLocations: posLocations?.length,
+      posLocations_data: posLocations,
+    });
   }, [warehouses, posLocations]);
 
   return {
@@ -79,7 +75,7 @@ export function useTransfers() {
     refetch,
     deleteTransfer,
     fetchTransferById,
-    posLocations: posLocations || [],
-    warehouses: warehouses || [],
+    posLocations,
+    warehouses,
   };
 }
