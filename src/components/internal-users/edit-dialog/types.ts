@@ -14,6 +14,7 @@ export interface EditUserFormProps {
   onTogglePasswordVisibility: () => void;
   passwordsMatch: boolean;
   onPhotoUpload?: (file: File) => Promise<void>;
+  onCancel: () => void;
 }
 
 export interface EditDialogActionsProps {

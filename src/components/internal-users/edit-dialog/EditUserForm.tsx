@@ -17,7 +17,8 @@ export function EditUserForm({
   onPasswordChange,
   onPasswordConfirmationChange,
   onTogglePasswordVisibility,
-  onPhotoUpload
+  onPhotoUpload,
+  onCancel
 }: EditUserFormProps) {
   
   return (
@@ -67,7 +68,7 @@ export function EditUserForm({
       
       <DialogActions 
         isSubmitting={isSubmitting} 
-        onCancel={() => {}} 
+        onCancel={onCancel} 
         disabled={newPassword && !passwordsMatch}
       />
     </>
