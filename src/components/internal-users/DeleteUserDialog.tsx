@@ -54,21 +54,19 @@ export function DeleteUserDialog({ user, open, onOpenChange }: DeleteUserDialogP
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-[#121212] text-white border-gray-700">
+      <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-white">Êtes-vous sûr de vouloir supprimer cet utilisateur ?</AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-400">
+          <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</AlertDialogTitle>
+          <AlertDialogDescription>
             Cette action ne peut pas être annulée. Cela supprimera définitivement l'utilisateur 
-            <span className="font-semibold text-gray-300"> {user.first_name} {user.last_name}</span> ({user.email}).
+            <span className="font-semibold"> {user.first_name} {user.last_name}</span> ({user.email}).
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800">
-            Annuler
-          </AlertDialogCancel>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleDelete}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={isDeleting}
           >
             {isDeleting ? "Suppression..." : "Supprimer"}
