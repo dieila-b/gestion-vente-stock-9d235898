@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { POSLocation } from "@/types/pos-locations";
 import { Switch } from "@/components/ui/switch";
+import { FormEvent, useState } from "react";
 
 interface POSLocationFormProps {
   location: POSLocation | null;
@@ -12,8 +13,30 @@ interface POSLocationFormProps {
 }
 
 export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFormProps) {
+  const [isActive, setIsActive] = useState<boolean>(location?.is_active !== false);
+  
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // Ensure is_active status is correctly passed with the form
+    const form = e.currentTarget;
+    const formElement = form.elements.namedItem('is_active') as HTMLInputElement;
+    if (formElement) {
+      formElement.value = String(isActive);
+    } else {
+      // If element doesn't exist, create a hidden input
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'is_active';
+      hiddenInput.value = String(isActive);
+      form.appendChild(hiddenInput);
+    }
+    
+    onSubmit(e);
+  };
+  
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">Nom</Label>
         <Input
@@ -67,9 +90,11 @@ export function POSLocationForm({ location, onSubmit, onCancel }: POSLocationFor
         <Switch
           id="status"
           name="status"
-          defaultChecked={location?.is_active !== false}
+          checked={isActive}
+          onCheckedChange={setIsActive}
         />
         <Label htmlFor="status">Actif</Label>
+        <input type="hidden" name="is_active" value={String(isActive)} />
       </div>
       
       <div className="flex justify-end space-x-2 pt-4">

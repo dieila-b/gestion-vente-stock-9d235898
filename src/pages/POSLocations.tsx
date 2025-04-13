@@ -34,6 +34,7 @@ export default function POSLocations() {
   const onSubmitForm = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
     // Construct location object from form data
     const locationData: Partial<POSLocation> = {
       name: formData.get('name') as string,
@@ -42,11 +43,13 @@ export default function POSLocations() {
       email: formData.get('email') as string,
       manager: formData.get('manager') as string,
       status: formData.get('status') as string,
+      is_active: formData.get('is_active') === 'true',
       capacity: parseInt(formData.get('capacity') as string) || 0,
       occupied: parseInt(formData.get('occupied') as string) || 0,
-      surface: parseInt(formData.get('surface') as string) || 0,
-      is_active: formData.get('is_active') === 'true'
+      surface: parseInt(formData.get('surface') as string) || 0
     };
+    
+    console.log("Form data being submitted:", locationData);
     
     if (selectedLocation?.id) {
       locationData.id = selectedLocation.id;
