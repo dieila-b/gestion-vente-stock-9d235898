@@ -39,7 +39,7 @@ export function usePOSLocation() {
 
   // Handle delete
   const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cet entrepôt?")) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce point de vente?")) {
       deleteLocation(id);
     }
   };

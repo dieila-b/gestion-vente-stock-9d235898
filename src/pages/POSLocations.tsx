@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { POSLocationsTable } from "@/components/pos-locations/POSLocationsTable";
 import { POSLocationForm } from "@/components/pos-locations/POSLocationForm";
@@ -75,15 +76,15 @@ export default function POSLocations() {
   return (
     <div className="p-4 space-y-6">
       <PageHeader>
-        <PageHeader.Title>Entrepôts</PageHeader.Title>
-        <PageHeader.Description>Gérez les emplacements de vos entrepôts</PageHeader.Description>
+        <PageHeader.Title>Points de Vente</PageHeader.Title>
+        <PageHeader.Description>Gérez les emplacements de vos points de vente</PageHeader.Description>
       </PageHeader>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glass-panel p-4">
           <div className="flex justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Entrepôts</p>
+              <p className="text-sm text-muted-foreground">Total Points de Vente</p>
               <h3 className="text-3xl font-bold mt-1">{totalLocations}</h3>
               <p className="text-xs text-green-500 mt-1">↑ 2.0%</p>
             </div>
@@ -122,13 +123,13 @@ export default function POSLocations() {
       
       <Card className="glass-panel p-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-primary">Liste des Entrepôts</h2>
+          <h2 className="text-xl font-bold text-primary">Liste des Points de Vente</h2>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher un entrepôt..."
+                placeholder="Rechercher un point de vente..."
                 className="pl-9 w-[300px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -142,7 +143,7 @@ export default function POSLocations() {
               }}
             >
               <span className="text-lg font-bold">+</span>
-              <span>Nouveau entrepôt</span>
+              <span>Nouveau point de vente</span>
             </button>
           </div>
         </div>
@@ -158,7 +159,7 @@ export default function POSLocations() {
         <DialogContent className="sm:max-w-md glass-panel">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {selectedLocation ? "Modifier l'entrepôt" : "Ajouter un nouveau entrepôt"}
+              {selectedLocation ? "Modifier le point de vente" : "Ajouter un nouveau point de vente"}
             </DialogTitle>
           </DialogHeader>
           <POSLocationForm

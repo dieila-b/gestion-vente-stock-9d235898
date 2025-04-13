@@ -14,8 +14,8 @@ export function POSLocationsTable({ locations, onEdit, onDelete }: POSLocationsT
   if (!locations || locations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-muted-foreground mb-4">Aucun entrepôt trouvé</p>
-        <p className="text-sm text-muted-foreground">Ajoutez un nouveau entrepôt pour commencer</p>
+        <p className="text-muted-foreground mb-4">Aucun point de vente trouvé</p>
+        <p className="text-sm text-muted-foreground">Ajoutez un nouveau point de vente pour commencer</p>
       </div>
     );
   }

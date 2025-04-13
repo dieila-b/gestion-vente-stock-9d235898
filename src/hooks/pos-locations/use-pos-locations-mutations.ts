@@ -46,7 +46,7 @@ export function usePOSLocationsMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Entrepôt créé avec succès");
+      toast.success("Point de vente créé avec succès");
     },
     onError: (error) => {
       console.error("Detailed error during creation:", error);
@@ -97,7 +97,7 @@ export function usePOSLocationsMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Entrepôt mis à jour avec succès");
+      toast.success("Point de vente mis à jour avec succès");
     },
     onError: (error) => {
       console.error("Detailed error during update:", error);
@@ -127,7 +127,7 @@ export function usePOSLocationsMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-locations"] });
-      toast.success("Entrepôt supprimé avec succès");
+      toast.success("Point de vente supprimé avec succès");
     },
     onError: (error) => {
       console.error("Detailed error during deletion:", error);
