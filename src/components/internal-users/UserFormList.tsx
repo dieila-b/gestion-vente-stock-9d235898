@@ -54,6 +54,18 @@ export const UserFormList = ({
       console.log("File size:", file.size, "bytes");
       console.log("File type:", file.type);
       
+      // List buckets first to verify
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      console.log("Available buckets:", buckets);
+      
+      if (bucketsError) {
+        console.error("Error listing buckets:", bucketsError);
+        toast.dismiss();
+        toast.error(`Erreur lors de la vérification des buckets: ${bucketsError.message}`);
+        return;
+      }
+      
+      // Now upload the file
       const { error: uploadError, data } = await supabase.storage
         .from('lovable-uploads')
         .upload(filePath, file, {

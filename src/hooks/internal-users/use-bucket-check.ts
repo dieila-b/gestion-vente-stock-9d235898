@@ -22,14 +22,15 @@ export const useBucketCheck = () => {
           return;
         }
         
-        const lovableBucket = buckets.find(bucket => bucket.name === 'lovable-uploads');
+        console.log("Available buckets:", buckets);
+        const lovableBucket = buckets.find(bucket => bucket.name === 'lovable-uploads' || bucket.id === 'lovable-uploads');
         
         if (!lovableBucket) {
           console.warn("Le bucket 'lovable-uploads' n'existe pas ou n'est pas accessible");
           setBucketExists(false);
-          toast.error("Le stockage d'images n'est pas configuré. Contactez l'administrateur.");
+          toast.error("Le stockage d'images n'est pas configuré correctement. Contactez l'administrateur.");
         } else {
-          console.log("Bucket 'lovable-uploads' exists");
+          console.log("Bucket 'lovable-uploads' exists:", lovableBucket);
           setBucketExists(true);
         }
       } catch (err) {
