@@ -12,16 +12,16 @@ interface TransfersHeaderProps {
 
 export const TransfersHeader = ({ transfers, onNewTransferClick }: TransfersHeaderProps) => {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 className="text-4xl font-bold text-gradient bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400">
           Transferts
         </h1>
         <p className="text-muted-foreground mt-2">
-          Gestion des transferts de stock entre entrepôts
+          Gestion des transferts de stock entre entrepôts et points de vente
         </p>
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap-4 w-full sm:w-auto justify-end">
         <TransfersPrintDialog 
           transfers={transfers}
           transferItems={[]}

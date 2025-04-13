@@ -17,8 +17,8 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
   const [isOpen, setIsOpen] = useState(false);
 
   const getTransferQuantity = (transferId: string) => {
-    const item = transferItems.find(item => item.transfer_id === transferId);
-    return item?.quantity || 0;
+    const items = transfers.find(t => t.id === transferId)?.items || [];
+    return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   };
 
   const getTransferTypeLabel = (transfer: Transfer) => {
@@ -27,8 +27,34 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
         return "Dépôt → Point de vente";
       case "pos_to_depot":
         return "Point de vente → Dépôt";
+      case "depot_to_depot":
+        return "Dépôt → Dépôt";
       default:
         return "Type inconnu";
+    }
+  };
+
+  const getSourceName = (transfer: Transfer) => {
+    switch (transfer.transfer_type) {
+      case "depot_to_pos":
+      case "depot_to_depot":
+        return transfer.source_warehouse?.name;
+      case "pos_to_depot":
+        return transfer.source_pos?.name;
+      default:
+        return "N/A";
+    }
+  };
+
+  const getDestinationName = (transfer: Transfer) => {
+    switch (transfer.transfer_type) {
+      case "depot_to_pos":
+        return transfer.destination_pos?.name;
+      case "pos_to_depot":
+      case "depot_to_depot":
+        return transfer.destination_warehouse?.name;
+      default:
+        return "N/A";
     }
   };
 
@@ -101,17 +127,11 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
                     <tr key={transfer.id}>
                       <td className="border p-2">{transfer.reference}</td>
                       <td className="border p-2">
-                        {format(new Date(transfer.transfer_date), "dd/MM/yyyy HH:mm")}
+                        {format(new Date(transfer.transfer_date), "dd/MM/yyyy")}
                       </td>
                       <td className="border p-2">{getTransferTypeLabel(transfer)}</td>
-                      <td className="border p-2">
-                        {transfer.transfer_type === "depot_to_pos" ? transfer.source_warehouse?.name :
-                         transfer.source_pos?.name}
-                      </td>
-                      <td className="border p-2">
-                        {transfer.transfer_type === "depot_to_pos" ? transfer.destination_pos?.name :
-                         transfer.destination_warehouse?.name}
-                      </td>
+                      <td className="border p-2">{getSourceName(transfer)}</td>
+                      <td className="border p-2">{getDestinationName(transfer)}</td>
                       <td className="border p-2">{getTransferQuantity(transfer.id)}</td>
                       <td className="border p-2">
                         {transfer.status === "completed" ? "Terminé" :

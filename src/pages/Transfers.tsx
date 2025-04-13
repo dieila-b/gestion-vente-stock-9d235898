@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { TransfersTable } from '@/components/warehouse/TransfersTable';
-import { TransferFormDialog } from '@/components/warehouse/TransferFormDialog';
+import { TransfersHeader } from '@/components/transfers/components/TransfersHeader';
+import { TransfersContent } from '@/components/transfers/components/TransfersContent';
+import { TransferDialog } from '@/components/transfers/TransferDialog';
 import { useTransfers } from '@/hooks/use-transfers';
 import { useTransferForm } from '@/hooks/use-transfer-form';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Transfer } from '@/types/transfer';
 
 export default function TransfersPage() {
   const {
@@ -37,8 +37,6 @@ export default function TransfersPage() {
     handleFormSubmit,
     resetForm,
     setExistingFormData,
-    handleEdit: formHandleEdit,
-    handleDelete: formHandleDelete,
   } = useTransferForm(refetch);
 
   // Create wrappers for the handlers
@@ -49,51 +47,41 @@ export default function TransfersPage() {
     setEditingTransfer(null);
   };
 
-  const handleEdit = async (id: string) => {
-    const transfer = await fetchTransferById(id);
-    if (transfer) {
-      setExistingFormData(transfer);
-      setEditingTransfer(transfer);
-      setIsDialogOpen(true);
-    }
+  const handleEdit = async (transfer: Transfer) => {
+    setExistingFormData(transfer);
+    setEditingTransfer(transfer);
+    setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this transfer?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce transfert ?')) {
       await deleteTransfer(id);
     }
   };
 
-  // Mocked or simplified versions for the component props
+  const handleNewTransferClick = () => {
+    resetForm();
+    setEditingTransfer(null);
+    setIsDialogOpen(true);
+  };
+
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Transfers</h1>
-    
-      <div className="mb-6 flex justify-between">
-        <Input
-          placeholder="Search transfers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-xs"
-        />
-        <Button onClick={() => {
-          resetForm();
-          setEditingTransfer(null);
-          setIsDialogOpen(true);
-        }}>
-          New Transfer
-        </Button>
-      </div>
+    <div className="container py-8 space-y-8 max-w-7xl mx-auto">
+      <TransfersHeader 
+        transfers={transfers}
+        onNewTransferClick={handleNewTransferClick}
+      />
       
-      <TransfersTable 
-        transfers={filteredTransfers.length > 0 ? filteredTransfers : transfers}
-        isLoading={isLoading}
+      <TransfersContent
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filteredTransfers={filteredTransfers.length > 0 ? filteredTransfers : transfers}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
       
       {isDialogOpen && (
-        <TransferFormDialog
+        <TransferDialog
           open={isDialogOpen}
           onClose={() => {
             setIsDialogOpen(false);
