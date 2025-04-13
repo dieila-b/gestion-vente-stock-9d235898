@@ -16,9 +16,7 @@ const InternalUsers = () => {
     handleAddUser, 
     handleRemoveUser, 
     handleBulkInsert,
-    togglePasswordVisibility,
-    onDeleteUser,
-    onEditUser
+    togglePasswordVisibility
   } = useInternalUsers();
 
   return (
@@ -32,12 +30,7 @@ const InternalUsers = () => {
         </TabsList>
         
         <TabsContent value="list" className="space-y-6">
-          <UsersTable 
-            users={users} 
-            isLoading={isLoading}
-            onDeleteUser={onDeleteUser}
-            onEditUser={onEditUser}
-          />
+          <UsersTable users={users} isLoading={isLoading} />
         </TabsContent>
         
         <TabsContent value="add">

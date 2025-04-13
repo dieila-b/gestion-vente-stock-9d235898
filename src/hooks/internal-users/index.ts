@@ -5,7 +5,6 @@ import { useInternalUsersQuery } from "./use-internal-users-query";
 import { useUserFormState } from "./use-user-form-state";
 import { useUserValidation } from "./use-user-validation";
 import { useUserMutations } from "./use-user-mutations";
-import { User } from "@/types/user";
 
 export const useInternalUsers = () => {
   const queryClient = useQueryClient();
@@ -32,8 +31,8 @@ export const useInternalUsers = () => {
   // Validation des données utilisateur
   const { validatePasswords, validateRequiredFields } = useUserValidation();
 
-  // Mutations pour ajouter, mettre à jour et supprimer des utilisateurs
-  const { handleBulkInsert: bulkInsertUsers, handleDeleteUser, handleUpdateUser } = useUserMutations(queryClient);
+  // Mutations pour ajouter des utilisateurs
+  const { handleBulkInsert: bulkInsertUsers } = useUserMutations(queryClient);
 
   const handleBulkInsert = async () => {
     const validatePasswordsWrapper = () => validatePasswords(newUserData, passwordConfirmation);
@@ -45,14 +44,6 @@ export const useInternalUsers = () => {
       validateRequiredFieldsWrapper,
       resetFormState
     );
-  };
-
-  const onDeleteUser = async (userId: string) => {
-    await handleDeleteUser(userId);
-  };
-
-  const onEditUser = async (user: User) => {
-    await handleUpdateUser(user);
   };
 
   return {
@@ -67,7 +58,5 @@ export const useInternalUsers = () => {
     handleRemoveUser,
     togglePasswordVisibility,
     handleBulkInsert,
-    onDeleteUser,
-    onEditUser
   };
 };

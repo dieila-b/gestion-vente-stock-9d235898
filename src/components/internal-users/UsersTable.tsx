@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
@@ -5,51 +6,14 @@ import { User } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Check, Edit, Trash2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useState } from "react";
-import { UserEditDialog } from "./UserEditDialog";
+import { Check, X } from "lucide-react";
 
 interface UsersTableProps {
   users: User[];
   isLoading: boolean;
-  onDeleteUser?: (userId: string) => void;
-  onEditUser?: (user: User) => void;
 }
 
-export const UsersTable = ({ users, isLoading, onDeleteUser, onEditUser }: UsersTableProps) => {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  const handleEditClick = (user: User) => {
-    setSelectedUser(user);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleEditComplete = (updatedUser: User) => {
-    if (onEditUser) {
-      onEditUser(updatedUser);
-    }
-    setIsEditDialogOpen(false);
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    if (onDeleteUser) {
-      onDeleteUser(userId);
-    }
-  };
-
+export const UsersTable = ({ users, isLoading }: UsersTableProps) => {
   const columns: ColumnDef<User>[] = [
     {
       accessorKey: "photo_url",
@@ -134,55 +98,6 @@ export const UsersTable = ({ users, isLoading, onDeleteUser, onEditUser }: Users
         return format(new Date(createdAt), "dd MMMM yyyy, HH:mm", { locale: fr });
       },
     },
-    {
-      accessorKey: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const user = row.original;
-        
-        return (
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={() => handleEditClick(user)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Supprimer l'utilisateur</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        );
-      },
-    },
   ];
 
   return (
@@ -194,15 +109,6 @@ export const UsersTable = ({ users, isLoading, onDeleteUser, onEditUser }: Users
         searchColumn="email"
         searchPlaceholder="Rechercher par email..."
       />
-      
-      {selectedUser && (
-        <UserEditDialog
-          user={selectedUser}
-          isOpen={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onSave={handleEditComplete}
-        />
-      )}
     </div>
   );
 };
