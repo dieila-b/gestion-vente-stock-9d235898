@@ -40,9 +40,9 @@ export const TransferDialog = ({
   const sourcePosId = form.watch('source_pos_id');
   const [availableQuantity, setAvailableQuantity] = useState<number | null>(null);
 
-  // Debugging logs
+  // Print debugging info to console
   useEffect(() => {
-    console.log("TransferDialog rendering with:", {
+    console.log("TransferDialog rendering with data:", {
       warehouses: warehouses?.length,
       warehouses_data: warehouses,
       posLocations: posLocations?.length,
@@ -79,7 +79,7 @@ export const TransferDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="border border-gray-300 bg-background max-w-2xl">
+      <DialogContent className="border border-gray-300 bg-white max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {!!editingTransfer ? "Modifier le transfert" : "Créer un nouveau transfert"}

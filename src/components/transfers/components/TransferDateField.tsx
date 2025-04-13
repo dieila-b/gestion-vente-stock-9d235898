@@ -1,6 +1,5 @@
 
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ export const TransferDateField = ({ form }: TransferDateFieldProps) => {
               </FormControl>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-auto p-0 z-[9999] bg-background border border-gray-300" 
+              className="w-auto p-0 z-[99999] bg-white border border-gray-300" 
               align="start"
             >
               <Calendar

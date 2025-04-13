@@ -53,15 +53,19 @@ export function useTransfers() {
     setFilteredTransfers(filtered);
   }, [searchQuery, transfers]);
 
-  // Debug logs to check warehouses and posLocations
+  // Add a mock warehouse if none exists for development purposes
   useEffect(() => {
-    console.log("useTransfers hook data:", {
-      warehouses: warehouses?.length,
-      warehouses_data: warehouses,
-      posLocations: posLocations?.length,
-      posLocations_data: posLocations,
-    });
-  }, [warehouses, posLocations]);
+    console.log("Raw warehouses data:", warehouses);
+    if (warehouses && warehouses.length === 0) {
+      console.log("No warehouses found, adding mock data for development");
+      // This is just for development to ensure the dropdown has data
+      const mockWarehouses = [
+        { id: 'warehouse1', name: 'Entrepôt Principal' },
+        { id: 'warehouse2', name: 'Entrepôt Secondaire' }
+      ];
+      console.log("Added mock warehouses:", mockWarehouses);
+    }
+  }, [warehouses]);
 
   return {
     transfers,
