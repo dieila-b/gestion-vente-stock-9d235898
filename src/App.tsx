@@ -87,6 +87,7 @@ function App() {
                 <Route path="stocks/in" element={<StockIn />} />
                 <Route path="stocks/out" element={<StockOut />} />
                 <Route path="warehouses" element={<Warehouses />} />
+                <Route path="pos-locations" element={<POSLocations />} />
                 <Route path="transfers" element={<Transfers />} />
                 
                 {/* Reports Routes */}
@@ -116,7 +117,6 @@ function App() {
                 
                 {/* Settings Routes */}
                 <Route path="stock-location" element={<StockLocation />} />
-                <Route path="pos-locations" element={<POSLocations />} />
                 <Route path="internal-users" element={<InternalUsers />} />
               </Routes>
             </DashboardLayout>

@@ -54,6 +54,11 @@ export const menuItems = [
         path: "/warehouses"
       },
       {
+        label: "Points de Vente",
+        icon: Store,
+        path: "/pos-locations"
+      },
+      {
         label: "Transferts",
         icon: ArrowRightLeft,
         path: "/transfers"
