@@ -102,17 +102,25 @@ export const useUserMutations = (queryClient: QueryClient) => {
     try {
       toast.loading("Mise à jour de l'utilisateur en cours...");
       
+      // Créer un objet avec les champs à mettre à jour
+      const updateData: Partial<User> = {
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        is_active: user.is_active,
+        address: user.address
+      };
+      
+      // Si un mot de passe est fourni, l'ajouter aux données à mettre à jour
+      if (user.password) {
+        updateData.password = user.password;
+      }
+      
       const { error } = await supabase
         .from('internal_users')
-        .update({
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          is_active: user.is_active,
-          // Ne pas mettre à jour le mot de passe ici, cela nécessiterait une logique spécifique
-        })
+        .update(updateData)
         .eq('id', user.id);
       
       if (error) {
