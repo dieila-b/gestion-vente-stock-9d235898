@@ -56,7 +56,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items
+        // Process items - Ensure result is treated as a single object, not an array
         const items = Array.isArray(result.items) ? result.items.map(item => {
           return {
             id: item.id || '',
@@ -72,16 +72,25 @@ export function useFetchDeliveryNote(id: string | undefined) {
           };
         }) : [];
 
-        // Handle supplier safely
-        const supplier = result.supplier || { 
+        // Handle supplier safely - Ensure result is treated as a single object, not an array
+        const supplier = result.supplier ? {
+          id: result.supplier.id || '',
+          name: result.supplier.name || 'Fournisseur inconnu',
+          phone: result.supplier.phone || '',
+          email: result.supplier.email || ''
+        } : { 
           id: '',
           name: 'Fournisseur inconnu', 
           phone: '', 
           email: '' 
         };
         
-        // Handle purchase order safely
-        const purchaseOrder = result.purchase_order || { 
+        // Handle purchase order safely - Ensure result is treated as a single object, not an array
+        const purchaseOrder = result.purchase_order ? {
+          id: result.purchase_order.id || '',
+          order_number: result.purchase_order.order_number || '',
+          total_amount: result.purchase_order.total_amount || 0
+        } : { 
           id: '',
           order_number: '', 
           total_amount: 0 
