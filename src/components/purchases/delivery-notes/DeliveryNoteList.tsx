@@ -6,6 +6,7 @@ import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { DeliveryNote } from "@/types/delivery-note";
+import { formatDate } from "@/lib/formatters";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
@@ -51,7 +52,7 @@ export function DeliveryNoteList({
       case 'rejected':
         return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">Rejeté</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{status || 'Inconnu'}</Badge>;
     }
   };
 
@@ -70,9 +71,11 @@ export function DeliveryNoteList({
       <TableBody>
         {deliveryNotes.map((note) => (
           <TableRow key={note.id}>
-            <TableCell className="font-medium">{note.delivery_number}</TableCell>
-            <TableCell>{new Date(note.created_at).toLocaleDateString()}</TableCell>
-            <TableCell>{note.supplier?.name || 'N/A'}</TableCell>
+            <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
+            <TableCell>
+              {note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Date inconnue'}
+            </TableCell>
+            <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>
             <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">
