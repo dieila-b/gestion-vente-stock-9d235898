@@ -52,6 +52,8 @@ export function useFetchDeliveryNotes() {
           return [];
         }
         
+        console.log("Fetched delivery notes:", deliveryNotesData);
+
         const transformedData = deliveryNotesData.map(note => {
           if (!note) return null;
           

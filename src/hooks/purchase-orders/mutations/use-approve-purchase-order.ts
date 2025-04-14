@@ -42,18 +42,24 @@ export function useApprovePurchaseOrder() {
         const warehouseData = warehouseResults[0];
         console.log("Using warehouse:", warehouseData);
 
-        // Create delivery note
+        // Create delivery note with all required fields and ensure deleted=false
         const deliveryNumber = `BL-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         console.log("Generated delivery number:", deliveryNumber);
 
-        const deliveryNote = await db.insert('delivery_notes', {
+        // Explicitly define all required fields for the delivery note
+        const deliveryNoteData = {
           delivery_number: deliveryNumber,
           purchase_order_id: orderId,
           supplier_id: order.supplier_id,
           status: 'pending',
           warehouse_id: warehouseData.id,
-          deleted: false
-        });
+          deleted: false,
+          notes: 'Créé automatiquement lors de l\'approbation du bon de commande'
+        };
+
+        console.log("Creating delivery note with data:", deliveryNoteData);
+        
+        const deliveryNote = await db.insert('delivery_notes', deliveryNoteData);
 
         if (!deliveryNote) {
           throw new Error('Erreur lors de la création du bon de livraison');
