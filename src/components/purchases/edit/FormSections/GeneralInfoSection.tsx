@@ -2,10 +2,10 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/formatters";
-import { Purchase } from "@/types/purchase-order";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 interface GeneralInfoSectionProps {
-  purchase: Purchase;
+  purchase: PurchaseOrder;
   formData: any;
   updateFormField: (field: string, value: any) => void;
 }

@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 export function usePurchaseStatus(
   orderId: string | undefined,
   formData: any,
-  setFormData: (data: any) => void,
+  updateFormField: (field: string, value: any) => void,
   handleUpdate: (data: any) => Promise<boolean>
 ) {
   // Update status
@@ -17,7 +17,7 @@ export function usePurchaseStatus(
     
     try {
       if (status === 'pending' || status === 'delivered') {
-        setFormData((prev: any) => ({ ...prev, status }));
+        updateFormField('status', status);
         await handleUpdate({ status });
       }
     } catch (error: any) {
@@ -31,7 +31,7 @@ export function usePurchaseStatus(
     
     try {
       if (status === 'pending' || status === 'partial' || status === 'paid') {
-        setFormData((prev: any) => ({ ...prev, payment_status: status }));
+        updateFormField('payment_status', status);
         await handleUpdate({ payment_status: status });
       }
     } catch (error: any) {

@@ -2,10 +2,24 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { formatGNF } from "@/lib/currency";
-import { PurchaseOrderItem } from "@/types/purchase-order";
+
+interface ProductItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  selling_price: number;
+  total_price: number;
+  purchase_order_id?: string;
+  product?: {
+    id?: string;
+    name: string;
+    reference?: string;
+  };
+}
 
 interface ProductsSectionProps {
-  items: PurchaseOrderItem[];
+  items: ProductItem[];
   updateItemQuantity: (itemId: string, quantity: number) => void;
 }
 

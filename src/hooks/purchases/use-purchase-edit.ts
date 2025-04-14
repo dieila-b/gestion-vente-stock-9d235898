@@ -72,7 +72,7 @@ export function usePurchaseEdit(orderId?: string) {
   const { updateStatus, updatePaymentStatus } = usePurchaseStatus(
     orderId,
     formData,
-    setFormData,
+    updateFormField,
     handleUpdate
   );
 
