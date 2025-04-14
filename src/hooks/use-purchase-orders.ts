@@ -22,28 +22,29 @@ export function usePurchaseOrders() {
           items:purchase_order_items(*)
         `)
         .eq('status', 'draft')
-        .or('status.eq.pending,status.eq.approved')
+        .or('status.eq.pending,status.eq.approved,status.eq.cancelled')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
       // Process the data to match PurchaseOrder type
       const processedOrders = (data || []).map((order) => {
-        // Ensure proper supplier structure
+        // Ensure proper supplier structure with type safety
         const supplierData = order.supplier || {};
         const supplier = {
-          name: supplierData.name || 'Fournisseur non spécifié',
-          phone: supplierData.phone || '',
-          email: supplierData.email || ''
+          name: typeof supplierData === 'object' && supplierData !== null ? (supplierData.name || 'Fournisseur non spécifié') : 'Fournisseur non spécifié',
+          phone: typeof supplierData === 'object' && supplierData !== null ? (supplierData.phone || '') : '',
+          email: typeof supplierData === 'object' && supplierData !== null ? (supplierData.email || '') : ''
         };
         
         // Ensure items is always an array
-        const items = order.items || [];
+        const items = Array.isArray(order.items) ? order.items : [];
         
         return {
           ...order,
           supplier,
           items,
+          deleted: false // Add this to match the type
         };
       });
       
@@ -117,8 +118,7 @@ export function usePurchaseOrders() {
   // Handle delete
   const { mutate: deleteOrder } = useMutation({
     mutationFn: async (id: string) => {
-      // Instead of using the 'deleted' field, we'll use a different approach
-      // and simply update the status to something like 'cancelled'
+      // Update the status to 'cancelled' instead of using a deleted flag
       const { error } = await supabase
         .from('purchase_orders')
         .update({ status: 'cancelled' })

@@ -20,7 +20,7 @@ export interface PurchaseOrder {
   };
   supplier_id: string;
   created_at: string;
-  status: "draft" | "pending" | "delivered" | "approved";
+  status: "draft" | "pending" | "delivered" | "approved" | "cancelled";
   payment_status: "pending" | "partial" | "paid";
   total_amount: number;
   items: PurchaseOrderItem[];
