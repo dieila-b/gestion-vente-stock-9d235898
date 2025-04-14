@@ -38,7 +38,10 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
           .update(formData)
           .eq('id', unit.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating unit:', error);
+          throw error;
+        }
         toast.success("Unité mise à jour avec succès");
       } else {
         // Create new unit
@@ -47,7 +50,7 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
           .insert(formData);
 
         if (error) {
-          console.error('Error details:', error);
+          console.error('Error creating unit:', error);
           throw error;
         }
         toast.success("Unité créée avec succès");
