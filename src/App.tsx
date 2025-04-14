@@ -41,9 +41,9 @@ import StockIn from "@/pages/stocks/StockIn";
 import StockOut from "@/pages/stocks/StockOut";
 
 // Purchase pages imports
-import PurchaseOrder from "@/pages/PurchaseOrder";
-import DeliveryNote from "@/pages/DeliveryNote";
-import PurchaseInvoice from "@/pages/PurchaseInvoice";
+import PurchaseOrdersPage from "@/pages/purchase-orders";
+import DeliveryNotesPage from "@/pages/delivery-notes";
+import PurchaseInvoicesPage from "@/pages/purchase-invoices";
 import SupplierReturns from "@/pages/SupplierReturns";
 
 // Sales & Billing pages imports
@@ -99,10 +99,10 @@ function App() {
                 <Route path="reports/unpaid" element={<UnpaidReport />} />
                 
                 {/* Purchase Routes */}
-                <Route path="purchase-orders" element={<PurchaseOrder />} />
+                <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
                 <Route path="purchase-orders/new" element={<NewPurchaseOrder />} />
-                <Route path="delivery-note" element={<DeliveryNote />} />
-                <Route path="purchase-invoice" element={<PurchaseInvoice />} />
+                <Route path="delivery-note" element={<DeliveryNotesPage />} />
+                <Route path="purchase-invoice" element={<PurchaseInvoicesPage />} />
                 <Route path="supplier-returns" element={<SupplierReturns />} />
                 
                 {/* Sales & Billing Routes */}

@@ -3,22 +3,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import type { DeliveryNote } from "@/types/delivery-note";
+import type { PurchaseInvoice } from "@/types/PurchaseInvoice";
 
-export function useDeliveryNotes() {
+export function usePurchaseInvoices() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Query to fetch delivery notes
-  const { data: deliveryNotes = [], isLoading } = useQuery({
-    queryKey: ['delivery-notes'],
+  // Query to fetch purchase invoices
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ['purchase-invoices'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('delivery_notes')
+        .from('purchase_invoices')
         .select(`
           *,
           supplier:suppliers(*),
-          purchase_order:purchase_orders(*)
+          purchase_order:purchase_orders(*),
+          delivery_note:delivery_notes(*)
         `)
         .order('created_at', { ascending: false });
       
@@ -29,14 +30,14 @@ export function useDeliveryNotes() {
 
   // Handle view
   const handleView = (id: string) => {
-    navigate(`/delivery-notes/${id}`);
+    navigate(`/purchase-invoices/${id}`);
   };
 
   // Handle delete
-  const { mutate: deleteDeliveryNote } = useMutation({
+  const { mutate: deleteInvoice } = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('delivery_notes')
+        .from('purchase_invoices')
         .delete()
         .eq('id', id);
       
@@ -44,8 +45,8 @@ export function useDeliveryNotes() {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      toast.success("Bon de livraison supprimé");
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      toast.success("Facture supprimée");
     },
     onError: (error: any) => {
       toast.error(`Erreur lors de la suppression: ${error.message}`);
@@ -53,13 +54,13 @@ export function useDeliveryNotes() {
   });
 
   const handleDelete = async (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de livraison?")) {
-      deleteDeliveryNote(id);
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette facture?")) {
+      deleteInvoice(id);
     }
   };
 
   return {
-    deliveryNotes,
+    invoices,
     isLoading,
     handleView,
     handleDelete
