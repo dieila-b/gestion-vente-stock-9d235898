@@ -9,11 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useProducts } from "@/hooks/use-products";
+import { CatalogProduct } from "@/types/catalog";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 
 interface ProductSelectionModalProps {
   open: boolean;
   onClose: () => void;
-  onAddProduct: (product: any) => void;
+  onAddProduct: (product: PurchaseOrderItem) => void;
 }
 
 export const ProductSelectionModal = ({
@@ -22,12 +25,50 @@ export const ProductSelectionModal = ({
   onAddProduct,
 }: ProductSelectionModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  // This would typically come from a hook or API call
-  const products = []; 
+  const { products } = useProducts();
+  
+  const filteredProducts = products.filter(product => 
+    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleAddProduct = (product: CatalogProduct) => {
+    const newItem: PurchaseOrderItem = {
+      id: crypto.randomUUID(),
+      purchase_order_id: "",
+      product_id: product.id,
+      quantity: 1,
+      unit_price: product.purchase_price || 0,
+      selling_price: product.price || 0,
+      total_price: product.purchase_price || 0,
+      product: {
+        name: product.name,
+        reference: product.reference
+      }
+    };
+    
+    onAddProduct(newItem);
+    onClose();
+  };
+
+  const handleAddEmptyProduct = () => {
+    const newItem: PurchaseOrderItem = {
+      id: crypto.randomUUID(),
+      purchase_order_id: "",
+      product_id: "",
+      quantity: 1,
+      unit_price: 0,
+      selling_price: 0,
+      total_price: 0
+    };
+    
+    onAddProduct(newItem);
+    onClose();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-black/90 border-white/10 text-white">
         <DialogHeader>
           <DialogTitle>Sélectionner un produit</DialogTitle>
         </DialogHeader>
@@ -38,40 +79,55 @@ export const ProductSelectionModal = ({
               <Input
                 type="search"
                 placeholder="Rechercher un produit..."
-                className="pl-8"
+                className="pl-8 bg-black/50 border-white/10 text-white"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="h-[300px] overflow-y-auto border rounded-md p-2">
-            {products.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                Aucun produit trouvé
+          <div className="h-[300px] overflow-y-auto border border-white/10 rounded-md p-2 bg-black/20">
+            {filteredProducts.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-white/60">
+                <p className="mb-4">Aucun produit correspondant trouvé</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddEmptyProduct}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Ajouter un produit manuel
+                </Button>
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Products would be listed here */}
+                {filteredProducts.map(product => (
+                  <div 
+                    key={product.id} 
+                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
+                    onClick={() => handleAddProduct(product)}
+                  >
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-white/60">
+                        {product.reference ? `Ref: ${product.reference}` : "Sans référence"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm">{product.purchase_price ? `${product.purchase_price} GNF` : "Sans prix"}</p>
+                      <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className="border-white/20 text-white">
               Annuler
             </Button>
-            <Button onClick={() => {
-              // For now, just add a dummy product
-              onAddProduct({
-                id: Math.random().toString(),
-                name: "Nouveau produit",
-                quantity: 1,
-                unit_price: 0,
-                total_price: 0
-              });
-            }}>
-              Ajouter
+            <Button onClick={handleAddEmptyProduct} className="bg-white/10 hover:bg-white/20 text-white">
+              Nouveau produit
             </Button>
           </div>
         </div>

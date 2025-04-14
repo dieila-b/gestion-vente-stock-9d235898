@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
-import { Package, Plus, Calendar, DollarSign } from "lucide-react";
+import { Package, Plus, Calendar, DollarSign, X } from "lucide-react";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { usePurchaseOrderFormState } from "./usePurchaseOrderFormState";
 import { usePurchaseOrderSubmit } from "./usePurchaseOrderSubmit";
+import { useProductSelection } from "@/hooks/use-product-selection";
 import {
   Select,
   SelectContent,
@@ -21,13 +22,29 @@ import {
 } from "@/components/ui/select";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 import { ProductSelectionModal } from "./ProductSelectionModal";
+import { formatGNF } from "@/lib/currency";
 
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { suppliers, isLoading: suppliersLoading } = useSuppliers();
-  const [showProductModal, setShowProductModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Product selection logic
+  const {
+    orderItems,
+    setOrderItems,
+    showProductModal,
+    setShowProductModal,
+    searchQuery,
+    setSearchQuery,
+    filteredProducts,
+    addProductToOrder,
+    removeProductFromOrder,
+    updateProductQuantity,
+    updateProductPrice,
+    calculateTotal
+  } = useProductSelection();
 
   // Form state from custom hook
   const { 
@@ -43,12 +60,11 @@ const PurchaseOrderForm = () => {
     orderStatus, setOrderStatus,
     paymentStatus, setPaymentStatus,
     paidAmount, setPaidAmount,
-    orderItems, setOrderItems
   } = usePurchaseOrderFormState();
   
   // Form submission handling with custom hook
   const { 
-    handleSubmit,
+    handleSubmit: submitOrder,
     calculateSubtotal,
     calculateTax,
     calculateTotalTTC,
@@ -78,6 +94,11 @@ const PurchaseOrderForm = () => {
   const tax = calculateTax();
   const total = calculateTotalTTC();
   const remainingAmount = calculateRemainingAmount();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitOrder(e);
+  };
 
   return (
     <div className="space-y-6">
@@ -201,13 +222,56 @@ const PurchaseOrderForm = () => {
                 </Button>
               </div>
               
-              {/* Product list would go here */}
               <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">
                 {orderItems.length === 0 ? (
                   <p className="text-white/40 text-center">Aucun produit ajouté</p>
                 ) : (
                   <div className="space-y-4">
-                    {/* Product items would render here */}
+                    {orderItems.map((item, index) => (
+                      <div key={item.id} className="p-3 bg-white/5 rounded-md grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                        <div className="md:col-span-2">
+                          <p className="text-white font-medium">{item.designation || "Produit sans nom"}</p>
+                          {item.product_code && <p className="text-xs text-white/60">Ref: {item.product_code}</p>}
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
+                            min="1"
+                            className="neo-blur border-white/10"
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            value={item.unit_price}
+                            onChange={(e) => updateProductPrice(index, parseInt(e.target.value) || 0)}
+                            min="0"
+                            className="neo-blur border-white/10"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-white/80">{formatGNF(item.total_price)}</span>
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeProductFromOrder(index)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="text-right px-4 py-2 bg-white/5 rounded-md">
+                      <span className="text-white/60 mr-2">Sous-total produits:</span>
+                      <span className="text-white font-medium">{formatGNF(calculateTotal())}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -359,7 +423,7 @@ const PurchaseOrderForm = () => {
               <Button 
                 type="submit" 
                 className="neo-blur"
-                disabled={isSubmitting || !supplier}
+                disabled={isSubmitting || !supplier || orderItems.length === 0}
               >
                 {isSubmitting ? "Création en cours..." : "Créer la commande"}
               </Button>
@@ -369,16 +433,11 @@ const PurchaseOrderForm = () => {
       </Card>
 
       {/* Product selection modal */}
-      {showProductModal && (
-        <ProductSelectionModal
-          open={showProductModal}
-          onClose={() => setShowProductModal(false)}
-          onAddProduct={(product) => {
-            // Logic to add product to order items
-            setShowProductModal(false);
-          }}
-        />
-      )}
+      <ProductSelectionModal
+        open={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        onAddProduct={addProductToOrder}
+      />
     </div>
   );
 };

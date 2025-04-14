@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 import { useProducts } from "@/hooks/use-products";
 
@@ -24,20 +24,8 @@ export const useProductSelection = () => {
     }
   );
 
-  const addProductToOrder = (product: CatalogProduct) => {
-    const newItem: PurchaseOrderItem = {
-      id: crypto.randomUUID(),
-      product_id: product.id,
-      product_code: product.reference || "",
-      designation: product.name,
-      quantity: 1,
-      unit_price: product.purchase_price || 0,
-      selling_price: product.price,
-      total_price: product.purchase_price || 0
-    };
-    
-    setOrderItems([...orderItems, newItem]);
-    setShowProductModal(false);
+  const addProductToOrder = (product: PurchaseOrderItem) => {
+    setOrderItems([...orderItems, product]);
   };
 
   const removeProductFromOrder = (index: number) => {
@@ -45,20 +33,22 @@ export const useProductSelection = () => {
   };
 
   const updateProductQuantity = (index: number, quantity: number) => {
+    const newQuantity = Math.max(1, quantity); // Ensure quantity is at least 1
     setOrderItems(
       orderItems.map((item, idx) => 
         idx === index 
-          ? { ...item, quantity, total_price: item.unit_price * quantity } 
+          ? { ...item, quantity: newQuantity, total_price: item.unit_price * newQuantity } 
           : item
       )
     );
   };
 
   const updateProductPrice = (index: number, price: number) => {
+    const newPrice = Math.max(0, price); // Ensure price is not negative
     setOrderItems(
       orderItems.map((item, idx) => 
         idx === index 
-          ? { ...item, unit_price: price, total_price: price * item.quantity } 
+          ? { ...item, unit_price: newPrice, total_price: newPrice * item.quantity } 
           : item
       )
     );
