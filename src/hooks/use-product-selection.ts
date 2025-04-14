@@ -33,7 +33,9 @@ export const useProductSelection = () => {
   };
 
   const updateProductQuantity = (index: number, quantity: number) => {
-    const newQuantity = Math.max(1, quantity); // Ensure quantity is at least 1
+    // Utiliser 1 comme valeur par défaut si quantity n'est pas défini ou est égal à 0
+    const newQuantity = quantity || 1;
+    
     setOrderItems(
       orderItems.map((item, idx) => 
         idx === index 
@@ -48,7 +50,7 @@ export const useProductSelection = () => {
     setOrderItems(
       orderItems.map((item, idx) => 
         idx === index 
-          ? { ...item, unit_price: newPrice, total_price: newPrice * item.quantity } 
+          ? { ...item, unit_price: newPrice, total_price: newPrice * (item.quantity || 1) } 
           : item
       )
     );

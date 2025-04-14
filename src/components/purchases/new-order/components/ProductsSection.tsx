@@ -23,6 +23,20 @@ export const ProductsSection = ({
   calculateTotal,
   setShowProductModal,
 }: ProductsSectionProps) => {
+  
+  // Nouvelle fonction pour gérer le changement de quantité
+  const handleQuantityChange = (index: number, value: string) => {
+    // Si la valeur est vide, on utilise 1 comme valeur par défaut
+    if (value === "") {
+      updateProductQuantity(index, 1);
+      return;
+    }
+    
+    // Sinon, on convertit la valeur en nombre
+    const quantity = parseInt(value);
+    updateProductQuantity(index, isNaN(quantity) ? 1 : quantity);
+  };
+  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -52,10 +66,11 @@ export const ProductsSection = ({
                 <div>
                   <Input
                     type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
+                    value={item.quantity || ""}
+                    onChange={(e) => handleQuantityChange(index, e.target.value)}
                     min="1"
                     className="neo-blur border-white/10"
+                    placeholder="1"
                   />
                 </div>
                 <div>
