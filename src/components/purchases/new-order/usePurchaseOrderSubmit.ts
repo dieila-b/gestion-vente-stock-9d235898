@@ -4,6 +4,7 @@ import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
 import { db } from "@/utils/db-adapter";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -83,41 +84,52 @@ export const usePurchaseOrderSubmit = ({
 
     setIsSubmitting(true);
     try {
-      // Create the purchase order using db adapter instead of direct Supabase query
-      const orderData = {
+      console.log("Creating purchase order with data:", {
         supplier_id: supplier,
         order_number: orderNumber,
-        expected_delivery_date: deliveryDate,
-        notes,
-        status: orderStatus,
-        payment_status: paymentStatus,
-        paid_amount: paidAmount,
-        logistics_cost: logisticsCost,
-        transit_cost: transitCost,
-        tax_rate: taxRate,
-        subtotal: calculateSubtotal(),
-        tax_amount: calculateTax(),
-        total_ttc: calculateTotalTTC(),
-        shipping_cost: shippingCost,
-        discount: discount,
-        total_amount: calculateTotalTTC(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const createdOrder = await db.insert('purchase_orders', orderData);
-      
-      if (!createdOrder) {
-        throw new Error("Failed to create purchase order");
+        items_count: orderItems.length,
+      });
+
+      // Try direct Supabase insertion first for better error visibility
+      const { data: orderData, error: orderError } = await supabase
+        .from('purchase_orders')
+        .insert({
+          supplier_id: supplier,
+          order_number: orderNumber,
+          expected_delivery_date: deliveryDate,
+          notes,
+          status: orderStatus,
+          payment_status: paymentStatus,
+          paid_amount: paidAmount,
+          logistics_cost: logisticsCost,
+          transit_cost: transitCost,
+          tax_rate: taxRate,
+          subtotal: calculateSubtotal(),
+          tax_amount: calculateTax(),
+          total_ttc: calculateTotalTTC(),
+          shipping_cost: shippingCost,
+          discount: discount,
+          total_amount: calculateTotalTTC(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error("Supabase error when creating order:", orderError);
+        throw orderError;
       }
       
+      console.log("Purchase order created successfully:", orderData);
+      
       // Add order items if there are any
-      if (orderItems.length > 0 && createdOrder) {
+      if (orderItems.length > 0 && orderData) {
         // Make sure we only proceed with items that have a quantity > 0
         const validOrderItems = orderItems
           .filter(item => item.quantity > 0)
           .map(item => ({
-            purchase_order_id: createdOrder.id,
+            purchase_order_id: orderData.id,
             product_id: item.product_id,
             quantity: item.quantity,
             unit_price: item.unit_price,
@@ -126,12 +138,17 @@ export const usePurchaseOrderSubmit = ({
           }));
         
         if (validOrderItems.length > 0) {
-          const itemsResult = await db.insert('purchase_order_items', validOrderItems);
+          console.log("Adding order items:", validOrderItems);
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .insert(validOrderItems);
           
-          if (!itemsResult) {
-            console.error("Failed to add order items");
-            throw new Error("Failed to add order items");
+          if (itemsError) {
+            console.error("Error adding order items:", itemsError);
+            throw itemsError;
           }
+          
+          console.log("Order items added successfully");
         }
       }
       
