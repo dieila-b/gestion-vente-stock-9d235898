@@ -12,6 +12,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       
       console.log("Fetching delivery note with ID:", id);
       try {
+        // Explicitly add .single() to ensure we get a single object, not an array
         const result = await db.query(
           'delivery_notes',
           query => query
@@ -56,8 +57,41 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items - Ensure result is treated as a single object, not an array
-        const items = Array.isArray(result.items) ? result.items.map(item => {
+        // Explicitly type the result to avoid TypeScript errors
+        const typedResult = result as {
+          id?: string;
+          delivery_number?: string;
+          created_at?: string;
+          updated_at?: string;
+          notes?: string;
+          status?: string;
+          supplier?: {
+            id?: string;
+            name?: string;
+            phone?: string;
+            email?: string;
+          };
+          purchase_order?: {
+            id?: string;
+            order_number?: string;
+            total_amount?: number;
+          };
+          items?: Array<{
+            id?: string;
+            product_id?: string;
+            quantity_ordered?: number;
+            quantity_received?: number;
+            unit_price?: number;
+            product?: {
+              id?: string;
+              name?: string;
+              reference?: string;
+            };
+          }>;
+        };
+
+        // Process items with proper typing
+        const items = Array.isArray(typedResult.items) ? typedResult.items.map(item => {
           return {
             id: item.id || '',
             product_id: item.product_id || '',
@@ -72,12 +106,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
           };
         }) : [];
 
-        // Handle supplier safely - Ensure result is treated as a single object, not an array
-        const supplier = result.supplier ? {
-          id: result.supplier.id || '',
-          name: result.supplier.name || 'Fournisseur inconnu',
-          phone: result.supplier.phone || '',
-          email: result.supplier.email || ''
+        // Handle supplier safely
+        const supplier = typedResult.supplier ? {
+          id: typedResult.supplier.id || '',
+          name: typedResult.supplier.name || 'Fournisseur inconnu',
+          phone: typedResult.supplier.phone || '',
+          email: typedResult.supplier.email || ''
         } : { 
           id: '',
           name: 'Fournisseur inconnu', 
@@ -85,11 +119,11 @@ export function useFetchDeliveryNote(id: string | undefined) {
           email: '' 
         };
         
-        // Handle purchase order safely - Ensure result is treated as a single object, not an array
-        const purchaseOrder = result.purchase_order ? {
-          id: result.purchase_order.id || '',
-          order_number: result.purchase_order.order_number || '',
-          total_amount: result.purchase_order.total_amount || 0
+        // Handle purchase order safely
+        const purchaseOrder = typedResult.purchase_order ? {
+          id: typedResult.purchase_order.id || '',
+          order_number: typedResult.purchase_order.order_number || '',
+          total_amount: typedResult.purchase_order.total_amount || 0
         } : { 
           id: '',
           order_number: '', 
@@ -97,12 +131,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
 
         return {
-          id: result.id || '',
-          delivery_number: result.delivery_number || '',
-          created_at: result.created_at || '',
-          updated_at: result.updated_at || '',
-          notes: result.notes || '',
-          status: result.status || '',
+          id: typedResult.id || '',
+          delivery_number: typedResult.delivery_number || '',
+          created_at: typedResult.created_at || '',
+          updated_at: typedResult.updated_at || '',
+          notes: typedResult.notes || '',
+          status: typedResult.status || '',
           supplier,
           purchase_order: purchaseOrder,
           items: items
