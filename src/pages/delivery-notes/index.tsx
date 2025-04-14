@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DeliveryNoteHeader } from "@/components/purchases/delivery-notes/DeliveryNoteHeader";
 import { DeliveryNoteList } from "@/components/purchases/delivery-notes/DeliveryNoteList";
 import { useDeliveryNotes } from "@/hooks/use-delivery-notes";
+import { isSelectQueryError, safeSupplier } from "@/utils/type-utils";
 
 export default function DeliveryNotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,10 +17,16 @@ export default function DeliveryNotesPage() {
   } = useDeliveryNotes();
   
   // Filter delivery notes based on search query
-  const filteredDeliveryNotes = deliveryNotes.filter(note => 
-    note.delivery_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDeliveryNotes = deliveryNotes.filter(note => {
+    // Safely access properties to handle SelectQueryError
+    const deliveryNumber = note.delivery_number || '';
+    const supplierName = isSelectQueryError(note.supplier) 
+      ? '' 
+      : (note.supplier?.name || '');
+    
+    return deliveryNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           supplierName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <DashboardLayout>

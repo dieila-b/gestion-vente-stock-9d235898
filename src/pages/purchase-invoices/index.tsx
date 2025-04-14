@@ -5,21 +5,62 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PurchaseInvoiceHeader } from "@/components/purchases/invoices/PurchaseInvoiceHeader";
 import { PurchaseInvoiceList } from "@/components/purchases/invoices/PurchaseInvoiceList";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
+import { isSelectQueryError } from "@/utils/type-utils";
+import type { PurchaseInvoice } from "@/types/purchase-invoice";
 
 export default function PurchaseInvoicesPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [filteredInvoices, setFilteredInvoices] = useState<PurchaseInvoice[]>([]);
   const { 
-    invoices, 
+    invoices: rawInvoices, 
     isLoading,
     handleView,
     handleDelete 
   } = usePurchaseInvoices();
   
-  // Filter invoices based on search query
-  const filteredInvoices = invoices.filter(invoice => 
-    invoice.invoice_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    invoice.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Process invoices to ensure they match the PurchaseInvoice type
+  useEffect(() => {
+    const processedInvoices = rawInvoices.map(invoice => {
+      // Create properly typed supplier
+      const supplier = isSelectQueryError(invoice.supplier) 
+        ? { name: 'Fournisseur inconnu', phone: '', email: '' }
+        : invoice.supplier || { name: 'Fournisseur non spécifié', phone: '', email: '' };
+      
+      // Create properly typed purchase order
+      const purchase_order = isSelectQueryError(invoice.purchase_order)
+        ? { id: '', order_number: '' }
+        : invoice.purchase_order || { id: '', order_number: '' };
+      
+      // Create properly typed delivery note
+      const delivery_note = isSelectQueryError(invoice.delivery_note)
+        ? { id: '', delivery_number: '' }
+        : invoice.delivery_note || { id: '', delivery_number: '' };
+      
+      // Return a complete PurchaseInvoice object with all required fields
+      return {
+        ...invoice,
+        tax_amount: invoice.tax_amount || 0,
+        payment_status: invoice.payment_status || 'pending',
+        due_date: invoice.due_date || new Date().toISOString(),
+        paid_amount: invoice.paid_amount || 0,
+        remaining_amount: invoice.remaining_amount || invoice.total_amount || 0,
+        discount: invoice.discount || 0,
+        notes: invoice.notes || '',
+        shipping_cost: invoice.shipping_cost || 0,
+        supplier,
+        purchase_order,
+        delivery_note
+      } as PurchaseInvoice;
+    });
+    
+    // Filter processed invoices based on search query
+    const filtered = processedInvoices.filter(invoice => 
+      invoice.invoice_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    setFilteredInvoices(filtered);
+  }, [rawInvoices, searchQuery]);
 
   return (
     <DashboardLayout>

@@ -59,7 +59,12 @@ export function safeSupplier(supplier: any): {
       email: ''
     };
   }
-  return supplier;
+  return supplier || { 
+    id: '', 
+    name: 'Fournisseur inconnu', 
+    phone: '', 
+    email: '' 
+  };
 }
 
 // Safely handle product properties
@@ -77,7 +82,12 @@ export function safeProduct(product: any): {
       category: ''
     };
   }
-  return product;
+  return product || { 
+    id: '', 
+    name: 'Produit inconnu', 
+    reference: '', 
+    category: '' 
+  };
 }
 
 // Safely handle purchase order properties
@@ -106,4 +116,18 @@ export function safeDeliveryNote(deliveryNote: any): {
     };
   }
   return deliveryNote || { id: '', delivery_number: '' };
+}
+
+// Safely handle warehouse properties
+export function safeWarehouse(warehouse: any): {
+  id?: string;
+  name: string;
+} {
+  if (isSelectQueryError(warehouse)) {
+    return {
+      id: '',
+      name: 'Entrepôt non disponible'
+    };
+  }
+  return warehouse || { id: '', name: 'Entrepôt inconnu' };
 }
