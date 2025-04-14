@@ -1,9 +1,9 @@
-
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -43,10 +43,8 @@ export const usePurchaseOrderSubmit = ({
   navigate
 }: UsePurchaseOrderSubmitProps) => {
 
-  // Calculate amounts
   const calculateSubtotal = () => {
     return orderItems.reduce((total, item) => {
-      // Only include items with quantity > 0
       return total + (item.unit_price * (item.quantity > 0 ? item.quantity : 1));
     }, 0);
   };
@@ -89,11 +87,10 @@ export const usePurchaseOrderSubmit = ({
         items_count: orderItems.length,
       });
 
-      // Prepare order data
       const orderData = {
         supplier_id: supplier,
         order_number: orderNumber,
-        expected_delivery_date: deliveryDate,
+        expected_delivery_date: deliveryDate ? deliveryDate : new Date().toISOString(),
         notes,
         status: orderStatus,
         payment_status: paymentStatus,
@@ -111,17 +108,7 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Utiliser directement le client Supabase sans RLS
-      const { data: createdOrder, error } = await supabase
-        .from('purchase_orders')
-        .insert(orderData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Erreur lors de la création du bon de commande:", error);
-        throw new Error(`Erreur lors de la création du bon de commande: ${error.message}`);
-      }
+      const createdOrder = await db.insert('purchase_orders', orderData);
       
       if (!createdOrder) {
         throw new Error("Aucun bon de commande créé");
@@ -129,9 +116,7 @@ export const usePurchaseOrderSubmit = ({
       
       console.log("Purchase order created successfully:", createdOrder);
       
-      // Add order items if there are any
       if (orderItems.length > 0 && createdOrder) {
-        // Make sure we only proceed with items that have a quantity > 0
         const validOrderItems = orderItems
           .filter(item => item.quantity > 0)
           .map(item => ({
@@ -146,14 +131,8 @@ export const usePurchaseOrderSubmit = ({
         if (validOrderItems.length > 0) {
           console.log("Adding order items:", validOrderItems);
           
-          // Insérer les éléments directement avec Supabase
-          const { error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .insert(validOrderItems);
-          
-          if (itemsError) {
-            console.error("Erreur lors de l'ajout des articles:", itemsError);
-            // On continue même si l'ajout des articles échoue
+          for (const item of validOrderItems) {
+            await db.insert('purchase_order_items', item);
           }
           
           console.log("Order items added successfully");
