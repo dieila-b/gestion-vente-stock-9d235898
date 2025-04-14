@@ -3,7 +3,6 @@ import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
-import { db } from "@/utils/db-adapter";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UsePurchaseOrderSubmitProps {
@@ -90,7 +89,7 @@ export const usePurchaseOrderSubmit = ({
         items_count: orderItems.length,
       });
 
-      // Use db utility for better RLS bypassing
+      // Prepare order data
       const orderData = {
         supplier_id: supplier,
         order_number: orderNumber,
@@ -112,18 +111,22 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Insert using lower-level db.query utility function to bypass RLS
-      const result = await db.query(
-        'purchase_orders',
-        (qb) => qb.insert(orderData).select(),
-        []
-      );
+      // Utiliser directement le client Supabase au lieu de db.query
+      const { data: createdOrder, error } = await supabase
+        .from('purchase_orders')
+        .insert(orderData)
+        .select()
+        .single();
       
-      if (!result || result.length === 0) {
-        throw new Error("Failed to create purchase order");
+      if (error) {
+        console.error("Erreur lors de la création du bon de commande:", error);
+        throw new Error(`Erreur lors de la création du bon de commande: ${error.message}`);
       }
       
-      const createdOrder = result[0];
+      if (!createdOrder) {
+        throw new Error("Aucun bon de commande créé");
+      }
+      
       console.log("Purchase order created successfully:", createdOrder);
       
       // Add order items if there are any
@@ -137,18 +140,21 @@ export const usePurchaseOrderSubmit = ({
             quantity: item.quantity,
             unit_price: item.unit_price,
             selling_price: item.selling_price || 0,
-            total_price: item.total_price
+            total_price: item.unit_price * item.quantity
           }));
         
         if (validOrderItems.length > 0) {
           console.log("Adding order items:", validOrderItems);
           
-          // Insert items using lower-level query function
-          await db.query(
-            'purchase_order_items',
-            (qb) => qb.insert(validOrderItems),
-            []
-          );
+          // Insérer les éléments directement avec Supabase
+          const { error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .insert(validOrderItems);
+          
+          if (itemsError) {
+            console.error("Erreur lors de l'ajout des articles:", itemsError);
+            // On continue même si l'ajout des articles échoue
+          }
           
           console.log("Order items added successfully");
         }
