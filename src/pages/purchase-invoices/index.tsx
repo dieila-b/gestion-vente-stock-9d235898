@@ -45,14 +45,14 @@ export default function PurchaseInvoicesPage() {
         status: invoice.status || 'pending',
         created_at: invoice.created_at || new Date().toISOString(),
         updated_at: invoice.updated_at || new Date().toISOString(),
-        tax_amount: invoice.tax_amount || 0,
-        payment_status: invoice.payment_status || 'pending',
-        due_date: invoice.due_date || new Date().toISOString(),
-        paid_amount: invoice.paid_amount || 0,
-        remaining_amount: invoice.remaining_amount || invoice.total_amount || 0,
-        discount: invoice.discount || 0,
-        notes: invoice.notes || '',
-        shipping_cost: invoice.shipping_cost || 0,
+        tax_amount: invoice.tax_amount || 0, // Provide default value
+        payment_status: invoice.payment_status || 'pending', // Provide default value
+        due_date: invoice.due_date || new Date().toISOString(), // Provide default value
+        paid_amount: invoice.paid_amount || 0, // Provide default value
+        remaining_amount: invoice.remaining_amount || invoice.total_amount || 0, // Provide default value
+        discount: invoice.discount || 0, // Provide default value
+        notes: invoice.notes || '', // Provide default value
+        shipping_cost: invoice.shipping_cost || 0, // Provide default value
         supplier,
         purchase_order,
         delivery_note

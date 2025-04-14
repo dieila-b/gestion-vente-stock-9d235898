@@ -23,19 +23,29 @@ export default function PurchaseOrdersPage() {
   useEffect(() => {
     const processedOrders = rawOrders.map(order => {
       // Create properly typed supplier
-      const supplier = isSelectQueryError(order.supplier) 
-        ? { 
-            id: '',
-            name: 'Fournisseur inconnu', 
-            phone: '', 
-            email: '' 
-          }
-        : {
-            id: order.supplier_id || '',
-            name: order.supplier?.name || 'Fournisseur non spécifié', 
-            phone: order.supplier?.phone || '', 
-            email: order.supplier?.email || '' 
-          };
+      let supplier;
+      if (isSelectQueryError(order.supplier)) {
+        supplier = { 
+          id: '',
+          name: 'Fournisseur inconnu', 
+          phone: '', 
+          email: '' 
+        };
+      } else if (!order.supplier) {
+        supplier = {
+          id: order.supplier_id || '',
+          name: 'Fournisseur non spécifié', 
+          phone: '', 
+          email: '' 
+        };
+      } else {
+        supplier = {
+          id: order.supplier_id || order.supplier.id || '',
+          name: order.supplier.name || 'Fournisseur non spécifié', 
+          phone: order.supplier.phone || '', 
+          email: order.supplier.email || '' 
+        };
+      }
       
       // Return a complete PurchaseOrder object
       return {
