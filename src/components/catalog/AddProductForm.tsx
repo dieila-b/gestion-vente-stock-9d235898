@@ -1,5 +1,3 @@
-
-// I'll focus just on the part with SelectItem that might have empty values
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,7 +44,6 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
   const [newProduct, setNewProduct] = useState<Omit<CatalogProduct, 'id'>>(defaultProduct);
   const [uploading, setUploading] = useState(false);
 
-  // Récupérer les catégories existantes
   const { data: categories = [] } = useQuery({
     queryKey: ['product-categories'],
     queryFn: async () => {
@@ -61,13 +58,11 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
         throw error;
       }
 
-      // Filtrer les catégories uniques
       const uniqueCategories = Array.from(new Set(data.map(item => item.category))).filter(Boolean);
       return uniqueCategories;
     }
   });
 
-  // Réinitialiser le formulaire à chaque ouverture
   useEffect(() => {
     if (isOpen) {
       const date = new Date();
@@ -122,11 +117,9 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
       await addProductMutation.mutateAsync(newProduct);
       toast.success("Produit ajouté avec succès");
       onClose();
-      // Réinitialiser le formulaire après l'ajout
       setNewProduct(defaultProduct);
     } catch (error) {
       console.error("Erreur lors de l'ajout du produit:", error);
-      toast.error("Erreur lors de l'ajout du produit. Veuillez réessayer.");
     }
   };
 
@@ -156,7 +149,6 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 enhanced-glass animate-in fade-in zoom-in">
         <h2 className="text-2xl font-bold mb-6 text-gradient">Nouveau Produit</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Image Upload Section */}
           <div className="md:col-span-2">
             <label className="text-sm text-muted-foreground mb-2 block">Image du produit</label>
             <ImageUpload
@@ -231,7 +223,6 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
                       {category}
                     </SelectItem>
                   ))}
-                  {/* Option pour ajouter une nouvelle catégorie */}
                   <SelectItem value="new">
                     + Nouvelle catégorie
                   </SelectItem>

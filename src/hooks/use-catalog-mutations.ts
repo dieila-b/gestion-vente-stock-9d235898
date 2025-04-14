@@ -1,4 +1,3 @@
-
 import { CatalogProduct } from "@/types/catalog";
 import { PostgrestError } from "@supabase/supabase-js";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,11 +7,13 @@ import { toast } from "sonner";
 export const useCatalogMutations = () => {
   const queryClient = useQueryClient();
 
-  const addProductMutation = useMutation<CatalogProduct, PostgrestError, Omit<CatalogProduct, 'id'>>({
-    mutationFn: async (product) => {
+  const addProductMutation = useMutation({
+    mutationFn: async (product: Omit<CatalogProduct, 'id'>) => {
+      const { unit_id, ...productWithoutUnitId } = product;
+      
       const { data, error } = await supabase
         .from('catalog')
-        .insert([product])
+        .insert([productWithoutUnitId])
         .select()
         .single();
 
