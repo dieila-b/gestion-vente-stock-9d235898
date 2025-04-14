@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Edit, FileText, Trash, Printer } from "lucide-react";
+import { Check, Edit, Trash, Printer } from "lucide-react";
+import { toast } from "sonner";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -53,6 +54,12 @@ export function PurchaseOrderTable({
         return 'Brouillon';
       default:
         return status;
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
+      onDelete(id);
     }
   };
 
@@ -107,12 +114,12 @@ export function PurchaseOrderTable({
                           onClick={() => onApprove(order.id)}
                           title="Approuver"
                         >
-                          <FileText className="h-4 w-4" />
+                          <Check className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
                           onClick={() => onEdit(order.id)}
                           title="Modifier"
                         >
@@ -122,7 +129,7 @@ export function PurchaseOrderTable({
                           variant="outline"
                           size="sm"
                           className="bg-red-500 hover:bg-red-600 text-white"
-                          onClick={() => onDelete(order.id)}
+                          onClick={() => handleDelete(order.id)}
                           title="Supprimer"
                         >
                           <Trash className="h-4 w-4" />
@@ -132,7 +139,7 @@ export function PurchaseOrderTable({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      className="bg-purple-500 hover:bg-purple-600 text-white"
                       onClick={() => onPrint(order)}
                       title="Imprimer"
                     >
