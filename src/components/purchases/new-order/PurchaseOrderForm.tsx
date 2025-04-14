@@ -108,6 +108,15 @@ const PurchaseOrderForm = () => {
 
   const currentDeliveryDate = deliveryDate ? new Date(deliveryDate) : undefined;
 
+  // Helper function to format supplier display name
+  const getSupplierDisplayName = (supplier: any) => {
+    if (!supplier) return '';
+    if (supplier.contact) {
+      return `${supplier.name} (${supplier.contact})`;
+    }
+    return supplier.name;
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-white/10 bg-black/20 text-white">
@@ -131,11 +140,14 @@ const PurchaseOrderForm = () => {
                     <SelectValue placeholder="Sélectionner un fournisseur" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
+                    {suppliers?.map((supplier) => {
+                      const supplierWithContact = suppliers.find(s => s.id === supplier.id);
+                      return (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.contact ? `${supplier.name} (${supplier.contact})` : supplier.name}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
