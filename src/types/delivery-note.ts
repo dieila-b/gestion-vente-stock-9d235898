@@ -9,7 +9,6 @@ export interface DeliveryNote {
   supplier_id?: string;
   purchase_order_id?: string;
   
-  // Adding error property which is shown in error messages
   supplier?: {
     name: string;
     phone?: string;
@@ -26,7 +25,7 @@ export interface DeliveryNote {
 
 export interface DeliveryNoteItem {
   id: string;
-  delivery_note_id: string;
+  delivery_note_id?: string;
   product_id: string;
   quantity_ordered: number;
   quantity_received: number;
