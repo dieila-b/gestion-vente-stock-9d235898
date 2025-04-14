@@ -12,7 +12,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       
       console.log("Fetching delivery note with ID:", id);
       try {
-        // Use single() to ensure we get a single object, not an array
+        // Explicitly define the result as a single object, not an array
         const result = await db.query(
           'delivery_notes',
           query => query
@@ -57,8 +57,9 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Safely access the items property, ensuring it's treated as an array
-        const resultItems = result.items || [];
+        // Now result is a single object, not an array
+        // Safely access the items property
+        const resultItems = result?.items || [];
         // Process items with proper typing
         const items = Array.isArray(resultItems) ? resultItems.map(item => {
           if (!item) return null;
@@ -82,7 +83,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         }).filter(Boolean) : [];
 
         // Handle supplier safely
-        const resultSupplier = result.supplier || null;
+        const resultSupplier = result?.supplier || null;
         const supplier = resultSupplier ? {
           id: resultSupplier.id || '',
           name: resultSupplier.name || 'Fournisseur inconnu',
@@ -96,7 +97,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
         
         // Handle purchase order safely
-        const resultPurchaseOrder = result.purchase_order || null;
+        const resultPurchaseOrder = result?.purchase_order || null;
         const purchaseOrder = resultPurchaseOrder ? {
           id: resultPurchaseOrder.id || '',
           order_number: resultPurchaseOrder.order_number || '',
