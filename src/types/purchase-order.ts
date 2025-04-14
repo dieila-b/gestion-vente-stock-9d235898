@@ -32,7 +32,7 @@ export interface PurchaseOrder {
 
 export interface PurchaseOrderItem {
   id: string;
-  purchase_order_id: string;
+  purchase_order_id?: string; // Made optional to accommodate different data structures
   product_id: string;
   quantity: number;
   unit_price: number;
