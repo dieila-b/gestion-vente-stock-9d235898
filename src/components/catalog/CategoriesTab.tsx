@@ -20,6 +20,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Pencil, Plus, Trash } from "lucide-react";
 
 export function CategoriesTab() {
@@ -28,6 +37,8 @@ export function CategoriesTab() {
     original: string;
     new: string;
   } | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [categoryInput, setCategoryInput] = useState("");
 
   const { data: categories = [], refetch } = useQuery({
     queryKey: ['product-categories'],
@@ -68,6 +79,34 @@ export function CategoriesTab() {
 
       toast.success("Catégorie ajoutée avec succès");
       setNewCategory("");
+      refetch();
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast.error("Erreur lors de l'ajout de la catégorie");
+    }
+  };
+
+  const handleAddCategoryFromDialog = async () => {
+    if (!categoryInput.trim()) {
+      toast.error("Veuillez entrer un nom de catégorie");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('catalog')
+        .insert([{ 
+          name: categoryInput,
+          category: categoryInput,
+          price: 0,
+          stock: 0
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Catégorie ajoutée avec succès");
+      setCategoryInput("");
+      setIsAddDialogOpen(false);
       refetch();
     } catch (error) {
       console.error('Error adding category:', error);
@@ -123,33 +162,17 @@ export function CategoriesTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Ajouter une catégorie</CardTitle>
-          <CardDescription>
-            Créez une nouvelle catégorie pour organiser vos produits
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Input
-              placeholder="Nom de la catégorie"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
-            <Button onClick={handleAddCategory}>
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter
-            </Button>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Liste des catégories</CardTitle>
+            <CardDescription>
+              Toutes les catégories de produits disponibles
+            </CardDescription>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des catégories</CardTitle>
-          <CardDescription>
-            Toutes les catégories de produits disponibles
-          </CardDescription>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter une catégorie
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -223,7 +246,41 @@ export function CategoriesTab() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter une catégorie</DialogTitle>
+            <DialogDescription>
+              Créez une nouvelle catégorie pour organiser vos produits
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="categoryName">Nom de la catégorie</Label>
+              <Input 
+                id="categoryName" 
+                placeholder="Nom de la catégorie"
+                value={categoryInput}
+                onChange={(e) => setCategoryInput(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleAddCategoryFromDialog}>
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
