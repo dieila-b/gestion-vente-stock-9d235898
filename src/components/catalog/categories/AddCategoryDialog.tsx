@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { db } from "@/utils/db-adapter";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface AddCategoryDialogProps {
 
 export function AddCategoryDialog({ isOpen, onClose, onSuccess }: AddCategoryDialogProps) {
   const [categoryInput, setCategoryInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddCategory = async () => {
     if (!categoryInput.trim()) {
@@ -30,22 +31,34 @@ export function AddCategoryDialog({ isOpen, onClose, onSuccess }: AddCategoryDia
     }
 
     try {
-      const result = await db.insert('catalog', { 
-        name: categoryInput,
-        category: categoryInput,
-        price: 0,
-        stock: 0
-      });
+      setIsLoading(true);
+      
+      // Créer un produit de référence pour la catégorie
+      const { data, error } = await supabase
+        .from('catalog')
+        .insert({ 
+          name: `Produit ${categoryInput}`,
+          category: categoryInput,
+          price: 0,
+          stock: 0
+        })
+        .select();
 
-      if (result) {
-        toast.success("Catégorie ajoutée avec succès");
-        setCategoryInput("");
-        onClose();
-        onSuccess();
+      if (error) {
+        console.error('Error adding category:', error);
+        toast.error("Erreur lors de l'ajout de la catégorie");
+        return;
       }
+
+      toast.success("Catégorie ajoutée avec succès");
+      setCategoryInput("");
+      onClose();
+      onSuccess();
     } catch (error) {
       console.error('Error adding category:', error);
       toast.error("Erreur lors de l'ajout de la catégorie");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -77,14 +90,16 @@ export function AddCategoryDialog({ isOpen, onClose, onSuccess }: AddCategoryDia
             variant="outline" 
             onClick={onClose}
             className="bg-transparent border-gray-700 text-white hover:bg-gray-800"
+            disabled={isLoading}
           >
             Annuler
           </Button>
           <Button 
             onClick={handleAddCategory}
             className="bg-purple-600 hover:bg-purple-700 text-white"
+            disabled={isLoading}
           >
-            Ajouter
+            {isLoading ? "Ajout en cours..." : "Ajouter"}
           </Button>
         </DialogFooter>
       </DialogContent>

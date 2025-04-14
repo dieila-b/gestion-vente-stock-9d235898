@@ -18,6 +18,7 @@ export function useCategoriesData() {
         throw error;
       }
 
+      // Extraire les catégories uniques
       const uniqueCategories = Array.from(new Set(data.map(item => item.category))).filter(Boolean);
       return uniqueCategories;
     }
