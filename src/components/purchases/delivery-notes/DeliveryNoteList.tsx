@@ -56,6 +56,16 @@ export function DeliveryNoteList({
     }
   };
 
+  const formatDisplayDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Date inconnue';
+    
+    try {
+      return new Date(dateStr).toLocaleDateString('fr-FR');
+    } catch (error) {
+      return 'Date inconnue';
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -73,7 +83,7 @@ export function DeliveryNoteList({
           <TableRow key={note.id}>
             <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
             <TableCell>
-              {note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Date inconnue'}
+              {formatDisplayDate(note.created_at)}
             </TableCell>
             <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>

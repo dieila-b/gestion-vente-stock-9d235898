@@ -1,127 +1,76 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { db } from "@/utils/db-adapter";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
 
-  const approvePurchaseOrderMutation = useMutation({
-    mutationFn: async (orderId: string) => {
+  return useMutation({
+    mutationFn: async (id: string) => {
       try {
-        console.log("Starting approval process for order:", orderId);
-        
-        // Get the purchase order details
-        const orderResults = await db.query(
-          'purchase_orders',
-          query => query
-            .select('id, status, supplier_id, total_amount')
-            .eq('id', orderId)
-        );
+        // Update the purchase order status
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .update({ status: 'approved' })
+          .eq('id', id)
+          .select()
+          .single();
 
-        if (!orderResults || orderResults.length === 0) {
-          throw new Error('Commande non trouvée');
+        if (error) throw error;
+
+        // Now create a delivery note based on the purchase order
+        if (data) {
+          const purchaseOrder = data as PurchaseOrder;
+          
+          // First create the delivery note
+          const { data: deliveryNote, error: deliveryNoteError } = await supabase
+            .from('delivery_notes')
+            .insert({
+              purchase_order_id: purchaseOrder.id,
+              supplier_id: purchaseOrder.supplier_id,
+              delivery_number: `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+              status: 'pending',
+              deleted: false, // Explicitly set deleted to false
+              notes: `Bon de livraison créé automatiquement depuis la commande ${purchaseOrder.order_number || ''}`
+            })
+            .select()
+            .single();
+
+          if (deliveryNoteError) throw deliveryNoteError;
+
+          // Then create delivery note items based on purchase order items
+          if (deliveryNote && purchaseOrder.items && purchaseOrder.items.length > 0) {
+            const deliveryItemsData = purchaseOrder.items.map(item => ({
+              delivery_note_id: deliveryNote.id,
+              product_id: item.product_id,
+              quantity_ordered: item.quantity,
+              quantity_received: 0, // Initial value, to be updated on reception
+              unit_price: item.unit_price
+            }));
+
+            const { error: itemsError } = await supabase
+              .from('delivery_note_items')
+              .insert(deliveryItemsData);
+
+            if (itemsError) throw itemsError;
+          }
         }
 
-        const order = orderResults[0];
-        console.log("Found order:", order);
-
-        // Find an active warehouse
-        const warehouseResults = await db.query(
-          'warehouses',
-          query => query
-            .select('id')
-            .eq('status', 'Actif')
-            .limit(1)
-        );
-
-        if (!warehouseResults || warehouseResults.length === 0) {
-          throw new Error('Aucun entrepôt actif trouvé');
-        }
-
-        const warehouseData = warehouseResults[0];
-        console.log("Using warehouse:", warehouseData);
-
-        // Create delivery note with all required fields and ensure deleted=false
-        const deliveryNumber = `BL-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-        console.log("Generated delivery number:", deliveryNumber);
-
-        // Explicitly define all required fields for the delivery note
-        const deliveryNoteData = {
-          delivery_number: deliveryNumber,
-          purchase_order_id: orderId,
-          supplier_id: order.supplier_id,
-          status: 'pending',
-          warehouse_id: warehouseData.id,
-          deleted: false,
-          notes: 'Créé automatiquement lors de l\'approbation du bon de commande'
-        };
-
-        console.log("Creating delivery note with data:", deliveryNoteData);
-        
-        const deliveryNote = await db.insert('delivery_notes', deliveryNoteData);
-
-        if (!deliveryNote) {
-          throw new Error('Erreur lors de la création du bon de livraison');
-        }
-        
-        console.log("Created delivery note:", deliveryNote);
-
-        // Get order items
-        const orderItems = await db.query(
-          'purchase_order_items',
-          query => query
-            .select('id, product_id, quantity, unit_price')
-            .eq('purchase_order_id', orderId)
-        );
-
-        if (!orderItems || orderItems.length === 0) {
-          throw new Error('Impossible de récupérer les articles de la commande');
-        }
-        
-        console.log("Found order items:", orderItems);
-
-        // Create delivery note items
-        for (const item of orderItems) {
-          await db.insert('delivery_note_items', {
-            delivery_note_id: deliveryNote.id,
-            product_id: item.product_id,
-            quantity_ordered: item.quantity,
-            quantity_received: 0,
-            unit_price: item.unit_price
-          });
-        }
-        
-        console.log("Created delivery note items");
-
-        // Update purchase order status
-        await db.update(
-          'purchase_orders',
-          { status: 'approved' },
-          'id',
-          orderId
-        );
-        
-        console.log("Updated purchase order status to approved");
-
-        return true;
-      } catch (error) {
-        console.error('Error in approvePurchaseOrder:', error);
+        return data;
+      } catch (error: any) {
+        console.error("Error approving purchase order:", error);
         throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      toast.success('Commande approuvée et bon de livraison créé avec succès');
+      toast.success("Commande approuvée avec succès");
     },
-    onError: (error: Error) => {
-      console.error('Mutation error:', error);
-      toast.error("Erreur lors de l'approbation: " + error.message);
+    onError: (error: any) => {
+      toast.error(`Erreur lors de l'approbation: ${error.message}`);
     }
   });
-
-  return (id: string) => {
-    approvePurchaseOrderMutation.mutate(id);
-  };
 }

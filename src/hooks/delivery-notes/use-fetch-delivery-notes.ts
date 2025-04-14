@@ -87,6 +87,9 @@ export function useFetchDeliveryNotes() {
             };
           }).filter(Boolean) : [];
 
+          // Generate a placeholder delivery number if not present
+          const deliveryNumber = note.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+
           // Handle supplier safely
           const supplier = note.supplier ? {
             id: note.supplier.id || '',
@@ -111,13 +114,16 @@ export function useFetchDeliveryNotes() {
             total_amount: 0
           };
 
+          // Define default status if not present
+          const status = note.status || 'pending';
+
           return {
             id: note.id || '',
-            delivery_number: note.delivery_number || 'BL-XXXX',
+            delivery_number: deliveryNumber,
             created_at: note.created_at || new Date().toISOString(),
             updated_at: note.updated_at || new Date().toISOString(),
             notes: note.notes || '',
-            status: note.status || 'pending',
+            status: status,
             supplier,
             purchase_order: purchaseOrder,
             items

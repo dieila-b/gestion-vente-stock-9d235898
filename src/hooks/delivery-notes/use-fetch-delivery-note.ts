@@ -57,61 +57,34 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Explicitly type the result to avoid TypeScript errors
-        const typedResult = result as {
-          id?: string;
-          delivery_number?: string;
-          created_at?: string;
-          updated_at?: string;
-          notes?: string;
-          status?: string;
-          supplier?: {
-            id?: string;
-            name?: string;
-            phone?: string;
-            email?: string;
-          };
-          purchase_order?: {
-            id?: string;
-            order_number?: string;
-            total_amount?: number;
-          };
-          items?: Array<{
-            id?: string;
-            product_id?: string;
-            quantity_ordered?: number;
-            quantity_received?: number;
-            unit_price?: number;
-            product?: {
-              id?: string;
-              name?: string;
-              reference?: string;
-            };
-          }>;
-        };
-
         // Process items with proper typing
-        const items = Array.isArray(typedResult.items) ? typedResult.items.map(item => {
+        const items = Array.isArray(result.items) ? result.items.map(item => {
+          if (!item) return null;
+          
           return {
             id: item.id || '',
             product_id: item.product_id || '',
             quantity_ordered: item.quantity_ordered || 0,
             quantity_received: item.quantity_received || 0,
             unit_price: item.unit_price || 0,
-            product: {
-              id: item.product?.id || '',
-              name: item.product?.name || 'Produit non disponible',
-              reference: item.product?.reference || ''
+            product: item.product ? {
+              id: item.product.id || '',
+              name: item.product.name || 'Produit non disponible',
+              reference: item.product.reference || ''
+            } : {
+              id: '',
+              name: 'Produit non disponible',
+              reference: ''
             }
           };
-        }) : [];
+        }).filter(Boolean) : [];
 
         // Handle supplier safely
-        const supplier = typedResult.supplier ? {
-          id: typedResult.supplier.id || '',
-          name: typedResult.supplier.name || 'Fournisseur inconnu',
-          phone: typedResult.supplier.phone || '',
-          email: typedResult.supplier.email || ''
+        const supplier = result.supplier ? {
+          id: result.supplier.id || '',
+          name: result.supplier.name || 'Fournisseur inconnu',
+          phone: result.supplier.phone || '',
+          email: result.supplier.email || ''
         } : { 
           id: '',
           name: 'Fournisseur inconnu', 
@@ -120,10 +93,10 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
         
         // Handle purchase order safely
-        const purchaseOrder = typedResult.purchase_order ? {
-          id: typedResult.purchase_order.id || '',
-          order_number: typedResult.purchase_order.order_number || '',
-          total_amount: typedResult.purchase_order.total_amount || 0
+        const purchaseOrder = result.purchase_order ? {
+          id: result.purchase_order.id || '',
+          order_number: result.purchase_order.order_number || '',
+          total_amount: result.purchase_order.total_amount || 0
         } : { 
           id: '',
           order_number: '', 
@@ -131,12 +104,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
 
         return {
-          id: typedResult.id || '',
-          delivery_number: typedResult.delivery_number || '',
-          created_at: typedResult.created_at || '',
-          updated_at: typedResult.updated_at || '',
-          notes: typedResult.notes || '',
-          status: typedResult.status || '',
+          id: result.id || '',
+          delivery_number: result.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          created_at: result.created_at || '',
+          updated_at: result.updated_at || '',
+          notes: result.notes || '',
+          status: result.status || 'pending',
           supplier,
           purchase_order: purchaseOrder,
           items: items
