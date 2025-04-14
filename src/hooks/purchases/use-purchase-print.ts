@@ -1,6 +1,6 @@
 
 import { useRef } from 'react';
-import { PurchaseOrder } from '@/types/purchaseOrder';
+import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchaseOrder';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
@@ -82,7 +82,7 @@ export function usePurchasePrint() {
             <tbody>
               ${order.items?.map(item => `
                 <tr>
-                  <td>${item.product?.name || 'Produit inconnu'}</td>
+                  <td>${item.designation || 'Produit inconnu'}</td>
                   <td>${item.quantity}</td>
                   <td>${formatGNF(item.unit_price)}</td>
                   <td>${formatGNF(item.total_price)}</td>

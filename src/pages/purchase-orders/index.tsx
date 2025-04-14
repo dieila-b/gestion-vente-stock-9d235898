@@ -52,12 +52,14 @@ export default function PurchaseOrdersPage() {
         };
       }
       
-      // Return a complete PurchaseOrder object with deleted property
+      // Return a complete PurchaseOrder object with required properties
       return {
         ...order,
         supplier,
-        deleted: false // Add this property required by PurchaseOrder in purchaseOrder.ts
-      } as PurchaseOrder;
+        deleted: false,
+        // Add empty items array if not present
+        items: order.items || []
+      } as unknown as PurchaseOrder;
     });
     
     // Filter processed orders based on search query
