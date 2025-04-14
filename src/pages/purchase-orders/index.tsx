@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PurchaseOrderHeader } from "@/components/purchases/PurchaseOrderHeader";
 import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
+import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { isSelectQueryError } from "@/utils/type-utils";
 import type { PurchaseOrder } from "@/types/purchase-order";
 
@@ -18,6 +19,8 @@ export default function PurchaseOrdersPage() {
     handleDelete,
     handleEdit
   } = usePurchaseOrders();
+  
+  const { printPurchaseOrder } = usePurchasePrint();
   
   // Process orders to ensure they match the PurchaseOrder type
   useEffect(() => {
@@ -65,6 +68,11 @@ export default function PurchaseOrdersPage() {
     setFilteredOrders(filtered);
   }, [rawOrders, searchQuery]);
 
+  // Handler for printing a purchase order
+  const handlePrint = (order: PurchaseOrder) => {
+    printPurchaseOrder(order);
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto p-6">
@@ -81,6 +89,7 @@ export default function PurchaseOrdersPage() {
               onApprove={handleApprove}
               onDelete={handleDelete}
               onEdit={handleEdit}
+              onPrint={handlePrint}
             />
           </CardContent>
         </Card>

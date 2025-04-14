@@ -27,6 +27,7 @@ export interface PurchaseOrder {
     id: string;
     name: string;
   };
+  items?: PurchaseOrderItem[];
 }
 
 export interface PurchaseOrderItem {

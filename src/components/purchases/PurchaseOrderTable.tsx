@@ -132,7 +132,7 @@ export function PurchaseOrderTable({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
                       onClick={() => onPrint(order)}
                       title="Imprimer"
                     >
