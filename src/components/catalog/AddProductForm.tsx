@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -115,7 +116,6 @@ export const AddProductForm = ({ isOpen, onClose, addProductMutation }: AddProdu
 
     try {
       await addProductMutation.mutateAsync(newProduct);
-      toast.success("Produit ajouté avec succès");
       onClose();
       setNewProduct(defaultProduct);
     } catch (error) {
