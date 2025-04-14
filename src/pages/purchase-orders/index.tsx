@@ -9,8 +9,12 @@ import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { isSelectQueryError } from "@/utils/type-utils";
 import type { PurchaseOrder } from "@/types/purchaseOrder";
-import { Dialog, DialogContent } from "@/components/ui/dialog"; 
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"; 
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/formatters";
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,6 +134,7 @@ export default function PurchaseOrdersPage() {
         {selectedOrderId && (
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="max-w-4xl">
+              <DialogTitle>Modifier Bon de Commande</DialogTitle>
               <PurchaseOrderEditForm 
                 orderId={selectedOrderId} 
                 onClose={handleCloseEditDialog} 
@@ -144,7 +149,7 @@ export default function PurchaseOrdersPage() {
 
 // Purchase Order Edit Form Component
 function PurchaseOrderEditForm({ orderId, onClose }: { orderId: string; onClose: () => void }) {
-  const { purchase, isLoading, handleUpdate } = usePurchaseEdit();
+  const { purchase, isLoading, handleUpdate, deliveryStatus, paymentStatus, updateStatus, updatePaymentStatus } = usePurchaseEdit(orderId);
   
   if (isLoading) {
     return <div className="p-6 text-center">Chargement...</div>;
@@ -154,32 +159,108 @@ function PurchaseOrderEditForm({ orderId, onClose }: { orderId: string; onClose:
     return <div className="p-6 text-center">Bon de commande non trouvé</div>;
   }
   
+  const handleSave = () => {
+    // For now, we'll just close the dialog
+    // In the future, we can implement actual saving of changes
+    onClose();
+  };
+  
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Modifier Bon de Commande #{purchase.order_number}</h2>
-      
-      {/* We'll implement a simple form for now, you can expand this later */}
       <div className="space-y-4">
-        <div>
-          <p>Fournisseur: {purchase.supplier?.name}</p>
-          <p>Date de création: {new Date(purchase.created_at).toLocaleDateString()}</p>
-          <p>Statut: {purchase.status}</p>
-          <p>Montant total: {purchase.total_amount?.toLocaleString('fr-FR')} GNF</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Numéro de commande</Label>
+            <Input value={purchase.order_number} readOnly />
+          </div>
+          
+          <div>
+            <Label>Fournisseur</Label>
+            <Input value={purchase.supplier?.name} readOnly />
+          </div>
+          
+          <div>
+            <Label>Date de création</Label>
+            <Input value={formatDate(purchase.created_at)} readOnly />
+          </div>
+          
+          <div>
+            <Label>Date de livraison prévue</Label>
+            <Input value={formatDate(purchase.expected_delivery_date)} readOnly />
+          </div>
+          
+          <div>
+            <Label>Statut</Label>
+            <select 
+              className="w-full px-3 py-2 border rounded-md"
+              value={deliveryStatus}
+              onChange={(e) => updateStatus(e.target.value)}
+            >
+              <option value="pending">En attente</option>
+              <option value="delivered">Livré</option>
+            </select>
+          </div>
+          
+          <div>
+            <Label>Statut de paiement</Label>
+            <select 
+              className="w-full px-3 py-2 border rounded-md"
+              value={paymentStatus}
+              onChange={(e) => updatePaymentStatus(e.target.value)}
+            >
+              <option value="pending">En attente</option>
+              <option value="partial">Partiel</option>
+              <option value="paid">Payé</option>
+            </select>
+          </div>
+          
+          <div>
+            <Label>Montant total</Label>
+            <Input value={`${purchase.total_amount?.toLocaleString('fr-FR')} GNF`} readOnly />
+          </div>
+          
+          <div>
+            <Label>Notes</Label>
+            <Input value={purchase.notes} />
+          </div>
         </div>
         
-        <div className="flex justify-end gap-2 mt-4">
-          <button 
-            className="px-4 py-2 bg-gray-200 rounded-md"
+        <h3 className="text-lg font-semibold mt-6 mb-2">Produits</h3>
+        <div className="border rounded-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left">Produit</th>
+                <th className="p-2 text-right">Quantité</th>
+                <th className="p-2 text-right">Prix unitaire</th>
+                <th className="p-2 text-right">Prix total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchase.items?.map((item, index) => (
+                <tr key={index} className="border-t">
+                  <td className="p-2">{item.product?.name || `Produit #${item.product_id}`}</td>
+                  <td className="p-2 text-right">{item.quantity}</td>
+                  <td className="p-2 text-right">{item.unit_price?.toLocaleString('fr-FR')} GNF</td>
+                  <td className="p-2 text-right">{item.total_price?.toLocaleString('fr-FR')} GNF</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="flex justify-end gap-2 mt-6">
+          <Button 
+            variant="outline"
             onClick={onClose}
           >
             Annuler
-          </button>
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-            onClick={onClose}
+          </Button>
+          <Button 
+            onClick={handleSave}
           >
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

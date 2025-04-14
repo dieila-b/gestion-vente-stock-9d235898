@@ -25,7 +25,8 @@ export function usePurchaseEdit(orderId?: string) {
             product_id,
             quantity,
             unit_price,
-            total_price
+            total_price,
+            product:product_id(id, name, reference)
           ),
           warehouse:warehouses(id, name)
         `)
@@ -33,9 +34,12 @@ export function usePurchaseEdit(orderId?: string) {
         .single();
 
       if (error) {
+        console.error("Error fetching purchase order:", error);
+        toast.error(`Erreur: ${error.message}`);
         throw new Error(error.message);
       }
 
+      console.log("Fetched purchase order:", data);
       return data;
     },
     enabled: !!orderId
@@ -75,7 +79,7 @@ export function usePurchaseEdit(orderId?: string) {
   const updateStatus = async (status: string) => {
     try {
       if (status === 'pending' || status === 'delivered') {
-        setDeliveryStatus(status);
+        setDeliveryStatus(status as 'pending' | 'delivered');
         await handleUpdate({ status });
       }
     } catch (error: any) {
@@ -87,7 +91,7 @@ export function usePurchaseEdit(orderId?: string) {
   const updatePaymentStatus = async (status: string) => {
     try {
       if (status === 'pending' || status === 'partial' || status === 'paid') {
-        setPaymentStatus(status);
+        setPaymentStatus(status as 'pending' | 'partial' | 'paid');
         await handleUpdate({ payment_status: status });
       }
     } catch (error: any) {
