@@ -230,8 +230,8 @@ const PurchaseOrderForm = () => {
                     {orderItems.map((item, index) => (
                       <div key={item.id} className="p-3 bg-white/5 rounded-md grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
                         <div className="md:col-span-2">
-                          <p className="text-white font-medium">{item.designation || "Produit sans nom"}</p>
-                          {item.product_code && <p className="text-xs text-white/60">Ref: {item.product_code}</p>}
+                          <p className="text-white font-medium">{item.product?.name || "Produit sans nom"}</p>
+                          {item.product?.reference && <p className="text-xs text-white/60">Ref: {item.product.reference}</p>}
                         </div>
                         <div>
                           <Input
