@@ -33,7 +33,14 @@ export function safeClient(client: any): {
       phone: ''
     };
   }
-  return client;
+  return client || {
+    id: '',
+    company_name: 'Client inconnu',
+    contact_name: '',
+    status: '',
+    email: '',
+    phone: ''
+  };
 }
 
 // Safely handle arrays that could be SelectQueryError
@@ -41,7 +48,7 @@ export function safeArray<T>(items: T[] | SelectQueryError): T[] {
   if (isSelectQueryError(items)) {
     return [];
   }
-  return items;
+  return items || [];
 }
 
 // Safely handle supplier properties

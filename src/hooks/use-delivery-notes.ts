@@ -47,9 +47,9 @@ export function useDeliveryNotes() {
       created_at: note.created_at || new Date().toISOString(),
       updated_at: note.updated_at || new Date().toISOString(),
       notes: note.notes || '',
-      status: note.status || 'pending', // Default status if not available
-      supplier_id: note.supplier_id || '', // Default supplier_id if not available
-      purchase_order_id: note.purchase_order_id || '', // Default purchase_order_id if not available
+      status: (note as any).status || 'pending', // Type cast and provide default
+      supplier_id: (note as any).supplier_id || '', // Type cast and provide default
+      purchase_order_id: (note as any).purchase_order_id || '', // Type cast and provide default
       supplier,
       purchase_order: purchaseOrder,
       items: [] // We'll need to fetch items separately or ensure they're included in the initial query

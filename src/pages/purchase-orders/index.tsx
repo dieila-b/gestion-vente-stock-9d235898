@@ -39,11 +39,13 @@ export default function PurchaseOrdersPage() {
           email: '' 
         };
       } else {
+        // Since TypeScript thinks order.supplier might be 'never', we need to use type casting
+        const supplierData = order.supplier as any;
         supplier = {
-          id: order.supplier_id || order.supplier.id || '',
-          name: order.supplier.name || 'Fournisseur non spécifié', 
-          phone: order.supplier.phone || '', 
-          email: order.supplier.email || '' 
+          id: order.supplier_id || (supplierData.id || ''),
+          name: supplierData.name || 'Fournisseur non spécifié',
+          phone: supplierData.phone || '',
+          email: supplierData.email || ''
         };
       }
       
