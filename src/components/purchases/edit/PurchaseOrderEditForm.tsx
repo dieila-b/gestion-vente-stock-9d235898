@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
 import { formatDate } from "@/lib/formatters";
+import { formatGNF } from "@/lib/currency";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -156,7 +157,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         
         <div>
           <Label>Montant total</Label>
-          <Input value={`${purchase.total_amount?.toLocaleString('fr-FR')} GNF`} readOnly />
+          <Input value={formatGNF(purchase.total_amount || 0)} readOnly />
         </div>
       </div>
       
@@ -212,7 +213,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
                     disabled
                   />
                 </td>
-                <td className="p-2 text-right">{item.total_price?.toLocaleString('fr-FR')} GNF</td>
+                <td className="p-2 text-right">{formatGNF(item.total_price || 0)}</td>
               </tr>
             ))}
           </tbody>
