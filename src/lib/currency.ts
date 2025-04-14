@@ -12,6 +12,12 @@ export const formatGNFNumber = (num: number): string => {
 };
 
 /**
+ * Same as formatGNFNumber, exported as formatGNF for backward compatibility
+ * across the application
+ */
+export const formatGNF = formatGNFNumber;
+
+/**
  * Format a number with French number formatting (spaces as thousand separators)
  */
 export const formatNumber = (num: number): string => {
