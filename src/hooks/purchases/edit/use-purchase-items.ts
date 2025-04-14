@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { calculateItemsTotal, updateOrderTotal } from './use-purchase-calculations';
+import { updateOrderTotal } from './use-purchase-calculations';
 
 /**
  * Hook for managing purchase order item operations
@@ -10,7 +10,6 @@ export function usePurchaseItems(
   orderId: string | undefined,
   orderItems: any[],
   setOrderItems: (items: any[]) => void,
-  formData: any,
   refetch: () => Promise<any>
 ) {
   // Update order item quantity
@@ -46,8 +45,8 @@ export function usePurchaseItems(
       
       setOrderItems(updatedItems);
       
-      // Calculate new items total and update the order total
-      await updateOrderTotal(orderId, formData, refetch);
+      // Update the order total
+      await updateOrderTotal(orderId, null, refetch);
       
       toast.success('Quantité mise à jour avec succès');
       return true;
@@ -91,7 +90,7 @@ export function usePurchaseItems(
       setOrderItems(updatedItems);
       
       // Update the order total
-      await updateOrderTotal(orderId, formData, refetch);
+      await updateOrderTotal(orderId, null, refetch);
       
       toast.success('Prix mis à jour avec succès');
       return true;
@@ -112,6 +111,9 @@ export function usePurchaseItems(
         .eq('id', itemId);
 
       if (error) throw error;
+      
+      // Update the order total
+      await updateOrderTotal(orderId, null, refetch);
 
       toast.success('Produit mis à jour avec succès');
       return true;
@@ -139,7 +141,7 @@ export function usePurchaseItems(
       setOrderItems(updatedItems);
       
       // Update the order total
-      await updateOrderTotal(orderId, formData, refetch);
+      await updateOrderTotal(orderId, null, refetch);
       
       toast.success('Produit supprimé avec succès');
       return true;

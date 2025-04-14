@@ -14,12 +14,29 @@ export const calculateItemsTotal = (items: any[]) => {
 // Update the purchase order total based on item changes
 export const updateOrderTotal = async (
   orderId: string,
-  formData: any,
+  formData: any | null,
   refetch: () => Promise<any>
 ) => {
   if (!orderId) return false;
   
   try {
+    // Fetch current purchase order to get the latest formData values if not provided
+    let currentFormData = formData;
+    if (!currentFormData) {
+      const { data: purchaseOrder } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+        
+      if (!purchaseOrder) {
+        throw new Error("Purchase order not found");
+      }
+      
+      currentFormData = purchaseOrder;
+    }
+    
+    // Fetch all items for this purchase order
     const { data: items } = await supabase
       .from('purchase_order_items')
       .select('total_price')
@@ -31,16 +48,16 @@ export const updateOrderTotal = async (
     const itemsTotal = calculateItemsTotal(items);
     
     // Calculate the new total amount
-    const discount = Number(formData.discount) || 0;
-    const shippingCost = Number(formData.shipping_cost) || 0;
-    const transitCost = Number(formData.transit_cost) || 0;
-    const logisticsCost = Number(formData.logistics_cost) || 0;
+    const discount = Number(currentFormData.discount) || 0;
+    const shippingCost = Number(currentFormData.shipping_cost) || 0;
+    const transitCost = Number(currentFormData.transit_cost) || 0;
+    const logisticsCost = Number(currentFormData.logistics_cost) || 0;
     
     // Calculate subtotal (items total - discount)
     const subtotal = Math.max(0, itemsTotal - discount);
     
     // Calculate tax amount
-    const taxRate = Number(formData.tax_rate) || 0;
+    const taxRate = Number(currentFormData.tax_rate) || 0;
     const taxAmount = subtotal * (taxRate / 100);
     
     // Calculate total TTC (subtotal + tax)
@@ -48,6 +65,13 @@ export const updateOrderTotal = async (
     
     // Calculate total amount (total TTC + additional costs)
     const totalAmount = totalTTC + shippingCost + transitCost + logisticsCost;
+    
+    console.log("Updating purchase order with new totals:", {
+      subtotal,
+      taxAmount,
+      totalTTC,
+      totalAmount
+    });
     
     // Update the purchase order totals
     const { error } = await supabase
@@ -67,6 +91,7 @@ export const updateOrderTotal = async (
     
     return true;
   } catch (error: any) {
+    console.error("Error updating order total:", error);
     toast.error(`Erreur lors de la mise à jour du total: ${error.message}`);
     return false;
   }

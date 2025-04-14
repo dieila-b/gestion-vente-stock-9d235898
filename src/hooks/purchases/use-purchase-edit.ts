@@ -69,7 +69,6 @@ export function usePurchaseEdit(orderId?: string) {
     orderId,
     orderItems,
     setOrderItems,
-    formData,
     refetch
   );
 
@@ -83,15 +82,11 @@ export function usePurchaseEdit(orderId?: string) {
 
   // Save all form data
   const saveChanges = async () => {
+    // Ensure order total is updated before saving
+    await updateOrderTotal(orderId!, formData, refetch);
+    
     const success = await handleUpdate(formData);
-    
-    if (success) {
-      // After saving form data, update the order total
-      await updateOrderTotal(orderId!, formData, refetch);
-      return true;
-    }
-    
-    return false;
+    return success;
   };
 
   return {

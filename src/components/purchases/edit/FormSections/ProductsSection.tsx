@@ -8,7 +8,7 @@ import { Trash, Plus } from "lucide-react";
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
   updateItemQuantity: (itemId: string, quantity: number) => void;
-  updateItemPrice?: (itemId: string, price: number) => void;
+  updateItemPrice: (itemId: string, price: number) => void;
   setShowProductModal?: (show: boolean) => void;
   removeItem?: (itemId: string) => void;
 }
@@ -35,8 +35,6 @@ export function ProductsSection({
 
   // Fonction pour gérer le changement de prix
   const handlePriceChange = (itemId: string, value: string) => {
-    if (!updateItemPrice) return;
-    
     // Si la valeur est vide, on met 0
     if (value === "") {
       updateItemPrice(itemId, 0);
