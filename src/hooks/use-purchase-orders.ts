@@ -31,10 +31,18 @@ export function usePurchaseOrders() {
       const processedOrders = (data || []).map((order) => {
         // Ensure proper supplier structure with type safety
         const supplierData = order.supplier || {};
+        
+        // Define the supplier structure
         const supplier = {
-          name: typeof supplierData === 'object' && supplierData !== null ? (supplierData.name || 'Fournisseur non spécifié') : 'Fournisseur non spécifié',
-          phone: typeof supplierData === 'object' && supplierData !== null ? (supplierData.phone || '') : '',
-          email: typeof supplierData === 'object' && supplierData !== null ? (supplierData.email || '') : ''
+          name: typeof supplierData === 'object' && supplierData !== null 
+            ? (supplierData as Record<string, any>).name || 'Fournisseur non spécifié' 
+            : 'Fournisseur non spécifié',
+          phone: typeof supplierData === 'object' && supplierData !== null 
+            ? (supplierData as Record<string, any>).phone || '' 
+            : '',
+          email: typeof supplierData === 'object' && supplierData !== null 
+            ? (supplierData as Record<string, any>).email || '' 
+            : ''
         };
         
         // Ensure items is always an array
