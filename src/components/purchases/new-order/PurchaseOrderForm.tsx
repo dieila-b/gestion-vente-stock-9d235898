@@ -23,6 +23,7 @@ import {
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { formatGNF } from "@/lib/currency";
+import { DatePickerCustom } from "@/components/ui/date-picker-custom";
 
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
@@ -100,6 +101,13 @@ const PurchaseOrderForm = () => {
     submitOrder(e);
   };
 
+  // Helper function to convert string date to Date object and vice versa
+  const handleDateChange = (date: Date | undefined) => {
+    setDeliveryDate(date ? date.toISOString().split('T')[0] : '');
+  };
+
+  const currentDeliveryDate = deliveryDate ? new Date(deliveryDate) : undefined;
+
   return (
     <div className="space-y-6">
       <Card className="border-white/10 bg-black/20 text-white">
@@ -133,15 +141,10 @@ const PurchaseOrderForm = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-white/80">Date de livraison prévue</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40 h-4 w-4" />
-                  <Input
-                    type="date"
-                    className="pl-10 neo-blur border-white/10"
-                    value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                  />
-                </div>
+                <DatePickerCustom
+                  date={currentDeliveryDate}
+                  onDateChange={handleDateChange}
+                />
               </div>
             </div>
 
