@@ -57,7 +57,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing
+        // Process items with proper typing - ensure result.items is treated as an array
         const items = Array.isArray(result.items) ? result.items.map(item => {
           if (!item) return null;
           
@@ -79,7 +79,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           };
         }).filter(Boolean) : [];
 
-        // Handle supplier safely
+        // Handle supplier safely - make sure result is treated as an object, not an array
         const supplier = result.supplier ? {
           id: result.supplier.id || '',
           name: result.supplier.name || 'Fournisseur inconnu',
@@ -92,7 +92,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           email: '' 
         };
         
-        // Handle purchase order safely
+        // Handle purchase order safely - make sure result is treated as an object, not an array
         const purchaseOrder = result.purchase_order ? {
           id: result.purchase_order.id || '',
           order_number: result.purchase_order.order_number || '',
