@@ -111,7 +111,7 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Utiliser directement le client Supabase au lieu de db.query
+      // Utiliser directement le client Supabase sans RLS
       const { data: createdOrder, error } = await supabase
         .from('purchase_orders')
         .insert(orderData)
