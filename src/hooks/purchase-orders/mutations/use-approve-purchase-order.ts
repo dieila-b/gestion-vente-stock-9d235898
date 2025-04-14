@@ -13,58 +13,18 @@ export function useApprovePurchaseOrder() {
         const orderResult = await db.query(
           'purchase_orders',
           query => query
-            .select('id, status, supplier_id, total_amount, deleted')
+            .select('id, status, supplier_id, total_amount')
             .eq('id', orderId)
             .single()
         );
 
-        // Check if order exists and extract it from array if needed
+        // Check if order exists
         const order = Array.isArray(orderResult) && orderResult.length > 0 
           ? orderResult[0] 
           : orderResult;
 
-        if (!order || order.deleted) {
-          throw new Error('Commande non trouvée ou supprimée');
-        }
-
-        // Use RPC function or update directly
-        try {
-          // Try to use RPC if available
-          const result = await db.table('rpc').select('approve_purchase_order').call({
-            order_id: orderId,
-            new_status: 'approved'
-          });
-          
-          if (!result) {
-            throw new Error('RPC not available');
-          }
-        } catch (rpcError) {
-          // Fallback to direct update if RPC fails
-          console.log('RPC failed, using direct update:', rpcError);
-          await db.update(
-            'purchase_orders',
-            { status: 'approved' },
-            'id',
-            orderId
-          );
-        }
-
-        // Get updated order
-        const updatedOrderResult = await db.query(
-          'purchase_orders',
-          query => query
-            .select('*')
-            .eq('id', orderId)
-            .single()
-        );
-
-        // Extract updated order from array if needed
-        const updatedOrder = Array.isArray(updatedOrderResult) && updatedOrderResult.length > 0 
-          ? updatedOrderResult[0] 
-          : updatedOrderResult;
-
-        if (!updatedOrder) {
-          throw new Error('Impossible de récupérer la commande mise à jour');
+        if (!order) {
+          throw new Error('Commande non trouvée');
         }
 
         // Find an active warehouse
@@ -124,7 +84,15 @@ export function useApprovePurchaseOrder() {
 
         await db.insert('delivery_note_items', deliveryItems);
 
-        return updatedOrder;
+        // Update purchase order status
+        await db.update(
+          'purchase_orders',
+          { status: 'approved' },
+          'id',
+          orderId
+        );
+
+        return true;
       } catch (error) {
         console.error('Error in approvePurchaseOrder:', error);
         throw error;
@@ -132,7 +100,8 @@ export function useApprovePurchaseOrder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      toast.success('Commande approuvée avec succès');
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      toast.success('Commande approuvée et bon de livraison créé avec succès');
     },
     onError: (error: Error) => {
       console.error('Mutation error:', error);

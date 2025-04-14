@@ -34,8 +34,7 @@ export function useFetchDeliveryNotes() {
                 unit_price,
                 product:catalog!delivery_note_items_product_id_fkey (
                   name,
-                  reference,
-                  category
+                  reference
                 )
               )
             `)
@@ -64,8 +63,7 @@ export function useFetchDeliveryNotes() {
               unit_price: item.unit_price || 0,
               product: {
                 name: item.product?.name || 'Produit non disponible',
-                reference: item.product?.reference || '',
-                category: item.product?.category || ''
+                reference: item.product?.reference || ''
               }
             };
           }).filter(Boolean) : [];
@@ -83,15 +81,8 @@ export function useFetchDeliveryNotes() {
             updated_at: note.updated_at || '',
             notes: note.notes || '',
             status: note.status || '',
-            supplier: {
-              name: supplier.name || 'Fournisseur inconnu',
-              phone: supplier.phone || '',
-              email: supplier.email || ''
-            },
-            purchase_order: {
-              order_number: purchaseOrder.order_number || '',
-              total_amount: purchaseOrder.total_amount || 0
-            },
+            supplier,
+            purchase_order: purchaseOrder,
             items: items
           } as DeliveryNote;
         }).filter(Boolean) as DeliveryNote[];

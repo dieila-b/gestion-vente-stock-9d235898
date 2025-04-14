@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DeliveryNote } from "@/types/delivery-note";
 import { Button } from "@/components/ui/button";
-import { Check, Edit, Trash2, Eye } from "lucide-react";
+import { Check, Edit, Trash2 } from "lucide-react";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
@@ -12,9 +12,6 @@ interface DeliveryNoteListProps {
   onDelete: (id: string) => Promise<boolean> | void;
   onApprove: (id: string) => Promise<boolean> | void;
   onEdit: (id: string) => void;
-  selectedWarehouseId?: string;
-  onWarehouseSelect?: (id: string) => void;
-  warehouses?: Array<{ id: string; name: string }>;
 }
 
 export function DeliveryNoteList({
@@ -23,9 +20,6 @@ export function DeliveryNoteList({
   onDelete,
   onApprove,
   onEdit,
-  selectedWarehouseId = "",
-  onWarehouseSelect = () => {},
-  warehouses = []
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -65,12 +59,9 @@ export function DeliveryNoteList({
             <TableCell>
               {note.created_at ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
             </TableCell>
-            <TableCell>{note.supplier.name}</TableCell>
+            <TableCell>{note.supplier?.name}</TableCell>
             <TableCell>
               {note.items.reduce((acc, item) => acc + (item.quantity_received || 0), 0)} / {note.items.reduce((acc, item) => acc + item.quantity_ordered, 0)}
-              <div className="text-xs text-gray-500">
-                {note.items.map(item => item.product?.name).join(', ')}
-              </div>
             </TableCell>
             <TableCell>
               <span className={`px-2 py-1 rounded-full text-xs ${
