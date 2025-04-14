@@ -57,8 +57,10 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing - ensure result.items is treated as an array
-        const items = Array.isArray(result.items) ? result.items.map(item => {
+        // Safely access the items property, ensuring it's treated as an array
+        const resultItems = result.items || [];
+        // Process items with proper typing
+        const items = Array.isArray(resultItems) ? resultItems.map(item => {
           if (!item) return null;
           
           return {
@@ -79,12 +81,13 @@ export function useFetchDeliveryNote(id: string | undefined) {
           };
         }).filter(Boolean) : [];
 
-        // Handle supplier safely - make sure result is treated as an object, not an array
-        const supplier = result.supplier ? {
-          id: result.supplier.id || '',
-          name: result.supplier.name || 'Fournisseur inconnu',
-          phone: result.supplier.phone || '',
-          email: result.supplier.email || ''
+        // Handle supplier safely
+        const resultSupplier = result.supplier || null;
+        const supplier = resultSupplier ? {
+          id: resultSupplier.id || '',
+          name: resultSupplier.name || 'Fournisseur inconnu',
+          phone: resultSupplier.phone || '',
+          email: resultSupplier.email || ''
         } : { 
           id: '',
           name: 'Fournisseur inconnu', 
@@ -92,11 +95,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
           email: '' 
         };
         
-        // Handle purchase order safely - make sure result is treated as an object, not an array
-        const purchaseOrder = result.purchase_order ? {
-          id: result.purchase_order.id || '',
-          order_number: result.purchase_order.order_number || '',
-          total_amount: result.purchase_order.total_amount || 0
+        // Handle purchase order safely
+        const resultPurchaseOrder = result.purchase_order || null;
+        const purchaseOrder = resultPurchaseOrder ? {
+          id: resultPurchaseOrder.id || '',
+          order_number: resultPurchaseOrder.order_number || '',
+          total_amount: resultPurchaseOrder.total_amount || 0
         } : { 
           id: '',
           order_number: '', 
