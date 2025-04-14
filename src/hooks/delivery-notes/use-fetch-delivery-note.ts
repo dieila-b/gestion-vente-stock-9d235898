@@ -12,7 +12,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       
       console.log("Fetching delivery note with ID:", id);
       try {
-        // Explicitly add .single() to ensure we get a single object, not an array
+        // Use single() to ensure we get a single object, not an array
         const result = await db.query(
           'delivery_notes',
           query => query
