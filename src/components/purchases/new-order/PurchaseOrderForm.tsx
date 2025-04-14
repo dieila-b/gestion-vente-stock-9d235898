@@ -1,29 +1,23 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
-import { Package, Plus, Calendar, DollarSign, X } from "lucide-react";
+import { Package } from "lucide-react";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { usePurchaseOrderFormState } from "./usePurchaseOrderFormState";
 import { usePurchaseOrderSubmit } from "./usePurchaseOrderSubmit";
 import { useProductSelection } from "@/hooks/use-product-selection";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 import { ProductSelectionModal } from "./ProductSelectionModal";
-import { formatGNF } from "@/lib/currency";
-import { DatePickerCustom } from "@/components/ui/date-picker-custom";
+
+// Import the new component sections
+import { SupplierDateSection } from "./components/SupplierDateSection";
+import { StatusSection } from "./components/StatusSection";
+import { ProductsSection } from "./components/ProductsSection";
+import { AdditionalCostsSection } from "./components/AdditionalCostsSection";
+import { PaymentCounterSection } from "./components/PaymentCounterSection";
+import { NotesSection } from "./components/NotesSection";
+import { FormActions } from "./components/FormActions";
 
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
@@ -108,14 +102,8 @@ const PurchaseOrderForm = () => {
 
   const currentDeliveryDate = deliveryDate ? new Date(deliveryDate) : undefined;
 
-  // Helper function to format supplier display name
-  const getSupplierDisplayName = (supplier: any) => {
-    if (!supplier) return '';
-    if (supplier.contact) {
-      return `${supplier.name} (${supplier.contact})`;
-    }
-    return supplier.name;
-  };
+  // Check if form is valid
+  const isFormValid = supplier && orderItems.length > 0;
 
   return (
     <div className="space-y-6">
@@ -132,317 +120,71 @@ const PurchaseOrderForm = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Supplier and delivery date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-white/80">Fournisseur</Label>
-                <Select value={supplier} onValueChange={setSupplier}>
-                  <SelectTrigger className="neo-blur border-white/10">
-                    <SelectValue placeholder="Sélectionner un fournisseur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers?.map((supplier) => {
-                      const supplierWithContact = suppliers.find(s => s.id === supplier.id);
-                      return (
-                        <SelectItem key={supplier.id} value={supplier.id}>
-                          {supplier.contact ? `${supplier.name} (${supplier.contact})` : supplier.name}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white/80">Date de livraison prévue</Label>
-                <DatePickerCustom
-                  date={currentDeliveryDate}
-                  onDateChange={handleDateChange}
-                />
-              </div>
-            </div>
+            <SupplierDateSection 
+              supplier={supplier}
+              setSupplier={setSupplier}
+              deliveryDate={currentDeliveryDate}
+              setDeliveryDate={handleDateChange}
+              suppliers={suppliers}
+            />
 
             {/* Payment and order status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Label className="text-white/80">Statut du paiement</Label>
-                <RadioGroup
-                  value={paymentStatus}
-                  onValueChange={(value) => setPaymentStatus(value as "pending" | "partial" | "paid")}
-                  className="grid grid-cols-3 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="pending"
-                      id="pending"
-                      className="border-white/20 text-purple-500"
-                    />
-                    <Label htmlFor="pending" className="text-white/60">En attente</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="partial"
-                      id="partial"
-                      className="border-white/20 text-blue-500"
-                    />
-                    <Label htmlFor="partial" className="text-white/60">Partiel</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="paid"
-                      id="paid"
-                      className="border-white/20 text-green-500"
-                    />
-                    <Label htmlFor="paid" className="text-white/60">Payé</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              <div className="space-y-4">
-                <Label className="text-white/80">Statut de la commande</Label>
-                <RadioGroup
-                  value={orderStatus}
-                  onValueChange={(value) => setOrderStatus(value as "pending" | "delivered")}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="pending"
-                      id="order-pending"
-                      className="border-white/20 text-purple-500"
-                    />
-                    <Label htmlFor="order-pending" className="text-white/60">En attente</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="delivered"
-                      id="delivered"
-                      className="border-white/20 text-green-500"
-                    />
-                    <Label htmlFor="delivered" className="text-white/60">Livrée</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
+            <StatusSection 
+              paymentStatus={paymentStatus}
+              setPaymentStatus={setPaymentStatus}
+              orderStatus={orderStatus}
+              setOrderStatus={setOrderStatus}
+            />
 
             {/* Products */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-white/80">Produits</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="neo-blur hover:bg-white/10"
-                  onClick={() => setShowProductModal(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un produit
-                </Button>
-              </div>
-              
-              <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">
-                {orderItems.length === 0 ? (
-                  <p className="text-white/40 text-center">Aucun produit ajouté</p>
-                ) : (
-                  <div className="space-y-4">
-                    {orderItems.map((item, index) => (
-                      <div key={item.id} className="p-3 bg-white/5 rounded-md grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
-                        <div className="md:col-span-2">
-                          <p className="text-white font-medium">{item.product?.name || "Produit sans nom"}</p>
-                          {item.product?.reference && <p className="text-xs text-white/60">Ref: {item.product.reference}</p>}
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
-                            min="1"
-                            className="neo-blur border-white/10"
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => updateProductPrice(index, parseInt(e.target.value) || 0)}
-                            min="0"
-                            className="neo-blur border-white/10"
-                          />
-                        </div>
-                        <div>
-                          <span className="text-white/80">{formatGNF(item.total_price)}</span>
-                        </div>
-                        <div className="flex justify-end">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeProductFromOrder(index)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="text-right px-4 py-2 bg-white/5 rounded-md">
-                      <span className="text-white/60 mr-2">Sous-total produits:</span>
-                      <span className="text-white font-medium">{formatGNF(calculateTotal())}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ProductsSection 
+              orderItems={orderItems}
+              removeProductFromOrder={removeProductFromOrder}
+              updateProductQuantity={updateProductQuantity}
+              updateProductPrice={updateProductPrice}
+              calculateTotal={calculateTotal}
+              setShowProductModal={setShowProductModal}
+            />
 
             {/* Additional costs */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-white/80">Coûts additionnels</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-white/80">Remise</Label>
-                  <FormattedNumberInput
-                    value={discount}
-                    onChange={setDiscount}
-                    min={0}
-                    className="neo-blur border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Frais de livraison</Label>
-                  <FormattedNumberInput
-                    value={shippingCost}
-                    onChange={setShippingCost}
-                    min={0}
-                    className="neo-blur border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Frais de logistique</Label>
-                  <FormattedNumberInput
-                    value={logisticsCost}
-                    onChange={setLogisticsCost}
-                    min={0}
-                    className="neo-blur border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Transit & Douane</Label>
-                  <FormattedNumberInput
-                    value={transitCost}
-                    onChange={setTransitCost}
-                    min={0}
-                    className="neo-blur border-white/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Taux de TVA (%)</Label>
-                  <Input
-                    type="number"
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                    className="neo-blur border-white/10"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-white/80">Sous-total</Label>
-                  <Input
-                    value={formatPrice(subtotal)}
-                    readOnly
-                    className="bg-white/5 border-white/10 text-white/80"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">TVA</Label>
-                  <Input
-                    value={formatPrice(tax)}
-                    readOnly
-                    className="bg-white/5 border-white/10 text-white/80"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-white/80">Total TTC</Label>
-                <Input
-                  value={formatPrice(total)}
-                  readOnly
-                  className="bg-white/5 border-white/10 text-white/80 text-lg font-bold"
-                />
-              </div>
-            </div>
+            <AdditionalCostsSection 
+              discount={discount}
+              setDiscount={setDiscount}
+              shippingCost={shippingCost}
+              setShippingCost={setShippingCost}
+              logisticsCost={logisticsCost}
+              setLogisticsCost={setLogisticsCost}
+              transitCost={transitCost}
+              setTransitCost={setTransitCost}
+              taxRate={taxRate}
+              setTaxRate={setTaxRate}
+              subtotal={subtotal}
+              tax={tax}
+              total={total}
+              formatPrice={formatPrice}
+            />
 
             {/* Payment counter */}
-            <div className="space-y-4 p-4 rounded-lg bg-white/5 border border-white/10">
-              <h3 className="text-lg font-semibold text-white/90 flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Compteur de Paiements
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-white/80">Montant payé</Label>
-                  <Input
-                    type="number"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(Number(e.target.value))}
-                    className="neo-blur border-white/10"
-                    min="0"
-                    max={total}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-white/80">Montant total</Label>
-                  <Input
-                    value={formatPrice(total)}
-                    readOnly
-                    className="neo-blur bg-white/5 border-white/10 text-white/80"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-white/80">Montant restant</Label>
-                  <Input
-                    value={formatPrice(remainingAmount)}
-                    readOnly
-                    className="neo-blur bg-white/5 border-white/10 text-white/80"
-                  />
-                </div>
-              </div>
-            </div>
+            <PaymentCounterSection 
+              paidAmount={paidAmount}
+              setPaidAmount={setPaidAmount}
+              total={total}
+              remainingAmount={remainingAmount}
+              formatPrice={formatPrice}
+            />
 
             {/* Notes */}
-            <div className="space-y-2">
-              <Label className="text-white/80">Notes et spécifications</Label>
-              <Textarea
-                placeholder="Ajoutez des détails sur les produits demandés..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-[100px] neo-blur border-white/10"
-              />
-            </div>
+            <NotesSection 
+              notes={notes}
+              setNotes={setNotes}
+            />
 
             {/* Submit buttons */}
-            <div className="flex justify-end gap-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="neo-blur border-white/10 text-white/80"
-                onClick={() => navigate("/purchase-orders")}
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                className="neo-blur"
-                disabled={isSubmitting || !supplier || orderItems.length === 0}
-              >
-                {isSubmitting ? "Création en cours..." : "Créer la commande"}
-              </Button>
-            </div>
+            <FormActions 
+              isSubmitting={isSubmitting}
+              isValid={isFormValid}
+              onCancel={() => navigate("/purchase-orders")}
+            />
           </form>
         </CardContent>
       </Card>
