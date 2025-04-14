@@ -66,6 +66,8 @@ export function PurchaseOrderTable({
     }
   };
 
+  console.log("Orders in PurchaseOrderTable:", orders);
+
   return (
     <div className="border rounded-lg">
       <Table>
@@ -97,15 +99,15 @@ export function PurchaseOrderTable({
               <TableRow key={order.id}>
                 <TableCell>{order.order_number}</TableCell>
                 <TableCell>
-                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+                  {order.created_at ? format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
                 </TableCell>
-                <TableCell>{order.supplier?.name}</TableCell>
+                <TableCell>{order.supplier?.name || 'Fournisseur non spécifié'}</TableCell>
                 <TableCell>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
                     {getStatusText(order.status)}
                   </span>
                 </TableCell>
-                <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
+                <TableCell>{(order.total_amount || 0).toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-2 items-center">
                     {order.status !== 'approved' && order.status !== 'cancelled' && (

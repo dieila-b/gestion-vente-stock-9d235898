@@ -13,19 +13,23 @@ export function usePurchaseOrders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['purchase-orders'],
     queryFn: async () => {
+      console.log('Fetching purchase orders...');
       const { data, error } = await supabase
         .from('purchase_orders')
         .select(`
           *,
-          supplier:suppliers(*),
-          warehouse:warehouses(*),
+          supplier:supplier_id(id, name, phone, email),
+          warehouse:warehouse_id(id, name),
           items:purchase_order_items(*)
         `)
-        .eq('status', 'draft')
-        .or('status.eq.pending,status.eq.approved,status.eq.cancelled')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching purchase orders:', error);
+        throw error;
+      }
+      
+      console.log('Purchase orders data:', data);
       
       // Process the data to match PurchaseOrder type
       const processedOrders = (data || []).map((order) => {
@@ -52,6 +56,8 @@ export function usePurchaseOrders() {
           ...order,
           supplier,
           items,
+          status: order.status || 'pending',
+          payment_status: order.payment_status || 'pending',
           deleted: false // Add this to match the type
         };
       });
