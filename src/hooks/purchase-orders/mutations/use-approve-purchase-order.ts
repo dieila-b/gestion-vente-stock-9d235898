@@ -9,57 +9,57 @@ export function useApprovePurchaseOrder() {
   const approvePurchaseOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
       try {
+        console.log("Starting approval process for order:", orderId);
+        
         // Get the purchase order details
-        const orderResult = await db.query(
+        const orderResults = await db.query(
           'purchase_orders',
           query => query
             .select('id, status, supplier_id, total_amount')
             .eq('id', orderId)
-            .single()
         );
 
-        // Check if order exists
-        const order = Array.isArray(orderResult) && orderResult.length > 0 
-          ? orderResult[0] 
-          : orderResult;
-
-        if (!order) {
+        if (!orderResults || orderResults.length === 0) {
           throw new Error('Commande non trouvée');
         }
 
+        const order = orderResults[0];
+        console.log("Found order:", order);
+
         // Find an active warehouse
-        const warehouseDataResult = await db.query(
+        const warehouseResults = await db.query(
           'warehouses',
           query => query
             .select('id')
             .eq('status', 'Actif')
             .limit(1)
-            .single()
         );
 
-        // Extract warehouse from array if needed
-        const warehouseData = Array.isArray(warehouseDataResult) && warehouseDataResult.length > 0 
-          ? warehouseDataResult[0] 
-          : warehouseDataResult;
-
-        if (!warehouseData || !warehouseData.id) {
+        if (!warehouseResults || warehouseResults.length === 0) {
           throw new Error('Aucun entrepôt actif trouvé');
         }
 
+        const warehouseData = warehouseResults[0];
+        console.log("Using warehouse:", warehouseData);
+
         // Create delivery note
         const deliveryNumber = `BL-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        console.log("Generated delivery number:", deliveryNumber);
 
         const deliveryNote = await db.insert('delivery_notes', {
           delivery_number: deliveryNumber,
           purchase_order_id: orderId,
           supplier_id: order.supplier_id,
           status: 'pending',
-          warehouse_id: warehouseData.id
+          warehouse_id: warehouseData.id,
+          deleted: false
         });
 
         if (!deliveryNote) {
           throw new Error('Erreur lors de la création du bon de livraison');
         }
+        
+        console.log("Created delivery note:", deliveryNote);
 
         // Get order items
         const orderItems = await db.query(
@@ -69,20 +69,24 @@ export function useApprovePurchaseOrder() {
             .eq('purchase_order_id', orderId)
         );
 
-        if (!Array.isArray(orderItems) || orderItems.length === 0) {
+        if (!orderItems || orderItems.length === 0) {
           throw new Error('Impossible de récupérer les articles de la commande');
         }
+        
+        console.log("Found order items:", orderItems);
 
         // Create delivery note items
-        const deliveryItems = orderItems.map(item => ({
-          delivery_note_id: deliveryNote.id,
-          product_id: item.product_id,
-          quantity_ordered: item.quantity,
-          quantity_received: 0,
-          unit_price: item.unit_price
-        }));
-
-        await db.insert('delivery_note_items', deliveryItems);
+        for (const item of orderItems) {
+          await db.insert('delivery_note_items', {
+            delivery_note_id: deliveryNote.id,
+            product_id: item.product_id,
+            quantity_ordered: item.quantity,
+            quantity_received: 0,
+            unit_price: item.unit_price
+          });
+        }
+        
+        console.log("Created delivery note items");
 
         // Update purchase order status
         await db.update(
@@ -91,6 +95,8 @@ export function useApprovePurchaseOrder() {
           'id',
           orderId
         );
+        
+        console.log("Updated purchase order status to approved");
 
         return true;
       } catch (error) {

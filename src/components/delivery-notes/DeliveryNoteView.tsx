@@ -1,16 +1,26 @@
 
 import { DeliveryNote } from "@/types/delivery-note";
 import { Card } from "@/components/ui/card";
-import { isSelectQueryError } from "@/utils/type-utils";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 interface DeliveryNoteViewProps {
   deliveryNote: DeliveryNote;
 }
 
 export function DeliveryNoteView({ deliveryNote }: DeliveryNoteViewProps) {
-  // Helper function to check if a relation has an error
-  const hasError = (obj: any): boolean => {
-    return obj && typeof obj === 'object' && obj.error === true;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'received':
+        return <Badge className="bg-green-100 text-green-800">Reçu</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status || 'Inconnu'}</Badge>;
+    }
   };
 
   return (
@@ -24,29 +34,34 @@ export function DeliveryNoteView({ deliveryNote }: DeliveryNoteViewProps) {
           
           <div>
             <h3 className="font-medium text-sm text-muted-foreground">Date de création</h3>
-            <p className="font-medium">{new Date(deliveryNote.created_at).toLocaleDateString()}</p>
+            <p className="font-medium">
+              {deliveryNote.created_at 
+                ? format(new Date(deliveryNote.created_at), "dd MMMM yyyy", { locale: fr }) 
+                : 'N/A'}
+            </p>
           </div>
 
-          {deliveryNote.supplier && !hasError(deliveryNote.supplier) && (
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Fournisseur</h3>
-              <p className="font-medium">{deliveryNote.supplier.name || 'N/A'}</p>
-            </div>
-          )}
+          <div>
+            <h3 className="font-medium text-sm text-muted-foreground">Fournisseur</h3>
+            <p className="font-medium">{deliveryNote.supplier?.name || 'N/A'}</p>
+          </div>
           
-          {deliveryNote.purchase_order && !hasError(deliveryNote.purchase_order) && (
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Bon de commande associé</h3>
-              <p className="font-medium">{deliveryNote.purchase_order.order_number || 'N/A'}</p>
-            </div>
-          )}
+          <div>
+            <h3 className="font-medium text-sm text-muted-foreground">Bon de commande associé</h3>
+            <p className="font-medium">{deliveryNote.purchase_order?.order_number || 'N/A'}</p>
+          </div>
           
-          {deliveryNote.status && (
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Statut</h3>
-              <p className="font-medium">{deliveryNote.status}</p>
-            </div>
-          )}
+          <div>
+            <h3 className="font-medium text-sm text-muted-foreground">Statut</h3>
+            <div className="mt-1">{getStatusBadge(deliveryNote.status)}</div>
+          </div>
+
+          <div>
+            <h3 className="font-medium text-sm text-muted-foreground">Montant total</h3>
+            <p className="font-medium">
+              {deliveryNote.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF
+            </p>
+          </div>
         </div>
       </Card>
       
@@ -65,7 +80,13 @@ export function DeliveryNoteView({ deliveryNote }: DeliveryNoteViewProps) {
               <div key={item.id} className="py-2">
                 <div className="flex justify-between">
                   <p>{item.product?.name || `Produit #${item.product_id}`}</p>
-                  <p>Quantité: {item.quantity_received} / {item.quantity_ordered}</p>
+                  <p>
+                    Quantité reçue: {item.quantity_received} / {item.quantity_ordered}
+                  </p>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                  <p>Réf: {item.product?.reference || 'N/A'}</p>
+                  <p>Prix unitaire: {item.unit_price?.toLocaleString('fr-FR')} GNF</p>
                 </div>
               </div>
             ))}

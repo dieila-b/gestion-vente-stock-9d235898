@@ -16,13 +16,17 @@ export function useFetchDeliveryNotes() {
               id,
               delivery_number,
               created_at,
+              updated_at,
+              notes,
               status,
               supplier:suppliers (
+                id,
                 name,
                 phone,
                 email
               ),
               purchase_order:purchase_orders!delivery_notes_purchase_order_id_fkey (
+                id,
                 order_number,
                 total_amount
               ),
@@ -33,6 +37,7 @@ export function useFetchDeliveryNotes() {
                 quantity_received,
                 unit_price,
                 product:catalog!delivery_note_items_product_id_fkey (
+                  id,
                   name,
                   reference
                 )
@@ -62,6 +67,7 @@ export function useFetchDeliveryNotes() {
               quantity_received: item.quantity_received || 0,
               unit_price: item.unit_price || 0,
               product: {
+                id: item.product?.id || '',
                 name: item.product?.name || 'Produit non disponible',
                 reference: item.product?.reference || ''
               }
@@ -69,10 +75,19 @@ export function useFetchDeliveryNotes() {
           }).filter(Boolean) : [];
 
           // Handle supplier safely
-          const supplier = note.supplier || { name: 'Fournisseur inconnu', phone: '', email: '' };
+          const supplier = note.supplier || { 
+            id: '',
+            name: 'Fournisseur inconnu', 
+            phone: '', 
+            email: '' 
+          };
           
           // Handle purchase order safely
-          const purchaseOrder = note.purchase_order || { order_number: '', total_amount: 0 };
+          const purchaseOrder = note.purchase_order || { 
+            id: '',
+            order_number: '', 
+            total_amount: 0 
+          };
 
           return {
             id: note.id || '',

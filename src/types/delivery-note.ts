@@ -10,15 +10,15 @@ export interface DeliveryNote {
   purchase_order_id?: string;
   
   supplier?: {
+    id: string;
     name: string;
     phone?: string;
     email?: string;
-    error?: boolean;
   };
   purchase_order?: {
+    id: string;
     order_number: string;
     total_amount: number;
-    error?: boolean;
   };
   items: DeliveryNoteItem[];
 }
@@ -31,6 +31,7 @@ export interface DeliveryNoteItem {
   quantity_received: number;
   unit_price: number;
   product?: {
+    id: string;
     name: string;
     reference: string;
     category?: string;
