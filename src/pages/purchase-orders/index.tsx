@@ -52,13 +52,16 @@ export default function PurchaseOrdersPage() {
         };
       }
       
+      // Cast the raw order to any type first to avoid TypeScript errors
+      const rawOrderAny = order as any;
+      
       // Return a complete PurchaseOrder object with required properties
       return {
         ...order,
         supplier,
         deleted: false,
-        // Add empty items array if not present
-        items: order.items || []
+        // Add empty items array if not present using optional chaining
+        items: rawOrderAny.items ? rawOrderAny.items : []
       } as unknown as PurchaseOrder;
     });
     
