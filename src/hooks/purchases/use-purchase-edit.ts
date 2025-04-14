@@ -1,39 +1,35 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export function usePurchaseEdit() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+export function usePurchaseEdit(orderId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<'pending' | 'delivered'>('pending');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
 
   // Fetch the purchase order 
   const { data: purchase, isLoading: isPurchaseLoading } = useQuery({
-    queryKey: ['purchase', id],
+    queryKey: ['purchase', orderId],
     queryFn: async () => {
-      if (!id) return null;
+      if (!orderId) return null;
 
       const { data, error } = await supabase
         .from('purchase_orders')
         .select(`
           *,
-          supplier:supplier_id(id, name, phone, email),
+          supplier:suppliers(*),
           items:purchase_order_items(
             id,
             product_id,
             quantity,
             unit_price,
-            total_price,
-            product:catalog(id, name, reference, category)
+            total_price
           ),
           warehouse:warehouse_id(id, name)
         `)
-        .eq('id', id)
+        .eq('id', orderId)
         .single();
 
       if (error) {
@@ -42,7 +38,7 @@ export function usePurchaseEdit() {
 
       return data;
     },
-    enabled: !!id
+    enabled: !!orderId
   });
 
   // Set states when data is loaded
@@ -55,7 +51,7 @@ export function usePurchaseEdit() {
 
   // Handle update
   const handleUpdate = async (data: any) => {
-    if (!id) return;
+    if (!orderId) return;
 
     setIsLoading(true);
     try {
@@ -63,15 +59,14 @@ export function usePurchaseEdit() {
       const { error } = await supabase
         .from('purchase_orders')
         .update(data)
-        .eq('id', id);
+        .eq('id', orderId);
 
       if (error) throw error;
 
-      toast.success('Purchase order updated successfully');
+      toast.success('Bon de commande mis à jour avec succès');
       setIsLoading(false);
-      navigate('/purchases');
     } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
       setIsLoading(false);
     }
   };
@@ -84,7 +79,7 @@ export function usePurchaseEdit() {
         await handleUpdate({ status });
       }
     } catch (error: any) {
-      toast.error(`Error updating status: ${error.message}`);
+      toast.error(`Erreur lors de la mise à jour du statut: ${error.message}`);
     }
   };
 
@@ -96,12 +91,11 @@ export function usePurchaseEdit() {
         await handleUpdate({ payment_status: status });
       }
     } catch (error: any) {
-      toast.error(`Error updating payment status: ${error.message}`);
+      toast.error(`Erreur lors de la mise à jour du statut de paiement: ${error.message}`);
     }
   };
 
   return {
-    id,
     purchase,
     isLoading: isLoading || isPurchaseLoading,
     handleUpdate,

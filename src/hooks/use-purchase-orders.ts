@@ -3,10 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 
 export function usePurchaseOrders() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const editPurchaseOrder = useEditPurchaseOrder();
 
   // Query to fetch purchase orders
   const { data: orders = [], isLoading } = useQuery({
@@ -64,7 +66,9 @@ export function usePurchaseOrders() {
   // Handle edit (navigate to edit page)
   const handleEdit = (id: string) => {
     console.log("Navigating to edit page for purchase order:", id);
-    navigate(`/purchase-orders/edit/${id}`);
+    
+    // Use the editPurchaseOrder hook instead of directly using navigate
+    editPurchaseOrder(id);
   };
 
   // Handle approve
