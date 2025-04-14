@@ -12,6 +12,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Check, Edit, Trash, Printer } from "lucide-react";
+import { toast } from "sonner";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -38,8 +39,6 @@ export function PurchaseOrderTable({
         return 'bg-yellow-500 text-white';
       case 'draft':
         return 'bg-gray-500 text-white';
-      case 'cancelled':
-        return 'bg-red-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
@@ -53,8 +52,6 @@ export function PurchaseOrderTable({
         return 'En attente';
       case 'draft':
         return 'Brouillon';
-      case 'cancelled':
-        return 'Annulé';
       default:
         return status;
     }
@@ -65,8 +62,6 @@ export function PurchaseOrderTable({
       onDelete(id);
     }
   };
-
-  console.log("Orders in PurchaseOrderTable:", orders);
 
   return (
     <div className="border rounded-lg">
@@ -99,18 +94,18 @@ export function PurchaseOrderTable({
               <TableRow key={order.id}>
                 <TableCell>{order.order_number}</TableCell>
                 <TableCell>
-                  {order.created_at ? format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
+                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
-                <TableCell>{order.supplier?.name || 'Fournisseur non spécifié'}</TableCell>
+                <TableCell>{order.supplier?.name}</TableCell>
                 <TableCell>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
                     {getStatusText(order.status)}
                   </span>
                 </TableCell>
-                <TableCell>{(order.total_amount || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-2 items-center">
-                    {order.status !== 'approved' && order.status !== 'cancelled' && (
+                    {order.status !== 'approved' && (
                       <>
                         <Button
                           variant="outline"

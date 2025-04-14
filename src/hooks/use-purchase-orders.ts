@@ -13,56 +13,19 @@ export function usePurchaseOrders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['purchase-orders'],
     queryFn: async () => {
-      console.log('Fetching purchase orders...');
       const { data, error } = await supabase
         .from('purchase_orders')
         .select(`
           *,
-          supplier:supplier_id(id, name, phone, email),
-          warehouse:warehouse_id(id, name),
+          supplier:suppliers(*),
+          warehouse:warehouses(*),
           items:purchase_order_items(*)
         `)
+        .eq('deleted', false)
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching purchase orders:', error);
-        throw error;
-      }
-      
-      console.log('Purchase orders data:', data);
-      
-      // Process the data to match PurchaseOrder type
-      const processedOrders = (data || []).map((order) => {
-        // Ensure proper supplier structure with type safety
-        const supplierData = order.supplier || {};
-        
-        // Define the supplier structure
-        const supplier = {
-          name: typeof supplierData === 'object' && supplierData !== null 
-            ? (supplierData as Record<string, any>).name || 'Fournisseur non spécifié' 
-            : 'Fournisseur non spécifié',
-          phone: typeof supplierData === 'object' && supplierData !== null 
-            ? (supplierData as Record<string, any>).phone || '' 
-            : '',
-          email: typeof supplierData === 'object' && supplierData !== null 
-            ? (supplierData as Record<string, any>).email || '' 
-            : ''
-        };
-        
-        // Ensure items is always an array
-        const items = Array.isArray(order.items) ? order.items : [];
-        
-        return {
-          ...order,
-          supplier,
-          items,
-          status: order.status || 'pending',
-          payment_status: order.payment_status || 'pending',
-          deleted: false // Add this to match the type
-        };
-      });
-      
-      return processedOrders;
+      if (error) throw error;
+      return data || [];
     }
   });
 
@@ -132,10 +95,9 @@ export function usePurchaseOrders() {
   // Handle delete
   const { mutate: deleteOrder } = useMutation({
     mutationFn: async (id: string) => {
-      // Update the status to 'cancelled' instead of using a deleted flag
       const { error } = await supabase
         .from('purchase_orders')
-        .update({ status: 'cancelled' })
+        .update({ deleted: true })
         .eq('id', id);
       
       if (error) throw error;
