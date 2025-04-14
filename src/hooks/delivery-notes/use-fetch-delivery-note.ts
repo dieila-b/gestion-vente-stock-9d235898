@@ -12,8 +12,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
       
       console.log("Fetching delivery note with ID:", id);
       try {
-        // Explicitly define the result as a single object, not an array
-        const result = await db.query(
+        // Use single() to get a single object result
+        const { data: result, error } = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -52,16 +52,14 @@ export function useFetchDeliveryNote(id: string | undefined) {
             .single()
         );
 
-        if (!result) {
-          console.error("Delivery note not found");
+        if (error || !result) {
+          console.error("Delivery note not found or error:", error);
           return null;
         }
 
-        // Now result is a single object, not an array
-        // Safely access the items property
-        const resultItems = result?.items || [];
         // Process items with proper typing
-        const items = Array.isArray(resultItems) ? resultItems.map(item => {
+        const resultItems = Array.isArray(result.items) ? result.items : [];
+        const items = resultItems.map(item => {
           if (!item) return null;
           
           return {
@@ -80,10 +78,10 @@ export function useFetchDeliveryNote(id: string | undefined) {
               reference: ''
             }
           };
-        }).filter(Boolean) : [];
+        }).filter(Boolean);
 
         // Handle supplier safely
-        const resultSupplier = result?.supplier || null;
+        const resultSupplier = result.supplier || null;
         const supplier = resultSupplier ? {
           id: resultSupplier.id || '',
           name: resultSupplier.name || 'Fournisseur inconnu',
@@ -97,7 +95,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
         
         // Handle purchase order safely
-        const resultPurchaseOrder = result?.purchase_order || null;
+        const resultPurchaseOrder = result.purchase_order || null;
         const purchaseOrder = resultPurchaseOrder ? {
           id: resultPurchaseOrder.id || '',
           order_number: resultPurchaseOrder.order_number || '',
@@ -117,7 +115,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           status: result.status || 'pending',
           supplier,
           purchase_order: purchaseOrder,
-          items: items
+          items
         } as DeliveryNote;
       } catch (error) {
         console.error("Error fetching delivery note:", error);
