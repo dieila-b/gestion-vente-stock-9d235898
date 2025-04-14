@@ -12,7 +12,6 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Check, Edit, Trash, Printer } from "lucide-react";
-import { toast } from "sonner";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -39,6 +38,8 @@ export function PurchaseOrderTable({
         return 'bg-yellow-500 text-white';
       case 'draft':
         return 'bg-gray-500 text-white';
+      case 'cancelled':
+        return 'bg-red-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
@@ -52,6 +53,8 @@ export function PurchaseOrderTable({
         return 'En attente';
       case 'draft':
         return 'Brouillon';
+      case 'cancelled':
+        return 'Annulé';
       default:
         return status;
     }
@@ -105,7 +108,7 @@ export function PurchaseOrderTable({
                 <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-2 items-center">
-                    {order.status !== 'approved' && (
+                    {order.status !== 'approved' && order.status !== 'cancelled' && (
                       <>
                         <Button
                           variant="outline"

@@ -21,11 +21,33 @@ export function usePurchaseOrders() {
           warehouse:warehouses(*),
           items:purchase_order_items(*)
         `)
-        .eq('deleted', false)
+        .eq('status', 'draft')
+        .or('status.eq.pending,status.eq.approved')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Process the data to match PurchaseOrder type
+      const processedOrders = (data || []).map((order) => {
+        // Ensure proper supplier structure
+        const supplierData = order.supplier || {};
+        const supplier = {
+          name: supplierData.name || 'Fournisseur non spécifié',
+          phone: supplierData.phone || '',
+          email: supplierData.email || ''
+        };
+        
+        // Ensure items is always an array
+        const items = order.items || [];
+        
+        return {
+          ...order,
+          supplier,
+          items,
+        };
+      });
+      
+      return processedOrders;
     }
   });
 
@@ -95,9 +117,11 @@ export function usePurchaseOrders() {
   // Handle delete
   const { mutate: deleteOrder } = useMutation({
     mutationFn: async (id: string) => {
+      // Instead of using the 'deleted' field, we'll use a different approach
+      // and simply update the status to something like 'cancelled'
       const { error } = await supabase
         .from('purchase_orders')
-        .update({ deleted: true })
+        .update({ status: 'cancelled' })
         .eq('id', id);
       
       if (error) throw error;
