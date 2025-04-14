@@ -60,7 +60,12 @@ export function usePurchaseEdit(orderId?: string) {
   };
 
   // Get items management functions
-  const { updateItemQuantity, updateOrderItem } = usePurchaseItems(
+  const { 
+    updateItemQuantity, 
+    updateItemPrice, 
+    updateOrderItem,
+    removeItem
+  } = usePurchaseItems(
     orderId,
     orderItems,
     setOrderItems,
@@ -98,6 +103,8 @@ export function usePurchaseEdit(orderId?: string) {
     updateFormField,
     updateOrderItem,
     updateItemQuantity,
+    updateItemPrice,
+    removeItem,
     saveChanges,
     deliveryStatus,
     paymentStatus,

@@ -47,10 +47,53 @@ export function usePurchaseItems(
       setOrderItems(updatedItems);
       
       // Calculate new items total and update the order total
-      const itemsTotal = calculateItemsTotal(updatedItems);
       await updateOrderTotal(orderId, formData, refetch);
       
       toast.success('Quantité mise à jour avec succès');
+      return true;
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+      return false;
+    }
+  };
+
+  // Update item price
+  const updateItemPrice = async (itemId: string, newPrice: number) => {
+    if (!orderId) return false;
+    
+    try {
+      // Get the current item to calculate new total price
+      const itemToUpdate = orderItems.find(item => item.id === itemId);
+      if (!itemToUpdate) {
+        throw new Error("Item not found");
+      }
+      
+      const newTotalPrice = itemToUpdate.quantity * newPrice;
+      
+      // Update the item in the database
+      const { error } = await supabase
+        .from('purchase_order_items')
+        .update({ 
+          unit_price: newPrice,
+          total_price: newTotalPrice 
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+      
+      // Update local state
+      const updatedItems = orderItems.map(item => 
+        item.id === itemId 
+          ? { ...item, unit_price: newPrice, total_price: newTotalPrice } 
+          : item
+      );
+      
+      setOrderItems(updatedItems);
+      
+      // Update the order total
+      await updateOrderTotal(orderId, formData, refetch);
+      
+      toast.success('Prix mis à jour avec succès');
       return true;
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
@@ -78,8 +121,38 @@ export function usePurchaseItems(
     }
   };
 
+  // Remove item from order
+  const removeItem = async (itemId: string) => {
+    if (!orderId) return false;
+    
+    try {
+      // Delete the item from the database
+      const { error } = await supabase
+        .from('purchase_order_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+      
+      // Update local state
+      const updatedItems = orderItems.filter(item => item.id !== itemId);
+      setOrderItems(updatedItems);
+      
+      // Update the order total
+      await updateOrderTotal(orderId, formData, refetch);
+      
+      toast.success('Produit supprimé avec succès');
+      return true;
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+      return false;
+    }
+  };
+
   return {
     updateItemQuantity,
-    updateOrderItem
+    updateItemPrice,
+    updateOrderItem,
+    removeItem
   };
 }
