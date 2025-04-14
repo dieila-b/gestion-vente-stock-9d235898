@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/formatters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,22 +36,18 @@ export default function PurchaseOrdersPage() {
   
   const { printPurchaseOrder } = usePurchasePrint();
 
-  // Check if we have an order ID to edit from the location state
   useEffect(() => {
     const state = location.state as { editOrderId?: string } | null;
     if (state?.editOrderId) {
       setSelectedOrderId(state.editOrderId);
       setEditDialogOpen(true);
       
-      // Clear the state to avoid reopening the dialog on page refresh
       window.history.replaceState({}, document.title);
     }
   }, [location]);
   
-  // Process orders to ensure they match the PurchaseOrder type
   useEffect(() => {
     const processedOrders = rawOrders.map(order => {
-      // Create properly typed supplier
       let supplier;
       if (isSelectQueryError(order.supplier)) {
         supplier = { 
@@ -68,7 +64,6 @@ export default function PurchaseOrdersPage() {
           email: '' 
         };
       } else {
-        // Since TypeScript thinks order.supplier might be 'never', we need to use type casting
         const supplierData = order.supplier as any;
         supplier = {
           id: order.supplier_id || (supplierData.id || ''),
@@ -78,20 +73,16 @@ export default function PurchaseOrdersPage() {
         };
       }
       
-      // Cast the raw order to any type first to avoid TypeScript errors
       const rawOrderAny = order as any;
       
-      // Return a complete PurchaseOrder object with required properties
       return {
         ...order,
         supplier,
         deleted: false,
-        // Add empty items array if not present using optional chaining
         items: rawOrderAny.items ? rawOrderAny.items : []
       } as unknown as PurchaseOrder;
     });
     
-    // Filter processed orders based on search query
     const filtered = processedOrders.filter(order => 
       order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -100,12 +91,10 @@ export default function PurchaseOrdersPage() {
     setFilteredOrders(filtered);
   }, [rawOrders, searchQuery]);
 
-  // Handler for printing a purchase order
   const handlePrint = (order: PurchaseOrder) => {
     printPurchaseOrder(order);
   };
   
-  // Handler for closing the edit dialog
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false);
     setSelectedOrderId(null);
@@ -132,7 +121,6 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
         
-        {/* Edit Purchase Order Dialog */}
         {selectedOrderId && (
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -149,7 +137,6 @@ export default function PurchaseOrdersPage() {
   );
 }
 
-// Purchase Order Edit Form Component
 function PurchaseOrderEditForm({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { 
     purchase, 
@@ -157,6 +144,7 @@ function PurchaseOrderEditForm({ orderId, onClose }: { orderId: string; onClose:
     formData,
     updateFormField,
     saveChanges,
+    updateItemQuantity,
     deliveryStatus, 
     paymentStatus, 
     updateStatus, 
@@ -327,7 +315,7 @@ function PurchaseOrderEditForm({ orderId, onClose }: { orderId: string; onClose:
                     value={item.quantity}
                     className="w-20 text-right"
                     min={1}
-                    disabled
+                    onChange={(e) => updateItemQuantity(item.id, Number(e.target.value))}
                   />
                 </td>
                 <td className="p-2 text-right">

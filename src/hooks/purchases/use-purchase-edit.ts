@@ -9,9 +9,10 @@ export function usePurchaseEdit(orderId?: string) {
   const [deliveryStatus, setDeliveryStatus] = useState<'pending' | 'delivered'>('pending');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
   const [formData, setFormData] = useState<any>({});
+  const [orderItems, setOrderItems] = useState<any[]>([]);
 
   // Fetch the purchase order 
-  const { data: purchase, isLoading: isPurchaseLoading } = useQuery({
+  const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery({
     queryKey: ['purchase', orderId],
     queryFn: async () => {
       if (!orderId) return null;
@@ -66,6 +67,11 @@ export function usePurchaseEdit(orderId?: string) {
         logistics_cost: purchase.logistics_cost,
         tax_rate: purchase.tax_rate
       });
+      
+      // Set order items
+      if (purchase.items) {
+        setOrderItems(purchase.items);
+      }
     }
   }, [purchase]);
 
@@ -75,6 +81,53 @@ export function usePurchaseEdit(orderId?: string) {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Update order item quantity
+  const updateItemQuantity = async (itemId: string, newQuantity: number) => {
+    if (!orderId) return;
+    
+    setIsLoading(true);
+    try {
+      // First, get the current item to calculate new total price
+      const itemToUpdate = orderItems.find(item => item.id === itemId);
+      if (!itemToUpdate) {
+        throw new Error("Item not found");
+      }
+      
+      const newTotalPrice = newQuantity * itemToUpdate.unit_price;
+      
+      // Update the item in the database
+      const { error } = await supabase
+        .from('purchase_order_items')
+        .update({ 
+          quantity: newQuantity,
+          total_price: newTotalPrice 
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setOrderItems(prevItems => 
+        prevItems.map(item => 
+          item.id === itemId 
+            ? { ...item, quantity: newQuantity, total_price: newTotalPrice } 
+            : item
+        )
+      );
+      
+      // Refetch the purchase order to get updated totals
+      await refetch();
+      
+      toast.success('Quantité mise à jour avec succès');
+      setIsLoading(false);
+      return true;
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+      setIsLoading(false);
+      return false;
+    }
   };
 
   // Handle update of specific items
@@ -158,10 +211,12 @@ export function usePurchaseEdit(orderId?: string) {
   return {
     purchase,
     formData,
+    orderItems,
     isLoading: isLoading || isPurchaseLoading,
     handleUpdate,
     updateFormField,
     updateOrderItem,
+    updateItemQuantity,
     saveChanges,
     deliveryStatus,
     paymentStatus,
