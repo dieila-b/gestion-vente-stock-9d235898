@@ -1,6 +1,6 @@
 
 import { useRef } from 'react';
-import { PurchaseOrder } from '@/types/purchase-order';
+import { PurchaseOrder } from '@/types/purchaseOrder';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';

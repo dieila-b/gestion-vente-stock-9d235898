@@ -7,7 +7,7 @@ import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { isSelectQueryError } from "@/utils/type-utils";
-import type { PurchaseOrder } from "@/types/purchase-order";
+import type { PurchaseOrder } from "@/types/purchaseOrder";
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,10 +52,11 @@ export default function PurchaseOrdersPage() {
         };
       }
       
-      // Return a complete PurchaseOrder object
+      // Return a complete PurchaseOrder object with deleted property
       return {
         ...order,
-        supplier
+        supplier,
+        deleted: false // Add this property required by PurchaseOrder in purchaseOrder.ts
       } as PurchaseOrder;
     });
     

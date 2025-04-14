@@ -1,6 +1,6 @@
 
 import { PurchaseOrderTable } from "@/components/purchases/PurchaseOrderTable";
-import type { PurchaseOrder } from "@/types/purchase-order";
+import type { PurchaseOrder } from "@/types/purchaseOrder";
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];
