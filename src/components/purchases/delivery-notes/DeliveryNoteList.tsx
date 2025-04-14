@@ -1,23 +1,28 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, Eye } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import type { DeliveryNote } from "@/types/delivery-note";
+import { DeliveryNote } from "@/types/delivery-note";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
   isLoading: boolean;
   onView: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string) => void; // Optional for backwards compatibility
+  onApprove?: (id: string) => void; // Optional for backwards compatibility
 }
 
 export function DeliveryNoteList({
   deliveryNotes,
   isLoading,
   onView,
-  onDelete
+  onDelete,
+  onEdit,
+  onApprove
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -58,6 +63,7 @@ export function DeliveryNoteList({
           <TableHead>Date</TableHead>
           <TableHead>Fournisseur</TableHead>
           <TableHead>Statut</TableHead>
+          <TableHead>Bon commande</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -68,6 +74,7 @@ export function DeliveryNoteList({
             <TableCell>{new Date(note.created_at).toLocaleDateString()}</TableCell>
             <TableCell>{note.supplier?.name || 'N/A'}</TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>
+            <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
                 <Button
@@ -78,6 +85,30 @@ export function DeliveryNoteList({
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => onEdit(note.id)}
+                    title="Modifier"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
+                  </Button>
+                )}
+                {onApprove && note.status === 'pending' && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => onApprove(note.id)}
+                    title="Approuver"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="icon"

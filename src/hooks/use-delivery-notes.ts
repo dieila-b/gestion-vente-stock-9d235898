@@ -48,8 +48,8 @@ export function useDeliveryNotes() {
       updated_at: note.updated_at || new Date().toISOString(),
       notes: note.notes || '',
       status: note.status || 'pending',
-      supplier_id: note.supplier_id,
-      purchase_order_id: note.purchase_order_id,
+      supplier_id: note.supplier_id || '',
+      purchase_order_id: note.purchase_order_id || '',
       supplier,
       purchase_order: purchaseOrder,
       items: [] // We'll need to fetch items separately or ensure they're included in the initial query

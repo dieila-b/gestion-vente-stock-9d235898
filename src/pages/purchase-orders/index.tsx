@@ -24,8 +24,18 @@ export default function PurchaseOrdersPage() {
     const processedOrders = rawOrders.map(order => {
       // Create properly typed supplier
       const supplier = isSelectQueryError(order.supplier) 
-        ? { name: 'Fournisseur inconnu', phone: '', email: '' }
-        : order.supplier || { name: 'Fournisseur non spécifié', phone: '', email: '' };
+        ? { 
+            id: '',
+            name: 'Fournisseur inconnu', 
+            phone: '', 
+            email: '' 
+          }
+        : {
+            id: order.supplier_id || '',
+            name: order.supplier?.name || 'Fournisseur non spécifié', 
+            phone: order.supplier?.phone || '', 
+            email: order.supplier?.email || '' 
+          };
       
       // Return a complete PurchaseOrder object
       return {

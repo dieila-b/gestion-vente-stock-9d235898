@@ -38,7 +38,13 @@ export default function PurchaseInvoicesPage() {
       
       // Return a complete PurchaseInvoice object with all required fields
       return {
-        ...invoice,
+        id: invoice.id || '',
+        invoice_number: invoice.invoice_number || '',
+        supplier_id: invoice.supplier_id || '',
+        total_amount: invoice.total_amount || 0,
+        status: invoice.status || 'pending',
+        created_at: invoice.created_at || new Date().toISOString(),
+        updated_at: invoice.updated_at || new Date().toISOString(),
         tax_amount: invoice.tax_amount || 0,
         payment_status: invoice.payment_status || 'pending',
         due_date: invoice.due_date || new Date().toISOString(),
