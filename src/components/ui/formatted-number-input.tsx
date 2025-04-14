@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, forwardRef } from "react";
 import { Input } from "./input";
-import { formatGNFNumber } from "@/lib/currency";
 
 interface FormattedNumberInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> {
@@ -17,11 +16,15 @@ export const FormattedNumberInput = forwardRef<HTMLInputElement, FormattedNumber
     // Update display value when actual value changes
     useEffect(() => {
       if (formatDisplay) {
-        setDisplayValue(value ? formatGNFNumber(value) : "");
+        setDisplayValue(value ? formatNumber(value) : "");
       } else {
         setDisplayValue(value ? value.toString() : "");
       }
     }, [value, formatDisplay]);
+
+    const formatNumber = (num: number) => {
+      return new Intl.NumberFormat('fr-FR').format(num);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       // Remove all non-numeric characters
@@ -42,7 +45,7 @@ export const FormattedNumberInput = forwardRef<HTMLInputElement, FormattedNumber
     // Handle blur to reformat the number
     const handleBlur = () => {
       if (formatDisplay && value) {
-        setDisplayValue(formatGNFNumber(value));
+        setDisplayValue(formatNumber(value));
       }
     };
 
@@ -61,4 +64,3 @@ export const FormattedNumberInput = forwardRef<HTMLInputElement, FormattedNumber
 );
 
 FormattedNumberInput.displayName = "FormattedNumberInput";
-

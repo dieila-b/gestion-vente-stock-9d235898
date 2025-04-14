@@ -1,14 +1,14 @@
 
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { supabase } from "@/integrations/supabase/client";
+import { toast as sonnerToast } from "sonner";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
   orderNumber: string;
   deliveryDate: string;
-  warehouseId: string;
   notes: string;
   orderStatus: "pending" | "delivered";
   paymentStatus: "pending" | "partial" | "paid";
@@ -19,10 +19,8 @@ interface UsePurchaseOrderSubmitProps {
   shippingCost: number;
   discount: number;
   orderItems: PurchaseOrderItem[];
-  calculateTotal: () => number;
   setIsSubmitting: (value: boolean) => void;
   toast: any;
-  handleCreate: any;
   navigate: NavigateFunction;
 }
 
@@ -30,7 +28,6 @@ export const usePurchaseOrderSubmit = ({
   supplier,
   orderNumber,
   deliveryDate,
-  warehouseId,
   notes,
   orderStatus,
   paymentStatus,
@@ -41,16 +38,14 @@ export const usePurchaseOrderSubmit = ({
   shippingCost,
   discount,
   orderItems,
-  calculateTotal,
   setIsSubmitting,
   toast,
-  handleCreate,
   navigate
 }: UsePurchaseOrderSubmitProps) => {
 
-  // Calculs des montants
+  // Calculate amounts
   const calculateSubtotal = () => {
-    return calculateTotal();
+    return orderItems.reduce((total, item) => total + (item.unit_price * item.quantity), 0);
   };
 
   const calculateTax = () => {
@@ -79,75 +74,59 @@ export const usePurchaseOrderSubmit = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!supplier) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un fournisseur",
-        variant: "destructive",
-      });
+      sonnerToast.error("Veuillez sélectionner un fournisseur");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Créer le bon de commande principal
-      const purchaseOrderData = {
-        supplier_id: supplier,
-        order_number: orderNumber,
-        expected_delivery_date: deliveryDate,
-        warehouse_id: warehouseId || undefined,
-        notes,
-        status: orderStatus,
-        total_amount: calculateTotal(),
-        payment_status: paymentStatus,
-        paid_amount: paidAmount,
-        logistics_cost: logisticsCost,
-        transit_cost: transitCost,
-        tax_rate: taxRate,
-        subtotal: calculateSubtotal(),
-        tax_amount: calculateTax(),
-        total_ttc: calculateTotalTTC(),
-        shipping_cost: shippingCost,
-        discount: discount
-      };
+      // Create the purchase order
+      const { data: orderData, error: orderError } = await supabase
+        .from('purchase_orders')
+        .insert({
+          supplier_id: supplier,
+          order_number: orderNumber,
+          expected_delivery_date: deliveryDate,
+          notes,
+          status: orderStatus,
+          payment_status: paymentStatus,
+          paid_amount: paidAmount,
+          logistics_cost: logisticsCost,
+          transit_cost: transitCost,
+          tax_rate: taxRate,
+          subtotal: calculateSubtotal(),
+          tax_amount: calculateTax(),
+          total_ttc: calculateTotalTTC(),
+          shipping_cost: shippingCost,
+          discount: discount,
+          total_amount: calculateTotalTTC(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
       
-      // Créer le bon de commande sans les items pour éviter l'erreur
-      const createdOrder = await handleCreate(purchaseOrderData);
+      if (orderError) throw orderError;
       
-      // Si des items existent, les ajouter séparément
-      if (orderItems.length > 0) {
-        // Préparer les items pour l'insertion en base de données
-        const itemsToInsert = orderItems.map(item => ({
-          purchase_order_id: createdOrder.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          selling_price: item.selling_price,
-          total_price: item.total_price
+      // Add order items if there are any
+      if (orderItems.length > 0 && orderData) {
+        const orderItemsWithOrderId = orderItems.map(item => ({
+          ...item,
+          purchase_order_id: orderData.id
         }));
-
-        // Insérer les items
+        
         const { error: itemsError } = await supabase
           .from('purchase_order_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) {
-          throw itemsError;
-        }
+          .insert(orderItemsWithOrderId);
+        
+        if (itemsError) throw itemsError;
       }
       
-      toast({
-        title: "Succès",
-        description: "Bon de commande créé avec succès",
-      });
-      
+      sonnerToast.success("Bon de commande créé avec succès");
       navigate("/purchase-orders");
     } catch (error) {
       console.error("Erreur lors de la création du bon de commande:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création du bon de commande",
-        variant: "destructive",
-      });
+      sonnerToast.error("Une erreur est survenue lors de la création du bon de commande");
     } finally {
       setIsSubmitting(false);
     }

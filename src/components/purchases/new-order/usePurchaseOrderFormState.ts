@@ -1,25 +1,28 @@
 
 import { useState } from "react";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 
 export const usePurchaseOrderFormState = () => {
-  // Form state
+  // Basic form state
   const [supplier, setSupplier] = useState("");
   const [orderNumber, setOrderNumber] = useState(`BC-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
   const [deliveryDate, setDeliveryDate] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
   const [notes, setNotes] = useState("");
   
-  // Nouveaux champs pour coûts additionnels
+  // Additional costs
   const [taxRate, setTaxRate] = useState(20);
   const [logisticsCost, setLogisticsCost] = useState(0);
   const [transitCost, setTransitCost] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
   
-  // Nouveaux champs pour statut et paiement
+  // Status and payment
   const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
   const [paidAmount, setPaidAmount] = useState(0);
+  
+  // Order items
+  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
 
   return {
     supplier,
@@ -28,8 +31,6 @@ export const usePurchaseOrderFormState = () => {
     setOrderNumber,
     deliveryDate,
     setDeliveryDate,
-    warehouseId,
-    setWarehouseId,
     notes,
     setNotes,
     taxRate,
@@ -47,6 +48,8 @@ export const usePurchaseOrderFormState = () => {
     paymentStatus,
     setPaymentStatus,
     paidAmount,
-    setPaidAmount
+    setPaidAmount,
+    orderItems,
+    setOrderItems
   };
 };
