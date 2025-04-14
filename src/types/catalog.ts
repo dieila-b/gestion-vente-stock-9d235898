@@ -17,7 +17,6 @@ export interface ProductUnit {
   id: string;
   name: string;
   symbol: string;
-  abbreviation?: string; // For backward compatibility
   description?: string;
   created_at?: string;
   updated_at?: string;
@@ -26,6 +25,5 @@ export interface ProductUnit {
 export interface NewProductUnit {
   name: string;
   symbol: string;
-  abbreviation?: string; // For backward compatibility
   description?: string;
 }

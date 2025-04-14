@@ -29,6 +29,8 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
     setIsSubmitting(true);
 
     try {
+      console.log("Submitting unit data:", formData);
+      
       if (unit) {
         // Update existing unit
         const { error } = await supabase
@@ -44,7 +46,10 @@ export function ProductUnitForm({ isOpen, unit, onClose }: ProductUnitFormProps)
           .from('product_units')
           .insert(formData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error details:', error);
+          throw error;
+        }
         toast.success("Unité créée avec succès");
       }
 

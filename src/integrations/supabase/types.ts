@@ -1005,20 +1005,26 @@ export type Database = {
         Row: {
           abbreviation: string | null
           created_at: string | null
+          description: string | null
           id: string
           name: string
+          symbol: string
         }
         Insert: {
           abbreviation?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           name: string
+          symbol?: string
         }
         Update: {
           abbreviation?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           name?: string
+          symbol?: string
         }
         Relationships: []
       }
