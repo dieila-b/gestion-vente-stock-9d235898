@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
@@ -33,19 +33,16 @@ export function AddCategoryDialog({ isOpen, onClose, onSuccess }: AddCategoryDia
     try {
       setIsLoading(true);
       
-      // Créer un produit de référence pour la catégorie
-      const { data, error } = await supabase
-        .from('catalog')
-        .insert({ 
-          name: `Produit ${categoryInput}`,
-          category: categoryInput,
-          price: 0,
-          stock: 0
-        })
-        .select();
+      // Using the db adapter instead of direct supabase call
+      const result = await db.insert('catalog', { 
+        name: `Produit ${categoryInput}`,
+        category: categoryInput,
+        price: 0,
+        stock: 0
+      });
 
-      if (error) {
-        console.error('Error adding category:', error);
+      if (!result) {
+        console.error('Error adding category: No result returned');
         toast.error("Erreur lors de l'ajout de la catégorie");
         return;
       }

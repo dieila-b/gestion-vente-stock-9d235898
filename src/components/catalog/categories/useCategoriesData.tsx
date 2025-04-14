@@ -1,26 +1,34 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { db } from "@/utils/db-core";
 
 export function useCategoriesData() {
   const { data: categories = [], refetch, isLoading } = useQuery({
     queryKey: ['product-categories'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('category')
-        .not('category', 'is', null)
-        .order('category');
+      try {
+        const data = await db.query('catalog', 
+          query => query
+            .select('category')
+            .not('category', 'is', null)
+            .order('category')
+        );
 
-      if (error) {
+        if (!data || !Array.isArray(data)) {
+          console.error('Error fetching categories: Invalid data format');
+          toast.error("Erreur lors du chargement des catégories");
+          return [];
+        }
+
+        // Extraire les catégories uniques
+        const uniqueCategories = Array.from(new Set(data.map(item => item.category))).filter(Boolean);
+        return uniqueCategories;
+      } catch (error) {
+        console.error('Error fetching categories:', error);
         toast.error("Erreur lors du chargement des catégories");
-        throw error;
+        return [];
       }
-
-      // Extraire les catégories uniques
-      const uniqueCategories = Array.from(new Set(data.map(item => item.category))).filter(Boolean);
-      return uniqueCategories;
     }
   });
 

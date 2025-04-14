@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
 
 interface CategoryListProps {
   categories: string[];
@@ -36,13 +36,15 @@ export function CategoryList({ categories, onRefetch }: CategoryListProps) {
     try {
       setIsLoading(true);
       
-      const { error } = await supabase
-        .from('catalog')
-        .update({ category: editingCategory.new })
-        .eq('category', editingCategory.original);
+      const result = await db.update(
+        'catalog',
+        { category: editingCategory.new },
+        'category',
+        editingCategory.original
+      );
 
-      if (error) {
-        console.error('Error updating category:', error);
+      if (!result) {
+        console.error('Error updating category: No result returned');
         toast.error("Erreur lors de la mise à jour de la catégorie");
         return;
       }
@@ -66,13 +68,15 @@ export function CategoryList({ categories, onRefetch }: CategoryListProps) {
     try {
       setIsLoading(true);
       
-      const { error } = await supabase
-        .from('catalog')
-        .update({ category: null })
-        .eq('category', category);
+      const result = await db.update(
+        'catalog',
+        { category: null },
+        'category',
+        category
+      );
 
-      if (error) {
-        console.error('Error deleting category:', error);
+      if (!result) {
+        console.error('Error deleting category: No result returned');
         toast.error("Erreur lors de la suppression de la catégorie");
         return;
       }
