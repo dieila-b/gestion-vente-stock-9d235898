@@ -2,8 +2,8 @@
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
-import { supabase } from "@/integrations/supabase/client";
 import { toast as sonnerToast } from "sonner";
+import { db } from "@/utils/db-adapter";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -45,7 +45,10 @@ export const usePurchaseOrderSubmit = ({
 
   // Calculate amounts
   const calculateSubtotal = () => {
-    return orderItems.reduce((total, item) => total + (item.unit_price * item.quantity), 0);
+    return orderItems.reduce((total, item) => {
+      // Only include items with quantity > 0
+      return total + (item.unit_price * (item.quantity > 0 ? item.quantity : 1));
+    }, 0);
   };
 
   const calculateTax = () => {
@@ -80,46 +83,56 @@ export const usePurchaseOrderSubmit = ({
 
     setIsSubmitting(true);
     try {
-      // Create the purchase order
-      const { data: orderData, error: orderError } = await supabase
-        .from('purchase_orders')
-        .insert({
-          supplier_id: supplier,
-          order_number: orderNumber,
-          expected_delivery_date: deliveryDate,
-          notes,
-          status: orderStatus,
-          payment_status: paymentStatus,
-          paid_amount: paidAmount,
-          logistics_cost: logisticsCost,
-          transit_cost: transitCost,
-          tax_rate: taxRate,
-          subtotal: calculateSubtotal(),
-          tax_amount: calculateTax(),
-          total_ttc: calculateTotalTTC(),
-          shipping_cost: shippingCost,
-          discount: discount,
-          total_amount: calculateTotalTTC(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      // Create the purchase order using db adapter instead of direct Supabase query
+      const orderData = {
+        supplier_id: supplier,
+        order_number: orderNumber,
+        expected_delivery_date: deliveryDate,
+        notes,
+        status: orderStatus,
+        payment_status: paymentStatus,
+        paid_amount: paidAmount,
+        logistics_cost: logisticsCost,
+        transit_cost: transitCost,
+        tax_rate: taxRate,
+        subtotal: calculateSubtotal(),
+        tax_amount: calculateTax(),
+        total_ttc: calculateTotalTTC(),
+        shipping_cost: shippingCost,
+        discount: discount,
+        total_amount: calculateTotalTTC(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      if (orderError) throw orderError;
+      const createdOrder = await db.insert('purchase_orders', orderData);
+      
+      if (!createdOrder) {
+        throw new Error("Failed to create purchase order");
+      }
       
       // Add order items if there are any
-      if (orderItems.length > 0 && orderData) {
-        const orderItemsWithOrderId = orderItems.map(item => ({
-          ...item,
-          purchase_order_id: orderData.id
-        }));
+      if (orderItems.length > 0 && createdOrder) {
+        // Make sure we only proceed with items that have a quantity > 0
+        const validOrderItems = orderItems
+          .filter(item => item.quantity > 0)
+          .map(item => ({
+            purchase_order_id: createdOrder.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            selling_price: item.selling_price || 0,
+            total_price: item.total_price
+          }));
         
-        const { error: itemsError } = await supabase
-          .from('purchase_order_items')
-          .insert(orderItemsWithOrderId);
-        
-        if (itemsError) throw itemsError;
+        if (validOrderItems.length > 0) {
+          const itemsResult = await db.insert('purchase_order_items', validOrderItems);
+          
+          if (!itemsResult) {
+            console.error("Failed to add order items");
+            throw new Error("Failed to add order items");
+          }
+        }
       }
       
       sonnerToast.success("Bon de commande créé avec succès");
