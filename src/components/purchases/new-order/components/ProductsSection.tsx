@@ -24,17 +24,17 @@ export const ProductsSection = ({
   setShowProductModal,
 }: ProductsSectionProps) => {
   
-  // Nouvelle fonction pour gérer le changement de quantité
+  // Fonction pour gérer le changement de quantité
   const handleQuantityChange = (index: number, value: string) => {
-    // Si la valeur est vide, on utilise 1 comme valeur par défaut
+    // Si la valeur est vide, on laisse le champ vide pour l'édition
     if (value === "") {
-      updateProductQuantity(index, 1);
+      updateProductQuantity(index, 0);
       return;
     }
     
     // Sinon, on convertit la valeur en nombre
     const quantity = parseInt(value);
-    updateProductQuantity(index, isNaN(quantity) ? 1 : quantity);
+    updateProductQuantity(index, isNaN(quantity) ? 0 : quantity);
   };
   
   return (
@@ -65,10 +65,9 @@ export const ProductsSection = ({
                 </div>
                 <div>
                   <Input
-                    type="number"
-                    value={item.quantity || ""}
+                    type="text"
+                    value={item.quantity === 0 ? "" : item.quantity}
                     onChange={(e) => handleQuantityChange(index, e.target.value)}
-                    min="1"
                     className="neo-blur border-white/10"
                     placeholder="1"
                   />
