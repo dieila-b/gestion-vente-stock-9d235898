@@ -27,7 +27,7 @@ export function usePurchaseEdit(orderId?: string) {
             unit_price,
             total_price
           ),
-          warehouse:warehouse_id(id, name)
+          warehouse:warehouses(id, name)
         `)
         .eq('id', orderId)
         .single();

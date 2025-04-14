@@ -11,14 +11,15 @@ import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
 import { isSelectQueryError, safeSupplier } from "@/utils/type-utils";
 
 export default function PurchasePage() {
-  const { id, purchase, isLoading, updatePaymentStatus } = usePurchaseEdit();
+  const { id } = useParams(); // Get the ID from URL params instead
+  const { purchase, isLoading, updatePaymentStatus } = usePurchaseEdit(id);
 
   // Access purchase data safely using optional chaining and check for SelectQueryError
-  const safeSupplier = purchase?.supplier && !isSelectQueryError(purchase.supplier) 
+  const safeSupplierObj = purchase?.supplier && !isSelectQueryError(purchase.supplier) 
     ? purchase.supplier 
     : { name: 'Unknown Supplier' };
 
-  const supplierName = safeSupplier.name || 'Unknown Supplier';
+  const supplierName = safeSupplierObj.name || 'Unknown Supplier';
   const orderNumber = purchase?.order_number || 'N/A';
   const totalAmount = purchase?.total_amount || 0;
   const status = purchase?.status || 'pending';
@@ -31,7 +32,7 @@ export default function PurchasePage() {
   const taxRate = purchase?.tax_rate || 0;
 
   const handleUpdateStatus = () => {
-    if (updatePaymentStatus) {
+    if (updatePaymentStatus && id) {
       updatePaymentStatus(paymentStatus === 'pending' ? 'paid' : 'pending');
     } else {
       console.error("updatePaymentStatus function is not available");
