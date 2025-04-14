@@ -17,11 +17,13 @@ export function usePurchaseOrders() {
         .select(`
           *,
           supplier:suppliers(*),
-          warehouse:warehouses(*)
+          warehouse:warehouses(*),
+          items:purchase_order_items(*)
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      console.log("Fetched purchase orders:", data);
       return data || [];
     }
   });
@@ -61,6 +63,7 @@ export function usePurchaseOrders() {
 
   // Handle edit (navigate to edit page)
   const handleEdit = (id: string) => {
+    console.log("Navigating to edit page for purchase order:", id);
     navigate(`/purchase-orders/edit/${id}`);
   };
 

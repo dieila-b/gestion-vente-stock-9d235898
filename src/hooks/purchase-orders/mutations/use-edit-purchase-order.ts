@@ -5,7 +5,7 @@ export function useEditPurchaseOrder() {
   const navigate = useNavigate();
   
   return (id: string) => {
-    navigate(`/purchase-order?edit=${id}`);
+    navigate(`/purchase-orders/edit/${id}`);
     return id;
   };
 }
