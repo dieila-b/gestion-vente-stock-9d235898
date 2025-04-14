@@ -26,10 +26,10 @@ export function useDeliveryNoteMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      toast.success('Delivery note created successfully');
+      toast.success('Bon de livraison créé avec succès');
     },
     onError: (error: any) => {
-      toast.error(`Error creating delivery note: ${error.message}`);
+      toast.error(`Erreur lors de la création: ${error.message}`);
     }
   });
 
@@ -52,10 +52,10 @@ export function useDeliveryNoteMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      toast.success('Delivery note updated successfully');
+      toast.success('Bon de livraison mis à jour avec succès');
     },
     onError: (error: any) => {
-      toast.error(`Error updating delivery note: ${error.message}`);
+      toast.error(`Erreur lors de la mise à jour: ${error.message}`);
     }
   });
 
@@ -76,10 +76,10 @@ export function useDeliveryNoteMutations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      toast.success('Delivery note deleted successfully');
+      toast.success('Bon de livraison supprimé avec succès');
     },
     onError: (error: any) => {
-      toast.error(`Error deleting delivery note: ${error.message}`);
+      toast.error(`Erreur lors de la suppression: ${error.message}`);
     }
   });
 

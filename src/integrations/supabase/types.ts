@@ -383,26 +383,63 @@ export type Database = {
       delivery_notes: {
         Row: {
           created_at: string | null
+          deleted: boolean | null
           delivery_number: string | null
           id: string
           notes: string | null
+          purchase_order_id: string | null
+          status: string | null
+          supplier_id: string | null
           updated_at: string | null
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string | null
+          deleted?: boolean | null
           delivery_number?: string | null
           id?: string
           notes?: string | null
+          purchase_order_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string | null
+          deleted?: boolean | null
           delivery_number?: string | null
           id?: string
           notes?: string | null
+          purchase_order_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
+          warehouse_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_notes_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expense_categories: {
         Row: {
