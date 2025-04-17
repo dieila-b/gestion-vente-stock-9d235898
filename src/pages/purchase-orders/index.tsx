@@ -10,6 +10,7 @@ import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { EditPurchaseOrderDialog } from "@/components/purchases/edit/EditPurchaseOrderDialog";
 import type { PurchaseOrder } from "@/types/purchaseOrder";
 import { isSelectQueryError } from "@/utils/type-utils";
+import { toast } from "sonner";
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,50 +52,63 @@ export default function PurchaseOrdersPage() {
       return;
     }
     
-    const processedOrders = rawOrders.map(order => {
-      let supplier;
-      if (isSelectQueryError(order.supplier)) {
-        supplier = { 
-          id: order.supplier_id || '',
-          name: 'Fournisseur inconnu', 
-          phone: '', 
-          email: '' 
-        };
-      } else if (!order.supplier) {
-        supplier = {
-          id: order.supplier_id || '',
-          name: 'Fournisseur non spécifié', 
-          phone: '', 
-          email: '' 
-        };
-      } else {
-        const supplierData = order.supplier as any;
-        supplier = {
-          id: order.supplier_id || (supplierData.id || ''),
-          name: supplierData.name || 'Fournisseur non spécifié',
-          phone: supplierData.phone || '',
-          email: supplierData.email || ''
-        };
-      }
+    try {
+      const processedOrders = rawOrders.map(order => {
+        let supplier;
+        if (isSelectQueryError(order.supplier)) {
+          console.log("Supplier is a select query error:", order.supplier);
+          supplier = { 
+            id: order.supplier_id || '',
+            name: 'Fournisseur inconnu', 
+            phone: '', 
+            email: '' 
+          };
+        } else if (!order.supplier) {
+          console.log("No supplier found for order:", order.id);
+          supplier = {
+            id: order.supplier_id || '',
+            name: 'Fournisseur non spécifié', 
+            phone: '', 
+            email: '' 
+          };
+        } else {
+          const supplierData = order.supplier as any;
+          supplier = {
+            id: order.supplier_id || (supplierData.id || ''),
+            name: supplierData.name || 'Fournisseur non spécifié',
+            phone: supplierData.phone || '',
+            email: supplierData.email || ''
+          };
+        }
+        
+        // Ensure all necessary properties are present
+        return {
+          ...order,
+          supplier,
+          deleted: false,
+          items: Array.isArray(order.items) ? order.items : [],
+          // Add defaults for required fields
+          payment_status: order.payment_status || 'pending',
+          status: order.status || 'draft',
+          total_amount: order.total_amount || 0,
+          order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
+        } as unknown as PurchaseOrder;
+      });
       
-      // Ensure all necessary properties are present
-      return {
-        ...order,
-        supplier,
-        deleted: false,
-        items: Array.isArray(order.items) ? order.items : []
-      } as unknown as PurchaseOrder;
-    });
-    
-    console.log("Processed orders:", processedOrders);
-    
-    const filtered = processedOrders.filter(order => 
-      order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    
-    console.log("Filtered orders:", filtered);
-    setFilteredOrders(filtered);
+      console.log("Processed orders:", processedOrders);
+      
+      const filtered = processedOrders.filter(order => 
+        order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      
+      console.log("Filtered orders:", filtered);
+      setFilteredOrders(filtered);
+    } catch (error) {
+      console.error("Error processing orders:", error);
+      toast.error("Erreur lors du traitement des bons de commande");
+      setFilteredOrders([]);
+    }
   }, [rawOrders, searchQuery]);
 
   // Handle print action
