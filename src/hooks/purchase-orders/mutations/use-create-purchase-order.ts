@@ -16,12 +16,14 @@ export function useCreatePurchaseOrder() {
     try {
       console.log("Creating purchase order with data:", data);
       
-      // Create the purchase order with deleted explicitly set to false
+      // Remove deleted property before sending to database since the column doesn't exist
+      const { deleted, ...dataForDb } = data;
+      
+      // Create the purchase order without the deleted field
       const purchaseOrder = await db.insert(
         'purchase_orders',
         {
-          ...data,
-          deleted: false,
+          ...dataForDb,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }

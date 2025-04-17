@@ -35,8 +35,9 @@ export function usePurchaseOrders() {
           throw error;
         }
         
-        // Rather than trying to access order.deleted (which doesn't exist), 
-        // set it to false for all orders since the column doesn't exist
+        console.log("Raw purchase order data:", data);
+        
+        // Add deleted property since it doesn't exist in the database
         const processedData = data?.map(order => ({
           ...order,
           deleted: false
@@ -61,7 +62,9 @@ export function usePurchaseOrders() {
             []
           );
           
-          // We set deleted to false for all orders since the column doesn't exist
+          console.log("Raw orders data from fallback:", ordersData);
+          
+          // Add deleted property to all orders
           const processedData = ordersData?.map(order => ({
             ...order,
             deleted: false 
@@ -80,9 +83,10 @@ export function usePurchaseOrders() {
   // Create purchase order mutation - properly typed
   const { mutate: createOrder } = useMutation({
     mutationFn: async (orderData: Omit<Partial<PurchaseOrder>, 'supplier' | 'warehouse' | 'items'>) => {
-      // Instead of destructuring deleted property (which doesn't exist in database),
-      // we just create a new object without it
+      // Remove deleted property since it doesn't exist in database
       const { deleted, ...restOrderData } = orderData;
+      
+      console.log("Creating order with data:", restOrderData);
       
       // Create main purchase order without the deleted field
       const { data, error } = await supabase
@@ -94,11 +98,13 @@ export function usePurchaseOrders() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Purchase order created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       toast.success("Bon de commande créé avec succès");
     },
     onError: (error: any) => {
+      console.error("Error creating purchase order:", error);
       toast.error(`Erreur lors de la création: ${error.message}`);
     }
   });
@@ -106,6 +112,7 @@ export function usePurchaseOrders() {
   // Handle create
   const handleCreate = async (orderData: any) => {
     try {
+      console.log("Handling create with order data:", orderData);
       await createOrder(orderData);
       return true;
     } catch (error) {
@@ -125,6 +132,7 @@ export function usePurchaseOrders() {
   // Handle approve
   const handleApprove = async (id: string) => {
     try {
+      console.log("Approving purchase order:", id);
       const { error } = await supabase
         .from('purchase_orders')
         .update({ status: 'approved' })
@@ -149,6 +157,7 @@ export function usePurchaseOrders() {
     }
     
     try {
+      console.log("Deleting purchase order:", id);
       // We can't use soft delete since the column doesn't exist, so we'll do a hard delete
       const { error } = await supabase
         .from('purchase_orders')

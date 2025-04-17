@@ -43,6 +43,8 @@ export default function PurchaseOrdersPage() {
   
   // Process and filter orders
   useEffect(() => {
+    console.log("Raw orders for processing:", rawOrders);
+    
     const processedOrders = rawOrders.map(order => {
       let supplier;
       if (isSelectQueryError(order.supplier)) {
@@ -71,6 +73,7 @@ export default function PurchaseOrdersPage() {
       
       const rawOrderAny = order as any;
       
+      // Ensure deleted property is explicitly set to false since it doesn't exist in DB
       return {
         ...order,
         supplier,
@@ -79,11 +82,14 @@ export default function PurchaseOrdersPage() {
       } as unknown as PurchaseOrder;
     });
     
+    console.log("Processed orders:", processedOrders);
+    
     const filtered = processedOrders.filter(order => 
       order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
+    console.log("Filtered orders:", filtered);
     setFilteredOrders(filtered);
   }, [rawOrders, searchQuery]);
 
