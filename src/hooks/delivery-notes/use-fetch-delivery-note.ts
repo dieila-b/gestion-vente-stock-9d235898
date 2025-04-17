@@ -59,8 +59,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing
-        const items = Array.isArray(result.items) ? result.items.map(item => {
+        // Process items with proper typing - ensure result is treated as an object, not an array
+        const items = result.items && Array.isArray(result.items) ? result.items.map(item => {
           if (!item) return null;
           
           return {
