@@ -2,8 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DeliveryNote } from "@/types/delivery-note";
 import { db } from "@/utils/db-adapter";
-import { isSelectQueryError, safeSupplier } from "@/utils/type-utils";
-import { formatDate } from "@/lib/formatters";
 
 export function useFetchDeliveryNotes() {
   return useQuery({
@@ -11,7 +9,7 @@ export function useFetchDeliveryNotes() {
     queryFn: async () => {
       console.log("Fetching delivery notes...");
       try {
-        const deliveryNotesData = await db.query(
+        const result = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -27,7 +25,7 @@ export function useFetchDeliveryNotes() {
                 phone,
                 email
               ),
-              purchase_order:purchase_orders!delivery_notes_purchase_order_id_fkey (
+              purchase_order:purchase_orders (
                 id,
                 order_number,
                 total_amount
@@ -38,7 +36,7 @@ export function useFetchDeliveryNotes() {
                 quantity_ordered,
                 quantity_received,
                 unit_price,
-                product:catalog!delivery_note_items_product_id_fkey (
+                product:catalog (
                   id,
                   name,
                   reference
@@ -49,23 +47,35 @@ export function useFetchDeliveryNotes() {
             .order('created_at', { ascending: false })
         );
 
-        console.log("Fetched delivery notes:", deliveryNotesData);
-
-        if (!Array.isArray(deliveryNotesData)) {
-          console.error("Error: delivery notes data is not an array", deliveryNotesData);
-          return [];
-        }
+        console.log("Fetched delivery notes:", result);
         
-        // Filter out null or undefined items
-        const filteredData = deliveryNotesData.filter(note => note !== null && note !== undefined);
-        
-        if (filteredData.length === 0) {
-          console.log("No valid delivery notes found");
-          return [];
-        }
+        // Transform and clean up the data
+        const deliveryNotes = Array.isArray(result) ? result.map(note => {
+          // Handle supplier safely
+          const supplier = note.supplier ? {
+            id: note.supplier.id || '',
+            name: note.supplier.name || 'Fournisseur inconnu',
+            phone: note.supplier.phone || '',
+            email: note.supplier.email || ''
+          } : { 
+            id: '',
+            name: 'Fournisseur inconnu', 
+            phone: '', 
+            email: '' 
+          };
+          
+          // Handle purchase order safely
+          const purchaseOrder = note.purchase_order ? {
+            id: note.purchase_order.id || '',
+            order_number: note.purchase_order.order_number || '',
+            total_amount: note.purchase_order.total_amount || 0
+          } : { 
+            id: '',
+            order_number: 'N/A', 
+            total_amount: 0 
+          };
 
-        const transformedData = filteredData.map(note => {
-          // Handle items safely
+          // Process items with proper typing
           const items = Array.isArray(note.items) ? note.items.map(item => {
             if (!item) return null;
             
@@ -86,52 +96,22 @@ export function useFetchDeliveryNotes() {
               }
             };
           }).filter(Boolean) : [];
-
-          // Generate a placeholder delivery number if not present
-          const deliveryNumber = note.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-
-          // Handle supplier safely
-          const supplier = note.supplier ? {
-            id: note.supplier.id || '',
-            name: note.supplier.name || 'Fournisseur inconnu',
-            phone: note.supplier.phone || '',
-            email: note.supplier.email || ''
-          } : {
-            id: '',
-            name: 'Fournisseur inconnu',
-            phone: '',
-            email: ''
-          };
           
-          // Handle purchase order safely
-          const purchaseOrder = note.purchase_order ? {
-            id: note.purchase_order.id || '',
-            order_number: note.purchase_order.order_number || 'N/A',
-            total_amount: note.purchase_order.total_amount || 0
-          } : {
-            id: '',
-            order_number: 'N/A',
-            total_amount: 0
-          };
-
-          // Define default status if not present
-          const status = note.status || 'pending';
-
           return {
             id: note.id || '',
-            delivery_number: deliveryNumber,
-            created_at: note.created_at || new Date().toISOString(),
-            updated_at: note.updated_at || new Date().toISOString(),
+            delivery_number: note.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+            created_at: note.created_at || '',
+            updated_at: note.updated_at || '',
             notes: note.notes || '',
-            status: status,
+            status: note.status || 'pending',
             supplier,
             purchase_order: purchaseOrder,
             items
           } as DeliveryNote;
-        });
-      
-        console.log("Transformed delivery notes:", transformedData);
-        return transformedData;
+        }) : [];
+        
+        console.log("Transformed delivery notes:", deliveryNotes);
+        return deliveryNotes;
       } catch (error) {
         console.error("Error fetching delivery notes:", error);
         return [];
