@@ -1,5 +1,6 @@
+
 import { db } from "./db-core";
-import { safeGet } from "./supabase-safe-query";
+import { safeGet } from "./data-safe/safe-access";
 
 // A utility function to check if a table exists in the database
 export async function checkTableExists(tableName: string): Promise<boolean> {
@@ -99,4 +100,19 @@ export async function getSafeTableData<T>(
   }
   
   return Array.isArray(data) ? data.map(processor) : fallbackData;
+}
+
+// Count records safely with table existence check
+export async function getSafeRecordCount(
+  tableName: string,
+  queryBuilder: (query: any) => any = q => q
+): Promise<number> {
+  const exists = await checkTableExists(tableName);
+  
+  if (!exists) {
+    console.warn(`Table ${tableName} doesn't exist. Returning count of 0.`);
+    return 0;
+  }
+  
+  return db.count(tableName, queryBuilder);
 }

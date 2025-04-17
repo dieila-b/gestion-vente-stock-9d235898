@@ -1,5 +1,5 @@
 
-import { tableQuery, query, insert, update, deleteRecord } from "./db-table-operations";
+import { tableQuery, query, insert, update, deleteRecord, count } from "./db-table-operations";
 
 // Export convenient shorthand functions
 export const db = {
@@ -7,8 +7,9 @@ export const db = {
   query,
   insert,
   update,
-  delete: deleteRecord
+  delete: deleteRecord,
+  count
 };
 
 // Also export individual functions for more granular imports
-export { tableQuery, query, insert, update, deleteRecord };
+export { tableQuery, query, insert, update, deleteRecord, count };

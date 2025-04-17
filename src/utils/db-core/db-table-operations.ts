@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { handleDbError, createErrorProxy } from "./db-error-handler";
 
@@ -169,5 +168,36 @@ export async function deleteRecord(
   } catch (err) {
     handleDbError('delete', tableName, err);
     return false;
+  }
+}
+
+/**
+ * Executes a count query safely
+ * 
+ * @param tableName The name of the table to query
+ * @param queryFn Function that builds the query before the count
+ * @returns The count or 0 in case of error
+ */
+export async function count(
+  tableName: string,
+  queryFn: (queryBuilder: any) => any = q => q
+): Promise<number> {
+  try {
+    const queryBuilder = tableQuery(tableName);
+    const query = queryFn(queryBuilder).select('*', { count: 'exact' });
+    
+    const { count, error } = await query;
+    
+    if (error) {
+      console.error(`Count error on table ${tableName}:`, error);
+      handleDbError('query', tableName, error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (err) {
+    console.error(`Unexpected error counting in table ${tableName}:`, err);
+    handleDbError('query', tableName, err);
+    return 0;
   }
 }
