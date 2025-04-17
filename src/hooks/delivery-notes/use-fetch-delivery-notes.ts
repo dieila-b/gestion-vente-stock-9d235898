@@ -54,7 +54,7 @@ export function useFetchDeliveryNotes() {
           if (!note) return null;
           
           // Handle supplier safely
-          const supplier = note && note.supplier 
+          const supplier = note.supplier 
             ? {
                 id: note.supplier.id || '',
                 name: note.supplier.name || 'Fournisseur inconnu',
@@ -69,7 +69,7 @@ export function useFetchDeliveryNotes() {
               };
           
           // Handle purchase order safely
-          const purchaseOrder = note && note.purchase_order 
+          const purchaseOrder = note.purchase_order 
             ? {
                 id: note.purchase_order.id || '',
                 order_number: note.purchase_order.order_number || '',
@@ -82,7 +82,7 @@ export function useFetchDeliveryNotes() {
               };
 
           // Process items with proper typing
-          const items = note && note.items && Array.isArray(note.items) 
+          const items = note.items && Array.isArray(note.items) 
             ? note.items.map(item => {
                 if (!item) return null;
                 
