@@ -19,15 +19,6 @@ export const SupplierDateSection = ({
   setDeliveryDate,
   suppliers,
 }: SupplierDateSectionProps) => {
-  // Helper function to format supplier display name
-  const getSupplierDisplayName = (supplier: any) => {
-    if (!supplier) return '';
-    if (supplier.contact) {
-      return `${supplier.name} (${supplier.contact})`;
-    }
-    return supplier.name;
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
@@ -38,9 +29,11 @@ export const SupplierDateSection = ({
           </SelectTrigger>
           <SelectContent>
             {suppliers?.map((supplier) => {
+              // Afficher le contact principal s'il existe
+              const contactInfo = supplier.contact ? ` (${supplier.contact})` : '';
               return (
                 <SelectItem key={supplier.id} value={supplier.id}>
-                  {supplier.contact ? `${supplier.name} (${supplier.contact})` : supplier.name}
+                  {supplier.name}{contactInfo}
                 </SelectItem>
               );
             })}
