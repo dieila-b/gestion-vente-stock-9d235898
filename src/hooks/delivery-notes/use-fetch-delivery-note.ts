@@ -49,17 +49,18 @@ export function useFetchDeliveryNote(id: string | undefined) {
             `)
             .eq('id', id)
             .eq('deleted', false)
+            .single()
         );
 
-        // Since db.query returns an array, we need to get the first item
-        const result = Array.isArray(results) && results.length > 0 ? results[0] : null;
-
-        if (!result) {
+        console.log("Raw query results:", results);
+        
+        if (!results) {
           console.error("Delivery note not found");
           return null;
         }
-
-        console.log("Delivery note data:", result);
+        
+        // Now we have a single object, not an array
+        const result = results;
 
         // Process items with proper typing
         const items = Array.isArray(result.items) ? result.items.map(item => {
