@@ -1,6 +1,5 @@
-
 import { BankAccount, DeliveryNote, Supplier } from "@/types/db-adapter";
-import { isSelectQueryError } from './safe-access';
+import { isSelectQueryError, safeArray } from './safe-access';
 
 /**
  * Safely handle client properties from a relation that could be SelectQueryError
