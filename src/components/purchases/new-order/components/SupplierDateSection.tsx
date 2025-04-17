@@ -3,8 +3,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerCustom } from "@/components/ui/date-picker-custom";
 import { Supplier } from "@/types/supplier";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 interface SupplierDateSectionProps {
   supplier: string;
