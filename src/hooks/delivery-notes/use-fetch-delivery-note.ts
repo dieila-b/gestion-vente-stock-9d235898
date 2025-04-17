@@ -13,7 +13,6 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        // The db.query returns an array, so we need to get the first item
         const results = await db.query(
           'delivery_notes',
           query => query
@@ -59,6 +58,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           console.error("Delivery note not found");
           return null;
         }
+
+        console.log("Delivery note data:", result);
 
         // Process items with proper typing
         const items = Array.isArray(result.items) ? result.items.map(item => {
@@ -106,7 +107,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
           total_amount: 0 
         };
 
-        return {
+        const deliveryNote: DeliveryNote = {
           id: result.id || '',
           delivery_number: result.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
           created_at: result.created_at || '',
@@ -116,7 +117,10 @@ export function useFetchDeliveryNote(id: string | undefined) {
           supplier,
           purchase_order: purchaseOrder,
           items
-        } as DeliveryNote;
+        };
+
+        console.log("Processed delivery note:", deliveryNote);
+        return deliveryNote;
       } catch (error) {
         console.error("Error fetching delivery note:", error);
         return null;
