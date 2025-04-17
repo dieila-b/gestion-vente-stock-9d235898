@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerCustom } from "@/components/ui/date-picker-custom";
 import { Supplier } from "@/types/supplier";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface SupplierDateSectionProps {
   supplier: string;
@@ -27,7 +29,7 @@ export const SupplierDateSection = ({
           <SelectTrigger className="neo-blur border-white/10">
             <SelectValue placeholder="Sélectionner un fournisseur" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-black/80 backdrop-blur-md border-white/10">
             {suppliers?.map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.contact || 'Contact non spécifié'}
