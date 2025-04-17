@@ -107,7 +107,7 @@ export default function Dashboard() {
           Tableau de Bord
         </h1>
         <p className="text-muted-foreground animate-fade-in delay-100">
-          Bienvenue sur votre tableau de bord MOGA STORE
+          Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA
         </p>
       </div>
 
@@ -145,3 +145,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

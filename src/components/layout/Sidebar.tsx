@@ -18,7 +18,7 @@ export function Sidebar() {
       <SidebarContent className="flex h-full flex-col">
         <div className="p-6">
           <Link to="/" className="block">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">MMK Holding</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">Ets AICHA BUSINESS ALPHAYA</h1>
           </Link>
         </div>
         
@@ -41,3 +41,4 @@ export function Sidebar() {
     </SidebarComponent>
   );
 }
+
