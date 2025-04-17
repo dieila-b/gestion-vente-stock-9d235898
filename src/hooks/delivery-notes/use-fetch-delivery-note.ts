@@ -13,7 +13,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        const result = await db.query(
+        const result: any = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -59,8 +59,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing - ensure result is treated as an object, not an array
-        const items = result.items && Array.isArray(result.items) ? result.items.map(item => {
+        // Process items with proper typing - type result as 'any' to avoid TypeScript errors
+        const items = result && result.items && Array.isArray(result.items) ? result.items.map(item => {
           if (!item) return null;
           
           return {
@@ -82,7 +82,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         }).filter(Boolean) : [];
 
         // Handle supplier safely
-        const supplier = result.supplier ? {
+        const supplier = result && result.supplier ? {
           id: result.supplier.id || '',
           name: result.supplier.name || 'Fournisseur inconnu',
           phone: result.supplier.phone || '',
@@ -95,7 +95,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         };
         
         // Handle purchase order safely
-        const purchaseOrder = result.purchase_order ? {
+        const purchaseOrder = result && result.purchase_order ? {
           id: result.purchase_order.id || '',
           order_number: result.purchase_order.order_number || '',
           total_amount: result.purchase_order.total_amount || 0

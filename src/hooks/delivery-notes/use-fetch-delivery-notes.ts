@@ -52,7 +52,7 @@ export function useFetchDeliveryNotes() {
         // Transform and clean up the data
         const deliveryNotes = Array.isArray(result) ? result.map(note => {
           // Handle supplier safely
-          const supplier = note.supplier ? {
+          const supplier = note && note.supplier ? {
             id: note.supplier.id || '',
             name: note.supplier.name || 'Fournisseur inconnu',
             phone: note.supplier.phone || '',
@@ -65,7 +65,7 @@ export function useFetchDeliveryNotes() {
           };
           
           // Handle purchase order safely
-          const purchaseOrder = note.purchase_order ? {
+          const purchaseOrder = note && note.purchase_order ? {
             id: note.purchase_order.id || '',
             order_number: note.purchase_order.order_number || '',
             total_amount: note.purchase_order.total_amount || 0
@@ -76,7 +76,7 @@ export function useFetchDeliveryNotes() {
           };
 
           // Process items with proper typing
-          const items = Array.isArray(note.items) ? note.items.map(item => {
+          const items = note && note.items && Array.isArray(note.items) ? note.items.map(item => {
             if (!item) return null;
             
             return {
