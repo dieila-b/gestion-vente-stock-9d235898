@@ -51,51 +51,59 @@ export function useFetchDeliveryNotes() {
         
         // Transform and clean up the data
         const deliveryNotes = Array.isArray(result) ? result.map(note => {
+          if (!note) return null;
+          
           // Handle supplier safely
-          const supplier = note && note.supplier ? {
-            id: note.supplier.id || '',
-            name: note.supplier.name || 'Fournisseur inconnu',
-            phone: note.supplier.phone || '',
-            email: note.supplier.email || ''
-          } : { 
-            id: '',
-            name: 'Fournisseur inconnu', 
-            phone: '', 
-            email: '' 
-          };
+          const supplier = note && note.supplier 
+            ? {
+                id: note.supplier.id || '',
+                name: note.supplier.name || 'Fournisseur inconnu',
+                phone: note.supplier.phone || '',
+                email: note.supplier.email || ''
+              } 
+            : { 
+                id: '',
+                name: 'Fournisseur inconnu', 
+                phone: '', 
+                email: '' 
+              };
           
           // Handle purchase order safely
-          const purchaseOrder = note && note.purchase_order ? {
-            id: note.purchase_order.id || '',
-            order_number: note.purchase_order.order_number || '',
-            total_amount: note.purchase_order.total_amount || 0
-          } : { 
-            id: '',
-            order_number: 'N/A', 
-            total_amount: 0 
-          };
+          const purchaseOrder = note && note.purchase_order 
+            ? {
+                id: note.purchase_order.id || '',
+                order_number: note.purchase_order.order_number || '',
+                total_amount: note.purchase_order.total_amount || 0
+              } 
+            : { 
+                id: '',
+                order_number: 'N/A', 
+                total_amount: 0 
+              };
 
           // Process items with proper typing
-          const items = note && note.items && Array.isArray(note.items) ? note.items.map(item => {
-            if (!item) return null;
-            
-            return {
-              id: item.id || '',
-              product_id: item.product_id || '',
-              quantity_ordered: item.quantity_ordered || 0,
-              quantity_received: item.quantity_received || 0,
-              unit_price: item.unit_price || 0,
-              product: item.product ? {
-                id: item.product.id || '',
-                name: item.product.name || 'Produit non disponible',
-                reference: item.product.reference || ''
-              } : {
-                id: '',
-                name: 'Produit non disponible',
-                reference: ''
-              }
-            };
-          }).filter(Boolean) : [];
+          const items = note && note.items && Array.isArray(note.items) 
+            ? note.items.map(item => {
+                if (!item) return null;
+                
+                return {
+                  id: item.id || '',
+                  product_id: item.product_id || '',
+                  quantity_ordered: item.quantity_ordered || 0,
+                  quantity_received: item.quantity_received || 0,
+                  unit_price: item.unit_price || 0,
+                  product: item.product ? {
+                    id: item.product.id || '',
+                    name: item.product.name || 'Produit non disponible',
+                    reference: item.product.reference || ''
+                  } : {
+                    id: '',
+                    name: 'Produit non disponible',
+                    reference: ''
+                  }
+                };
+              }).filter(Boolean) 
+            : [];
           
           return {
             id: note.id || '',
@@ -108,7 +116,7 @@ export function useFetchDeliveryNotes() {
             purchase_order: purchaseOrder,
             items
           } as DeliveryNote;
-        }) : [];
+        }).filter(Boolean) as DeliveryNote[] : [];
         
         console.log("Transformed delivery notes:", deliveryNotes);
         return deliveryNotes;

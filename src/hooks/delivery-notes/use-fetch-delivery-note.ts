@@ -13,7 +13,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        const result: any = await db.query(
+        const result = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -59,51 +59,57 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing - type result as 'any' to avoid TypeScript errors
-        const items = result && result.items && Array.isArray(result.items) ? result.items.map(item => {
-          if (!item) return null;
-          
-          return {
-            id: item.id || '',
-            product_id: item.product_id || '',
-            quantity_ordered: item.quantity_ordered || 0,
-            quantity_received: item.quantity_received || 0,
-            unit_price: item.unit_price || 0,
-            product: item.product ? {
-              id: item.product.id || '',
-              name: item.product.name || 'Produit non disponible',
-              reference: item.product.reference || ''
-            } : {
-              id: '',
-              name: 'Produit non disponible',
-              reference: ''
-            }
-          };
-        }).filter(Boolean) : [];
+        // Process items with proper typing
+        const items = result && result.items && Array.isArray(result.items) 
+          ? result.items.map(item => {
+              if (!item) return null;
+              
+              return {
+                id: item.id || '',
+                product_id: item.product_id || '',
+                quantity_ordered: item.quantity_ordered || 0,
+                quantity_received: item.quantity_received || 0,
+                unit_price: item.unit_price || 0,
+                product: item.product ? {
+                  id: item.product.id || '',
+                  name: item.product.name || 'Produit non disponible',
+                  reference: item.product.reference || ''
+                } : {
+                  id: '',
+                  name: 'Produit non disponible',
+                  reference: ''
+                }
+              };
+            }).filter(Boolean) 
+          : [];
 
         // Handle supplier safely
-        const supplier = result && result.supplier ? {
-          id: result.supplier.id || '',
-          name: result.supplier.name || 'Fournisseur inconnu',
-          phone: result.supplier.phone || '',
-          email: result.supplier.email || ''
-        } : { 
-          id: '',
-          name: 'Fournisseur inconnu', 
-          phone: '', 
-          email: '' 
-        };
+        const supplier = result && result.supplier 
+          ? {
+              id: result.supplier.id || '',
+              name: result.supplier.name || 'Fournisseur inconnu',
+              phone: result.supplier.phone || '',
+              email: result.supplier.email || ''
+            } 
+          : { 
+              id: '',
+              name: 'Fournisseur inconnu', 
+              phone: '', 
+              email: '' 
+            };
         
         // Handle purchase order safely
-        const purchaseOrder = result && result.purchase_order ? {
-          id: result.purchase_order.id || '',
-          order_number: result.purchase_order.order_number || '',
-          total_amount: result.purchase_order.total_amount || 0
-        } : { 
-          id: '',
-          order_number: 'N/A', 
-          total_amount: 0 
-        };
+        const purchaseOrder = result && result.purchase_order 
+          ? {
+              id: result.purchase_order.id || '',
+              order_number: result.purchase_order.order_number || '',
+              total_amount: result.purchase_order.total_amount || 0
+            } 
+          : { 
+              id: '',
+              order_number: 'N/A', 
+              total_amount: 0 
+            };
 
         // Construct the delivery note with proper typing
         const deliveryNote: DeliveryNote = {
