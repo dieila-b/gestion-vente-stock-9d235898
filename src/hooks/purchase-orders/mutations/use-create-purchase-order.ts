@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { safeSupplier } from "@/utils/data-safe"; 
 import { db } from "@/utils/db-core";
-import { PurchaseOrder } from "@/types/purchase-order";
+import { PurchaseOrder, Supplier } from "@/types/purchase-order";
 
 export function useCreatePurchaseOrder() {
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +58,13 @@ export function useCreatePurchaseOrder() {
       console.log("Successfully created purchase order:", createdOrder);
 
       // Get supplier info if available
-      let supplierInfo = { name: "Fournisseur inconnu", phone: "", email: "" };
+      let supplierInfo: Partial<Supplier> = { 
+        id: createdOrder.supplier_id || '', 
+        name: "Fournisseur inconnu", 
+        phone: "", 
+        email: "" 
+      };
+      
       if (createdOrder.supplier_id) {
         try {
           const { data: supplierData } = await supabase

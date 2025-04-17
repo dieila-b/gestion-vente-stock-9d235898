@@ -14,6 +14,7 @@ export interface PurchaseOrder {
   id: string;
   order_number: string;
   supplier: { 
+    id: string;
     name: string;
     phone?: string | null;
     email?: string | null;

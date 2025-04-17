@@ -8,7 +8,7 @@ import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { EditPurchaseOrderDialog } from "@/components/purchases/edit/EditPurchaseOrderDialog";
-import type { PurchaseOrder } from "@/types/purchase-order";
+import { PurchaseOrder } from "@/types/purchaseOrder";
 import { isSelectQueryError } from "@/utils/type-utils";
 import { toast } from "sonner";
 
@@ -65,15 +65,23 @@ export default function PurchaseOrdersPage() {
           };
         }
         
+        // Convert order.status to the type needed by PurchaseOrder in purchaseOrder.ts
+        const safeStatus = ((status: string): PurchaseOrder['status'] => {
+          if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
+            return status as PurchaseOrder['status'];
+          }
+          return 'draft';
+        })(order.status);
+
         // Ensure all necessary properties are present
         return {
           ...order,
           supplier,
+          status: safeStatus,
           deleted: false,
           items: Array.isArray(order.items) ? order.items : [],
           // Add defaults for required fields
           payment_status: order.payment_status || 'pending',
-          status: order.status || 'draft',
           total_amount: order.total_amount || 0,
           order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
         } as PurchaseOrder;

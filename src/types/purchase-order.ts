@@ -6,7 +6,7 @@ export interface PurchaseOrder {
   order_number: string;
   created_at: string;
   updated_at?: string;
-  status: string;
+  status: "draft" | "pending" | "delivered" | "approved";
   supplier_id: string;
   discount: number;
   expected_delivery_date: string;
