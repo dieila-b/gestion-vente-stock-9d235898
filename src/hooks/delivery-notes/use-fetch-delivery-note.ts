@@ -13,7 +13,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        const result = await db.query(
+        // The db.query returns an array, so we need to get the first item
+        const results = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -49,8 +50,10 @@ export function useFetchDeliveryNote(id: string | undefined) {
             `)
             .eq('id', id)
             .eq('deleted', false)
-            .single()
         );
+
+        // Since db.query returns an array, we need to get the first item
+        const result = Array.isArray(results) && results.length > 0 ? results[0] : null;
 
         if (!result) {
           console.error("Delivery note not found");
