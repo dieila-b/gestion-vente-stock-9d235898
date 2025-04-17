@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { safeSupplier } from "@/utils/data-safe"; // Updated import path
-import { db } from "@/utils/db-adapter";
+import { safeSupplier } from "@/utils/data-safe"; 
+import { db } from "@/utils/db-core";
 
 export function useCreatePurchaseOrder() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,11 +13,14 @@ export function useCreatePurchaseOrder() {
 
   const createPurchaseOrder = async (data: any) => {
     try {
-      // Create the purchase order
+      console.log("Creating purchase order with data:", data);
+      
+      // Create the purchase order with deleted explicitly set to false
       const purchaseOrder = await db.insert(
         'purchase_orders',
         {
           ...data,
+          deleted: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
@@ -26,6 +29,8 @@ export function useCreatePurchaseOrder() {
       if (!purchaseOrder) {
         throw new Error("Failed to create purchase order");
       }
+
+      console.log("Successfully created purchase order:", purchaseOrder);
 
       // Add supplementary data for the UI
       const supplier = safeSupplier(purchaseOrder.supplier);

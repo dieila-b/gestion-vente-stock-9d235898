@@ -1,3 +1,4 @@
+
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
@@ -105,7 +106,8 @@ export const usePurchaseOrderSubmit = ({
         discount: discount,
         total_amount: calculateTotalTTC(),
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        deleted: false // Explicitly set to false for new orders
       };
       
       const createdOrder = await db.insert('purchase_orders', orderData);

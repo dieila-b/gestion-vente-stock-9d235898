@@ -4,29 +4,64 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
+import { db } from "@/utils/db-core";
 
 export function usePurchaseOrders() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const editPurchaseOrder = useEditPurchaseOrder();
 
-  // Query to fetch purchase orders
+  // Query to fetch purchase orders with improved reliability
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['purchase-orders'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('purchase_orders')
-        .select(`
-          *,
-          supplier:suppliers(*),
-          warehouse:warehouses(*),
-          items:purchase_order_items(*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      console.log("Fetched purchase orders:", data);
-      return data || [];
+      try {
+        console.log("Fetching purchase orders...");
+        
+        // Use both db utility and direct supabase query for maximum reliability
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:suppliers(*),
+            warehouse:warehouses(*),
+            items:purchase_order_items(*)
+          `)
+          .eq('deleted', false) // Only fetch non-deleted orders
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching purchase orders with Supabase:", error);
+          throw error;
+        }
+        
+        console.log("Fetched purchase orders:", data);
+        return data || [];
+      } catch (supabaseError) {
+        console.error("Trying alternative fetch method after error:", supabaseError);
+        
+        // Fallback to db utility if the direct query fails
+        try {
+          const ordersData = await db.query(
+            'purchase_orders',
+            q => q.select(`
+              *,
+              supplier:suppliers (*),
+              warehouse:warehouses (*),
+              items:purchase_order_items (*)
+            `)
+            .eq('deleted', false)
+            .order('created_at', { ascending: false }),
+            []
+          );
+          
+          console.log("Fetched purchase orders with fallback method:", ordersData);
+          return ordersData || [];
+        } catch (fallbackError) {
+          console.error("Error with fallback fetch method:", fallbackError);
+          return [];
+        }
+      }
     }
   });
 
@@ -36,7 +71,10 @@ export function usePurchaseOrders() {
       // Create main purchase order
       const { data, error } = await supabase
         .from('purchase_orders')
-        .insert(orderData)
+        .insert({
+          ...orderData,
+          deleted: false // Explicitly set deleted to false
+        })
         .select()
         .single();
       
@@ -91,16 +129,17 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle delete
+  // Handle delete - updated to use soft delete
   const handleDelete = async (id: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
       return false;
     }
     
     try {
+      // Use soft delete by setting deleted=true instead of actually deleting
       const { error } = await supabase
         .from('purchase_orders')
-        .delete()
+        .update({ deleted: true })
         .eq('id', id);
       
       if (error) throw error;
