@@ -39,13 +39,14 @@ export function DatePickerCustom({ date, onDateChange, className }: DatePickerPr
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 neo-blur border-white/10 bg-black/30" align="start">
+      <PopoverContent className="w-auto p-0 neo-blur border-white/10 bg-black/30 z-50" align="start">
         <Calendar
           mode="single"
           selected={date}
           onSelect={onDateChange}
           initialFocus
           className="p-3 pointer-events-auto"
+          locale={fr}
         />
       </PopoverContent>
     </Popover>
