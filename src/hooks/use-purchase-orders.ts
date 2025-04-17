@@ -19,7 +19,7 @@ export function usePurchaseOrders() {
       try {
         console.log("Fetching purchase orders...");
         
-        // Use both db utility and direct supabase query for maximum reliability
+        // Try to fetch using direct Supabase query first
         const { data, error } = await supabase
           .from('purchase_orders')
           .select(`
@@ -28,7 +28,6 @@ export function usePurchaseOrders() {
             warehouse:warehouses(*),
             items:purchase_order_items(*)
           `)
-          .eq('deleted', false) // Only fetch non-deleted orders
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -36,8 +35,14 @@ export function usePurchaseOrders() {
           throw error;
         }
         
-        console.log("Fetched purchase orders:", data);
-        return data || [];
+        // Process data to ensure all orders have deleted property set
+        const processedData = data?.map(order => ({
+          ...order,
+          deleted: typeof order.deleted === 'boolean' ? order.deleted : false
+        })) || [];
+
+        console.log("Fetched purchase orders:", processedData);
+        return processedData;
       } catch (supabaseError) {
         console.error("Trying alternative fetch method after error:", supabaseError);
         
@@ -51,13 +56,18 @@ export function usePurchaseOrders() {
               warehouse:warehouses (*),
               items:purchase_order_items (*)
             `)
-            .eq('deleted', false)
             .order('created_at', { ascending: false }),
             []
           );
           
-          console.log("Fetched purchase orders with fallback method:", ordersData);
-          return ordersData || [];
+          // Process data to ensure all orders have deleted property set
+          const processedData = ordersData?.map(order => ({
+            ...order,
+            deleted: typeof order.deleted === 'boolean' ? order.deleted : false
+          })) || [];
+
+          console.log("Fetched purchase orders with fallback method:", processedData);
+          return processedData;
         } catch (fallbackError) {
           console.error("Error with fallback fetch method:", fallbackError);
           return [];
@@ -70,8 +80,10 @@ export function usePurchaseOrders() {
   const { mutate: createOrder } = useMutation({
     mutationFn: async (orderData: Omit<Partial<PurchaseOrder>, 'supplier' | 'warehouse' | 'items'>) => {
       // Create main purchase order with explicit typing
+      const { deleted, ...restOrderData } = orderData;
+      
       const orderDataWithDeleted = {
-        ...orderData,
+        ...restOrderData,
         deleted: false // Explicitly set deleted to false
       };
       
@@ -139,7 +151,7 @@ export function usePurchaseOrders() {
     }
     
     try {
-      // Use soft delete by setting deleted=true instead of actually deleting
+      // Use soft delete by setting deleted=true
       const { error } = await supabase
         .from('purchase_orders')
         .update({ deleted: true })

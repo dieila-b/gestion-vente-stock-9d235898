@@ -42,8 +42,14 @@ export function usePurchaseData(orderId?: string) {
         throw new Error(error.message);
       }
 
-      console.log("Fetched purchase order:", data);
-      return data;
+      // Ensure the purchase has a deleted property
+      const processedData = {
+        ...data,
+        deleted: typeof data.deleted === 'boolean' ? data.deleted : false
+      };
+
+      console.log("Fetched purchase order:", processedData);
+      return processedData;
     },
     enabled: !!orderId
   });
@@ -63,7 +69,8 @@ export function usePurchaseData(orderId?: string) {
         shipping_cost: purchase.shipping_cost,
         transit_cost: purchase.transit_cost,
         logistics_cost: purchase.logistics_cost,
-        tax_rate: purchase.tax_rate
+        tax_rate: purchase.tax_rate,
+        deleted: purchase.deleted
       });
       
       // Set order items
