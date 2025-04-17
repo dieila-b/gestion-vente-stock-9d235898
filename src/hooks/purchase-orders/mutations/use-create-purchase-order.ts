@@ -16,10 +16,10 @@ export function useCreatePurchaseOrder() {
     try {
       console.log("Creating purchase order with data:", data);
       
-      // Remove deleted property before sending to database since the column doesn't exist
-      const { deleted, ...dataForDb } = data;
+      // Remove properties that don't exist in the database
+      const { deleted, supplier, warehouse, items, ...dataForDb } = data as any;
       
-      // Create the purchase order without the deleted field
+      // Create the purchase order without fields that don't exist in the database
       const purchaseOrder = await db.insert(
         'purchase_orders',
         {
@@ -44,8 +44,7 @@ export function useCreatePurchaseOrder() {
           phone: supplier.phone || "",
           email: supplier.email || ""
         },
-        // Explicit cast for properties that might not exist in the database
-        // but are expected in the UI
+        // Explicit properties for UI
         deleted: false
       };
 

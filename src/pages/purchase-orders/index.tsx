@@ -45,11 +45,17 @@ export default function PurchaseOrdersPage() {
   useEffect(() => {
     console.log("Raw orders for processing:", rawOrders);
     
+    if (!rawOrders || rawOrders.length === 0) {
+      console.log("No orders to process");
+      setFilteredOrders([]);
+      return;
+    }
+    
     const processedOrders = rawOrders.map(order => {
       let supplier;
       if (isSelectQueryError(order.supplier)) {
         supplier = { 
-          id: '',
+          id: order.supplier_id || '',
           name: 'Fournisseur inconnu', 
           phone: '', 
           email: '' 
@@ -71,14 +77,12 @@ export default function PurchaseOrdersPage() {
         };
       }
       
-      const rawOrderAny = order as any;
-      
-      // Ensure deleted property is explicitly set to false since it doesn't exist in DB
+      // Ensure all necessary properties are present
       return {
         ...order,
         supplier,
         deleted: false,
-        items: rawOrderAny.items ? rawOrderAny.items : []
+        items: Array.isArray(order.items) ? order.items : []
       } as unknown as PurchaseOrder;
     });
     

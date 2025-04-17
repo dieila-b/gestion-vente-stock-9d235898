@@ -1,8 +1,8 @@
+
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/utils/db-core";
 
 interface UsePurchaseOrderSubmitProps {
@@ -108,7 +108,10 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      const createdOrder = await db.insert('purchase_orders', orderData);
+      // Explicitly exclude 'deleted' as it doesn't exist in the database
+      const cleanedOrderData = { ...orderData };
+      
+      const createdOrder = await db.insert('purchase_orders', cleanedOrderData);
       
       if (!createdOrder) {
         throw new Error("Aucun bon de commande créé");

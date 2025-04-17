@@ -37,13 +37,30 @@ export function usePurchaseOrders() {
         
         console.log("Raw purchase order data:", data);
         
+        if (!data || data.length === 0) {
+          console.log("No purchase orders found in database");
+          return [];
+        }
+        
         // Add deleted property since it doesn't exist in the database
-        const processedData = data?.map(order => ({
-          ...order,
-          deleted: false
-        })) || [];
+        const processedData = data.map(order => {
+          // Format the supplier information explicitly
+          const supplierData = order.supplier || {};
+          const formattedSupplier = {
+            id: supplierData.id || order.supplier_id || '',
+            name: supplierData.name || 'Fournisseur inconnu',
+            phone: supplierData.phone || '',
+            email: supplierData.email || ''
+          };
+          
+          return {
+            ...order,
+            supplier: formattedSupplier,
+            deleted: false
+          };
+        });
 
-        console.log("Fetched purchase orders:", processedData);
+        console.log("Processed purchase orders:", processedData);
         return processedData;
       } catch (supabaseError) {
         console.error("Trying alternative fetch method after error:", supabaseError);
@@ -64,13 +81,30 @@ export function usePurchaseOrders() {
           
           console.log("Raw orders data from fallback:", ordersData);
           
-          // Add deleted property to all orders
-          const processedData = ordersData?.map(order => ({
-            ...order,
-            deleted: false 
-          })) || [];
+          if (!ordersData || ordersData.length === 0) {
+            console.log("No purchase orders found using fallback method");
+            return [];
+          }
+          
+          // Add deleted property and format supplier data
+          const processedData = ordersData.map(order => {
+            // Format the supplier information explicitly
+            const supplierData = order.supplier || {};
+            const formattedSupplier = {
+              id: supplierData.id || order.supplier_id || '',
+              name: supplierData.name || 'Fournisseur inconnu',
+              phone: supplierData.phone || '',
+              email: supplierData.email || ''
+            };
+            
+            return {
+              ...order,
+              supplier: formattedSupplier,
+              deleted: false
+            };
+          });
 
-          console.log("Fetched purchase orders with fallback method:", processedData);
+          console.log("Processed purchase orders with fallback method:", processedData);
           return processedData;
         } catch (fallbackError) {
           console.error("Error with fallback fetch method:", fallbackError);
@@ -84,7 +118,7 @@ export function usePurchaseOrders() {
   const { mutate: createOrder } = useMutation({
     mutationFn: async (orderData: Omit<Partial<PurchaseOrder>, 'supplier' | 'warehouse' | 'items'>) => {
       // Remove deleted property since it doesn't exist in database
-      const { deleted, ...restOrderData } = orderData;
+      const { deleted, supplier, warehouse, items, ...restOrderData } = orderData as any;
       
       console.log("Creating order with data:", restOrderData);
       
@@ -95,7 +129,12 @@ export function usePurchaseOrders() {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating purchase order:", error);
+        throw error;
+      }
+      
+      console.log("Successfully created purchase order:", data);
       return data;
     },
     onSuccess: (data) => {
