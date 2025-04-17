@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,7 +16,7 @@ export function useCreatePurchaseOrder() {
       console.log("Creating purchase order with data:", data);
       
       // Remove properties that don't exist in the database
-      const { deleted, supplier, warehouse, items, ...dataForDb } = data as any;
+      const { deleted, supplier: supplierData, warehouse, items, ...dataForDb } = data as any;
       
       // Create the purchase order without fields that don't exist in the database
       const purchaseOrder = await db.insert(
@@ -36,13 +35,13 @@ export function useCreatePurchaseOrder() {
       console.log("Successfully created purchase order:", purchaseOrder);
 
       // Add supplementary data for the UI
-      const supplier = safeSupplier(purchaseOrder.supplier);
+      const supplierInfo = safeSupplier(purchaseOrder.supplier);
       const enhancedOrder = {
         ...purchaseOrder,
         supplier: {
-          name: supplier.name || "Unknown Supplier",
-          phone: supplier.phone || "",
-          email: supplier.email || ""
+          name: supplierInfo.name || "Unknown Supplier",
+          phone: supplierInfo.phone || "",
+          email: supplierInfo.email || ""
         },
         // Explicit properties for UI
         deleted: false

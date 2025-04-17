@@ -28,7 +28,7 @@ export interface PurchaseOrder {
     name: string;
   };
   items?: PurchaseOrderItem[];
-  deleted?: boolean; // Make it optional since it doesn't exist in the database
+  deleted?: boolean; // Keep this optional as it doesn't exist in the database
 }
 
 export interface PurchaseOrderItem {

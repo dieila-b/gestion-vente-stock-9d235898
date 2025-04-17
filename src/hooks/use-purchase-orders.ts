@@ -44,7 +44,7 @@ export function usePurchaseOrders() {
         
         // Add deleted property since it doesn't exist in the database
         const processedData = data.map(order => {
-          // Format the supplier information explicitly
+          // Format the supplier information explicitly with null checks
           const supplierData = order.supplier || {};
           const formattedSupplier = {
             id: supplierData.id || order.supplier_id || '',
@@ -88,7 +88,7 @@ export function usePurchaseOrders() {
           
           // Add deleted property and format supplier data
           const processedData = ordersData.map(order => {
-            // Format the supplier information explicitly
+            // Format the supplier information explicitly with null checks
             const supplierData = order.supplier || {};
             const formattedSupplier = {
               id: supplierData.id || order.supplier_id || '',
