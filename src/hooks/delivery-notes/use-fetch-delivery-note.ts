@@ -13,7 +13,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        const result = await db.query(
+        const result: any = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -59,8 +59,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Process items with proper typing
-        const items = Array.isArray(result.items) ? result.items.map(item => {
+        // Process items with proper typing - ensure result.items is treated as an array
+        const items = Array.isArray(result?.items) ? result.items.map(item => {
           if (!item) return null;
           
           return {
@@ -81,8 +81,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           };
         }).filter(Boolean) : [];
 
-        // Handle supplier safely
-        const supplier = result.supplier ? {
+        // Handle supplier safely - use optional chaining to avoid type errors
+        const supplier = result?.supplier ? {
           id: result.supplier.id || '',
           name: result.supplier.name || 'Fournisseur inconnu',
           phone: result.supplier.phone || '',
@@ -94,8 +94,8 @@ export function useFetchDeliveryNote(id: string | undefined) {
           email: '' 
         };
         
-        // Handle purchase order safely
-        const purchaseOrder = result.purchase_order ? {
+        // Handle purchase order safely - use optional chaining to avoid type errors
+        const purchaseOrder = result?.purchase_order ? {
           id: result.purchase_order.id || '',
           order_number: result.purchase_order.order_number || '',
           total_amount: result.purchase_order.total_amount || 0
@@ -105,13 +105,14 @@ export function useFetchDeliveryNote(id: string | undefined) {
           total_amount: 0 
         };
 
+        // Construct the delivery note with proper typing
         const deliveryNote: DeliveryNote = {
-          id: result.id || '',
-          delivery_number: result.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-          created_at: result.created_at || '',
-          updated_at: result.updated_at || '',
-          notes: result.notes || '',
-          status: result.status || 'pending',
+          id: result?.id || '',
+          delivery_number: result?.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          created_at: result?.created_at || '',
+          updated_at: result?.updated_at || '',
+          notes: result?.notes || '',
+          status: result?.status || 'pending',
           supplier,
           purchase_order: purchaseOrder,
           items
