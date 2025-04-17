@@ -59,12 +59,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
           return null;
         }
 
-        // Ensure result is treated as an object, not an array
-        const deliveryNoteData = result as any;
-
+        // Make sure we're dealing with an object, not an array
+        const note = result as any;
+        
         // Process items with proper typing
-        const items = deliveryNoteData.items && Array.isArray(deliveryNoteData.items) 
-          ? deliveryNoteData.items.map((item: any) => {
+        const items = note.items && Array.isArray(note.items) 
+          ? note.items.map((item: any) => {
               if (!item) return null;
               
               return {
@@ -87,12 +87,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
           : [];
 
         // Handle supplier safely
-        const supplier = deliveryNoteData.supplier 
+        const supplier = note.supplier 
           ? {
-              id: deliveryNoteData.supplier.id || '',
-              name: deliveryNoteData.supplier.name || 'Fournisseur inconnu',
-              phone: deliveryNoteData.supplier.phone || '',
-              email: deliveryNoteData.supplier.email || ''
+              id: note.supplier.id || '',
+              name: note.supplier.name || 'Fournisseur inconnu',
+              phone: note.supplier.phone || '',
+              email: note.supplier.email || ''
             } 
           : { 
               id: '',
@@ -102,11 +102,11 @@ export function useFetchDeliveryNote(id: string | undefined) {
             };
         
         // Handle purchase order safely
-        const purchaseOrder = deliveryNoteData.purchase_order 
+        const purchaseOrder = note.purchase_order 
           ? {
-              id: deliveryNoteData.purchase_order.id || '',
-              order_number: deliveryNoteData.purchase_order.order_number || '',
-              total_amount: deliveryNoteData.purchase_order.total_amount || 0
+              id: note.purchase_order.id || '',
+              order_number: note.purchase_order.order_number || '',
+              total_amount: note.purchase_order.total_amount || 0
             } 
           : { 
               id: '',
@@ -116,12 +116,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
 
         // Construct the delivery note with proper typing
         const deliveryNote: DeliveryNote = {
-          id: deliveryNoteData.id || '',
-          delivery_number: deliveryNoteData.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-          created_at: deliveryNoteData.created_at || '',
-          updated_at: deliveryNoteData.updated_at || '',
-          notes: deliveryNoteData.notes || '',
-          status: deliveryNoteData.status || 'pending',
+          id: note.id || '',
+          delivery_number: note.delivery_number || `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          created_at: note.created_at || '',
+          updated_at: note.updated_at || '',
+          notes: note.notes || '',
+          status: note.status || 'pending',
           supplier,
           purchase_order: purchaseOrder,
           items
