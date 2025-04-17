@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { safeSupplier } from "@/utils/data-safe/safe-entities";
+import { safeSupplier } from "@/utils/data-safe"; // Updated import path
 import { db } from "@/utils/db-adapter";
 
 export function useCreatePurchaseOrder() {
