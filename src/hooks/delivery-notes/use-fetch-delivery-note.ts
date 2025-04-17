@@ -13,7 +13,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
       console.log("Fetching delivery note with ID:", id);
       try {
         // Execute the query and get the result
-        const results = await db.query(
+        const result = await db.query(
           'delivery_notes',
           query => query
             .select(`
@@ -52,15 +52,12 @@ export function useFetchDeliveryNote(id: string | undefined) {
             .single()
         );
 
-        console.log("Raw query results:", results);
+        console.log("Raw query result:", result);
         
-        if (!results) {
+        if (!result) {
           console.error("Delivery note not found");
           return null;
         }
-        
-        // Now we have a single object, not an array
-        const result = results;
 
         // Process items with proper typing
         const items = Array.isArray(result.items) ? result.items.map(item => {
