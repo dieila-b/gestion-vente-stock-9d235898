@@ -28,6 +28,7 @@ export interface PurchaseOrder {
     name: string;
   };
   items?: PurchaseOrderItem[];
+  deleted?: boolean;
 }
 
 export interface PurchaseOrderItem {

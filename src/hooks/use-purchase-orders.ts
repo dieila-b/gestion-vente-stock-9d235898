@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 import { db } from "@/utils/db-core";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 export function usePurchaseOrders() {
   const queryClient = useQueryClient();
@@ -67,7 +68,7 @@ export function usePurchaseOrders() {
 
   // Create purchase order mutation
   const { mutate: createOrder } = useMutation({
-    mutationFn: async (orderData: any) => {
+    mutationFn: async (orderData: Partial<PurchaseOrder>) => {
       // Create main purchase order
       const { data, error } = await supabase
         .from('purchase_orders')
