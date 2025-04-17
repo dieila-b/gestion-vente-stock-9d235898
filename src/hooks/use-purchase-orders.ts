@@ -77,57 +77,87 @@ export function usePurchaseOrders() {
       } catch (supabaseError) {
         console.error("Trying alternative fetch method after error:", supabaseError);
         
-        // Fallback to db utility if the direct query fails
+        // Fallback to a simpler approach with error handling
         try {
-          const ordersData = await db.query(
-            'purchase_orders',
-            q => q.select(`
-              *,
-              supplier:suppliers (*),
-              warehouse:warehouses (*),
-              items:purchase_order_items (*)
-            `)
-            .order('created_at', { ascending: false }),
-            []
-          );
+          const { data, error } = await supabase
+            .from('purchase_orders')
+            .select('*')
+            .order('created_at', { ascending: false });
           
-          console.log("Raw orders data from fallback:", ordersData);
+          if (error) throw error;
           
-          if (!ordersData || ordersData.length === 0) {
-            console.log("No purchase orders found using fallback method");
+          console.log("Basic purchase orders data:", data);
+          
+          if (!data || data.length === 0) {
             return [];
           }
           
-          // Add deleted property and format supplier data
-          const processedData = ordersData.map(order => {
-            // Format the supplier information explicitly with null checks
-            const supplierData: Partial<Supplier> = order.supplier || {};
-            
-            // Create a formatted supplier object with fallbacks
-            const formattedSupplier: Supplier = {
-              id: (supplierData?.id || order.supplier_id || '').toString(),
-              name: supplierData?.name || 'Fournisseur inconnu',
-              phone: supplierData?.phone || '',
-              email: supplierData?.email || ''
-            };
-            
-            // Process order with required fields
-            const processedOrder = {
-              ...order,
-              supplier: formattedSupplier,
-              deleted: false,
-              items: Array.isArray(order.items) ? order.items : [],
-              payment_status: order.payment_status || 'pending',
-              status: order.status || 'draft',
-              total_amount: order.total_amount || 0,
-              order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
-            };
-            
-            return processedOrder;
-          });
-
-          console.log("Processed purchase orders with fallback method:", processedData);
-          return processedData;
+          // For each purchase order, fetch supplier separately
+          const enrichedOrders = await Promise.all(data.map(async (order) => {
+            try {
+              // Get supplier
+              let supplierData: Partial<Supplier> = {};
+              
+              if (order.supplier_id) {
+                const { data: supplier } = await supabase
+                  .from('suppliers')
+                  .select('*')
+                  .eq('id', order.supplier_id)
+                  .single();
+                
+                if (supplier) {
+                  supplierData = supplier;
+                }
+              }
+              
+              // Get order items
+              const { data: items = [] } = await supabase
+                .from('purchase_order_items')
+                .select('*')
+                .eq('purchase_order_id', order.id);
+              
+              // Format supplier
+              const formattedSupplier: Supplier = {
+                id: (supplierData?.id || order.supplier_id || '').toString(),
+                name: supplierData?.name || 'Fournisseur inconnu',
+                phone: supplierData?.phone || '',
+                email: supplierData?.email || ''
+              };
+              
+              return {
+                ...order,
+                supplier: formattedSupplier,
+                items: items || [],
+                deleted: false,
+                payment_status: order.payment_status || 'pending',
+                status: order.status || 'draft',
+                total_amount: order.total_amount || 0,
+                order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
+              };
+            } catch (error) {
+              console.error("Error enriching order:", error);
+              
+              // Return basic order with minimal data
+              return {
+                ...order,
+                supplier: {
+                  id: order.supplier_id || 'unknown',
+                  name: 'Fournisseur inconnu',
+                  phone: '',
+                  email: ''
+                },
+                items: [],
+                deleted: false,
+                payment_status: order.payment_status || 'pending',
+                status: order.status || 'draft',
+                total_amount: order.total_amount || 0,
+                order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
+              };
+            }
+          }));
+          
+          console.log("Enriched purchase orders:", enrichedOrders);
+          return enrichedOrders;
         } catch (fallbackError) {
           console.error("Error with fallback fetch method:", fallbackError);
           
@@ -169,7 +199,7 @@ export function usePurchaseOrders() {
         }
       }
     },
-    retry: 1, // Only retry once to avoid excessive retries
+    retry: 2, // Retry twice to improve chances of success
     refetchOnWindowFocus: false // Prevent refetch on window focus for debugging
   });
 

@@ -8,7 +8,7 @@ import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { EditPurchaseOrderDialog } from "@/components/purchases/edit/EditPurchaseOrderDialog";
-import type { PurchaseOrder } from "@/types/purchaseOrder";
+import type { PurchaseOrder } from "@/types/purchase-order";
 import { isSelectQueryError } from "@/utils/type-utils";
 import { toast } from "sonner";
 
@@ -54,30 +54,14 @@ export default function PurchaseOrdersPage() {
     
     try {
       const processedOrders = rawOrders.map(order => {
-        let supplier;
-        if (isSelectQueryError(order.supplier)) {
-          console.log("Supplier is a select query error:", order.supplier);
+        // Ensure supplier object is valid
+        let supplier = order.supplier;
+        if (!supplier || isSelectQueryError(supplier)) {
           supplier = { 
             id: order.supplier_id || '',
             name: 'Fournisseur inconnu', 
             phone: '', 
             email: '' 
-          };
-        } else if (!order.supplier) {
-          console.log("No supplier found for order:", order.id);
-          supplier = {
-            id: order.supplier_id || '',
-            name: 'Fournisseur non spécifié', 
-            phone: '', 
-            email: '' 
-          };
-        } else {
-          const supplierData = order.supplier as any;
-          supplier = {
-            id: order.supplier_id || (supplierData.id || ''),
-            name: supplierData.name || 'Fournisseur non spécifié',
-            phone: supplierData.phone || '',
-            email: supplierData.email || ''
           };
         }
         
@@ -92,11 +76,12 @@ export default function PurchaseOrdersPage() {
           status: order.status || 'draft',
           total_amount: order.total_amount || 0,
           order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
-        } as unknown as PurchaseOrder;
+        } as PurchaseOrder;
       });
       
       console.log("Processed orders:", processedOrders);
       
+      // Apply search filter
       const filtered = processedOrders.filter(order => 
         order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
