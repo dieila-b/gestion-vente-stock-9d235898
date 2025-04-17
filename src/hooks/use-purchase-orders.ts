@@ -66,16 +66,18 @@ export function usePurchaseOrders() {
     }
   });
 
-  // Create purchase order mutation
+  // Create purchase order mutation - properly typed
   const { mutate: createOrder } = useMutation({
-    mutationFn: async (orderData: Partial<PurchaseOrder>) => {
-      // Create main purchase order
+    mutationFn: async (orderData: Omit<Partial<PurchaseOrder>, 'supplier' | 'warehouse' | 'items'>) => {
+      // Create main purchase order with explicit typing
+      const orderDataWithDeleted = {
+        ...orderData,
+        deleted: false // Explicitly set deleted to false
+      };
+      
       const { data, error } = await supabase
         .from('purchase_orders')
-        .insert({
-          ...orderData,
-          deleted: false // Explicitly set deleted to false
-        })
+        .insert(orderDataWithDeleted)
         .select()
         .single();
       

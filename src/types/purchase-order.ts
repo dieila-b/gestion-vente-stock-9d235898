@@ -28,7 +28,7 @@ export interface PurchaseOrder {
     name: string;
   };
   items?: PurchaseOrderItem[];
-  deleted?: boolean;
+  deleted: boolean; // Changed from optional to required
 }
 
 export interface PurchaseOrderItem {

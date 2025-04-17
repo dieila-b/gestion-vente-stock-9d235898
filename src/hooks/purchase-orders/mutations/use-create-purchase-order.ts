@@ -5,13 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { safeSupplier } from "@/utils/data-safe"; 
 import { db } from "@/utils/db-core";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 export function useCreatePurchaseOrder() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
 
-  const createPurchaseOrder = async (data: any) => {
+  const createPurchaseOrder = async (data: Partial<Omit<PurchaseOrder, 'supplier' | 'warehouse' | 'items'>>) => {
     try {
       console.log("Creating purchase order with data:", data);
       
