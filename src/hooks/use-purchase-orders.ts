@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 import { db } from "@/utils/db-core";
-import { PurchaseOrder } from "@/types/purchase-order";
+import { PurchaseOrder, PurchaseOrderItem } from "@/types/purchase-order";
+import { Supplier } from "@/types/supplier";
 
 export function usePurchaseOrders() {
   const queryClient = useQueryClient();
@@ -45,7 +46,7 @@ export function usePurchaseOrders() {
         // Add deleted property since it doesn't exist in the database
         const processedData = data.map(order => {
           // Format the supplier information explicitly with null checks
-          const supplierData = order.supplier || {};
+          const supplierData: Partial<Supplier> = order.supplier || {};
           const formattedSupplier = {
             id: supplierData.id || order.supplier_id || '',
             name: supplierData.name || 'Fournisseur inconnu',
@@ -89,7 +90,7 @@ export function usePurchaseOrders() {
           // Add deleted property and format supplier data
           const processedData = ordersData.map(order => {
             // Format the supplier information explicitly with null checks
-            const supplierData = order.supplier || {};
+            const supplierData: Partial<Supplier> = order.supplier || {};
             const formattedSupplier = {
               id: supplierData.id || order.supplier_id || '',
               name: supplierData.name || 'Fournisseur inconnu',
