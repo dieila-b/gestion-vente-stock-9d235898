@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -27,7 +28,9 @@ export function useApprovePurchaseOrder() {
 
         console.log("Purchase order approved successfully:", data);
         
-        // We'll handle the delivery note creation elsewhere to avoid RLS issues
+        // Immediately try to create the delivery note
+        await syncApprovedPurchaseOrders();
+        
         return data;
       } catch (error: any) {
         console.error("Error approving purchase order:", error);
@@ -36,7 +39,7 @@ export function useApprovePurchaseOrder() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      // Also invalidate delivery notes to trigger a refresh that will check for approved orders
+      // Also invalidate delivery notes to trigger a refresh
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       toast.success("Commande approuvée avec succès");
     },

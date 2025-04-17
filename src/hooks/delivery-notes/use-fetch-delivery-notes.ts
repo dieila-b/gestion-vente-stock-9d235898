@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { DeliveryNote } from "@/types/delivery-note";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
 import { transformDeliveryNotes } from "./data/transform-delivery-notes";
 import { syncApprovedPurchaseOrders } from "./sync/sync-approved-purchase-orders";
 
@@ -15,10 +15,14 @@ export function useFetchDeliveryNotes() {
     queryFn: async () => {
       console.log("Fetching delivery notes...");
       try {
-        // Fetch delivery notes directly from Supabase for more reliable results
-        const { data: deliveryNotesData, error } = await supabase
-          .from('delivery_notes')
-          .select(`
+        // First sync approved purchase orders to create any missing delivery notes
+        console.log("Syncing approved purchase orders before fetching delivery notes...");
+        await syncApprovedPurchaseOrders();
+        
+        // Then fetch all delivery notes using our db utility for more reliable results
+        const deliveryNotesData = await db.query(
+          'delivery_notes',
+          q => q.select(`
             id,
             delivery_number,
             created_at,
@@ -52,12 +56,9 @@ export function useFetchDeliveryNotes() {
             )
           `)
           .eq('deleted', false)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("Error fetching delivery notes:", error);
-          return [];
-        }
+          .order('created_at', { ascending: false }),
+          []
+        );
 
         console.log("Fetched delivery notes:", deliveryNotesData);
         
@@ -65,58 +66,6 @@ export function useFetchDeliveryNotes() {
         const deliveryNotes = transformDeliveryNotes(deliveryNotesData);
         
         console.log("Transformed delivery notes:", deliveryNotes);
-        
-        // Après avoir récupéré les bons de livraison existants, vérifions s'il existe des commandes approuvées
-        // qui n'ont pas encore de bons de livraison, et créons-les si nécessaire
-        await syncApprovedPurchaseOrders();
-        
-        // Une fois la synchronisation terminée, récupérons à nouveau les bons de livraison
-        // pour inclure ceux nouvellement créés
-        if (deliveryNotes.length === 0) {
-          const { data: refreshedData, error: refreshError } = await supabase
-            .from('delivery_notes')
-            .select(`
-              id,
-              delivery_number,
-              created_at,
-              updated_at,
-              notes,
-              status,
-              purchase_order_id,
-              supplier_id,
-              supplier:suppliers (
-                id,
-                name,
-                phone,
-                email
-              ),
-              purchase_order:purchase_orders (
-                id,
-                order_number,
-                total_amount
-              ),
-              items:delivery_note_items (
-                id,
-                product_id,
-                quantity_ordered,
-                quantity_received,
-                unit_price,
-                product:catalog (
-                  id,
-                  name,
-                  reference
-                )
-              )
-            `)
-            .eq('deleted', false)
-            .order('created_at', { ascending: false });
-          
-          if (!refreshError && refreshedData && refreshedData.length > 0) {
-            console.log("Fetched refreshed delivery notes after sync:", refreshedData);
-            return transformDeliveryNotes(refreshedData);
-          }
-        }
-        
         return deliveryNotes;
       } catch (error) {
         console.error("Error fetching delivery notes:", error);
