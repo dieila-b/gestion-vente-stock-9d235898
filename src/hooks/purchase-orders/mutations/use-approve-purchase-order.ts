@@ -10,6 +10,8 @@ export function useApprovePurchaseOrder() {
   return useMutation({
     mutationFn: async (id: string) => {
       try {
+        console.log("Approving purchase order:", id);
+        
         // Update the purchase order status
         const { data, error } = await supabase
           .from('purchase_orders')
@@ -18,43 +20,75 @@ export function useApprovePurchaseOrder() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating purchase order status:", error);
+          throw error;
+        }
 
         // Now create a delivery note based on the purchase order
         if (data) {
           const purchaseOrder = data as PurchaseOrder;
           
-          // First create the delivery note
-          const { data: deliveryNote, error: deliveryNoteError } = await supabase
+          // Check if a delivery note already exists for this purchase order
+          const { data: existingDeliveryNote, error: checkError } = await supabase
             .from('delivery_notes')
-            .insert({
-              purchase_order_id: purchaseOrder.id,
-              supplier_id: purchaseOrder.supplier_id,
-              delivery_number: `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-              status: 'pending',
-              deleted: false, // Explicitly set deleted to false
-              notes: `Bon de livraison créé automatiquement depuis la commande ${purchaseOrder.order_number || ''}`
-            })
-            .select()
-            .single();
+            .select('id')
+            .eq('purchase_order_id', purchaseOrder.id)
+            .maybeSingle();
+            
+          if (checkError) {
+            console.error("Error checking existing delivery notes:", checkError);
+            throw checkError;
+          }
+          
+          // Only create a new delivery note if one doesn't exist
+          if (!existingDeliveryNote) {
+            console.log("Creating delivery note for purchase order:", purchaseOrder.id);
+            
+            // First create the delivery note
+            const { data: deliveryNote, error: deliveryNoteError } = await supabase
+              .from('delivery_notes')
+              .insert({
+                purchase_order_id: purchaseOrder.id,
+                supplier_id: purchaseOrder.supplier_id,
+                delivery_number: `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+                status: 'pending',
+                deleted: false, // Explicitly set deleted to false
+                notes: `Bon de livraison créé automatiquement depuis la commande ${purchaseOrder.order_number || ''}`
+              })
+              .select()
+              .single();
 
-          if (deliveryNoteError) throw deliveryNoteError;
+            if (deliveryNoteError) {
+              console.error("Error creating delivery note:", deliveryNoteError);
+              throw deliveryNoteError;
+            }
 
-          // Then create delivery note items based on purchase order items
-          if (deliveryNote && purchaseOrder.items && purchaseOrder.items.length > 0) {
-            const deliveryItemsData = purchaseOrder.items.map(item => ({
-              delivery_note_id: deliveryNote.id,
-              product_id: item.product_id,
-              quantity_ordered: item.quantity,
-              quantity_received: 0, // Initial value, to be updated on reception
-              unit_price: item.unit_price
-            }));
+            console.log("Created delivery note:", deliveryNote);
 
-            const { error: itemsError } = await supabase
-              .from('delivery_note_items')
-              .insert(deliveryItemsData);
+            // Then create delivery note items based on purchase order items
+            if (deliveryNote && purchaseOrder.items && purchaseOrder.items.length > 0) {
+              const deliveryItemsData = purchaseOrder.items.map(item => ({
+                delivery_note_id: deliveryNote.id,
+                product_id: item.product_id,
+                quantity_ordered: item.quantity,
+                quantity_received: 0, // Initial value, to be updated on reception
+                unit_price: item.unit_price
+              }));
 
-            if (itemsError) throw itemsError;
+              const { error: itemsError } = await supabase
+                .from('delivery_note_items')
+                .insert(deliveryItemsData);
+
+              if (itemsError) {
+                console.error("Error creating delivery note items:", itemsError);
+                throw itemsError;
+              }
+              
+              console.log("Created delivery note items");
+            }
+          } else {
+            console.log("Delivery note already exists for this purchase order");
           }
         }
 
