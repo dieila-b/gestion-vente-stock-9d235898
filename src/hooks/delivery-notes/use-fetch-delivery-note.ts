@@ -61,8 +61,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
         }
 
         // Process items with proper typing
-        const resultItems = Array.isArray(result.items) ? result.items : [];
-        const items = resultItems.map(item => {
+        const items = Array.isArray(result.items) ? result.items.map(item => {
           if (!item) return null;
           
           return {
@@ -81,7 +80,7 @@ export function useFetchDeliveryNote(id: string | undefined) {
               reference: ''
             }
           };
-        }).filter(Boolean);
+        }).filter(Boolean) : [];
 
         // Handle supplier safely
         const supplier = result.supplier ? {
