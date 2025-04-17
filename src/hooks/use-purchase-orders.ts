@@ -49,7 +49,7 @@ export function usePurchaseOrders() {
           const supplierData: Partial<Supplier> = order.supplier || {};
           
           // Create a properly formatted supplier object with fallbacks
-          const formattedSupplier = {
+          const formattedSupplier: Supplier = {
             id: (supplierData?.id || order.supplier_id || '').toString(),
             name: supplierData?.name || 'Fournisseur inconnu',
             phone: supplierData?.phone || '',
@@ -104,7 +104,7 @@ export function usePurchaseOrders() {
             const supplierData: Partial<Supplier> = order.supplier || {};
             
             // Create a formatted supplier object with fallbacks
-            const formattedSupplier = {
+            const formattedSupplier: Supplier = {
               id: (supplierData?.id || order.supplier_id || '').toString(),
               name: supplierData?.name || 'Fournisseur inconnu',
               phone: supplierData?.phone || '',
@@ -133,15 +133,18 @@ export function usePurchaseOrders() {
           
           // Since we have no data, create a mock purchase order for testing
           console.log("Creating mock purchase order for debugging");
+          const mockSupplier: Supplier = {
+            id: "supplier-123",
+            name: "Fournisseur Test",
+            phone: "+123456789",
+            email: "test@example.com"
+          };
+          
           const mockOrder: PurchaseOrder = {
             id: "mock-id-123",
             order_number: "PO-TEST-001",
             supplier_id: "supplier-123",
-            supplier: {
-              name: "Fournisseur Test",
-              phone: "+123456789",
-              email: "test@example.com"
-            },
+            supplier: mockSupplier,
             created_at: new Date().toISOString(),
             status: "draft",
             payment_status: "pending",
