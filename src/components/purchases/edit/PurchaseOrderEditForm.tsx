@@ -45,10 +45,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     return <div className="p-6 text-center">Bon de commande non trouvé</div>;
   }
   
-  // Ensure formData has the deleted property set
-  if (formData && typeof formData.deleted === 'undefined') {
-    updateFormField('deleted', purchase.deleted ?? false);
-  }
+  // We don't check for the deleted property anymore since we'll handle it in the hooks
   
   return (
     <div className="p-4 space-y-6">

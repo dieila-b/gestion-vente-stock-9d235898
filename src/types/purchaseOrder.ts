@@ -38,5 +38,5 @@ export interface PurchaseOrder {
   paid_amount: number;
   customs_duty?: number;
   delivery_note_id?: string;
-  deleted: boolean;
+  deleted?: boolean; // Make it optional since it doesn't exist in the database
 }

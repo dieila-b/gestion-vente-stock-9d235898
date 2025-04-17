@@ -42,10 +42,11 @@ export function usePurchaseData(orderId?: string) {
         throw new Error(error.message);
       }
 
-      // Ensure the purchase has a deleted property
+      // We don't try to access data.deleted directly since it might not exist in the database
+      // Instead, we treat all purchase orders as non-deleted by default
       const processedData = {
         ...data,
-        deleted: typeof data.deleted === 'boolean' ? data.deleted : false
+        deleted: false // Default value, since column doesn't exist in the database
       };
 
       console.log("Fetched purchase order:", processedData);
@@ -70,7 +71,7 @@ export function usePurchaseData(orderId?: string) {
         transit_cost: purchase.transit_cost,
         logistics_cost: purchase.logistics_cost,
         tax_rate: purchase.tax_rate,
-        deleted: purchase.deleted
+        deleted: false // Set default value, since column doesn't exist in the database
       });
       
       // Set order items

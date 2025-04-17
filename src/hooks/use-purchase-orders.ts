@@ -35,10 +35,11 @@ export function usePurchaseOrders() {
           throw error;
         }
         
-        // Process data to ensure all orders have deleted property set
+        // Rather than trying to access order.deleted (which doesn't exist), 
+        // set it to false for all orders since the column doesn't exist
         const processedData = data?.map(order => ({
           ...order,
-          deleted: typeof order.deleted === 'boolean' ? order.deleted : false
+          deleted: false
         })) || [];
 
         console.log("Fetched purchase orders:", processedData);
@@ -60,10 +61,10 @@ export function usePurchaseOrders() {
             []
           );
           
-          // Process data to ensure all orders have deleted property set
+          // We set deleted to false for all orders since the column doesn't exist
           const processedData = ordersData?.map(order => ({
             ...order,
-            deleted: typeof order.deleted === 'boolean' ? order.deleted : false
+            deleted: false 
           })) || [];
 
           console.log("Fetched purchase orders with fallback method:", processedData);
@@ -79,17 +80,14 @@ export function usePurchaseOrders() {
   // Create purchase order mutation - properly typed
   const { mutate: createOrder } = useMutation({
     mutationFn: async (orderData: Omit<Partial<PurchaseOrder>, 'supplier' | 'warehouse' | 'items'>) => {
-      // Create main purchase order with explicit typing
+      // Instead of destructuring deleted property (which doesn't exist in database),
+      // we just create a new object without it
       const { deleted, ...restOrderData } = orderData;
       
-      const orderDataWithDeleted = {
-        ...restOrderData,
-        deleted: false // Explicitly set deleted to false
-      };
-      
+      // Create main purchase order without the deleted field
       const { data, error } = await supabase
         .from('purchase_orders')
-        .insert(orderDataWithDeleted)
+        .insert(restOrderData)
         .select()
         .single();
       
@@ -144,17 +142,17 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle delete - updated to use soft delete
+  // Handle delete - since we don't have a deleted column, let's use a different approach
   const handleDelete = async (id: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
       return false;
     }
     
     try {
-      // Use soft delete by setting deleted=true
+      // We can't use soft delete since the column doesn't exist, so we'll do a hard delete
       const { error } = await supabase
         .from('purchase_orders')
-        .update({ deleted: true })
+        .delete()
         .eq('id', id);
       
       if (error) throw error;
