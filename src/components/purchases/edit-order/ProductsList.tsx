@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 import { formatGNF } from "@/lib/currency";
 

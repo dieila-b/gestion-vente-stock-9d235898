@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Printer, Check, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import type { PurchaseOrder } from "@/types/purchaseOrder";
+import type { PurchaseOrder } from "@/types/purchase-order";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];

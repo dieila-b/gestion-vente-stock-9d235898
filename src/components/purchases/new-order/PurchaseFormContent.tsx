@@ -6,7 +6,7 @@ import { OrderPriceSection } from "@/components/suppliers/order-form/OrderPriceS
 import { OrderStatusSelect } from "@/components/suppliers/order-form/OrderStatusSelect";
 import { PaymentStatusSelect } from "@/components/suppliers/order-form/PaymentStatusSelect";
 import { PaymentSection } from "@/components/suppliers/order-form/PaymentSection";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 
 interface PurchaseFormContentProps {

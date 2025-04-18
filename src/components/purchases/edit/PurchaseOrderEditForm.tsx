@@ -45,12 +45,15 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     return <div className="p-6 text-center">Bon de commande non trouvé</div>;
   }
   
-  // Ensure purchase status is one of the valid enum values
+  // Ensure purchase status and payment_status match defined types
   const validPurchase = {
     ...purchase,
     status: (purchase.status as string in ["draft", "pending", "delivered", "approved"]) 
       ? purchase.status as "draft" | "pending" | "delivered" | "approved"
-      : "draft"
+      : "draft",
+    payment_status: (purchase.payment_status as string in ["pending", "partial", "paid"])
+      ? purchase.payment_status as "pending" | "partial" | "paid"
+      : "pending"
   };
   
   return (

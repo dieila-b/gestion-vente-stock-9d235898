@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { PurchaseOrder } from "@/types/purchaseOrder";
+import type { PurchaseOrder } from "@/types/purchase-order";
 
 // Type guard functions
 function isValidOrderStatus(status: string): status is PurchaseOrder['status'] {

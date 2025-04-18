@@ -1,6 +1,6 @@
 
 import { CatalogProduct } from "@/types/catalog";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PurchaseOrderItem } from "@/types/purchaseOrder";
+import { PurchaseOrderItem } from "@/types/purchase-order";
 import { useProducts } from "@/hooks/use-products";
 import { useState } from "react";
 
