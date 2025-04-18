@@ -72,16 +72,24 @@ export default function PurchaseOrdersPage() {
           }
           return 'draft';
         })(order.status);
+        
+        // Convert payment_status to ensure it matches the allowed values
+        const safePaymentStatus = ((status: string): PurchaseOrder['payment_status'] => {
+          if (['pending', 'partial', 'paid'].includes(status)) {
+            return status as PurchaseOrder['payment_status'];
+          }
+          return 'pending';
+        })(order.payment_status || 'pending');
 
         // Ensure all necessary properties are present
         return {
           ...order,
           supplier,
           status: safeStatus,
+          payment_status: safePaymentStatus,
           deleted: false,
           items: Array.isArray(order.items) ? order.items : [],
           // Add defaults for required fields
-          payment_status: order.payment_status || 'pending',
           total_amount: order.total_amount || 0,
           order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
         } as PurchaseOrder;

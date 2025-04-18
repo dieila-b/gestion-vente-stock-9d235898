@@ -64,6 +64,14 @@ export function usePurchaseOrders() {
             return 'draft';
           };
           
+          // Ensure payment_status is one of the valid enum values
+          const safePaymentStatus = (status: string): PurchaseOrder['payment_status'] => {
+            if (['pending', 'partial', 'paid'].includes(status)) {
+              return status as PurchaseOrder['payment_status'];
+            }
+            return 'pending';
+          };
+          
           // Create processed order with required properties
           const processedOrder = {
             ...order,
@@ -71,7 +79,7 @@ export function usePurchaseOrders() {
             deleted: false,
             items: Array.isArray(order.items) ? order.items : [],
             // Make sure required fields have default values
-            payment_status: order.payment_status || 'pending',
+            payment_status: safePaymentStatus(order.payment_status),
             status: safeStatus(order.status),
             total_amount: order.total_amount || 0,
             order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
@@ -132,13 +140,29 @@ export function usePurchaseOrders() {
                 email: supplierData?.email || ''
               };
               
+              // Ensure payment_status is one of the valid enum values
+              const safePaymentStatus = (status: string): PurchaseOrder['payment_status'] => {
+                if (['pending', 'partial', 'paid'].includes(status)) {
+                  return status as PurchaseOrder['payment_status'];
+                }
+                return 'pending';
+              };
+              
+              // Ensure status is one of the valid enum values
+              const safeStatus = (status: string): PurchaseOrder['status'] => {
+                if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
+                  return status as PurchaseOrder['status'];
+                }
+                return 'draft';
+              };
+              
               return {
                 ...order,
                 supplier: formattedSupplier,
                 items: items || [],
                 deleted: false,
-                payment_status: order.payment_status || 'pending',
-                status: order.status || 'draft',
+                payment_status: safePaymentStatus(order.payment_status),
+                status: safeStatus(order.status),
                 total_amount: order.total_amount || 0,
                 order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
               };
@@ -156,8 +180,8 @@ export function usePurchaseOrders() {
                 },
                 items: [],
                 deleted: false,
-                payment_status: order.payment_status || 'pending',
-                status: order.status || 'draft',
+                payment_status: 'pending' as PurchaseOrder['payment_status'],
+                status: 'draft' as PurchaseOrder['status'],
                 total_amount: order.total_amount || 0,
                 order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
               };

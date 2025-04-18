@@ -20,7 +20,7 @@ export interface PurchaseOrder {
   total_ttc: number;
   total_amount: number;
   paid_amount: number;
-  payment_status: string;
+  payment_status: "pending" | "partial" | "paid";
   warehouse_id?: string;
   supplier: Supplier;
   warehouse?: {
