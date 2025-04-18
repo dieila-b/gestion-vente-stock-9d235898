@@ -1,4 +1,3 @@
-
 import { Supplier } from "./supplier";
 
 export interface PurchaseOrder {
@@ -45,5 +44,5 @@ export interface PurchaseOrderItem {
   };
 }
 
-// Re-export Supplier to make it available for importing modules
-export { Supplier } from "./supplier";
+// Correctly re-export Supplier using export type
+export type { Supplier } from "./supplier";
