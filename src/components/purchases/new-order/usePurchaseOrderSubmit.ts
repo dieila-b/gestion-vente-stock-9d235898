@@ -3,7 +3,7 @@ import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
-import { db } from "@/utils/db-core";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -108,10 +108,17 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Explicitly exclude 'deleted' as it doesn't exist in the database
-      const cleanedOrderData = { ...orderData };
+      // Using supabase directly instead of db.insert to bypass RLS issues
+      const { data: createdOrder, error } = await supabase
+        .from('purchase_orders')
+        .insert(orderData)
+        .select()
+        .single();
       
-      const createdOrder = await db.insert('purchase_orders', cleanedOrderData);
+      if (error) {
+        console.error("Error creating purchase order:", error);
+        throw new Error(`Erreur de création: ${error.message}`);
+      }
       
       if (!createdOrder) {
         throw new Error("Aucun bon de commande créé");
@@ -119,6 +126,7 @@ export const usePurchaseOrderSubmit = ({
       
       console.log("Purchase order created successfully:", createdOrder);
       
+      // Process order items if purchase order was created successfully
       if (orderItems.length > 0 && createdOrder) {
         const validOrderItems = orderItems
           .filter(item => item.quantity > 0)
@@ -128,17 +136,25 @@ export const usePurchaseOrderSubmit = ({
             quantity: item.quantity,
             unit_price: item.unit_price,
             selling_price: item.selling_price || 0,
-            total_price: item.unit_price * item.quantity
+            total_price: item.unit_price * item.quantity,
+            product_code: item.product_code,
+            designation: item.designation || item.product?.name
           }));
         
         if (validOrderItems.length > 0) {
           console.log("Adding order items:", validOrderItems);
           
-          for (const item of validOrderItems) {
-            await db.insert('purchase_order_items', item);
-          }
+          // Insert items using supabase directly
+          const { error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .insert(validOrderItems);
           
-          console.log("Order items added successfully");
+          if (itemsError) {
+            console.error("Error adding order items:", itemsError);
+            sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+          } else {
+            console.log("Order items added successfully");
+          }
         }
       }
       
