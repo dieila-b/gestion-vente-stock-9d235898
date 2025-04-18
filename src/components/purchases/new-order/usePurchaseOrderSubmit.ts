@@ -110,49 +110,56 @@ export const usePurchaseOrderSubmit = ({
         total_amount: calculateTotalTTC()
       };
       
-      // Use the mutation to create the purchase order
-      const result = await createPurchaseOrderMutation.mutateAsync(orderData);
-      
-      if (result && orderItems.length > 0) {
-        // Extract the created purchase order ID
-        const purchaseOrderId = result.id;
+      try {
+        // Use the mutation to create the purchase order
+        const result = await createPurchaseOrderMutation.mutateAsync(orderData);
         
-        // Prepare the order items
-        const validOrderItems = orderItems
-          .filter(item => item.quantity > 0)
-          .map(item => ({
-            purchase_order_id: purchaseOrderId,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            selling_price: item.selling_price || 0,
-            total_price: item.unit_price * item.quantity,
-            product_code: item.product_code || '',
-            designation: item.designation || (item.product?.name || 'Produit sans nom')
-          }));
+        console.log("Purchase order creation result:", result);
         
-        if (validOrderItems.length > 0) {
-          console.log("Ajout des articles à la commande:", validOrderItems);
+        if (result && result.id && orderItems.length > 0) {
+          // Extract the created purchase order ID
+          const purchaseOrderId = result.id;
           
-          // Insert the order items directly
-          const { error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .insert(validOrderItems);
-              
-          if (itemsError) {
-            console.error("Erreur lors de l'ajout des articles:", itemsError);
-            sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+          // Prepare the order items
+          const validOrderItems = orderItems
+            .filter(item => item.quantity > 0)
+            .map(item => ({
+              purchase_order_id: purchaseOrderId,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              selling_price: item.selling_price || 0,
+              total_price: item.unit_price * item.quantity,
+              product_code: item.product_code || '',
+              designation: item.designation || (item.product?.name || 'Produit sans nom')
+            }));
+          
+          if (validOrderItems.length > 0) {
+            console.log("Adding items to order:", validOrderItems);
+            
+            // Insert the order items directly
+            const { error: itemsError } = await supabase
+              .from('purchase_order_items')
+              .insert(validOrderItems);
+                
+            if (itemsError) {
+              console.error("Error adding items:", itemsError);
+              sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+            }
           }
+          
+          sonnerToast.success("Bon de commande créé avec succès");
+          navigate("/purchase-orders");
+        } else {
+          throw new Error("Failed to create purchase order - no result returned");
         }
-        
-        sonnerToast.success("Bon de commande créé avec succès");
-        navigate("/purchase-orders");
-      } else {
-        throw new Error("Impossible de créer le bon de commande");
+      } catch (error: any) {
+        console.error("Mutation error:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error("Erreur lors de la création du bon de commande:", error);
-      sonnerToast.error("Une erreur est survenue lors de la création du bon de commande");
+    } catch (error: any) {
+      console.error("Error creating purchase order:", error);
+      sonnerToast.error(`Une erreur est survenue: ${error.message || "Erreur inconnue"}`);
     } finally {
       setIsSubmitting(false);
     }

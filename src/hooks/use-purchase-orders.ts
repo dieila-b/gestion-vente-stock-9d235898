@@ -11,14 +11,16 @@ export function usePurchaseOrders() {
   const handleEdit = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
-  // Log si des erreurs surviennent
+  // Log if errors occur
   if (error) {
     console.error("Error in usePurchaseOrders:", error);
   }
 
-  // Fonction pour forcer le rafraîchissement des données
+  // Function to force refresh the data
   const refreshOrders = () => {
+    console.log("Refreshing purchase orders...");
     queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    refetch();
     toast.success("Liste des bons de commande rafraîchie");
   };
 

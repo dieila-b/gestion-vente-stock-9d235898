@@ -23,12 +23,20 @@ export function useCreatePurchaseOrder() {
           updated_at: new Date().toISOString()
         };
         
-        // Use the db-table-operations utility to insert the record
-        // This approach may bypass certain RLS restrictions
-        const insertedOrder = await insert<PurchaseOrder>('purchase_orders', finalOrderData);
+        // Direct insertion using Supabase client
+        const { data: insertedOrder, error } = await supabase
+          .from('purchase_orders')
+          .insert(finalOrderData)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Error in Supabase insert:", error);
+          throw error;
+        }
         
         if (!insertedOrder) {
-          throw new Error("Failed to create purchase order");
+          throw new Error("Failed to create purchase order - no data returned");
         }
         
         console.log("Purchase order created successfully:", insertedOrder);

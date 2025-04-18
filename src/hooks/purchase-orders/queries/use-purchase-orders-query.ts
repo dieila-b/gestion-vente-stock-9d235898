@@ -12,7 +12,7 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders...");
         
-        // Requête plus simple pour éviter les erreurs potentielles
+        // Simple query to avoid potential errors
         const { data, error } = await supabase
           .from('purchase_orders')
           .select(`
@@ -104,7 +104,7 @@ export function usePurchaseOrdersQuery() {
       }
     },
     retry: 2,
-    refetchOnWindowFocus: false,
-    staleTime: 60000 // Ajouter un temps d'invalidation pour éviter des requêtes inutiles
+    refetchOnWindowFocus: true,
+    staleTime: 30000 // Reduced stale time to refresh more frequently
   });
 }
