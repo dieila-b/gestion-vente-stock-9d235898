@@ -87,6 +87,7 @@ export const usePurchaseOrderSubmit = ({
         items_count: orderItems.length,
       });
 
+      // Préparation des données de commande
       const orderData = {
         supplier_id: supplier,
         order_number: orderNumber,
@@ -108,11 +109,11 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Using supabase directly instead of db.insert to bypass RLS issues
+      // Essayons d'insérer avec des options différentes
       const { data: createdOrder, error } = await supabase
         .from('purchase_orders')
         .insert(orderData)
-        .select()
+        .select('*')
         .single();
       
       if (error) {
@@ -137,23 +138,28 @@ export const usePurchaseOrderSubmit = ({
             unit_price: item.unit_price,
             selling_price: item.selling_price || 0,
             total_price: item.unit_price * item.quantity,
-            product_code: item.product_code,
-            designation: item.designation || item.product?.name
+            product_code: item.product_code || '',
+            designation: item.designation || item.product?.name || 'Produit sans nom'
           }));
         
         if (validOrderItems.length > 0) {
           console.log("Adding order items:", validOrderItems);
           
-          // Insert items using supabase directly
-          const { error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .insert(validOrderItems);
-          
-          if (itemsError) {
-            console.error("Error adding order items:", itemsError);
+          try {
+            // Insertion des articles en une seule opération
+            const { error: itemsError } = await supabase
+              .from('purchase_order_items')
+              .insert(validOrderItems);
+            
+            if (itemsError) {
+              console.error("Error adding order items:", itemsError);
+              sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+            } else {
+              console.log("Order items added successfully");
+            }
+          } catch (itemsInsertError) {
+            console.error("Exception during items insertion:", itemsInsertError);
             sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
-          } else {
-            console.log("Order items added successfully");
           }
         }
       }
