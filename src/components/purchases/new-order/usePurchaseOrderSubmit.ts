@@ -44,7 +44,7 @@ export const usePurchaseOrderSubmit = ({
   navigate
 }: UsePurchaseOrderSubmitProps) => {
   // Use our custom mutation hook
-  const createPurchaseOrderFn = useCreatePurchaseOrder();
+  const createPurchaseOrderMutation = useCreatePurchaseOrder();
 
   const calculateSubtotal = () => {
     return orderItems.reduce((total, item) => {
@@ -110,73 +110,50 @@ export const usePurchaseOrderSubmit = ({
         total_amount: calculateTotalTTC()
       };
       
-      // Créer le bon de commande
-      createPurchaseOrderFn(orderData);
+      // Use the mutation to create the purchase order
+      const result = await createPurchaseOrderMutation.mutateAsync(orderData);
       
-      // Attendre un peu pour que la création soit complète avant de récupérer l'ID
-      setTimeout(async () => {
-        try {
-          // Récupérer le dernier bon de commande créé pour ce fournisseur
-          const { data: createdOrder, error: fetchError } = await supabase
-            .from('purchase_orders')
-            .select('*')
-            .eq('supplier_id', supplier)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+      if (result && orderItems.length > 0) {
+        // Extract the created purchase order ID
+        const purchaseOrderId = result.id;
+        
+        // Prepare the order items
+        const validOrderItems = orderItems
+          .filter(item => item.quantity > 0)
+          .map(item => ({
+            purchase_order_id: purchaseOrderId,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            selling_price: item.selling_price || 0,
+            total_price: item.unit_price * item.quantity,
+            product_code: item.product_code || '',
+            designation: item.designation || (item.product?.name || 'Produit sans nom')
+          }));
+        
+        if (validOrderItems.length > 0) {
+          console.log("Ajout des articles à la commande:", validOrderItems);
           
-          if (fetchError) {
-            console.error("Erreur lors de la récupération du bon de commande:", fetchError);
-            throw fetchError;
-          }
-          
-          if (createdOrder) {
-            console.log("Bon de commande créé avec succès:", createdOrder);
-            
-            // Ajouter les articles au bon de commande
-            if (orderItems.length > 0) {
-              const validOrderItems = orderItems
-                .filter(item => item.quantity > 0)
-                .map(item => ({
-                  purchase_order_id: createdOrder.id,
-                  product_id: item.product_id,
-                  quantity: item.quantity,
-                  unit_price: item.unit_price,
-                  selling_price: item.selling_price || 0,
-                  total_price: item.unit_price * item.quantity,
-                  product_code: item.product_code || '',
-                  designation: item.designation || (item.product?.name || 'Produit sans nom')
-                }));
+          // Insert the order items directly
+          const { error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .insert(validOrderItems);
               
-              if (validOrderItems.length > 0) {
-                console.log("Ajout des articles à la commande:", validOrderItems);
-                
-                const { error: itemsError } = await supabase
-                  .from('purchase_order_items')
-                  .insert(validOrderItems);
-                    
-                if (itemsError) {
-                  console.error("Erreur lors de l'ajout des articles:", itemsError);
-                  sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
-                }
-              }
-            }
-            
-            sonnerToast.success("Bon de commande créé avec succès");
-            navigate("/purchase-orders");
-          } else {
-            throw new Error("Impossible de récupérer le bon de commande créé");
+          if (itemsError) {
+            console.error("Erreur lors de l'ajout des articles:", itemsError);
+            sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
           }
-        } catch (innerError) {
-          console.error("Erreur dans le traitement post-création:", innerError);
-          sonnerToast.error("Une erreur est survenue lors de la finalisation de la commande");
-        } finally {
-          setIsSubmitting(false);
         }
-      }, 1000);
+        
+        sonnerToast.success("Bon de commande créé avec succès");
+        navigate("/purchase-orders");
+      } else {
+        throw new Error("Impossible de créer le bon de commande");
+      }
     } catch (error) {
       console.error("Erreur lors de la création du bon de commande:", error);
       sonnerToast.error("Une erreur est survenue lors de la création du bon de commande");
+    } finally {
       setIsSubmitting(false);
     }
   };
