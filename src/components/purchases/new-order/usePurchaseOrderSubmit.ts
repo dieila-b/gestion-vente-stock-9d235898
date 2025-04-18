@@ -44,9 +44,8 @@ export const usePurchaseOrderSubmit = ({
   toast,
   navigate
 }: UsePurchaseOrderSubmitProps) => {
-
-  // Utiliser notre hook personnalisé qui gère la création de commandes
-  const { createPurchaseOrder } = useCreatePurchaseOrder();
+  // Use our custom mutation hook instead of duplicating logic
+  const createPurchaseOrderFn = useCreatePurchaseOrder();
 
   const calculateSubtotal = () => {
     return orderItems.reduce((total, item) => {
@@ -109,13 +108,11 @@ export const usePurchaseOrderSubmit = ({
         total_ttc: calculateTotalTTC(),
         shipping_cost: shippingCost || 0,
         discount: discount || 0,
-        total_amount: calculateTotalTTC(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        total_amount: calculateTotalTTC()
       };
       
-      // Utiliser notre hook de création qui contourne les problèmes de RLS
-      const createdOrder = await createPurchaseOrder(orderData);
+      // Use the mutation hook to create the purchase order
+      const createdOrder = await createPurchaseOrderFn(orderData);
       
       if (!createdOrder) {
         throw new Error("Échec de création du bon de commande");
@@ -142,15 +139,23 @@ export const usePurchaseOrderSubmit = ({
           console.log("Adding order items:", validOrderItems);
           
           try {
-            // Utiliser directement tableQuery au lieu de .from pour plus de contrôle
-            const { error: itemsError } = await db.table('purchase_order_items')
-              .insert(validOrderItems);
+            // Try RPC function first
+            const { error: itemsError } = await supabase.rpc('add_purchase_order_items', {
+              items: validOrderItems
+            });
             
             if (itemsError) {
-              console.error("Error adding order items:", itemsError);
-              sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
-            } else {
-              console.log("Order items added successfully");
+              console.error("Error with RPC for items, trying direct insert:", itemsError);
+              
+              // Fallback to direct insert
+              const { error: directError } = await supabase
+                .from('purchase_order_items')
+                .insert(validOrderItems);
+                
+              if (directError) {
+                console.error("Error adding order items:", directError);
+                sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+              }
             }
           } catch (itemsInsertError) {
             console.error("Exception during items insertion:", itemsInsertError);
