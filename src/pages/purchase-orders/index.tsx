@@ -44,7 +44,7 @@ export default function PurchaseOrdersPage() {
   
   // Process and filter orders
   useEffect(() => {
-    console.log("Raw orders for processing:", rawOrders);
+    console.log("Raw orders available for processing:", rawOrders?.length || 0);
     
     if (!rawOrders || rawOrders.length === 0) {
       console.log("No orders to process");
@@ -53,57 +53,13 @@ export default function PurchaseOrdersPage() {
     }
     
     try {
-      const processedOrders = rawOrders.map(order => {
-        // Ensure supplier object is valid
-        let supplier = order.supplier;
-        if (!supplier || isSelectQueryError(supplier)) {
-          supplier = { 
-            id: order.supplier_id || '',
-            name: 'Fournisseur inconnu', 
-            phone: '', 
-            email: '' 
-          };
-        }
-        
-        // Convert order.status to the type needed by PurchaseOrder in purchase-order.ts
-        const safeStatus = ((status: string): PurchaseOrder['status'] => {
-          if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
-            return status as PurchaseOrder['status'];
-          }
-          return 'draft';
-        })(order.status);
-        
-        // Convert payment_status to ensure it matches the allowed values
-        const safePaymentStatus = ((status: string): PurchaseOrder['payment_status'] => {
-          if (['pending', 'partial', 'paid'].includes(status)) {
-            return status as PurchaseOrder['payment_status'];
-          }
-          return 'pending';
-        })(order.payment_status || 'pending');
-
-        // Ensure all necessary properties are present
-        return {
-          ...order,
-          supplier,
-          status: safeStatus,
-          payment_status: safePaymentStatus,
-          deleted: false,
-          items: Array.isArray(order.items) ? order.items : [],
-          // Add defaults for required fields
-          total_amount: order.total_amount || 0,
-          order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
-        } as PurchaseOrder;
-      });
-      
-      console.log("Processed orders:", processedOrders);
-      
       // Apply search filter
-      const filtered = processedOrders.filter(order => 
+      const filtered = rawOrders.filter(order => 
         order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       
-      console.log("Filtered orders:", filtered);
+      console.log("Filtered orders:", filtered.length);
       setFilteredOrders(filtered);
     } catch (error) {
       console.error("Error processing orders:", error);
