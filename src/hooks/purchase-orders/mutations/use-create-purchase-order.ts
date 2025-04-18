@@ -1,16 +1,18 @@
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
 
 export function useCreatePurchaseOrder() {
+  const queryClient = useQueryClient();
+  
   const mutation = useMutation({
     mutationFn: async (orderData: Partial<PurchaseOrder>) => {
       console.log("Creating purchase order with data:", orderData);
       
       try {
-        // Instead of using RPC, use direct insert with fallback
+        // Insertion directe dans la table des bons de commande
         const { data, error } = await supabase
           .from('purchase_orders')
           .insert({
@@ -34,18 +36,23 @@ export function useCreatePurchaseOrder() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-          .select()
+          .select('*')
           .single();
             
-        if (error) throw error;
+        if (error) {
+          console.error("Error creating purchase order:", error);
+          throw error;
+        }
+        
         return data;
       } catch (error: any) {
-        console.error("Error creating purchase order:", error);
+        console.error("Error in createPurchaseOrder:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
       toast.success("Bon de commande créé avec succès");
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       return data;
     },
     onError: (error: any) => {

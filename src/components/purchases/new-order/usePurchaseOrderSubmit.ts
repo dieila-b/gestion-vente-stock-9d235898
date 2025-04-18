@@ -84,7 +84,7 @@ export const usePurchaseOrderSubmit = ({
 
     setIsSubmitting(true);
     try {
-      console.log("Creating purchase order with data:", {
+      console.log("Création du bon de commande avec les données:", {
         supplier_id: supplier,
         order_number: orderNumber,
         items_count: orderItems.length,
@@ -110,67 +110,73 @@ export const usePurchaseOrderSubmit = ({
         total_amount: calculateTotalTTC()
       };
       
-      // Use the mutation hook to create the purchase order
+      // Créer le bon de commande
       createPurchaseOrderFn(orderData);
       
-      // We need to get the created order ID from a response, but since there might be
-      // issues with the mutation return type, let's fetch the latest order as a workaround
-      const { data: createdOrder, error: fetchError } = await supabase
-        .from('purchase_orders')
-        .select('*')
-        .eq('supplier_id', supplier)
-        .eq('order_number', orderData.order_number)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (fetchError || !createdOrder) {
-        throw new Error("Échec de récupération du bon de commande créé");
-      }
-      
-      console.log("Purchase order created successfully:", createdOrder);
-      
-      // Process order items if purchase order was created successfully
-      if (orderItems.length > 0 && createdOrder) {
-        const validOrderItems = orderItems
-          .filter(item => item.quantity > 0)
-          .map(item => ({
-            purchase_order_id: createdOrder.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            selling_price: item.selling_price || 0,
-            total_price: item.unit_price * item.quantity,
-            product_code: item.product_code || '',
-            designation: item.designation || (item.product?.name || 'Produit sans nom')
-          }));
-        
-        if (validOrderItems.length > 0) {
-          console.log("Adding order items:", validOrderItems);
+      // Attendre un peu pour que la création soit complète avant de récupérer l'ID
+      setTimeout(async () => {
+        try {
+          // Récupérer le dernier bon de commande créé pour ce fournisseur
+          const { data: createdOrder, error: fetchError } = await supabase
+            .from('purchase_orders')
+            .select('*')
+            .eq('supplier_id', supplier)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
           
-          try {
-            // Use direct insert for order items
-            const { error: itemsError } = await supabase
-              .from('purchase_order_items')
-              .insert(validOrderItems);
-                
-            if (itemsError) {
-              console.error("Error adding order items:", itemsError);
-              sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
-            }
-          } catch (itemsInsertError) {
-            console.error("Exception during items insertion:", itemsInsertError);
-            sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+          if (fetchError) {
+            console.error("Erreur lors de la récupération du bon de commande:", fetchError);
+            throw fetchError;
           }
+          
+          if (createdOrder) {
+            console.log("Bon de commande créé avec succès:", createdOrder);
+            
+            // Ajouter les articles au bon de commande
+            if (orderItems.length > 0) {
+              const validOrderItems = orderItems
+                .filter(item => item.quantity > 0)
+                .map(item => ({
+                  purchase_order_id: createdOrder.id,
+                  product_id: item.product_id,
+                  quantity: item.quantity,
+                  unit_price: item.unit_price,
+                  selling_price: item.selling_price || 0,
+                  total_price: item.unit_price * item.quantity,
+                  product_code: item.product_code || '',
+                  designation: item.designation || (item.product?.name || 'Produit sans nom')
+                }));
+              
+              if (validOrderItems.length > 0) {
+                console.log("Ajout des articles à la commande:", validOrderItems);
+                
+                const { error: itemsError } = await supabase
+                  .from('purchase_order_items')
+                  .insert(validOrderItems);
+                    
+                if (itemsError) {
+                  console.error("Erreur lors de l'ajout des articles:", itemsError);
+                  sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
+                }
+              }
+            }
+            
+            sonnerToast.success("Bon de commande créé avec succès");
+            navigate("/purchase-orders");
+          } else {
+            throw new Error("Impossible de récupérer le bon de commande créé");
+          }
+        } catch (innerError) {
+          console.error("Erreur dans le traitement post-création:", innerError);
+          sonnerToast.error("Une erreur est survenue lors de la finalisation de la commande");
+        } finally {
+          setIsSubmitting(false);
         }
-      }
-      
-      sonnerToast.success("Bon de commande créé avec succès");
-      navigate("/purchase-orders");
+      }, 1000);
     } catch (error) {
       console.error("Erreur lors de la création du bon de commande:", error);
       sonnerToast.error("Une erreur est survenue lors de la création du bon de commande");
-    } finally {
       setIsSubmitting(false);
     }
   };
