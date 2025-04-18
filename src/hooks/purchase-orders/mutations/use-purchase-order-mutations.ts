@@ -7,7 +7,7 @@ import { PurchaseOrder } from "@/types/purchase-order";
 export function usePurchaseOrderMutations() {
   const queryClient = useQueryClient();
 
-  const handleApprove = useMutation({
+  const approveMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log("Approving purchase order:", id);
       
@@ -29,7 +29,7 @@ export function usePurchaseOrderMutations() {
     }
   });
 
-  const handleDelete = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
         return false;
@@ -54,7 +54,7 @@ export function usePurchaseOrderMutations() {
     }
   });
 
-  const handleCreate = useMutation({
+  const createMutation = useMutation({
     mutationFn: async (orderData: Partial<PurchaseOrder>) => {
       const { data, error } = await supabase
         .from('purchase_orders')
@@ -74,6 +74,11 @@ export function usePurchaseOrderMutations() {
       toast.error("Erreur lors de la création");
     }
   });
+
+  // Create wrapper functions with correct signature type
+  const handleApprove = (id: string) => approveMutation.mutate(id);
+  const handleDelete = (id: string) => deleteMutation.mutate(id);
+  const handleCreate = (orderData: Partial<PurchaseOrder>) => createMutation.mutate(orderData);
 
   return {
     handleApprove,

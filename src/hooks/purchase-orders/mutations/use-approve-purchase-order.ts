@@ -8,7 +8,7 @@ import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-app
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (id: string) => {
       try {
         console.log("Approving purchase order:", id);
@@ -47,4 +47,7 @@ export function useApprovePurchaseOrder() {
       toast.error(`Erreur lors de l'approbation: ${error.message}`);
     }
   });
+
+  // Return a function with the proper signature
+  return (id: string) => mutation.mutate(id);
 }
