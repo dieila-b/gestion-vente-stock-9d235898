@@ -82,7 +82,7 @@ export function usePurchasePrint() {
             <tbody>
               ${order.items?.map(item => `
                 <tr>
-                  <td>${item.designation || 'Produit inconnu'}</td>
+                  <td>${item.designation || item.product?.name || 'Produit inconnu'}</td>
                   <td>${item.quantity}</td>
                   <td>${formatGNF(item.unit_price)}</td>
                   <td>${formatGNF(item.total_price)}</td>

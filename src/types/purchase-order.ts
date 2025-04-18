@@ -39,6 +39,8 @@ export interface PurchaseOrderItem {
   unit_price: number;
   selling_price: number;
   total_price: number;
+  product_code?: string; // Added this field
+  designation?: string;  // Added this field
   product?: {
     name: string;
     reference?: string;
