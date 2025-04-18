@@ -8,7 +8,7 @@ import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
 import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
 import { EditPurchaseOrderDialog } from "@/components/purchases/edit/EditPurchaseOrderDialog";
-import { PurchaseOrder } from "@/types/purchaseOrder";
+import { PurchaseOrder } from "@/types/purchase-order";
 import { isSelectQueryError } from "@/utils/type-utils";
 import { toast } from "sonner";
 
@@ -65,7 +65,7 @@ export default function PurchaseOrdersPage() {
           };
         }
         
-        // Convert order.status to the type needed by PurchaseOrder in purchaseOrder.ts
+        // Convert order.status to the type needed by PurchaseOrder in purchase-order.ts
         const safeStatus = ((status: string): PurchaseOrder['status'] => {
           if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
             return status as PurchaseOrder['status'];

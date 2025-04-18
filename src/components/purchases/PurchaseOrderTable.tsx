@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { PurchaseOrder } from "@/types/purchaseOrder";
+import { PurchaseOrder } from "@/types/purchase-order";
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Edit, FileText, Trash, Printer } from "lucide-react";
+import { Edit, FileText, Trash, Printer, ExternalLink } from "lucide-react";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -38,6 +38,8 @@ export function PurchaseOrderTable({
         return 'bg-yellow-500 text-white';
       case 'draft':
         return 'bg-gray-500 text-white';
+      case 'delivered':
+        return 'bg-blue-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
@@ -51,10 +53,14 @@ export function PurchaseOrderTable({
         return 'En attente';
       case 'draft':
         return 'Brouillon';
+      case 'delivered':
+        return 'Livré';
       default:
         return status;
     }
   };
+
+  console.log("Rendering PurchaseOrderTable with orders:", orders);
 
   return (
     <div className="border rounded-lg">

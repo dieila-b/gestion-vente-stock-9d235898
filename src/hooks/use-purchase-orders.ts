@@ -56,6 +56,14 @@ export function usePurchaseOrders() {
             email: supplierData?.email || ''
           };
           
+          // Ensure status is one of the valid enum values
+          const safeStatus = (status: string): PurchaseOrder['status'] => {
+            if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
+              return status as PurchaseOrder['status'];
+            }
+            return 'draft';
+          };
+          
           // Create processed order with required properties
           const processedOrder = {
             ...order,
@@ -64,7 +72,7 @@ export function usePurchaseOrders() {
             items: Array.isArray(order.items) ? order.items : [],
             // Make sure required fields have default values
             payment_status: order.payment_status || 'pending',
-            status: order.status || 'draft',
+            status: safeStatus(order.status),
             total_amount: order.total_amount || 0,
             order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
           };
