@@ -20,7 +20,9 @@ export function useCreatePurchaseOrder() {
       const purchaseOrderData = {
         order_number: data.order_number || `PO-${new Date().getTime().toString().slice(-8)}`,
         supplier_id: data.supplier_id,
-        status: data.status || 'draft',
+        status: (data.status as string in ["draft", "pending", "delivered", "approved"]) 
+          ? data.status 
+          : 'draft',
         payment_status: data.payment_status || 'pending',
         total_amount: data.total_amount || 0,
         logistics_cost: data.logistics_cost || 0,
@@ -91,7 +93,8 @@ export function useCreatePurchaseOrder() {
           email: supplierInfo.email || ""
         },
         items: [],
-        deleted: false
+        deleted: false,
+        status: (createdOrder.status as "draft" | "pending" | "delivered" | "approved") || "draft"
       };
 
       toast.success("Bon de commande créé avec succès");

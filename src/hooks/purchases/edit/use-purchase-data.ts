@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PurchaseOrder } from '@/types/purchase-order';
 
 /**
  * Hook to fetch and manage purchase order data
@@ -44,9 +45,18 @@ export function usePurchaseData(orderId?: string) {
 
       // We don't try to access data.deleted directly since it might not exist in the database
       // Instead, we treat all purchase orders as non-deleted by default
+      // Also ensure status is one of the valid enum values
+      const safeStatus = (status: string): PurchaseOrder['status'] => {
+        if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
+          return status as PurchaseOrder['status'];
+        }
+        return 'draft';
+      };
+      
       const processedData = {
         ...data,
-        deleted: false // Default value, since column doesn't exist in the database
+        deleted: false, // Default value, since column doesn't exist in the database
+        status: safeStatus(data.status)
       };
 
       console.log("Fetched purchase order:", processedData);

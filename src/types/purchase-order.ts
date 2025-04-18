@@ -44,3 +44,6 @@ export interface PurchaseOrderItem {
     reference?: string;
   };
 }
+
+// Re-export Supplier to make it available for importing modules
+export { Supplier } from "./supplier";

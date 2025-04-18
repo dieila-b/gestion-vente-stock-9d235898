@@ -45,14 +45,20 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     return <div className="p-6 text-center">Bon de commande non trouvé</div>;
   }
   
-  // We don't check for the deleted property anymore since we'll handle it in the hooks
+  // Ensure purchase status is one of the valid enum values
+  const validPurchase = {
+    ...purchase,
+    status: (purchase.status as string in ["draft", "pending", "delivered", "approved"]) 
+      ? purchase.status as "draft" | "pending" | "delivered" | "approved"
+      : "draft"
+  };
   
   return (
     <div className="p-4 space-y-6">
       <h3 className="text-lg font-semibold">Informations générales</h3>
       
       <GeneralInfoSection 
-        purchase={purchase}
+        purchase={validPurchase}
         formData={formData}
         updateFormField={updateFormField}
       />
@@ -69,7 +75,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       <AdditionalCostsSection 
         formData={formData}
         updateFormField={updateFormField}
-        totalAmount={purchase.total_amount}
+        totalAmount={validPurchase.total_amount}
       />
       
       <NotesSection 
@@ -80,7 +86,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       <h3 className="text-lg font-semibold mt-6">Produits</h3>
       
       <ProductsSection 
-        items={purchase.items || []}
+        items={validPurchase.items || []}
         updateItemQuantity={updateItemQuantity}
         updateItemPrice={updateItemPrice}
         removeItem={removeItem}
