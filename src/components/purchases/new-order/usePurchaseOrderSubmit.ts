@@ -4,7 +4,6 @@ import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/utils/db-core";
 import { useCreatePurchaseOrder } from "@/hooks/purchase-orders/mutations/use-create-purchase-order";
 
 interface UsePurchaseOrderSubmitProps {
@@ -44,7 +43,7 @@ export const usePurchaseOrderSubmit = ({
   toast,
   navigate
 }: UsePurchaseOrderSubmitProps) => {
-  // Use our custom mutation hook instead of duplicating logic
+  // Use our custom mutation hook
   const createPurchaseOrderFn = useCreatePurchaseOrder();
 
   const calculateSubtotal = () => {
@@ -112,10 +111,21 @@ export const usePurchaseOrderSubmit = ({
       };
       
       // Use the mutation hook to create the purchase order
-      const createdOrder = await createPurchaseOrderFn(orderData);
+      createPurchaseOrderFn(orderData);
       
-      if (!createdOrder) {
-        throw new Error("Échec de création du bon de commande");
+      // We need to get the created order ID from a response, but since there might be
+      // issues with the mutation return type, let's fetch the latest order as a workaround
+      const { data: createdOrder, error: fetchError } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .eq('supplier_id', supplier)
+        .eq('order_number', orderData.order_number)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (fetchError || !createdOrder) {
+        throw new Error("Échec de récupération du bon de commande créé");
       }
       
       console.log("Purchase order created successfully:", createdOrder);
@@ -139,23 +149,14 @@ export const usePurchaseOrderSubmit = ({
           console.log("Adding order items:", validOrderItems);
           
           try {
-            // Try RPC function first
-            const { error: itemsError } = await supabase.rpc('add_purchase_order_items', {
-              items: validOrderItems
-            });
-            
-            if (itemsError) {
-              console.error("Error with RPC for items, trying direct insert:", itemsError);
-              
-              // Fallback to direct insert
-              const { error: directError } = await supabase
-                .from('purchase_order_items')
-                .insert(validOrderItems);
+            // Use direct insert for order items
+            const { error: itemsError } = await supabase
+              .from('purchase_order_items')
+              .insert(validOrderItems);
                 
-              if (directError) {
-                console.error("Error adding order items:", directError);
-                sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
-              }
+            if (itemsError) {
+              console.error("Error adding order items:", itemsError);
+              sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
             }
           } catch (itemsInsertError) {
             console.error("Exception during items insertion:", itemsInsertError);
