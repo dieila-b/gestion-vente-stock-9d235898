@@ -34,20 +34,22 @@ export function usePurchaseOrdersQuery() {
         }
         
         const processedData = data.map(order => {
-          let supplierData = order.supplier || {};
+          // Create a default supplier object for type safety
+          let supplierData: Partial<Supplier> = {};
           
-          // Vérifier si supplier est une erreur de requête et fournir un objet par défaut
-          if (isSelectQueryError(supplierData)) {
-            console.log("Supplier query error for order:", order.id);
-            supplierData = {};
+          // Check if supplier exists and is not a query error
+          if (order.supplier && !isSelectQueryError(order.supplier)) {
+            supplierData = order.supplier;
+          } else {
+            console.log("Supplier data missing or invalid for order:", order.id);
           }
           
-          // Construire un objet fournisseur valide
+          // Construct a valid supplier object with safe fallbacks
           const formattedSupplier: Supplier = {
-            id: (supplierData?.id || order.supplier_id || '').toString(),
-            name: supplierData?.name || 'Fournisseur inconnu',
-            phone: supplierData?.phone || '',
-            email: supplierData?.email || ''
+            id: (supplierData.id || order.supplier_id || '').toString(),
+            name: supplierData.name || 'Fournisseur inconnu',
+            phone: supplierData.phone || '',
+            email: supplierData.email || ''
           };
           
           const safeStatus = (status: string): PurchaseOrder['status'] => {
@@ -64,17 +66,33 @@ export function usePurchaseOrdersQuery() {
             return 'pending';
           };
           
-          // S'assurer que l'objet renvoyé est conforme au type PurchaseOrder
-          return {
-            ...order,
-            supplier: formattedSupplier,
-            deleted: order.deleted || false,
-            items: [], // Sera rempli séparément si nécessaire
-            payment_status: safePaymentStatus(order.payment_status),
+          // Create a properly typed PurchaseOrder object with all required fields
+          const purchaseOrder: PurchaseOrder = {
+            id: order.id,
+            order_number: order.order_number || `PO-${order.id.slice(0, 8)}`,
+            created_at: order.created_at,
+            updated_at: order.updated_at,
             status: safeStatus(order.status),
+            supplier_id: order.supplier_id,
+            discount: order.discount || 0,
+            expected_delivery_date: order.expected_delivery_date || new Date().toISOString(),
+            notes: order.notes || '',
+            logistics_cost: order.logistics_cost || 0,
+            transit_cost: order.transit_cost || 0,
+            tax_rate: order.tax_rate || 0,
+            shipping_cost: order.shipping_cost || 0,
+            subtotal: order.subtotal || 0,
+            tax_amount: order.tax_amount || 0,
+            total_ttc: order.total_ttc || 0,
             total_amount: order.total_amount || 0,
-            order_number: order.order_number || `PO-${order.id.slice(0, 8)}`
-          } as PurchaseOrder;
+            paid_amount: order.paid_amount || 0,
+            payment_status: safePaymentStatus(order.payment_status),
+            warehouse_id: order.warehouse_id,
+            supplier: formattedSupplier,
+            items: [] // Will be populated separately if needed
+          };
+          
+          return purchaseOrder;
         });
 
         console.log("Processed purchase orders:", processedData);
