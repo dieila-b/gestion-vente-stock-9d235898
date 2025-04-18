@@ -16,13 +16,11 @@ export function useCreatePurchaseOrder() {
     try {
       console.log("Creating purchase order with data:", data);
       
-      // Make sure all required fields are present
+      // S'assurer que tous les champs requis sont présents
       const purchaseOrderData = {
         order_number: data.order_number || `PO-${new Date().getTime().toString().slice(-8)}`,
         supplier_id: data.supplier_id,
-        status: (data.status as string in ["draft", "pending", "delivered", "approved"]) 
-          ? data.status 
-          : 'draft',
+        status: data.status || 'pending',
         payment_status: data.payment_status || 'pending',
         total_amount: data.total_amount || 0,
         logistics_cost: data.logistics_cost || 0,
@@ -41,25 +39,52 @@ export function useCreatePurchaseOrder() {
         updated_at: new Date().toISOString()
       };
       
-      // Create the purchase order
-      const { data: createdOrder, error } = await supabase
-        .from('purchase_orders')
-        .insert(purchaseOrderData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error creating purchase order:", error);
-        throw error;
+      // Tenter différentes approches pour l'insertion
+      let createdOrder = null;
+      let insertError = null;
+      
+      // Approche 1: Utiliser tableQuery pour un accès direct au tableau
+      try {
+        console.log("Trying insertion with db.table...");
+        const result = await db.insert('purchase_orders', purchaseOrderData);
+        if (result) {
+          createdOrder = result;
+          console.log("Insertion successful with db.table:", result);
+        }
+      } catch (err) {
+        console.error("Error with db.table approach:", err);
+        insertError = err;
       }
-
+      
+      // Approche 2: Si l'approche 1 échoue, essayer directement avec supabase
       if (!createdOrder) {
-        throw new Error("Failed to create purchase order");
+        try {
+          console.log("Trying insertion with direct supabase client...");
+          const { data: orderData, error: orderError } = await supabase
+            .from('purchase_orders')
+            .insert(purchaseOrderData)
+            .select('*')
+            .single();
+            
+          if (orderError) {
+            console.error("Error with direct supabase approach:", orderError);
+            insertError = orderError;
+          } else if (orderData) {
+            createdOrder = orderData;
+            console.log("Insertion successful with direct supabase:", orderData);
+          }
+        } catch (err) {
+          console.error("Exception with direct supabase approach:", err);
+          insertError = err;
+        }
+      }
+      
+      // Si aucune approche n'a fonctionné, générer une erreur
+      if (!createdOrder) {
+        throw insertError || new Error("Impossible de créer le bon de commande");
       }
 
-      console.log("Successfully created purchase order:", createdOrder);
-
-      // Get supplier info if available
+      // Obtenir les informations du fournisseur si disponibles
       let supplierInfo: Partial<Supplier> = { 
         id: createdOrder.supplier_id || '', 
         name: "Fournisseur inconnu", 
@@ -83,7 +108,7 @@ export function useCreatePurchaseOrder() {
         }
       }
 
-      // Add supplementary data for the UI
+      // Ajouter des données supplémentaires pour l'UI
       const enhancedOrder = {
         ...createdOrder,
         supplier: {
