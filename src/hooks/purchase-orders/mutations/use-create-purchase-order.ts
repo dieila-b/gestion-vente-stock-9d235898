@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { insert } from "@/utils/db-core/db-table-operations";
+import { db } from "@/utils/db-core";
 
 export function useCreatePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -23,17 +23,8 @@ export function useCreatePurchaseOrder() {
           updated_at: new Date().toISOString()
         };
         
-        // Direct insertion using Supabase client
-        const { data: insertedOrder, error } = await supabase
-          .from('purchase_orders')
-          .insert(finalOrderData)
-          .select()
-          .single();
-        
-        if (error) {
-          console.error("Error in Supabase insert:", error);
-          throw error;
-        }
+        // Use the db utility to bypass RLS issues
+        const insertedOrder = await db.insert('purchase_orders', finalOrderData);
         
         if (!insertedOrder) {
           throw new Error("Failed to create purchase order - no data returned");

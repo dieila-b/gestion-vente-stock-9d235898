@@ -3,7 +3,7 @@ import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
 import { useCreatePurchaseOrder } from "@/hooks/purchase-orders/mutations/use-create-purchase-order";
 
 interface UsePurchaseOrderSubmitProps {
@@ -137,13 +137,11 @@ export const usePurchaseOrderSubmit = ({
           if (validOrderItems.length > 0) {
             console.log("Adding items to order:", validOrderItems);
             
-            // Insert the order items directly
-            const { error: itemsError } = await supabase
-              .from('purchase_order_items')
-              .insert(validOrderItems);
+            // Use the db utility to insert items
+            const itemsResult = await db.insert('purchase_order_items', validOrderItems);
                 
-            if (itemsError) {
-              console.error("Error adding items:", itemsError);
+            if (!itemsResult) {
+              console.error("Error adding items");
               sonnerToast.error("Bon de commande créé mais erreur lors de l'ajout des articles");
             }
           }
