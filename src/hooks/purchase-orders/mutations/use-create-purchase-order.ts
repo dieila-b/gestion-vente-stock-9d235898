@@ -36,10 +36,13 @@ export function useCreatePurchaseOrder() {
           // Try fallback method - direct database insertion
           console.log("Attempting fallback insertion method...");
           
-          // Use rpc with proper type casting
+          // Use a properly typed approach for the RPC call
+          // We need to cast the function name since the types are incorrect
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'bypass_insert_purchase_order' as unknown as "authenticate_internal_user", 
+            // Use type assertion to bypass TypeScript check for the function name
+            'bypass_insert_purchase_order' as unknown as any, 
             {
+              // Pass the order data as a parameter with the right name
               order_data: finalOrderData
             }
           );

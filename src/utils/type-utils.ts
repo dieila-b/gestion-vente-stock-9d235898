@@ -22,3 +22,28 @@ export function safeGet<T, K extends keyof T>(obj: T | null | undefined, key: K,
 export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
+
+/**
+ * Safely handle supplier properties
+ */
+export function safeSupplier(supplier: any): {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+} {
+  if (isSelectQueryError(supplier)) {
+    return {
+      id: '',
+      name: 'Erreur de chargement',
+      phone: '',
+      email: ''
+    };
+  }
+  return supplier || { 
+    id: '', 
+    name: 'Fournisseur inconnu', 
+    phone: '', 
+    email: '' 
+  };
+}
