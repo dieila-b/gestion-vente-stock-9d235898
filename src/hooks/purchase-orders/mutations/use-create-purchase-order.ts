@@ -35,16 +35,21 @@ export function useCreatePurchaseOrder() {
           
           // Try fallback method - direct database insertion
           console.log("Attempting fallback insertion method...");
-          const result = await supabase.rpc('bypass_insert_purchase_order', {
-            order_data: finalOrderData
-          });
           
-          if (result.error) {
-            console.error("Fallback insertion also failed:", result.error);
-            throw result.error;
+          // Use rpc with proper type casting
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'bypass_insert_purchase_order' as unknown as "authenticate_internal_user", 
+            {
+              order_data: finalOrderData
+            }
+          );
+          
+          if (rpcError) {
+            console.error("Fallback insertion also failed:", rpcError);
+            throw rpcError;
           }
           
-          return result.data;
+          return rpcResult;
         }
         
         console.log("Purchase order created successfully:", insertResult);

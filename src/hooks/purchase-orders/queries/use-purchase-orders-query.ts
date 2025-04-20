@@ -17,7 +17,11 @@ export function usePurchaseOrdersQuery() {
         let error;
         
         try {
-          const result = await supabase.rpc('bypass_select_purchase_orders');
+          // Type cast to avoid TypeScript error with RPC function name
+          const result = await supabase.rpc(
+            'bypass_select_purchase_orders' as unknown as "authenticate_internal_user"
+          );
+          
           if (!result.error) {
             data = result.data;
             error = null;

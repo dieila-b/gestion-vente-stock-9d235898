@@ -126,7 +126,8 @@ export const usePurchaseOrderSubmit = ({
       // Use the mutation hook to create the order
       const result = await createPurchaseOrderMutation.mutateAsync(orderData);
       
-      if (!result || !result.id) {
+      // Check if result is a valid object with an id property
+      if (!result || typeof result !== 'object' || !('id' in result)) {
         throw new Error("Échec de la création du bon de commande - aucun ID retourné");
       }
       
