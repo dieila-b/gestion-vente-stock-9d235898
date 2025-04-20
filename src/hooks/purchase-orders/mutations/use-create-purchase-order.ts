@@ -23,33 +23,20 @@ export function useCreatePurchaseOrder() {
           updated_at: new Date().toISOString()
         };
         
-        // Try using the db utility first (bypasses RLS)
-        try {
-          const insertedOrder = await db.insert('purchase_orders', finalOrderData);
-          
-          if (!insertedOrder) {
-            throw new Error("Failed to create purchase order via db utility");
-          }
-          
-          console.log("Purchase order created successfully via db utility:", insertedOrder);
-          return insertedOrder;
-        } catch (dbError) {
-          console.error("DB insertion failed, trying direct Supabase insertion:", dbError);
-          
-          // Try direct Supabase insertion as fallback
-          const { data: supabaseResult, error: supabaseError } = await supabase
-            .from('purchase_orders')
-            .insert(finalOrderData)
-            .select();
-          
-          if (supabaseError) {
-            console.error("Supabase insertion failed:", supabaseError);
-            throw supabaseError;
-          }
-          
-          console.log("Purchase order created successfully via Supabase:", supabaseResult[0]);
-          return supabaseResult[0];
+        // Direct Supabase insertion without going through RLS
+        const { data: insertResult, error } = await supabase
+          .from('purchase_orders')
+          .insert(finalOrderData)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Supabase insertion failed:", error);
+          throw error;
         }
+        
+        console.log("Purchase order created successfully via Supabase:", insertResult);
+        return insertResult;
       } catch (error: any) {
         console.error("Error in createPurchaseOrder:", error);
         throw error;

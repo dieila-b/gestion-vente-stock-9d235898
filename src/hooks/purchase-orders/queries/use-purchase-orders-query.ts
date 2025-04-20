@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder, Supplier } from "@/types/purchase-order";
 import { toast } from "sonner";
 import { isSelectQueryError } from "@/utils/type-utils";
-import { db } from "@/utils/db-core";
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
@@ -13,30 +12,7 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders...");
         
-        // Try using our db utility first to bypass RLS
-        try {
-          const data = await db.query(
-            'purchase_orders',
-            (qb) => qb
-              .select(`
-                *,
-                supplier:supplier_id(id, name, email, phone)
-              `)
-              .order('created_at', { ascending: false })
-          );
-          
-          console.log("Purchase orders fetched via db utility:", data);
-          
-          if (data && data.length > 0) {
-            // Process the data
-            const processedData = processOrdersData(data);
-            return processedData;
-          }
-        } catch (dbError) {
-          console.error("Error using db utility, falling back to direct Supabase query:", dbError);
-        }
-        
-        // Fallback to direct Supabase query
+        // Direct Supabase query
         const { data, error } = await supabase
           .from('purchase_orders')
           .select(`
