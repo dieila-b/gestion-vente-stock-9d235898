@@ -69,7 +69,7 @@ export function usePurchaseOrdersQuery() {
     },
     retry: 2,
     refetchOnWindowFocus: true,
-    staleTime: 30000 // Refresh more frequently
+    staleTime: 5000 // Refresh more frequently (5 seconds)
   });
 }
 
@@ -112,7 +112,7 @@ function processOrdersData(data: any[]): PurchaseOrder[] {
       id: order.id,
       order_number: order.order_number || `PO-${order.id.slice(0, 8)}`,
       created_at: order.created_at,
-      updated_at: order.updated_at,
+      updated_at: order.updated_at || order.created_at,
       status: safeStatus(order.status),
       supplier_id: order.supplier_id,
       discount: order.discount || 0,

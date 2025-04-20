@@ -17,11 +17,14 @@ export function usePurchaseOrders() {
   }
 
   // Function to force refresh the data
-  const refreshOrders = () => {
+  const refreshOrders = async () => {
     console.log("Refreshing purchase orders...");
-    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    refetch();
-    toast.success("Liste des bons de commande rafraîchie");
+    await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    const result = await refetch();
+    if (result.isSuccess) {
+      toast.success("Liste des bons de commande rafraîchie");
+    }
+    return result;
   };
 
   return {

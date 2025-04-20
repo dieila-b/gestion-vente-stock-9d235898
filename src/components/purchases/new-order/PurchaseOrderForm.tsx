@@ -92,6 +92,31 @@ const PurchaseOrderForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submission initiated with:", {
+      supplier,
+      orderItems: orderItems.length,
+      orderNumber,
+      total
+    });
+    
+    if (!supplier) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (orderItems.length === 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez ajouter au moins un produit",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     submitOrder(e);
   };
 
