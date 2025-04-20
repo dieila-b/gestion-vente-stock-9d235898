@@ -23,8 +23,8 @@ export function usePurchaseOrders() {
     // First invalidate the query
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
     
-    // Then trigger a refetch
-    const result = await refetch({ stale: true });
+    // Then trigger a refetch (removed invalid 'stale' option)
+    const result = await refetch();
     
     console.log("Refresh result:", result);
     
