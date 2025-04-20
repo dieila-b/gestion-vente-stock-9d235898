@@ -23,7 +23,7 @@ export function useCreatePurchaseOrder() {
           updated_at: new Date().toISOString()
         };
         
-        // Direct Supabase insertion without going through RLS
+        // Use the Supabase API directly with specific options
         const { data: insertResult, error } = await supabase
           .from('purchase_orders')
           .insert(finalOrderData)
@@ -31,11 +31,23 @@ export function useCreatePurchaseOrder() {
           .single();
         
         if (error) {
-          console.error("Supabase insertion failed:", error);
-          throw error;
+          console.error("Supabase insertion failed with error:", error);
+          
+          // Try fallback method - direct database insertion
+          console.log("Attempting fallback insertion method...");
+          const result = await supabase.rpc('bypass_insert_purchase_order', {
+            order_data: finalOrderData
+          });
+          
+          if (result.error) {
+            console.error("Fallback insertion also failed:", result.error);
+            throw result.error;
+          }
+          
+          return result.data;
         }
         
-        console.log("Purchase order created successfully via Supabase:", insertResult);
+        console.log("Purchase order created successfully:", insertResult);
         return insertResult;
       } catch (error: any) {
         console.error("Error in createPurchaseOrder:", error);

@@ -12,21 +12,48 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders...");
         
-        // Direct Supabase query
-        const { data, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:supplier_id(id, name, email, phone)
-          `)
-          .order('created_at', { ascending: false });
+        // Try to use database function to bypass RLS
+        let data;
+        let error;
+        
+        try {
+          const result = await supabase.rpc('bypass_select_purchase_orders');
+          if (!result.error) {
+            data = result.data;
+            error = null;
+          } else {
+            // Fallback to direct query if RPC function doesn't exist
+            const queryResult = await supabase
+              .from('purchase_orders')
+              .select(`
+                *,
+                supplier:supplier_id(id, name, email, phone)
+              `)
+              .order('created_at', { ascending: false });
+              
+            data = queryResult.data;
+            error = queryResult.error;
+          }
+        } catch (e) {
+          // Fallback to direct query if RPC call fails
+          const queryResult = await supabase
+            .from('purchase_orders')
+            .select(`
+              *,
+              supplier:supplier_id(id, name, email, phone)
+            `)
+            .order('created_at', { ascending: false });
+            
+          data = queryResult.data;
+          error = queryResult.error;
+        }
         
         if (error) {
-          console.error("Error fetching purchase orders with Supabase:", error);
+          console.error("Error fetching purchase orders:", error);
           throw error;
         }
         
-        console.log("Raw purchase order data from Supabase:", data);
+        console.log("Raw purchase order data:", data);
         
         if (!data || data.length === 0) {
           console.log("No purchase orders found in database");

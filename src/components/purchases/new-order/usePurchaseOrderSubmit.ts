@@ -3,7 +3,6 @@ import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
-import { db } from "@/utils/db-core";
 import { useCreatePurchaseOrder } from "@/hooks/purchase-orders/mutations/use-create-purchase-order";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -124,23 +123,14 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Try direct Supabase insertion first (without RLS)
-      const { data: insertedOrder, error } = await supabase
-        .from('purchase_orders')
-        .insert(orderData)
-        .select()
-        .single();
+      // Use the mutation hook to create the order
+      const result = await createPurchaseOrderMutation.mutateAsync(orderData);
       
-      if (error) {
-        console.error("Direct Supabase insertion failed:", error);
-        throw error;
-      }
-      
-      if (!insertedOrder || !insertedOrder.id) {
+      if (!result || !result.id) {
         throw new Error("Échec de la création du bon de commande - aucun ID retourné");
       }
       
-      const purchaseOrderId = insertedOrder.id;
+      const purchaseOrderId = result.id;
       console.log("Purchase order created with ID:", purchaseOrderId);
       
       if (purchaseOrderId && orderItems.length > 0) {
@@ -169,7 +159,8 @@ export const usePurchaseOrderSubmit = ({
             
           if (itemsError) {
             console.error("Error inserting order items:", itemsError);
-            throw itemsError;
+            sonnerToast.error(`Erreur lors de l'ajout des produits: ${itemsError.message}`);
+            // Continue with navigation even if items insertion fails
           }
         }
         
