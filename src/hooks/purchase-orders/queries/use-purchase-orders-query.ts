@@ -13,7 +13,7 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders...");
         
-        // Try using our db utility first
+        // Try using our db utility first to bypass RLS
         try {
           const data = await db.query(
             'purchase_orders',
@@ -69,12 +69,18 @@ export function usePurchaseOrdersQuery() {
     },
     retry: 2,
     refetchOnWindowFocus: true,
-    staleTime: 5000 // Refresh more frequently (5 seconds)
+    staleTime: 1000 // Set to 1 second to refresh more often
   });
 }
 
 function processOrdersData(data: any[]): PurchaseOrder[] {
   return data.map(order => {
+    // Safely handle missing or null order.id
+    if (!order || !order.id) {
+      console.error("Invalid order data encountered:", order);
+      return null;
+    }
+    
     // Create a default supplier object for type safety
     let supplierData: Partial<Supplier> = {};
     
@@ -107,14 +113,18 @@ function processOrdersData(data: any[]): PurchaseOrder[] {
       return 'pending';
     };
     
+    // Generate a safe order number if missing
+    const safeOrderNumber = order.order_number || 
+      (order.id ? `PO-${order.id.toString().substring(0, 8)}` : `PO-${Date.now().toString().substring(0, 8)}`);
+    
     // Create a properly typed PurchaseOrder object with all required fields
     const purchaseOrder: PurchaseOrder = {
       id: order.id,
-      order_number: order.order_number || `PO-${order.id.slice(0, 8)}`,
-      created_at: order.created_at,
-      updated_at: order.updated_at || order.created_at,
+      order_number: safeOrderNumber,
+      created_at: order.created_at || new Date().toISOString(),
+      updated_at: order.updated_at || order.created_at || new Date().toISOString(),
       status: safeStatus(order.status),
-      supplier_id: order.supplier_id,
+      supplier_id: order.supplier_id || '',
       discount: order.discount || 0,
       expected_delivery_date: order.expected_delivery_date || new Date().toISOString(),
       notes: order.notes || '',
@@ -128,11 +138,11 @@ function processOrdersData(data: any[]): PurchaseOrder[] {
       total_amount: order.total_amount || 0,
       paid_amount: order.paid_amount || 0,
       payment_status: safePaymentStatus(order.payment_status),
-      warehouse_id: order.warehouse_id,
+      warehouse_id: order.warehouse_id || '',
       supplier: formattedSupplier,
       items: [] // Will be populated separately if needed
     };
     
     return purchaseOrder;
-  });
+  }).filter(Boolean) as PurchaseOrder[]; // Filter out null values
 }

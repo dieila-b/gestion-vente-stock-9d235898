@@ -16,14 +16,25 @@ export function usePurchaseOrders() {
     console.error("Error in usePurchaseOrders:", error);
   }
 
-  // Function to force refresh the data
+  // Force refresh the data with minimal stale time
   const refreshOrders = async () => {
     console.log("Refreshing purchase orders...");
+    
+    // First invalidate the query
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    const result = await refetch();
+    
+    // Then trigger a refetch
+    const result = await refetch({ stale: true });
+    
+    console.log("Refresh result:", result);
+    
     if (result.isSuccess) {
       toast.success("Liste des bons de commande rafraîchie");
+    } else if (result.isError) {
+      console.error("Error refreshing orders:", result.error);
+      toast.error("Erreur lors du rafraîchissement");
     }
+    
     return result;
   };
 

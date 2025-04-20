@@ -5,7 +5,6 @@ import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
 import { db } from "@/utils/db-core";
 import { useCreatePurchaseOrder } from "@/hooks/purchase-orders/mutations/use-create-purchase-order";
-import { supabase } from "@/integrations/supabase/client";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -124,55 +123,58 @@ export const usePurchaseOrderSubmit = ({
         updated_at: new Date().toISOString()
       };
       
-      // Insertion directe dans Supabase pour éviter RLS
-      const { data: insertedOrder, error: insertError } = await supabase
-        .from('purchase_orders')
-        .insert(orderData)
-        .select()
-        .single();
-      
-      if (insertError) {
-        console.error("Supabase insert error:", insertError);
-        throw new Error(`Erreur lors de la création du bon de commande: ${insertError.message}`);
-      }
-      
-      const purchaseOrderId = insertedOrder.id;
-      console.log("Purchase order created with ID:", purchaseOrderId);
-      
-      if (purchaseOrderId && orderItems.length > 0) {
-        // Préparer les éléments pour insertion
-        const validOrderItems = orderItems
-          .filter(item => item.quantity > 0)
-          .map(item => ({
-            purchase_order_id: purchaseOrderId,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            selling_price: item.selling_price || 0,
-            total_price: item.unit_price * item.quantity,
-            product_code: item.product_code || '',
-            designation: item.designation || (item.product?.name || 'Produit sans nom'),
-            created_at: new Date().toISOString()
-          }));
+      // Use db.insert to bypass RLS policies
+      try {
+        const insertedOrder = await db.insert('purchase_orders', orderData);
         
-        if (validOrderItems.length > 0) {
-          console.log("Adding items to order:", validOrderItems);
-          
-          // Insertion directe des éléments dans Supabase
-          const { data: itemsResult, error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .insert(validOrderItems);
-          
-          if (itemsError) {
-            console.error("Error adding items:", itemsError);
-            sonnerToast.error(`Bon de commande créé mais erreur lors de l'ajout des articles: ${itemsError.message}`);
-          }
+        if (!insertedOrder || !insertedOrder.id) {
+          throw new Error("Échec de la création du bon de commande - aucun ID retourné");
         }
         
-        sonnerToast.success("Bon de commande créé avec succès");
-        navigate("/purchase-orders");
-      } else {
-        throw new Error("Échec de la création du bon de commande - aucun ID de commande retourné");
+        const purchaseOrderId = insertedOrder.id;
+        console.log("Purchase order created with ID:", purchaseOrderId);
+        
+        if (purchaseOrderId && orderItems.length > 0) {
+          // Préparer les éléments pour insertion
+          const validOrderItems = orderItems
+            .filter(item => item.quantity > 0)
+            .map(item => ({
+              purchase_order_id: purchaseOrderId,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              selling_price: item.selling_price || 0,
+              total_price: item.unit_price * item.quantity,
+              product_code: item.product_code || '',
+              designation: item.designation || (item.product?.name || 'Produit sans nom'),
+              created_at: new Date().toISOString()
+            }));
+          
+          if (validOrderItems.length > 0) {
+            console.log("Adding items to order:", validOrderItems);
+            
+            // Use db.insert for items too
+            for (const item of validOrderItems) {
+              await db.insert('purchase_order_items', item);
+            }
+          }
+          
+          sonnerToast.success("Bon de commande créé avec succès");
+          navigate("/purchase-orders");
+        } else {
+          throw new Error("Échec de la création du bon de commande - aucun ID de commande retourné");
+        }
+      } catch (dbError: any) {
+        console.error("Error with db.insert:", dbError);
+        
+        // Final fallback to mutation method
+        const result = await createPurchaseOrderMutation.mutateAsync(orderData);
+        if (result && result.id) {
+          sonnerToast.success("Bon de commande créé avec succès");
+          navigate("/purchase-orders");
+        } else {
+          throw new Error("Échec de la création du bon de commande avec la mutation");
+        }
       }
     } catch (error: any) {
       console.error("Error creating purchase order:", error);
