@@ -63,8 +63,23 @@ export function useCreatePurchaseOrder() {
           console.error("Échec insertion Supabase :", error);
           console.log("Tentative via fonction RPC bypass_insert_purchase_order...");
 
+          // S'assurer que chaque valeur est un type primitif pour éviter des problèmes de sérialisation
+          const safeOrderData = {};
+          Object.entries(cleanOrderData).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) {
+              // Convertir les dates en chaînes ISO
+              if (value instanceof Date) {
+                safeOrderData[key] = value.toISOString();
+              } else {
+                safeOrderData[key] = value;
+              }
+            }
+          });
+
           // On passe un objet JSON-sérialisable à la fonction RPC
-          const jsonSafeData = JSON.parse(JSON.stringify(cleanOrderData));
+          const jsonSafeData = JSON.parse(JSON.stringify(safeOrderData));
+          console.log("Données envoyées à la RPC:", jsonSafeData);
+          
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
             "bypass_insert_purchase_order",
             { order_data: jsonSafeData }

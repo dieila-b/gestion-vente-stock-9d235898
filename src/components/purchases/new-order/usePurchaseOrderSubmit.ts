@@ -138,7 +138,7 @@ export const usePurchaseOrderSubmit = ({
       console.log("Purchase order created with ID:", purchaseOrderId);
 
       if (purchaseOrderId && orderItems.length > 0) {
-        // Préparer les éléments pour insertion
+        // Préparer les éléments pour insertion avec des valeurs sûres pour JSON
         const validOrderItems = orderItems
           .filter(item => item.quantity > 0)
           .map(item => ({
@@ -159,6 +159,8 @@ export const usePurchaseOrderSubmit = ({
           try {
             // Use the RPC function for items insertion
             const jsonSafeItems = JSON.parse(JSON.stringify(validOrderItems));
+            console.log("Données d'éléments envoyées à RPC:", jsonSafeItems);
+            
             const { data: itemsResult, error: itemsError } = await supabase.rpc(
               'bypass_insert_purchase_order_items',
               { items_data: jsonSafeItems }
@@ -175,6 +177,8 @@ export const usePurchaseOrderSubmit = ({
               if (directItemsError) {
                 console.error("Direct insertion of items failed:", directItemsError);
                 sonnerToast.error(`Erreur lors de l'ajout des produits: ${directItemsError.message}`);
+              } else {
+                console.log("Items added successfully via direct insertion");
               }
             } else {
               console.log("Items added successfully via RPC:", itemsResult);
