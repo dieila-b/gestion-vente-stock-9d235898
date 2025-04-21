@@ -24,10 +24,17 @@ export function useCreatePurchaseOrder() {
 
       try {
         console.log("Attempting direct insert via Supabase...");
+        
+        // Create a clean version of the data without complex objects
+        const cleanOrderData = { ...finalOrderData };
+        if ('supplier' in cleanOrderData) {
+          delete cleanOrderData.supplier;
+        }
+        
         // Use the Supabase API directly with specific options
         const { data: insertResult, error } = await supabase
           .from('purchase_orders')
-          .insert(finalOrderData)
+          .insert(cleanOrderData)
           .select()
           .single();
 
@@ -41,16 +48,16 @@ export function useCreatePurchaseOrder() {
           console.error("Supabase insertion failed with error:", error);
           console.log("Trying fallback with RPC function...");
 
-          // Remove the supplier property before sending to RPC
-          const rpcOrderData = { ...finalOrderData };
-          if ('supplier' in rpcOrderData) {
-            delete rpcOrderData.supplier;
-          }
+          // Create a clean JSON-serializable object for RPC
+          const rpcOrderData = { ...cleanOrderData };
+          
+          // Ensure all properties are JSON-serializable
+          const jsonSafeData = JSON.parse(JSON.stringify(rpcOrderData));
 
           // Call the RPC function
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
             'bypass_insert_purchase_order',
-            { order_data: rpcOrderData }
+            { order_data: jsonSafeData }
           );
 
           if (rpcError) {
