@@ -55,10 +55,11 @@ export function useCreatePurchaseOrder() {
           const jsonSafeData = JSON.parse(JSON.stringify(rpcOrderData));
 
           // Call the RPC function
-          const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'bypass_insert_purchase_order',
-            { order_data: jsonSafeData }
-          );
+          const { data: rpcResult, error: rpcError } = await supabase
+            .from('purchase_orders')
+            .insert(jsonSafeData)
+            .select()
+            .single();
 
           if (rpcError) {
             console.error("Fallback insertion also failed:", rpcError);

@@ -1,4 +1,3 @@
-
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
@@ -157,27 +156,16 @@ export const usePurchaseOrderSubmit = ({
           console.log("Adding items to order:", validOrderItems);
 
           try {
-            // Insérer directement ou utiliser la fonction RPC en cas d'échec
+            // Direct insert to purchase_order_items
             const { error: itemsError } = await supabase
               .from('purchase_order_items')
               .insert(validOrderItems);
 
             if (itemsError) {
-              console.error("Direct insertion failed, trying RPC fallback:", itemsError);
-              
-              // Utiliser la fonction RPC bypass en cas d'échec
-              const { data: rpcItemsResult, error: rpcItemsError } = await supabase.rpc(
-                'bypass_insert_purchase_order_items' as any, 
-                { items_data: JSON.stringify(validOrderItems) }
-              );
-              
-              if (rpcItemsError) {
-                console.error("RPC fallback for items also failed:", rpcItemsError);
-                throw rpcItemsError;
-              }
-              console.log("Items added via RPC fallback:", rpcItemsResult);
+              console.error("Direct insertion of items failed:", itemsError);
+              sonnerToast.error(`Erreur lors de l'ajout des produits: ${itemsError.message}`);
             } else {
-              console.log("Items added successfully via direct insertion");
+              console.log("Items added successfully");
             }
           } catch (error) {
             console.error("Error adding order items:", error);
