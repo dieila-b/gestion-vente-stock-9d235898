@@ -12,7 +12,7 @@ export function useCreatePurchaseOrder() {
     mutationFn: async (orderData: Partial<PurchaseOrder>) => {
       console.log("Creating purchase order with data:", orderData);
 
-      // Generate order number if not provided
+      // Générer le numéro de commande si non fourni
       const finalOrderData = {
         ...orderData,
         order_number: orderData.order_number || `BC-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -22,57 +22,70 @@ export function useCreatePurchaseOrder() {
         updated_at: new Date().toISOString()
       };
 
-      try {
-        console.log("Attempting direct insert via Supabase...");
-        
-        // Create a clean version of the data without complex objects
-        const cleanOrderData = { ...finalOrderData };
-        if ('supplier' in cleanOrderData) {
-          delete cleanOrderData.supplier;
+      // Supprimer les propriétés complexes ou non liées à la table DB
+      const cleanOrderData = { ...finalOrderData };
+      if ("supplier" in cleanOrderData) {
+        delete cleanOrderData.supplier;
+      }
+      if ("warehouse" in cleanOrderData) {
+        delete cleanOrderData.warehouse;
+      }
+      if ("items" in cleanOrderData) {
+        delete cleanOrderData.items;
+      }
+      if ("deleted" in cleanOrderData) {
+        delete cleanOrderData.deleted;
+      }
+
+      // Nettoyer les undefined (sinon JSON.stringify met "undefined" à null)
+      Object.keys(cleanOrderData).forEach((key) => {
+        if (cleanOrderData[key] === undefined) {
+          delete cleanOrderData[key];
         }
-        
-        // Use the Supabase API directly with specific options
+      });
+
+      try {
+        console.log("Tentative d'insertion directe via Supabase...");
+        // Tentative normale
         const { data: insertResult, error } = await supabase
-          .from('purchase_orders')
+          .from("purchase_orders")
           .insert(cleanOrderData)
           .select()
           .single();
 
         if (!error && insertResult) {
-          console.log("Purchase order created successfully via direct insert:", insertResult);
+          console.log("Commande fournisseur créée via insertion directe :", insertResult);
           return insertResult;
         }
 
-        // If error, fallback to RPC
+        // Si échec, fallback RPC
         if (error) {
-          console.error("Supabase insertion failed with error:", error);
-          console.log("Trying fallback with RPC function...");
+          console.error("Échec insertion Supabase :", error);
+          console.log("Tentative via fonction RPC bypass_insert_purchase_order...");
 
-          // Create a clean JSON-serializable object for RPC
-          const rpcOrderData = { ...cleanOrderData };
-          
-          // Ensure all properties are JSON-serializable
-          const jsonSafeData = JSON.parse(JSON.stringify(rpcOrderData));
-
-          // Call the RPC function
-          const { data: rpcResult, error: rpcError } = await supabase
-            .from('purchase_orders')
-            .insert(jsonSafeData)
-            .select()
-            .single();
+          // On passe un objet JSON-sérialisable à la fonction RPC
+          const jsonSafeData = JSON.parse(JSON.stringify(cleanOrderData));
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            "bypass_insert_purchase_order",
+            { order_data: jsonSafeData }
+          );
 
           if (rpcError) {
-            console.error("Fallback insertion also failed:", rpcError);
+            console.error("Échec fallback RPC :", rpcError);
             throw rpcError;
           }
-          
-          console.log("RPC fallback succeeded:", rpcResult);
-          return rpcResult;
+
+          if (rpcResult) {
+            // Certains retours RPC renvoient l'objet direct, parfois dans un tableau
+            const order = Array.isArray(rpcResult) && rpcResult.length > 0 ? rpcResult[0] : rpcResult;
+            console.log("RPC fallback OK :", order);
+            return order;
+          }
         }
-        
-        throw new Error("Failed to create purchase order");
+
+        throw new Error("Impossible de créer le bon de commande");
       } catch (error) {
-        console.error("Error in purchase order creation:", error);
+        console.error("Erreur lors de la création du bon de commande :", error);
         throw error;
       }
     },
@@ -82,9 +95,11 @@ export function useCreatePurchaseOrder() {
       return data;
     },
     onError: (error: any) => {
-      console.error("Error creating purchase order:", error);
-      toast.error(`Erreur lors de la création: ${error.message || "Erreur inconnue"}`);
-    }
+      console.error("Erreur création bon de commande :", error);
+      toast.error(
+        `Erreur lors de la création: ${error.message || "Erreur inconnue"}`
+      );
+    },
   });
 
   return mutation;
