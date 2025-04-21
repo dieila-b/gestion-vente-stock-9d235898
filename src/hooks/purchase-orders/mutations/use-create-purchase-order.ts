@@ -41,10 +41,16 @@ export function useCreatePurchaseOrder() {
           console.error("Supabase insertion failed with error:", error);
           console.log("Trying fallback with RPC function...");
 
+          // Remove the supplier property before sending to RPC
+          const rpcOrderData = { ...finalOrderData };
+          if ('supplier' in rpcOrderData) {
+            delete rpcOrderData.supplier;
+          }
+
           // Call the RPC function
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
             'bypass_insert_purchase_order',
-            { order_data: finalOrderData }
+            { order_data: rpcOrderData }
           );
 
           if (rpcError) {
