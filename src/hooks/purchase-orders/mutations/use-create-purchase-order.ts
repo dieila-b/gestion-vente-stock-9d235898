@@ -57,7 +57,7 @@ export function useCreatePurchaseOrder() {
           console.log("Commande fournisseur créée via insertion directe :", insertResult);
           return insertResult;
         }
-
+        
         // Si échec, fallback RPC
         if (error) {
           console.error("Échec insertion Supabase :", error);
@@ -76,10 +76,8 @@ export function useCreatePurchaseOrder() {
           }
 
           if (rpcResult) {
-            // Certains retours RPC renvoient l'objet direct, parfois dans un tableau
-            const order = Array.isArray(rpcResult) && rpcResult.length > 0 ? rpcResult[0] : rpcResult;
-            console.log("RPC fallback OK :", order);
-            return order;
+            console.log("RPC fallback OK :", rpcResult);
+            return rpcResult;
           }
         }
 
