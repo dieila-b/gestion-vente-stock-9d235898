@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Edit, FileText, Trash, Printer, ExternalLink } from "lucide-react";
+import { Edit, FileText, Trash, Printer } from "lucide-react";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];

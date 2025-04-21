@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export function usePurchaseOrders() {
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
   const { handleApprove, handleDelete, handleCreate } = usePurchaseOrderMutations();
-  const handleEdit = useEditPurchaseOrder();
+  const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
   // Log if errors occur
@@ -23,7 +23,7 @@ export function usePurchaseOrders() {
     // First invalidate the query
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
     
-    // Then trigger a refetch (removed invalid 'stale' option)
+    // Then trigger a refetch
     const result = await refetch();
     
     console.log("Refresh result:", result);
@@ -45,6 +45,8 @@ export function usePurchaseOrders() {
     handleApprove,
     handleDelete,
     handleEdit,
+    EditDialog,
+    isDialogOpen,
     handleCreate,
     refreshOrders,
     refetch
