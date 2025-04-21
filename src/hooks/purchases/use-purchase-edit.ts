@@ -1,4 +1,5 @@
 
+import React from 'react'; // Add this import to fix TS2686
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
