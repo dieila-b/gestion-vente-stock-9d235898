@@ -1699,6 +1699,18 @@ export type Database = {
         Args: { email_input: string; password_input: string }
         Returns: Json
       }
+      bypass_insert_purchase_order: {
+        Args: { order_data: Json }
+        Returns: Json
+      }
+      bypass_insert_purchase_order_items: {
+        Args: { items_data: Json }
+        Returns: Json
+      }
+      bypass_select_purchase_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
     }
     Enums: {
       [_ in never]: never

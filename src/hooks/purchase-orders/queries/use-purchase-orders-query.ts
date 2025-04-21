@@ -7,68 +7,74 @@ import { isSelectQueryError } from "@/utils/type-utils";
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
-    queryKey: ['purchase-orders'],
+    queryKey: ["purchase-orders"],
     queryFn: async () => {
       try {
         console.log("Fetching purchase orders...");
-        
-        // Try to use database function to bypass RLS
+
         let data;
         let error;
-        
+
         try {
-          // Type cast to avoid TypeScript error with RPC function name
+          // Bypass TypeScript check for custom RPC
           const result = await supabase.rpc(
-            // Cast to any type to bypass the type check
-            'bypass_select_purchase_orders' as any
+            "bypass_select_purchase_orders" as any
           );
-          
+
           if (!result.error) {
             data = result.data;
             error = null;
           } else {
-            // Fallback to direct query if RPC function doesn't exist
+            // Fallback to direct select if custom function fails
             const queryResult = await supabase
-              .from('purchase_orders')
+              .from("purchase_orders")
               .select(`
                 *,
                 supplier:supplier_id(id, name, email, phone)
               `)
-              .order('created_at', { ascending: false });
-              
+              .order("created_at", { ascending: false });
+
             data = queryResult.data;
             error = queryResult.error;
           }
         } catch (e) {
-          // Fallback to direct query if RPC call fails
+          // Fallback direct query
           const queryResult = await supabase
-            .from('purchase_orders')
+            .from("purchase_orders")
             .select(`
               *,
               supplier:supplier_id(id, name, email, phone)
             `)
-            .order('created_at', { ascending: false });
-            
+            .order("created_at", { ascending: false });
+
           data = queryResult.data;
           error = queryResult.error;
         }
-        
+
         if (error) {
           console.error("Error fetching purchase orders:", error);
           throw error;
         }
-        
+
         console.log("Raw purchase order data:", data);
-        
+
         if (!data || data.length === 0) {
           console.log("No purchase orders found in database");
           return [];
         }
-        
-        const processedData = processOrdersData(data);
-        console.log("Processed purchase orders:", processedData);
-        
-        return processedData;
+
+        // The custom function returns an array of JSON objects, parse them!
+        const processedData =
+          typeof data[0] === "string"
+            ? data.map((d: string) => JSON.parse(d))
+            : data.map((d: any) =>
+                typeof d === "object" && d !== null && d.hasOwnProperty("id") ? d : d
+              );
+
+        const finalData = processOrdersData(processedData);
+        console.log("Processed purchase orders:", finalData);
+
+        return finalData;
       } catch (error) {
         console.error("Error fetching purchase orders:", error);
         toast.error("Erreur lors du chargement des bons de commande");
@@ -77,7 +83,7 @@ export function usePurchaseOrdersQuery() {
     },
     retry: 2,
     refetchOnWindowFocus: true,
-    staleTime: 1000 // Set to 1 second to refresh more often
+    staleTime: 1000 // short stale time to refresh often
   });
 }
 

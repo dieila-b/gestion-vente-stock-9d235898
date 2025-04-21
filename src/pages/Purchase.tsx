@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
-import { isSelectQueryError, safeSupplier } from "@/utils/type-utils";
+import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 
 export default function PurchasePage() {
   const { id } = useParams(); // Get the ID from URL params instead
