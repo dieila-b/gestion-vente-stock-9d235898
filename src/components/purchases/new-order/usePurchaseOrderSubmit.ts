@@ -1,10 +1,11 @@
+
 import { FormEvent } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { toast as sonnerToast } from "sonner";
 import { useCreatePurchaseOrder } from "@/hooks/purchase-orders/mutations/use-create-purchase-order";
 import { supabase } from "@/integrations/supabase/client";
-import { safeSupplier } from "@/utils/supabase-safe-query";
+import { isObject } from "@/utils/type-utils";
 
 interface UsePurchaseOrderSubmitProps {
   supplier: string;
@@ -125,18 +126,15 @@ export const usePurchaseOrderSubmit = ({
       // Use the mutation hook to create the order
       const result = await createPurchaseOrderMutation.mutateAsync(orderData);
       
-      // Coerce the result to a usable object
+      // Extraire l'ID du purchase order du résultat
       let purchaseOrderId: string | null = null;
-      if (result && typeof result === "object" && "id" in result && typeof (result as any).id === "string") {
-        purchaseOrderId = (result as any).id;
-      } else if (typeof result === "object" && result !== null) {
-        // Sometimes Supabase custom functions return the raw JSON as { ...fields }
-        // Try id fallback
-        purchaseOrderId = (result as any)["id"] || null;
-      } else {
-        // Handle other possible non-object results
-        purchaseOrderId = null;
+      
+      if (result && typeof result === 'object') {
+        if ('id' in result && result.id) {
+          purchaseOrderId = String(result.id);
+        }
       }
+      
       console.log("Purchase order created with ID:", purchaseOrderId);
 
       if (purchaseOrderId && orderItems.length > 0) {
@@ -144,7 +142,7 @@ export const usePurchaseOrderSubmit = ({
         const validOrderItems = orderItems
           .filter(item => item.quantity > 0)
           .map(item => ({
-            purchase_order_id: String(purchaseOrderId),
+            purchase_order_id: purchaseOrderId,
             product_id: item.product_id,
             quantity: item.quantity,
             unit_price: item.unit_price,
@@ -158,14 +156,32 @@ export const usePurchaseOrderSubmit = ({
         if (validOrderItems.length > 0) {
           console.log("Adding items to order:", validOrderItems);
 
-          // Insert items with Supabase (array insertion, force type to correct)
-          const { error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .insert(validOrderItems as any[]);
+          try {
+            // Insérer directement ou utiliser la fonction RPC en cas d'échec
+            const { error: itemsError } = await supabase
+              .from('purchase_order_items')
+              .insert(validOrderItems);
 
-          if (itemsError) {
-            console.error("Error inserting order items:", itemsError);
-            sonnerToast.error(`Erreur lors de l'ajout des produits: ${itemsError.message}`);
+            if (itemsError) {
+              console.error("Direct insertion failed, trying RPC fallback:", itemsError);
+              
+              // Utiliser la fonction RPC bypass en cas d'échec
+              const { data: rpcItemsResult, error: rpcItemsError } = await supabase.rpc(
+                'bypass_insert_purchase_order_items' as any, 
+                { items_data: JSON.stringify(validOrderItems) }
+              );
+              
+              if (rpcItemsError) {
+                console.error("RPC fallback for items also failed:", rpcItemsError);
+                throw rpcItemsError;
+              }
+              console.log("Items added via RPC fallback:", rpcItemsResult);
+            } else {
+              console.log("Items added successfully via direct insertion");
+            }
+          } catch (error) {
+            console.error("Error adding order items:", error);
+            sonnerToast.error(`Erreur lors de l'ajout des produits: ${(error as Error).message}`);
             // Continue with navigation even if items insertion fails
           }
         }

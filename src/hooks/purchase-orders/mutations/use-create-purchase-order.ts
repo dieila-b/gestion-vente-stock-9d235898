@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,37 +22,40 @@ export function useCreatePurchaseOrder() {
         updated_at: new Date().toISOString()
       };
 
-      // Use the Supabase API directly with specific options
-      const { data: insertResult, error } = await supabase
-        .from('purchase_orders')
-        .insert(finalOrderData)
-        .select()
-        .single();
+      try {
+        // Use the Supabase API directly with specific options
+        const { data: insertResult, error } = await supabase
+          .from('purchase_orders')
+          .insert(finalOrderData)
+          .select()
+          .single();
 
-      if (!error && insertResult) {
-        console.log("Purchase order created successfully:", insertResult);
-        return insertResult;
-      }
-
-      // If error, fallback to RPC
-      if (error) {
-        console.error("Supabase insertion failed with error:", error);
-
-        // Use a properly typed approach for the RPC call
-        // We need to cast the function name since the types are incorrect
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
-          'bypass_insert_purchase_order' as any,
-          {
-            order_data: finalOrderData
-          }
-        );
-
-        if (rpcError) {
-          console.error("Fallback insertion also failed:", rpcError);
-          throw rpcError;
+        if (!error && insertResult) {
+          console.log("Purchase order created successfully:", insertResult);
+          return insertResult;
         }
-        // The RPC returns a raw object with fields, return as-is
-        return rpcResult;
+
+        // If error, fallback to RPC
+        if (error) {
+          console.error("Supabase insertion failed with error:", error);
+          console.log("Trying fallback with RPC function...");
+
+          // Use a properly typed approach for the RPC call
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'bypass_insert_purchase_order' as any,
+            { order_data: finalOrderData }
+          );
+
+          if (rpcError) {
+            console.error("Fallback insertion also failed:", rpcError);
+            throw rpcError;
+          }
+          console.log("RPC fallback succeeded:", rpcResult);
+          return rpcResult;
+        }
+      } catch (error) {
+        console.error("Error in purchase order creation:", error);
+        throw error;
       }
     },
     onSuccess: (data) => {

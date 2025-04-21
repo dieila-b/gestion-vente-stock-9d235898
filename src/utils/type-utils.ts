@@ -1,4 +1,6 @@
+
 import { SelectQueryError } from "@/types/db-adapter";
+import { Supplier } from "@/types/supplier";
 
 /**
  * Type guard to check if an object is a Supabase SelectQueryError
@@ -20,4 +22,14 @@ export function safeGet<T, K extends keyof T>(obj: T | null | undefined, key: K,
  */
 export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Safely get supplier information, handling SelectQueryError
+ */
+export function safeSupplier(supplier: Supplier | SelectQueryError | null | undefined): Supplier {
+  if (!supplier || isSelectQueryError(supplier)) {
+    return { id: '', name: 'Fournisseur inconnu' } as Supplier;
+  }
+  return supplier;
 }

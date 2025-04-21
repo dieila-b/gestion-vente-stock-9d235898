@@ -1,162 +1,56 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PurchaseOrder, Supplier } from "@/types/purchase-order";
+import { PurchaseOrder } from "@/types/purchase-order";
 import { toast } from "sonner";
-import { isSelectQueryError } from "@/utils/type-utils";
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
-    queryKey: ["purchase-orders"],
-    queryFn: async () => {
+    queryKey: ['purchase-orders'],
+    queryFn: async (): Promise<PurchaseOrder[]> => {
+      console.log("Fetching purchase orders...");
+      
       try {
-        console.log("Fetching purchase orders...");
-
-        let data;
-        let error;
-
-        try {
-          // Bypass TypeScript check for custom RPC
-          const result = await supabase.rpc(
-            "bypass_select_purchase_orders" as any
-          );
-
-          if (!result.error) {
-            data = result.data;
-            error = null;
-          } else {
-            // Fallback to direct select if custom function fails
-            const queryResult = await supabase
-              .from("purchase_orders")
-              .select(`
-                *,
-                supplier:supplier_id(id, name, email, phone)
-              `)
-              .order("created_at", { ascending: false });
-
-            data = queryResult.data;
-            error = queryResult.error;
+        // First, try direct query
+        const { data: directData, error: directError } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:suppliers(*)
+          `)
+          .order('created_at', { ascending: false });
+          
+        if (!directError && directData) {
+          console.log("Purchase orders fetched successfully via direct query:", directData.length);
+          return directData as PurchaseOrder[];
+        }
+        
+        // If direct query fails, try RPC function
+        if (directError) {
+          console.log("Direct query failed, trying RPC function:", directError);
+          const { data: rpcData, error: rpcError } = await supabase.rpc('bypass_select_purchase_orders' as any);
+          
+          if (rpcError) {
+            console.error("RPC function also failed:", rpcError);
+            throw rpcError;
           }
-        } catch (e) {
-          // Fallback direct query
-          const queryResult = await supabase
-            .from("purchase_orders")
-            .select(`
-              *,
-              supplier:supplier_id(id, name, email, phone)
-            `)
-            .order("created_at", { ascending: false });
-
-          data = queryResult.data;
-          error = queryResult.error;
-        }
-
-        if (error) {
-          console.error("Error fetching purchase orders:", error);
-          throw error;
-        }
-
-        console.log("Raw purchase order data:", data);
-
-        if (!data || data.length === 0) {
-          console.log("No purchase orders found in database");
+          
+          if (rpcData) {
+            console.log("Processed purchase orders:", rpcData);
+            return rpcData as unknown as PurchaseOrder[];
+          }
+          
           return [];
         }
-
-        // The custom function returns an array of JSON objects, parse them!
-        const processedData =
-          typeof data[0] === "string"
-            ? data.map((d: string) => JSON.parse(d))
-            : data.map((d: any) =>
-                typeof d === "object" && d !== null && d.hasOwnProperty("id") ? d : d
-              );
-
-        const finalData = processOrdersData(processedData);
-        console.log("Processed purchase orders:", finalData);
-
-        return finalData;
+        
+        return [];
       } catch (error) {
         console.error("Error fetching purchase orders:", error);
         toast.error("Erreur lors du chargement des bons de commande");
         return [];
       }
     },
-    retry: 2,
+    staleTime: 0, // Always refetch on component mount
     refetchOnWindowFocus: true,
-    staleTime: 1000 // short stale time to refresh often
   });
-}
-
-function processOrdersData(data: any[]): PurchaseOrder[] {
-  return data.map(order => {
-    // Safely handle missing or null order.id
-    if (!order || !order.id) {
-      console.error("Invalid order data encountered:", order);
-      return null;
-    }
-    
-    // Create a default supplier object for type safety
-    let supplierData: Partial<Supplier> = {};
-    
-    // Check if supplier exists and is not a query error
-    if (order.supplier && !isSelectQueryError(order.supplier)) {
-      supplierData = order.supplier;
-    } else {
-      console.log("Supplier data missing or invalid for order:", order.id);
-    }
-    
-    // Construct a valid supplier object with safe fallbacks
-    const formattedSupplier: Supplier = {
-      id: (supplierData.id || order.supplier_id || '').toString(),
-      name: supplierData.name || 'Fournisseur inconnu',
-      phone: supplierData.phone || '',
-      email: supplierData.email || ''
-    };
-    
-    const safeStatus = (status: string): PurchaseOrder['status'] => {
-      if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
-        return status as PurchaseOrder['status'];
-      }
-      return 'draft';
-    };
-    
-    const safePaymentStatus = (status: string): PurchaseOrder['payment_status'] => {
-      if (['pending', 'partial', 'paid'].includes(status)) {
-        return status as PurchaseOrder['payment_status'];
-      }
-      return 'pending';
-    };
-    
-    // Generate a safe order number if missing
-    const safeOrderNumber = order.order_number || 
-      (order.id ? `PO-${order.id.toString().substring(0, 8)}` : `PO-${Date.now().toString().substring(0, 8)}`);
-    
-    // Create a properly typed PurchaseOrder object with all required fields
-    const purchaseOrder: PurchaseOrder = {
-      id: order.id,
-      order_number: safeOrderNumber,
-      created_at: order.created_at || new Date().toISOString(),
-      updated_at: order.updated_at || order.created_at || new Date().toISOString(),
-      status: safeStatus(order.status),
-      supplier_id: order.supplier_id || '',
-      discount: order.discount || 0,
-      expected_delivery_date: order.expected_delivery_date || new Date().toISOString(),
-      notes: order.notes || '',
-      logistics_cost: order.logistics_cost || 0,
-      transit_cost: order.transit_cost || 0,
-      tax_rate: order.tax_rate || 0,
-      shipping_cost: order.shipping_cost || 0,
-      subtotal: order.subtotal || 0,
-      tax_amount: order.tax_amount || 0,
-      total_ttc: order.total_ttc || 0,
-      total_amount: order.total_amount || 0,
-      paid_amount: order.paid_amount || 0,
-      payment_status: safePaymentStatus(order.payment_status),
-      warehouse_id: order.warehouse_id || '',
-      supplier: formattedSupplier,
-      items: [] // Will be populated separately if needed
-    };
-    
-    return purchaseOrder;
-  }).filter(Boolean) as PurchaseOrder[]; // Filter out null values
 }
