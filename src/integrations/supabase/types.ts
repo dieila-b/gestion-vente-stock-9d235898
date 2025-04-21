@@ -1711,6 +1711,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json[]
       }
+      get_purchase_order_by_id: {
+        Args: { order_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

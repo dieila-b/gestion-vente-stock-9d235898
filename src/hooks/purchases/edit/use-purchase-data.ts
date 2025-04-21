@@ -9,11 +9,11 @@ import { PurchaseOrder } from '@/types/purchase-order';
  * Hook to fetch and manage purchase order data
  */
 export function usePurchaseData(orderId?: string) {
-  const [formData, setFormData] = useState<any>({});
-  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [formData, setFormData] = useState<Partial<PurchaseOrder>>({});
+  const [orderItems, setOrderItems] = useState<PurchaseOrder['items']>([]);
 
   // Fetch the purchase order 
-  const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery({
+  const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery<PurchaseOrder | null>({
     queryKey: ['purchase', orderId],
     queryFn: async () => {
       if (!orderId) return null;
@@ -33,7 +33,7 @@ export function usePurchaseData(orderId?: string) {
               unit_price,
               selling_price,
               total_price,
-              product:product_id(id, name, reference)
+              product:catalog(id, name, reference)
             ),
             warehouse:warehouses(id, name)
           `)
@@ -46,22 +46,77 @@ export function usePurchaseData(orderId?: string) {
           
           // Fallback to RPC if direct query fails
           console.log("Attempting to fetch purchase order via RPC...");
-          const { data: rpcData, error: rpcError } = await supabase.rpc(
+          const { data: rpcDataRaw, error: rpcError } = await supabase.rpc(
             'get_purchase_order_by_id',
             { order_id: orderId }
           );
-          
+
           if (rpcError) {
             console.error("RPC fetch error:", rpcError);
             throw new Error(rpcError.message);
           }
-          
-          if (rpcData) {
-            console.log("Purchase order fetched via RPC:", rpcData);
-            return rpcData;
+
+          if (!rpcDataRaw) {
+            throw new Error("Bon de commande non trouvé");
           }
-          
-          throw new Error("Bon de commande non trouvé");
+
+          // Parse RPC jsonb data into PurchaseOrder type
+          const rpcData = typeof rpcDataRaw === 'string' ? JSON.parse(rpcDataRaw) : rpcDataRaw;
+
+          // Construct full PurchaseOrder with defaults
+          const safeStatus = (status: any): PurchaseOrder['status'] => {
+            if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
+              return status as PurchaseOrder['status'];
+            }
+            return 'draft';
+          };
+
+          const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
+            if (['pending', 'partial', 'paid'].includes(status)) {
+              return status as PurchaseOrder['payment_status'];
+            }
+            return 'pending';
+          };
+
+          const processedRpcData: PurchaseOrder = {
+            id: rpcData.id,
+            order_number: rpcData.order_number,
+            created_at: rpcData.created_at,
+            updated_at: rpcData.updated_at,
+            status: safeStatus(rpcData.status),
+            supplier_id: rpcData.supplier_id,
+            discount: rpcData.discount || 0,
+            expected_delivery_date: rpcData.expected_delivery_date || '',
+            notes: rpcData.notes || '',
+            logistics_cost: rpcData.logistics_cost || 0,
+            transit_cost: rpcData.transit_cost || 0,
+            tax_rate: rpcData.tax_rate || 0,
+            shipping_cost: rpcData.shipping_cost || 0,
+            subtotal: rpcData.subtotal || 0,
+            tax_amount: rpcData.tax_amount || 0,
+            total_ttc: rpcData.total_ttc || 0,
+            total_amount: rpcData.total_amount || 0,
+            paid_amount: rpcData.paid_amount || 0,
+            payment_status: safePaymentStatus(rpcData.payment_status),
+            warehouse_id: rpcData.warehouse_id || undefined,
+            supplier: {
+              id: rpcData.supplier?.id,
+              name: rpcData.supplier?.name,
+              email: rpcData.supplier?.email,
+              phone: rpcData.supplier?.phone,
+              address: rpcData.supplier?.address,
+              city: ''
+            },
+            warehouse: rpcData.warehouse ? {
+              id: rpcData.warehouse.id,
+              name: rpcData.warehouse.name
+            } : undefined,
+            items: rpcData.items || [],
+            deleted: false
+          };
+
+          console.log("Purchase order fetched via RPC:", processedRpcData);
+          return processedRpcData;
         }
 
         if (!data) {
@@ -72,17 +127,25 @@ export function usePurchaseData(orderId?: string) {
         // We don't try to access data.deleted directly since it might not exist in the database
         // Instead, we treat all purchase orders as non-deleted by default
         // Also ensure status is one of the valid enum values
-        const safeStatus = (status: string): PurchaseOrder['status'] => {
+        const safeStatus = (status: any): PurchaseOrder['status'] => {
           if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
             return status as PurchaseOrder['status'];
           }
           return 'draft';
         };
-        
-        const processedData = {
+
+        const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
+          if (['pending', 'partial', 'paid'].includes(status)) {
+            return status as PurchaseOrder['payment_status'];
+          }
+          return 'pending';
+        };
+
+        const processedData: PurchaseOrder = {
           ...data,
           deleted: false, // Default value, since column doesn't exist in the database
           status: safeStatus(data.status),
+          payment_status: safePaymentStatus(data.payment_status),
           items: data.items || []
         };
 
@@ -115,7 +178,7 @@ export function usePurchaseData(orderId?: string) {
         tax_rate: purchase.tax_rate,
         deleted: false // Set default value, since column doesn't exist in the database
       });
-      
+
       // Set order items
       if (purchase.items) {
         setOrderItems(purchase.items);
@@ -141,3 +204,4 @@ export function usePurchaseData(orderId?: string) {
     refetch
   };
 }
+

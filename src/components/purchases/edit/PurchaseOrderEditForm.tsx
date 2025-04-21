@@ -8,6 +8,7 @@ import {
   ProductsSection,
   FormActions
 } from "./FormSections";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -44,16 +45,32 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   if (!purchase) {
     return <div className="p-6 text-center">Bon de commande non trouvé</div>;
   }
-  
-  // Ensure purchase status and payment_status match defined types
-  const validPurchase = {
-    ...purchase,
-    status: (purchase.status as string in ["draft", "pending", "delivered", "approved"]) 
-      ? purchase.status as "draft" | "pending" | "delivered" | "approved"
-      : "draft",
-    payment_status: (purchase.payment_status as string in ["pending", "partial", "paid"])
-      ? purchase.payment_status as "pending" | "partial" | "paid"
-      : "pending"
+
+  // We explicitly assert types here to avoid spreading union type that includes string etc.
+  const validPurchase: PurchaseOrder = {
+    id: purchase.id,
+    order_number: purchase.order_number || '',
+    created_at: purchase.created_at,
+    updated_at: purchase.updated_at,
+    status: ['draft', 'pending', 'delivered', 'approved'].includes(purchase.status) ? purchase.status : 'draft',
+    supplier_id: purchase.supplier_id,
+    discount: purchase.discount || 0,
+    expected_delivery_date: purchase.expected_delivery_date || '',
+    notes: purchase.notes || '',
+    logistics_cost: purchase.logistics_cost || 0,
+    transit_cost: purchase.transit_cost || 0,
+    tax_rate: purchase.tax_rate || 0,
+    shipping_cost: purchase.shipping_cost || 0,
+    subtotal: purchase.subtotal || 0,
+    tax_amount: purchase.tax_amount || 0,
+    total_ttc: purchase.total_ttc || 0,
+    total_amount: purchase.total_amount || 0,
+    paid_amount: purchase.paid_amount || 0,
+    payment_status: ['pending', 'partial', 'paid'].includes(purchase.payment_status) ? purchase.payment_status : 'pending',
+    warehouse_id: purchase.warehouse_id,
+    supplier: purchase.supplier,
+    warehouse: purchase.warehouse,
+    items: purchase.items || [],
   };
   
   return (
@@ -89,7 +106,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       <h3 className="text-lg font-semibold mt-6">Produits</h3>
       
       <ProductsSection 
-        items={validPurchase.items || []}
+        items={validPurchase.items}
         updateItemQuantity={updateItemQuantity}
         updateItemPrice={updateItemPrice}
         removeItem={removeItem}
@@ -102,3 +119,4 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     </div>
   );
 }
+

@@ -6,6 +6,7 @@ import { usePurchaseData } from './edit/use-purchase-data';
 import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
 import { updateOrderTotal } from './edit/use-purchase-calculations';
+import { PurchaseOrder } from '@/types/purchase-order';
 
 export function usePurchaseEdit(orderId?: string) {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,17 +24,19 @@ export function usePurchaseEdit(orderId?: string) {
     refetch 
   } = usePurchaseData(orderId);
 
-  // Update delivery and payment status based on purchase data
-  if (purchase && purchase.status && purchase.status !== deliveryStatus) {
-    setDeliveryStatus(purchase.status as 'pending' | 'delivered');
-  }
+  // Update delivery and payment status based on purchase data (avoid infinite loop with useEffect)
+  React.useEffect(() => {
+    if (purchase && purchase.status && purchase.status !== deliveryStatus) {
+      setDeliveryStatus(purchase.status as 'pending' | 'delivered');
+    }
 
-  if (purchase && purchase.payment_status && purchase.payment_status !== paymentStatus) {
-    setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
-  }
+    if (purchase && purchase.payment_status && purchase.payment_status !== paymentStatus) {
+      setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
+    }
+  }, [purchase]);
 
   // Handle update
-  const handleUpdate = async (data: any) => {
+  const handleUpdate = async (data: Partial<PurchaseOrder>) => {
     if (!orderId) return false;
 
     setIsLoading(true);
@@ -107,3 +110,4 @@ export function usePurchaseEdit(orderId?: string) {
     updatePaymentStatus
   };
 }
+
