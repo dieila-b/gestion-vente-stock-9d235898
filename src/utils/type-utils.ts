@@ -28,8 +28,19 @@ export function isObject(value: unknown): value is Record<string, unknown> {
  * Safely get supplier information, handling SelectQueryError
  */
 export function safeSupplier(supplier: Supplier | SelectQueryError | null | undefined): Supplier {
-  if (!supplier || isSelectQueryError(supplier)) {
-    return { id: '', name: 'Fournisseur inconnu' } as Supplier;
+  if (!supplier) {
+    return { id: '', name: 'Fournisseur inconnu', phone: '', email: '' } as Supplier;
   }
-  return supplier;
+  
+  if (isSelectQueryError(supplier)) {
+    return { id: '', name: 'Erreur fournisseur', phone: '', email: '' } as Supplier;
+  }
+  
+  // Ensure required properties are present
+  return {
+    id: supplier.id || '',
+    name: supplier.name || 'Fournisseur sans nom',
+    phone: supplier.phone || '',
+    email: supplier.email || ''
+  } as Supplier;
 }

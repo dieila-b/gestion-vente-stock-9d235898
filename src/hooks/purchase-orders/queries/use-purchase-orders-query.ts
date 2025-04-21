@@ -11,7 +11,8 @@ export function usePurchaseOrdersQuery() {
       console.log("Fetching purchase orders...");
       
       try {
-        // First, try direct query
+        // First, try direct query with detailed logging
+        console.log("Attempting direct query to purchase_orders table...");
         const { data: directData, error: directError } = await supabase
           .from('purchase_orders')
           .select(`
@@ -20,29 +21,30 @@ export function usePurchaseOrdersQuery() {
           `)
           .order('created_at', { ascending: false });
           
-        if (!directError && directData) {
+        if (!directError && directData && directData.length > 0) {
           console.log("Purchase orders fetched successfully via direct query:", directData.length);
           return directData as PurchaseOrder[];
         }
         
-        // If direct query fails, try RPC function
-        if (directError) {
-          console.log("Direct query failed, trying RPC function:", directError);
-          const { data: rpcData, error: rpcError } = await supabase.rpc('bypass_select_purchase_orders' as any);
-          
-          if (rpcError) {
-            console.error("RPC function also failed:", rpcError);
-            throw rpcError;
-          }
-          
-          if (rpcData) {
-            console.log("Processed purchase orders:", rpcData);
-            return rpcData as unknown as PurchaseOrder[];
-          }
-          
-          return [];
+        console.log("Direct query result:", directData?.length || 0, "records. Error:", directError);
+        
+        // If direct query fails or returns no data, try RPC function
+        console.log("Attempting RPC function bypass_select_purchase_orders...");
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          'bypass_select_purchase_orders'
+        );
+        
+        if (rpcError) {
+          console.error("RPC function failed:", rpcError);
+          throw rpcError;
         }
         
+        if (rpcData && rpcData.length > 0) {
+          console.log("Processed purchase orders via RPC:", rpcData.length);
+          return rpcData as unknown as PurchaseOrder[];
+        }
+        
+        console.log("No purchase orders found in either direct query or RPC.");
         return [];
       } catch (error) {
         console.error("Error fetching purchase orders:", error);

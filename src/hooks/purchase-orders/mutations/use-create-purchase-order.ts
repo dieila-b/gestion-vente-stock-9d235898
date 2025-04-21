@@ -15,7 +15,7 @@ export function useCreatePurchaseOrder() {
       // Generate order number if not provided
       const finalOrderData = {
         ...orderData,
-        order_number: orderData.order_number || `PO-${new Date().getTime().toString().slice(-8)}`,
+        order_number: orderData.order_number || `BC-${new Date().toISOString().slice(0, 10)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
         status: orderData.status || 'pending',
         payment_status: orderData.payment_status || 'pending',
         created_at: new Date().toISOString(),
@@ -23,6 +23,7 @@ export function useCreatePurchaseOrder() {
       };
 
       try {
+        console.log("Attempting direct insert via Supabase...");
         // Use the Supabase API directly with specific options
         const { data: insertResult, error } = await supabase
           .from('purchase_orders')
@@ -31,7 +32,7 @@ export function useCreatePurchaseOrder() {
           .single();
 
         if (!error && insertResult) {
-          console.log("Purchase order created successfully:", insertResult);
+          console.log("Purchase order created successfully via direct insert:", insertResult);
           return insertResult;
         }
 
@@ -40,9 +41,9 @@ export function useCreatePurchaseOrder() {
           console.error("Supabase insertion failed with error:", error);
           console.log("Trying fallback with RPC function...");
 
-          // Use a properly typed approach for the RPC call
+          // Call the RPC function
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'bypass_insert_purchase_order' as any,
+            'bypass_insert_purchase_order',
             { order_data: finalOrderData }
           );
 
@@ -50,9 +51,12 @@ export function useCreatePurchaseOrder() {
             console.error("Fallback insertion also failed:", rpcError);
             throw rpcError;
           }
+          
           console.log("RPC fallback succeeded:", rpcResult);
           return rpcResult;
         }
+        
+        throw new Error("Failed to create purchase order");
       } catch (error) {
         console.error("Error in purchase order creation:", error);
         throw error;
