@@ -50,6 +50,25 @@ export function usePurchaseData(orderId?: string) {
           throw new Error("Format de données invalide");
         }
         
+        // Extract and process items separately to ensure they're properly formatted
+        let processedItems: PurchaseOrderItem[] = [];
+        
+        if (data.items && Array.isArray(data.items)) {
+          processedItems = data.items.map((item: any) => ({
+            id: String(item.id || ''),
+            product_id: String(item.product_id || ''),
+            purchase_order_id: String(data.id || ''),
+            quantity: Number(item.quantity || 0),
+            unit_price: Number(item.unit_price || 0),
+            selling_price: Number(item.selling_price || 0),
+            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+            product: item.product ? {
+              name: String(item.product.name || 'Produit sans nom'),
+              reference: String(item.product.reference || '')
+            } : undefined
+          }));
+        }
+        
         // Ensure proper typing for enums and defaults
         const safeStatus = (status: any): PurchaseOrder['status'] => {
           return ['draft', 'pending', 'delivered', 'approved'].includes(String(status)) 
@@ -87,9 +106,12 @@ export function usePurchaseData(orderId?: string) {
           warehouse_id: String(data.warehouse_id || ''),
           supplier: data.supplier as PurchaseOrder['supplier'],
           warehouse: data.warehouse as PurchaseOrder['warehouse'],
-          items: Array.isArray(data.items) ? data.items : [],
+          items: processedItems,
           deleted: false
         };
+
+        console.log("Processed purchase order:", processedData);
+        console.log("Processed items:", processedItems);
 
         return processedData;
       } catch (error) {
@@ -128,11 +150,11 @@ export function usePurchaseData(orderId?: string) {
       });
 
       // If there are items in the purchase, use them
-      if (purchase.items && Array.isArray(purchase.items)) {
-        console.log("Setting order items:", purchase.items);
+      if (purchase.items && Array.isArray(purchase.items) && purchase.items.length > 0) {
+        console.log("Setting order items from purchase:", purchase.items);
         setOrderItems(purchase.items);
       } else {
-        console.log("No order items found or items is not an array");
+        console.log("No items found in purchase object. Fetching items directly...");
         
         // If no items are found, fetch them directly
         const fetchOrderItems = async () => {
@@ -149,7 +171,19 @@ export function usePurchaseData(orderId?: string) {
             
             console.log("Fetched items directly:", data);
             if (data && data.length > 0) {
-              setOrderItems(data);
+              const formattedItems = data.map(item => ({
+                id: item.id,
+                purchase_order_id: item.purchase_order_id,
+                product_id: item.product_id,
+                quantity: Number(item.quantity),
+                unit_price: Number(item.unit_price),
+                selling_price: Number(item.selling_price),
+                total_price: Number(item.quantity) * Number(item.unit_price),
+                product: item.product
+              }));
+              
+              console.log("Formatted items:", formattedItems);
+              setOrderItems(formattedItems);
             } else {
               setOrderItems([]);
             }
