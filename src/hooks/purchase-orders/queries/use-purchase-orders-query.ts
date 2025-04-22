@@ -41,7 +41,16 @@ export function usePurchaseOrdersQuery() {
           }
           
           console.log(`Order ${order.order_number}: Found ${items.length} items`);
-          return { ...order, items };
+          
+          // Type casting to ensure status is one of the allowed values
+          // This ensures TypeScript compatibility with the PurchaseOrder interface
+          const typedOrder: PurchaseOrder = {
+            ...order,
+            items: items,
+            status: (order.status as "draft" | "pending" | "delivered" | "approved")
+          };
+          
+          return typedOrder;
         })
       );
       
