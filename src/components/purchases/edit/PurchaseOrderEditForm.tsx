@@ -10,6 +10,7 @@ import {
   FormActions
 } from "./FormSections";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { Loader } from "lucide-react";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -50,7 +51,10 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       <DialogTitle>Modifier Bon de Commande</DialogTitle>
       
       {isLoading ? (
-        <div className="p-6 text-center">Chargement...</div>
+        <div className="p-6 text-center">
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Chargement...</p>
+        </div>
       ) : !purchase ? (
         <div className="p-6 text-center">Bon de commande non trouvé</div>
       ) : (

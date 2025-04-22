@@ -25,95 +25,63 @@ export function usePurchaseData(orderId?: string) {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
         // First try to get the purchase order with items
-        const { data: rawData, error } = await supabase.rpc(
-          'get_purchase_order_by_id', 
-          { order_id: orderId }
-        );
+        const { data: orderData, error: orderError } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:suppliers(*),
+            warehouse:warehouses(*)
+          `)
+          .eq('id', orderId)
+          .single();
           
-        if (error) {
-          console.error("RPC error:", error);
-          throw new Error(`Erreur lors de la récupération du bon de commande: ${error.message}`);
+        if (orderError) {
+          console.error("Error fetching purchase order:", orderError);
+          throw new Error(`Erreur lors de la récupération du bon de commande: ${orderError.message}`);
         }
           
-        if (!rawData) {
-          console.error("No data found via RPC");
+        if (!orderData) {
+          console.error("No purchase order found");
           throw new Error("Bon de commande non trouvé");
         }
-          
-        console.log("RPC data found:", rawData);
-        
-        // Ensure the rawData is treated as a Record<string, any>
-        const data = rawData as Record<string, any>;
-        
-        // Ensure data is an object before proceeding
-        if (typeof data !== 'object' || data === null) {
-          throw new Error("Format de données invalide");
-        }
-        
-        // Extract and process items separately to ensure they're properly formatted
-        let processedItems: PurchaseOrderItem[] = [];
-        
-        if (data.items && Array.isArray(data.items)) {
-          processedItems = data.items.map((item: any) => ({
-            id: String(item.id || ''),
-            product_id: String(item.product_id || ''),
-            purchase_order_id: String(data.id || ''),
-            quantity: Number(item.quantity || 0),
-            unit_price: Number(item.unit_price || 0),
-            selling_price: Number(item.selling_price || 0),
-            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-            product: item.product ? {
-              name: String(item.product.name || 'Produit sans nom'),
-              reference: String(item.product.reference || '')
-            } : undefined
-          }));
-        }
-        
-        // Ensure proper typing for enums and defaults
-        const safeStatus = (status: any): PurchaseOrder['status'] => {
-          return ['draft', 'pending', 'delivered', 'approved'].includes(String(status)) 
-            ? status as PurchaseOrder['status'] 
-            : 'draft';
-        };
 
-        const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
-          return ['pending', 'partial', 'paid'].includes(String(status)) 
-            ? status as PurchaseOrder['payment_status'] 
-            : 'pending';
-        };
+        // Separately fetch items with product information
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('purchase_order_items')
+          .select(`
+            *,
+            product:catalog(*)
+          `)
+          .eq('purchase_order_id', orderId);
+          
+        if (itemsError) {
+          console.error("Error fetching items:", itemsError);
+        }
+          
+        console.log("Fetched items:", itemsData?.length || 0);
+        
+        // Process items
+        const processedItems: PurchaseOrderItem[] = itemsData ? itemsData.map(item => ({
+          id: String(item.id),
+          product_id: String(item.product_id),
+          purchase_order_id: String(orderId),
+          quantity: Number(item.quantity || 0),
+          unit_price: Number(item.unit_price || 0),
+          selling_price: Number(item.selling_price || 0),
+          total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+          product: item.product
+        })) : [];
 
         // Create a properly typed PurchaseOrder object from the data
-        const processedData: PurchaseOrder = {
-          id: String(data.id || ''),
-          order_number: String(data.order_number || ''),
-          created_at: String(data.created_at || ''),
-          updated_at: String(data.updated_at || ''),
-          status: safeStatus(data.status),
-          supplier_id: String(data.supplier_id || ''),
-          discount: Number(data.discount || 0),
-          expected_delivery_date: String(data.expected_delivery_date || ''),
-          notes: String(data.notes || ''),
-          logistics_cost: Number(data.logistics_cost || 0),
-          transit_cost: Number(data.transit_cost || 0),
-          tax_rate: Number(data.tax_rate || 0),
-          shipping_cost: Number(data.shipping_cost || 0),
-          subtotal: Number(data.subtotal || 0),
-          tax_amount: Number(data.tax_amount || 0),
-          total_ttc: Number(data.total_ttc || 0),
-          total_amount: Number(data.total_amount || 0),
-          paid_amount: Number(data.paid_amount || 0),
-          payment_status: safePaymentStatus(data.payment_status),
-          warehouse_id: String(data.warehouse_id || ''),
-          supplier: data.supplier as PurchaseOrder['supplier'],
-          warehouse: data.warehouse as PurchaseOrder['warehouse'],
-          items: processedItems,
-          deleted: false
+        const processedOrder: PurchaseOrder = {
+          ...orderData,
+          items: processedItems
         };
 
-        console.log("Processed purchase order:", processedData);
-        console.log("Processed items:", processedItems);
+        console.log("Processed purchase order:", processedOrder);
+        console.log("Processed items:", processedItems.length);
 
-        return processedData;
+        return processedOrder;
       } catch (error) {
         console.error("Failed to fetch purchase order:", error);
         
@@ -151,49 +119,8 @@ export function usePurchaseData(orderId?: string) {
 
       // If there are items in the purchase, use them
       if (purchase.items && Array.isArray(purchase.items) && purchase.items.length > 0) {
-        console.log("Setting order items from purchase:", purchase.items);
+        console.log("Setting order items from purchase:", purchase.items.length);
         setOrderItems(purchase.items);
-      } else {
-        console.log("No items found in purchase object. Fetching items directly...");
-        
-        // If no items are found, fetch them directly
-        const fetchOrderItems = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('purchase_order_items')
-              .select(`
-                *,
-                product:catalog(id, name, reference)
-              `)
-              .eq('purchase_order_id', purchase.id);
-            
-            if (error) throw error;
-            
-            console.log("Fetched items directly:", data);
-            if (data && data.length > 0) {
-              const formattedItems = data.map(item => ({
-                id: item.id,
-                purchase_order_id: item.purchase_order_id,
-                product_id: item.product_id,
-                quantity: Number(item.quantity),
-                unit_price: Number(item.unit_price),
-                selling_price: Number(item.selling_price),
-                total_price: Number(item.quantity) * Number(item.unit_price),
-                product: item.product
-              }));
-              
-              console.log("Formatted items:", formattedItems);
-              setOrderItems(formattedItems);
-            } else {
-              setOrderItems([]);
-            }
-          } catch (err) {
-            console.error("Error fetching order items:", err);
-            setOrderItems([]);
-          }
-        };
-        
-        fetchOrderItems();
       }
     }
   }, [purchase]);
