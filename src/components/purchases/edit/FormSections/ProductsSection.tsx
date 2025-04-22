@@ -29,11 +29,16 @@ export function ProductsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const { products } = useProducts();
   
-  // Filter products based on search query
-  const filteredProducts = products?.filter(product => 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
+  // Filter products with null/undefined safety checks
+  const filteredProducts = products?.filter(product => {
+    if (!product || !searchQuery) return false;
+    
+    const productName = product.name?.toLowerCase() || '';
+    const productReference = product.reference?.toLowerCase() || '';
+    const query = searchQuery.toLowerCase();
+    
+    return productName.includes(query) || productReference.includes(query);
+  }) || [];
 
   // Handle quantity change
   const handleQuantityChange = (itemId: string, value: string) => {
