@@ -143,7 +143,7 @@ export function usePurchaseItems(
     console.log("Adding product to order:", product);
     
     try {
-      // Create item data without product field, which is not in the database schema
+      // Create item data
       const itemData = {
         purchase_order_id: orderId,
         product_id: product.id,
@@ -153,26 +153,30 @@ export function usePurchaseItems(
         total_price: product.purchase_price || 0
       };
       
+      console.log("Item data to insert:", itemData);
+      
       // Add the item to the database
-      const { data, error } = await supabase
+      const { data: insertedItem, error } = await supabase
         .from('purchase_order_items')
         .insert(itemData)
         .select('*')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting item:", error);
+        throw error;
+      }
       
-      console.log("Added product to database:", data);
+      if (!insertedItem) {
+        console.error("No data returned after insert");
+        throw new Error("Erreur lors de l'ajout du produit");
+      }
+      
+      console.log("Added product to database:", insertedItem);
       
       // Create a full item object with product info for the UI
       const newItem: PurchaseOrderItem = {
-        ...data,
-        id: data.id,
-        product_id: data.product_id,
-        quantity: data.quantity,
-        unit_price: data.unit_price,
-        selling_price: data.selling_price,
-        total_price: data.total_price,
+        ...insertedItem,
         product: {
           name: product.name,
           reference: product.reference

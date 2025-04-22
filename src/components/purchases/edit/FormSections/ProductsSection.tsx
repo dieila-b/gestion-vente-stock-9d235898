@@ -4,7 +4,7 @@ import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { Plus, Trash, Loader } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface ProductsSectionProps {
 }
 
 export function ProductsSection({
-  items,
+  items = [],
   updateItemQuantity,
   updateItemPrice,
   removeItem,
@@ -50,10 +50,14 @@ export function ProductsSection({
   const handleAddProduct = async (product: CatalogProduct) => {
     setIsLoading(true);
     try {
+      console.log("Adding product:", product);
       const success = await addItem(product);
       if (success) {
         setIsProductModalOpen(false);
+        setSearchQuery("");
       }
+    } catch (error) {
+      console.error("Error adding product:", error);
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +94,7 @@ export function ProductsSection({
         </Button>
       </div>
 
-      {items?.length === 0 ? (
+      {!items || items.length === 0 ? (
         <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
           <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
           <Button 
@@ -129,7 +133,7 @@ export function ProductsSection({
                   type="number"
                   value={item.quantity}
                   min={1}
-                  onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value))}
+                  onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 1)}
                   className="text-center neo-blur"
                 />
               </div>
@@ -139,7 +143,7 @@ export function ProductsSection({
                   type="number"
                   value={item.unit_price}
                   min={0}
-                  onChange={(e) => updateItemPrice(item.id, parseInt(e.target.value))}
+                  onChange={(e) => updateItemPrice(item.id, parseInt(e.target.value) || 0)}
                   className="text-center neo-blur"
                 />
               </div>

@@ -21,14 +21,14 @@ export function ProductSelectionModal({
   onClose,
   searchQuery,
   setSearchQuery,
-  products,
+  products = [],
   onSelectProduct,
   isLoading = false
 }: ProductSelectionModalProps) {
   console.log("ProductSelectionModal - Available products:", products?.length || 0);
   
   // Filter products based on search query
-  const filteredProducts = searchQuery
+  const filteredProducts = searchQuery && products
     ? products.filter(product =>
         product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,9 +75,9 @@ export function ProductSelectionModal({
             </div>
           ) : (
             <div className="space-y-2 max-h-[50vh] overflow-y-auto p-1">
-              {filteredProducts?.length === 0 ? (
+              {!filteredProducts || filteredProducts.length === 0 ? (
                 <div className="text-center py-8 text-white/60">
-                  {products?.length === 0 ? "Aucun produit disponible" : "Aucun produit trouvé"}
+                  {!products || products.length === 0 ? "Aucun produit disponible" : "Aucun produit trouvé"}
                 </div>
               ) : (
                 filteredProducts.map((product) => (
