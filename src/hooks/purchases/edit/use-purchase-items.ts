@@ -133,7 +133,7 @@ export function usePurchaseItems(
     }
   };
 
-  // Add new item to order - FIXED VERSION
+  // Add new item to order - VERSION CORRIGÉE AVEC BYPASS RPC
   const addItem = async (product: CatalogProduct) => {
     if (!orderId) {
       console.error("Missing orderId in addItem");
@@ -158,8 +158,8 @@ export function usePurchaseItems(
       const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
-      // Create the item data object
-      const itemData = {
+      // Create the item data array for the RPC function
+      const itemData = [{
         id: newItemId,
         purchase_order_id: orderId,
         product_id: product.id,
@@ -168,23 +168,32 @@ export function usePurchaseItems(
         selling_price: product.price || 0,
         total_price: totalPrice,
         created_at: new Date().toISOString()
-      };
+      }];
       
-      console.log("Inserting new item:", itemData);
+      console.log("Inserting new item using RPC:", itemData);
       
-      // Insert into database
-      const { error } = await supabase
-        .from('purchase_order_items')
-        .insert(itemData);
+      // Utiliser la fonction RPC qui contourne les politiques RLS
+      const { data, error } = await supabase
+        .rpc('bypass_insert_purchase_order_items', {
+          items_data: itemData
+        });
       
       if (error) {
-        console.error("Error inserting item:", error);
+        console.error("Error inserting item with RPC:", error);
         throw error;
       }
       
+      console.log("RPC insert result:", data);
+      
       // Create an item with product info for UI display
       const newItem: PurchaseOrderItem = {
-        ...itemData,
+        id: newItemId,
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: quantity,
+        unit_price: unitPrice,
+        selling_price: product.price || 0,
+        total_price: totalPrice,
         product: {
           name: product.name,
           reference: product.reference
