@@ -67,7 +67,6 @@ export function usePurchaseEdit(orderId?: string) {
   const { 
     updateItemQuantity, 
     updateItemPrice, 
-    updateOrderItem,
     removeItem
   } = usePurchaseItems(
     orderId,
@@ -100,7 +99,6 @@ export function usePurchaseEdit(orderId?: string) {
     isLoading: isLoading || isPurchaseLoading,
     handleUpdate,
     updateFormField,
-    updateOrderItem,
     updateItemQuantity,
     updateItemPrice,
     removeItem,
@@ -111,4 +109,3 @@ export function usePurchaseEdit(orderId?: string) {
     updatePaymentStatus
   };
 }
-
