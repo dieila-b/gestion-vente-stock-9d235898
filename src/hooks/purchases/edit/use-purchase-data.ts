@@ -15,6 +15,11 @@ function isValidPaymentStatus(status: string): status is PurchaseOrder['payment_
   return ['pending', 'partial', 'paid'].includes(status);
 }
 
+// Type guard to check if value is a plain object
+function isPlainObject(value: any): value is Record<string, any> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Hook to fetch and manage purchase order data
  */
@@ -38,29 +43,38 @@ export function usePurchaseData(orderId?: string) {
         const { data: functionData, error: functionError } = await supabase
           .rpc('get_purchase_order_by_id', { order_id: orderId });
         
-        if (functionData && !functionError) {
+        if (functionData && !functionError && isPlainObject(functionData)) {
           console.log("Successfully fetched purchase order using RPC function:", functionData);
           
           // Process items if they exist
-          const processedItems: PurchaseOrderItem[] = functionData.items ? 
-            functionData.items.map((item: any) => ({
-              id: String(item.id),
-              product_id: String(item.product_id),
-              purchase_order_id: String(orderId),
-              quantity: Number(item.quantity || 0),
-              unit_price: Number(item.unit_price || 0),
-              selling_price: Number(item.selling_price || 0),
-              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-              product: item.product
-            })) : [];
+          const processedItems: PurchaseOrderItem[] = 
+            isPlainObject(functionData) && 
+            Array.isArray(functionData.items) ? 
+              functionData.items.map((item: any) => ({
+                id: String(item.id),
+                product_id: String(item.product_id),
+                purchase_order_id: String(orderId),
+                quantity: Number(item.quantity || 0),
+                unit_price: Number(item.unit_price || 0),
+                selling_price: Number(item.selling_price || 0),
+                total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+                product: item.product
+              })) : [];
           
           // Ensure status is one of the allowed values
-          const status = isValidStatus(functionData.status) ? functionData.status : 'pending';
+          const status = isPlainObject(functionData) && 
+                         typeof functionData.status === 'string' && 
+                         isValidStatus(functionData.status) ? 
+                         functionData.status : 'pending';
+                         
           // Ensure payment_status is one of the allowed values
-          const payment_status = isValidPaymentStatus(functionData.payment_status) ? functionData.payment_status : 'pending';
+          const payment_status = isPlainObject(functionData) && 
+                                typeof functionData.payment_status === 'string' && 
+                                isValidPaymentStatus(functionData.payment_status) ? 
+                                functionData.payment_status : 'pending';
           
           const processedOrder: PurchaseOrder = {
-            ...functionData,
+            ...(functionData as Omit<PurchaseOrder, 'status' | 'payment_status'>),
             status,
             payment_status,
             items: processedItems
