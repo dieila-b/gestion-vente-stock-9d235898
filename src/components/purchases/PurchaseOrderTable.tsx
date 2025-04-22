@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { PurchaseOrder } from "@/types/purchase-order";
 import {
@@ -60,8 +59,6 @@ export function PurchaseOrderTable({
     }
   };
 
-  console.log("Rendering PurchaseOrderTable with orders:", orders);
-
   return (
     <div className="border rounded-lg">
       <Table>
@@ -109,20 +106,20 @@ export function PurchaseOrderTable({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                          onClick={() => onApprove(order.id)}
-                          title="Approuver"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
                           className="bg-yellow-500 hover:bg-yellow-600 text-white"
                           onClick={() => onEdit(order.id)}
                           title="Modifier"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-green-500 hover:bg-green-600 text-white"
+                          onClick={() => onApprove(order.id)}
+                          title="Approuver"
+                        >
+                          <FileText className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
