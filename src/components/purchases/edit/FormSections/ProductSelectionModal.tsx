@@ -26,10 +26,8 @@ export function ProductSelectionModal({
   isLoading = false
 }: ProductSelectionModalProps) {
   const [filteredProducts, setFilteredProducts] = useState<CatalogProduct[]>([]);
-  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionInProgress, setSelectionInProgress] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  
-  console.log("ProductSelectionModal rendered with products count:", products?.length, "isOpen:", isOpen);
   
   // Filter products based on search query when products or searchQuery changes
   useEffect(() => {
@@ -38,8 +36,6 @@ export function ProductSelectionModal({
       return;
     }
     
-    console.log("ProductSelectionModal - Filtering products with query:", searchQuery);
-    
     if (searchQuery && searchQuery.trim() !== '') {
       const lowercaseQuery = searchQuery.toLowerCase().trim();
       const filtered = products.filter(product =>
@@ -47,27 +43,31 @@ export function ProductSelectionModal({
         (product.reference?.toLowerCase().includes(lowercaseQuery))
       );
       setFilteredProducts(filtered);
-      console.log("ProductSelectionModal - Filtered products:", filtered.length);
+      console.log("Filtered products:", filtered.length);
     } else {
       setFilteredProducts(products);
-      console.log("ProductSelectionModal - All products shown:", products.length);
+      console.log("Showing all products:", products.length);
     }
   }, [searchQuery, products]);
 
   // Handle product selection with loading state
   const handleSelectProduct = async (product: CatalogProduct) => {
-    if (!product || isSelecting) return;
+    if (!product || selectionInProgress) return;
     
     try {
-      setIsSelecting(true);
+      setSelectionInProgress(true);
       setSelectedProductId(product.id);
-      console.log("Selecting product:", product);
+      console.log("Selecting product:", product.name);
+      
+      // Call the provided onSelectProduct function
       await onSelectProduct(product);
-      console.log("Product selection completed");
+      
+      // Close the modal after selection
+      onClose();
     } catch (error) {
       console.error("Error selecting product:", error);
     } finally {
-      setIsSelecting(false);
+      setSelectionInProgress(false);
       setSelectedProductId(null);
     }
   };
@@ -85,7 +85,7 @@ export function ProductSelectionModal({
             size="icon"
             onClick={onClose}
             className="text-white/60 hover:text-white"
-            disabled={isLoading || isSelecting}
+            disabled={isLoading || selectionInProgress}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -100,6 +100,7 @@ export function ProductSelectionModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 neo-blur"
+              autoFocus
             />
           </div>
           
@@ -110,15 +111,17 @@ export function ProductSelectionModal({
             </div>
           ) : (
             <div className="space-y-2 max-h-[50vh] overflow-y-auto p-1">
-              {!filteredProducts || filteredProducts.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 <div className="text-center py-8 text-white/60">
-                  {!products || products.length === 0 ? "Aucun produit disponible" : "Aucun produit trouvé"}
+                  {!products || products.length === 0 
+                    ? "Aucun produit disponible" 
+                    : "Aucun produit trouvé"}
                 </div>
               ) : (
                 filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors"
+                    className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <div>
                       <p className="font-medium text-white">{product.name}</p>
@@ -133,9 +136,9 @@ export function ProductSelectionModal({
                       size="sm"
                       onClick={() => handleSelectProduct(product)}
                       className="neo-blur"
-                      disabled={isSelecting && selectedProductId === product.id}
+                      disabled={selectionInProgress && selectedProductId === product.id}
                     >
-                      {isSelecting && selectedProductId === product.id ? (
+                      {selectionInProgress && selectedProductId === product.id ? (
                         <Loader className="h-4 w-4 animate-spin mr-2" />
                       ) : (
                         <Plus className="h-4 w-4 mr-2" />

@@ -30,33 +30,25 @@ export function ProductsSection({
   const [isLoading, setIsLoading] = useState(false);
   const [actionItemId, setActionItemId] = useState<string | null>(null);
   
-  console.log("ProductsSection rendering with items:", items?.length || 0);
-
   // Fetch available products
   const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       console.log("Fetching catalog products...");
-      try {
-        const { data, error } = await supabase
-          .from('catalog')
-          .select('*')
-          .order('name');
+      const { data, error } = await supabase
+        .from('catalog')
+        .select('*')
+        .order('name');
           
-        if (error) {
-          console.error("Error fetching products:", error);
-          throw error;
-        }
-        
-        console.log("Fetched catalog products:", data?.length || 0);
-        return data as CatalogProduct[];
-      } catch (e) {
-        console.error("Exception fetching products:", e);
-        throw e;
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
       }
+        
+      console.log("Fetched catalog products:", data?.length || 0);
+      return data as CatalogProduct[];
     },
     staleTime: 60000, // 1 minute
-    retry: 2
   });
 
   useEffect(() => {
@@ -64,12 +56,16 @@ export function ProductsSection({
       console.error("Error loading products:", productsError);
     }
   }, [productsError]);
+  
+  useEffect(() => {
+    console.log("Current items in ProductsSection:", items);
+  }, [items]);
 
-  // Handle product addition with loading state
+  // Handle product addition
   const handleAddProduct = async (product: CatalogProduct) => {
+    console.log("Handling add product:", product);
     setIsLoading(true);
     try {
-      console.log("Adding product to order:", product);
       const success = await addItem(product);
       if (success) {
         setIsProductModalOpen(false);
@@ -85,7 +81,7 @@ export function ProductsSection({
     }
   };
 
-  // Handle item removal with loading state
+  // Handle item removal
   const handleRemoveItem = async (itemId: string) => {
     setActionItemId(itemId);
     setIsLoading(true);
@@ -97,19 +93,33 @@ export function ProductsSection({
     }
   };
 
-  // Handle quantity change with debouncing
+  // Handle quantity change
   const handleQuantityChange = async (itemId: string, value: string) => {
     const quantity = parseInt(value);
     if (!isNaN(quantity) && quantity > 0) {
-      await updateItemQuantity(itemId, quantity);
+      setActionItemId(itemId);
+      setIsLoading(true);
+      try {
+        await updateItemQuantity(itemId, quantity);
+      } finally {
+        setIsLoading(false);
+        setActionItemId(null);
+      }
     }
   };
 
-  // Handle price change with debouncing
+  // Handle price change
   const handlePriceChange = async (itemId: string, value: string) => {
     const price = parseInt(value);
     if (!isNaN(price) && price >= 0) {
-      await updateItemPrice(itemId, price);
+      setActionItemId(itemId);
+      setIsLoading(true);
+      try {
+        await updateItemPrice(itemId, price);
+      } finally {
+        setIsLoading(false);
+        setActionItemId(null);
+      }
     }
   };
 
@@ -175,6 +185,7 @@ export function ProductsSection({
                   min={1}
                   onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                   className="text-center neo-blur"
+                  disabled={isLoading && actionItemId === item.id}
                 />
               </div>
               
@@ -185,6 +196,7 @@ export function ProductsSection({
                   min={0}
                   onChange={(e) => handlePriceChange(item.id, e.target.value)}
                   className="text-center neo-blur"
+                  disabled={isLoading && actionItemId === item.id}
                 />
               </div>
               

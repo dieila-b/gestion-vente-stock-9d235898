@@ -133,9 +133,8 @@ export function usePurchaseItems(
     }
   };
 
-  // Add new item to order
+  // Add new item to order - FIXED VERSION
   const addItem = async (product: CatalogProduct) => {
-    // Input validation
     if (!orderId) {
       console.error("Missing orderId in addItem");
       toast.error("Erreur: ID de commande manquant");
@@ -151,15 +150,15 @@ export function usePurchaseItems(
     console.log("Adding product to order:", { orderId, productId: product.id, productName: product.name });
     
     try {
-      // Generate a new unique ID for the item
+      // Create a new item ID
       const newItemId = uuidv4();
-      console.log("Generated new item ID:", newItemId);
       
-      // Prepare the item data
-      const unitPrice = product.purchase_price || 0;
+      // Prepare item data
       const quantity = 1;
+      const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
+      // Create the item data object
       const itemData = {
         id: newItemId,
         purchase_order_id: orderId,
@@ -171,23 +170,19 @@ export function usePurchaseItems(
         created_at: new Date().toISOString()
       };
       
-      console.log("Inserting new item data:", itemData);
+      console.log("Inserting new item:", itemData);
       
-      // Insert the item into the database
-      const { data, error } = await supabase
+      // Insert into database
+      const { error } = await supabase
         .from('purchase_order_items')
-        .insert(itemData)
-        .select('*')
-        .single();
-
+        .insert(itemData);
+      
       if (error) {
         console.error("Error inserting item:", error);
         throw error;
       }
       
-      console.log("Item successfully added to database:", data);
-      
-      // Create a new item object for the UI with product info
+      // Create an item with product info for UI display
       const newItem: PurchaseOrderItem = {
         ...itemData,
         product: {
@@ -196,11 +191,11 @@ export function usePurchaseItems(
         }
       };
       
-      // Update the local state
-      const newItems = [...orderItems, newItem];
-      setOrderItems(newItems);
+      // Update local state IMMEDIATELY instead of waiting for refetch
+      const updatedItems = [...(orderItems || []), newItem];
+      setOrderItems(updatedItems);
       
-      // Update the order total
+      // Update order total
       await updateOrderTotal(orderId, null, refetch);
       
       toast.success(`Produit "${product.name}" ajouté avec succès`);
