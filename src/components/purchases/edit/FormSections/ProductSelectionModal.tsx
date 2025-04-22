@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, X, Loader } from "lucide-react";
@@ -25,17 +25,45 @@ export function ProductSelectionModal({
   onSelectProduct,
   isLoading = false
 }: ProductSelectionModalProps) {
-  console.log("ProductSelectionModal - Available products:", products?.length || 0);
+  const [filteredProducts, setFilteredProducts] = useState<CatalogProduct[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
   
-  // Filter products based on search query
-  const filteredProducts = searchQuery && products
-    ? products.filter(product =>
+  // Filter products based on search query when products or searchQuery changes
+  useEffect(() => {
+    if (!products || products.length === 0) {
+      setFilteredProducts([]);
+      return;
+    }
+    
+    console.log("ProductSelectionModal - Available products:", products.length);
+    
+    if (searchQuery) {
+      const filtered = products.filter(product =>
         product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : products;
-  
-  console.log("ProductSelectionModal - Filtered products:", filteredProducts?.length || 0);
+      );
+      setFilteredProducts(filtered);
+      console.log("ProductSelectionModal - Filtered products:", filtered.length);
+    } else {
+      setFilteredProducts(products);
+      console.log("ProductSelectionModal - All products shown:", products.length);
+    }
+  }, [searchQuery, products]);
+
+  // Handle product selection with loading state
+  const handleSelectProduct = async (product: CatalogProduct) => {
+    if (!product || isSelecting) return;
+    
+    try {
+      setIsSelecting(true);
+      console.log("Selecting product:", product.name);
+      await onSelectProduct(product);
+    } catch (error) {
+      console.error("Error selecting product:", error);
+    } finally {
+      setIsSelecting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -50,7 +78,7 @@ export function ProductSelectionModal({
             size="icon"
             onClick={onClose}
             className="text-white/60 hover:text-white"
-            disabled={isLoading}
+            disabled={isLoading || isSelecting}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -96,11 +124,15 @@ export function ProductSelectionModal({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onSelectProduct(product)}
+                      onClick={() => handleSelectProduct(product)}
                       className="neo-blur"
-                      disabled={isLoading}
+                      disabled={isSelecting}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      {isSelecting ? (
+                        <Loader className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
                       Ajouter
                     </Button>
                   </div>

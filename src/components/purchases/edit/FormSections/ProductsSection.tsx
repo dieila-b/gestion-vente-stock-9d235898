@@ -4,7 +4,7 @@ import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from '@/integrations/supabase/client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { Plus, Trash, Loader } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,23 +28,35 @@ export function ProductsSection({
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [actionItemId, setActionItemId] = useState<string | null>(null);
   
   console.log("Product section rendering with items:", items?.length || 0);
 
   // Fetch available products
-  const { data: products = [], isLoading: productsLoading } = useQuery<CatalogProduct[]>({
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
     queryFn: async () => {
+      console.log("Fetching catalog products...");
       const { data, error } = await supabase
         .from('catalog')
         .select('*')
         .order('name');
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
+      }
+      
       console.log("Fetched catalog products:", data?.length || 0);
       return data as CatalogProduct[];
     }
   });
+
+  useEffect(() => {
+    if (productsError) {
+      console.error("Error loading products:", productsError);
+    }
+  }, [productsError]);
 
   // Handle product addition with loading state
   const handleAddProduct = async (product: CatalogProduct) => {
@@ -65,11 +77,13 @@ export function ProductsSection({
 
   // Handle item removal with loading state
   const handleRemoveItem = async (itemId: string) => {
+    setActionItemId(itemId);
     setIsLoading(true);
     try {
       await removeItem(itemId);
     } finally {
       setIsLoading(false);
+      setActionItemId(null);
     }
   };
 
@@ -85,7 +99,7 @@ export function ProductsSection({
           className="neo-blur"
           disabled={isLoading}
         >
-          {isLoading ? (
+          {isLoading && !actionItemId ? (
             <Loader className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Plus className="w-4 h-4 mr-2" />
@@ -158,9 +172,9 @@ export function ProductsSection({
                   size="sm"
                   onClick={() => handleRemoveItem(item.id)}
                   className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  disabled={isLoading}
+                  disabled={isLoading && actionItemId === item.id}
                 >
-                  {isLoading ? (
+                  {isLoading && actionItemId === item.id ? (
                     <Loader className="h-4 w-4 animate-spin" />
                   ) : (
                     <Trash className="h-4 w-4" />
@@ -177,7 +191,7 @@ export function ProductsSection({
         onClose={() => setIsProductModalOpen(false)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        products={products}
+        products={products || []}
         onSelectProduct={handleAddProduct}
         isLoading={productsLoading || isLoading}
       />

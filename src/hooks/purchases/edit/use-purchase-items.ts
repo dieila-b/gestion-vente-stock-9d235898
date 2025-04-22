@@ -143,8 +143,12 @@ export function usePurchaseItems(
     console.log("Adding product to order:", product);
     
     try {
+      // Create a unique ID for the new item
+      const newItemId = uuidv4();
+      
       // Create item data
       const itemData = {
+        id: newItemId,
         purchase_order_id: orderId,
         product_id: product.id,
         quantity: 1,
@@ -156,27 +160,20 @@ export function usePurchaseItems(
       console.log("Item data to insert:", itemData);
       
       // Add the item to the database
-      const { data: insertedItem, error } = await supabase
+      const { error } = await supabase
         .from('purchase_order_items')
-        .insert(itemData)
-        .select('*')
-        .single();
+        .insert(itemData);
 
       if (error) {
         console.error("Error inserting item:", error);
         throw error;
       }
       
-      if (!insertedItem) {
-        console.error("No data returned after insert");
-        throw new Error("Erreur lors de l'ajout du produit");
-      }
-      
-      console.log("Added product to database:", insertedItem);
+      console.log("Item successfully added to the database");
       
       // Create a full item object with product info for the UI
       const newItem: PurchaseOrderItem = {
-        ...insertedItem,
+        ...itemData,
         product: {
           name: product.name,
           reference: product.reference
