@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,11 +45,13 @@ export function usePurchaseData(orderId?: string) {
         if (functionData && !functionError && isPlainObject(functionData)) {
           console.log("Successfully fetched purchase order using RPC function:", functionData);
           
+          // Cast functionData to a Record<string, any> to ensure TypeScript recognizes it as an object
+          const dataObject = functionData as Record<string, any>;
+          
           // Process items if they exist
           const processedItems: PurchaseOrderItem[] = 
-            isPlainObject(functionData) && 
-            Array.isArray(functionData.items) ? 
-              functionData.items.map((item: any) => ({
+            Array.isArray(dataObject.items) ? 
+              dataObject.items.map((item: any) => ({
                 id: String(item.id),
                 product_id: String(item.product_id),
                 purchase_order_id: String(orderId),
@@ -62,19 +63,41 @@ export function usePurchaseData(orderId?: string) {
               })) : [];
           
           // Ensure status is one of the allowed values
-          const status = isPlainObject(functionData) && 
-                         typeof functionData.status === 'string' && 
-                         isValidStatus(functionData.status) ? 
-                         functionData.status : 'pending';
+          const status = typeof dataObject.status === 'string' && 
+                         isValidStatus(dataObject.status) ? 
+                         dataObject.status : 'pending';
                          
           // Ensure payment_status is one of the allowed values
-          const payment_status = isPlainObject(functionData) && 
-                                typeof functionData.payment_status === 'string' && 
-                                isValidPaymentStatus(functionData.payment_status) ? 
-                                functionData.payment_status : 'pending';
+          const payment_status = typeof dataObject.payment_status === 'string' && 
+                                isValidPaymentStatus(dataObject.payment_status) ? 
+                                dataObject.payment_status : 'pending';
+          
+          // Create a base object and then add the validated fields
+          const baseObject: Partial<PurchaseOrder> = {
+            id: String(dataObject.id || ''),
+            order_number: String(dataObject.order_number || ''),
+            created_at: String(dataObject.created_at || ''),
+            updated_at: dataObject.updated_at ? String(dataObject.updated_at) : undefined,
+            supplier_id: String(dataObject.supplier_id || ''),
+            discount: Number(dataObject.discount || 0),
+            expected_delivery_date: String(dataObject.expected_delivery_date || ''),
+            notes: String(dataObject.notes || ''),
+            logistics_cost: Number(dataObject.logistics_cost || 0),
+            transit_cost: Number(dataObject.transit_cost || 0),
+            tax_rate: Number(dataObject.tax_rate || 0),
+            shipping_cost: Number(dataObject.shipping_cost || 0),
+            subtotal: Number(dataObject.subtotal || 0),
+            tax_amount: Number(dataObject.tax_amount || 0),
+            total_ttc: Number(dataObject.total_ttc || 0),
+            total_amount: Number(dataObject.total_amount || 0),
+            paid_amount: Number(dataObject.paid_amount || 0),
+            warehouse_id: dataObject.warehouse_id ? String(dataObject.warehouse_id) : undefined,
+            supplier: dataObject.supplier || {},
+            warehouse: dataObject.warehouse || {},
+          };
           
           const processedOrder: PurchaseOrder = {
-            ...(functionData as Omit<PurchaseOrder, 'status' | 'payment_status'>),
+            ...baseObject as PurchaseOrder,
             status,
             payment_status,
             items: processedItems
