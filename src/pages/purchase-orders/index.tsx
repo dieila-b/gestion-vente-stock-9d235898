@@ -25,42 +25,47 @@ export default function PurchaseOrdersPage() {
   
   const { printPurchaseOrder } = usePurchasePrint();
 
-  // Process and filter orders
+  // Traitement et filtrage des commandes
   useEffect(() => {
-    console.log("Raw orders available for processing:", rawOrders?.length || 0);
+    console.log("Traitement des bons de commande bruts:", rawOrders?.length || 0);
     
     if (!rawOrders || rawOrders.length === 0) {
-      console.log("No orders to process");
+      console.log("Aucune commande à traiter");
       setFilteredOrders([]);
       return;
     }
     
     try {
-      // Apply search filter
+      // Appliquer le filtre de recherche
       const filtered = rawOrders.filter(order => 
         order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       
-      console.log("Filtered orders:", filtered.length);
+      console.log("Commandes filtrées:", filtered.length);
       
-      // Check if filtered orders have items
+      // Vérification des articles
       filtered.forEach(order => {
-        console.log(`Order ${order.order_number} has ${order.items?.length || 0} items`);
+        console.log(`Commande ${order.order_number} contient ${order.items?.length || 0} articles`);
       });
       
       setFilteredOrders(filtered);
     } catch (error) {
-      console.error("Error processing orders:", error);
+      console.error("Erreur lors du traitement des commandes:", error);
       toast.error("Erreur lors du traitement des bons de commande");
       setFilteredOrders([]);
     }
   }, [rawOrders, searchQuery]);
 
-  // Handle print action
+  // Rafraîchir les données au chargement initial
+  useEffect(() => {
+    console.log("Chargement initial - rafraîchissement des bons de commande");
+    refreshOrders();
+  }, [refreshOrders]);
+
+  // Gestion de l'impression
   const handlePrint = (order: PurchaseOrder) => {
-    // Log the order before printing to debug
-    console.log("Printing order with items:", order.items);
+    console.log("Impression de la commande avec articles:", order.items?.length || 0);
     printPurchaseOrder(order);
   };
 
@@ -85,7 +90,7 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
         
-        {/* Render the EditDialog component */}
+        {/* Rendu du composant EditDialog */}
         <EditDialog />
       </div>
     </DashboardLayout>

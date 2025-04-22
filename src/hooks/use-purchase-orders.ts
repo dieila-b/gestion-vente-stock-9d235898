@@ -11,33 +11,33 @@ export function usePurchaseOrders() {
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
-  // Log if errors occur
+  // Log si des erreurs surviennent
   if (error) {
-    console.error("Error in usePurchaseOrders:", error);
+    console.error("Erreur dans usePurchaseOrders:", error);
   }
 
-  // Log the orders data to debug
-  console.log("Use Purchase Orders - Orders count:", orders?.length || 0);
+  // Log des données pour déboguer
+  console.log("Use Purchase Orders - Nombre de commandes:", orders?.length || 0);
   if (orders?.length > 0) {
-    console.log("First order items:", orders[0]?.items?.length || 0);
+    console.log("Articles du premier bon de commande:", orders[0]?.items?.length || 0);
   }
 
-  // Force refresh the data with minimal stale time
+  // Forcer le rafraîchissement des données avec un temps de mise en cache minimal
   const refreshOrders = async () => {
-    console.log("Refreshing purchase orders...");
+    console.log("Rafraîchissement des bons de commande...");
     
-    // First invalidate the query
+    // D'abord invalider la requête
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
     
-    // Then trigger a refetch
+    // Puis déclencher une nouvelle récupération
     const result = await refetch();
     
-    console.log("Refresh result:", result);
+    console.log("Résultat du rafraîchissement:", result);
     
     if (result.isSuccess) {
       toast.success("Liste des bons de commande rafraîchie");
     } else if (result.isError) {
-      console.error("Error refreshing orders:", result.error);
+      console.error("Erreur lors du rafraîchissement des commandes:", result.error);
       toast.error("Erreur lors du rafraîchissement");
     }
     
