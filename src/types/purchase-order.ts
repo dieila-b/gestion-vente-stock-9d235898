@@ -42,6 +42,7 @@ export interface PurchaseOrderItem {
   product_code?: string; // Added this field
   designation?: string;  // Added this field
   product?: {
+    id: string; // Added the id property to fix the TypeScript error
     name: string;
     reference?: string;
   };
