@@ -42,19 +42,22 @@ export function usePurchaseOrdersQuery() {
           
           console.log(`Order ${order.order_number}: Found ${items.length} items`);
           
-          // Type casting to ensure status is one of the allowed values
-          // This ensures TypeScript compatibility with the PurchaseOrder interface
+          // Type casting to ensure all required fields match the PurchaseOrder interface
+          // This ensures TypeScript compatibility
           const typedOrder: PurchaseOrder = {
             ...order,
             items: items,
-            status: (order.status as "draft" | "pending" | "delivered" | "approved")
+            // Cast status and payment_status to their required types
+            status: (order.status as "draft" | "pending" | "delivered" | "approved"),
+            payment_status: (order.payment_status as "pending" | "partial" | "paid")
           };
           
           return typedOrder;
         })
       );
       
-      return ordersWithItems;
+      // Type assertion for the entire array
+      return ordersWithItems as PurchaseOrder[];
     }
   });
 }
