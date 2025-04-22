@@ -15,7 +15,8 @@ export interface PurchaseInvoice {
   discount: number;
   notes: string;
   shipping_cost: number;
-  supplier: {
+  supplier?: {
+    id?: string;
     name: string;
     phone?: string;
     email?: string;
@@ -23,6 +24,7 @@ export interface PurchaseInvoice {
   purchase_order?: {
     id?: string;
     order_number?: string;
+    created_at?: string;
   };
   delivery_note?: {
     id?: string;

@@ -1,9 +1,7 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { isSelectQueryError } from "@/utils/type-utils";
 import { useParams } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { formatGNF } from "@/lib/currency";
@@ -95,7 +93,11 @@ function PurchaseInvoicePage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date:</span>
-                    <span>{new Date(invoice.purchase_order.created_at).toLocaleDateString()}</span>
+                    <span>
+                      {invoice.purchase_order.created_at 
+                        ? new Date(invoice.purchase_order.created_at).toLocaleDateString() 
+                        : "N/A"}
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -126,7 +128,7 @@ function PurchaseInvoicePage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Taxes:</span>
-                <span>{formatGNF(0)}</span>
+                <span>{formatGNF(invoice.tax_amount || 0)}</span>
               </div>
               <div className="flex justify-between font-bold border-t border-gray-200 pt-2 mt-2">
                 <span>Total:</span>

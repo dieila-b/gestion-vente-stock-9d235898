@@ -1,26 +1,26 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate,
 } from "react-router-dom";
 import "./App.css";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
-import Categories from "./pages/Categories";
+import Catalog from "./pages/Catalog"; // Using Catalog instead of Categories
 import Suppliers from "./pages/Suppliers";
 import Clients from "./pages/Clients";
 import Warehouses from "./pages/Warehouses";
-import Users from "./pages/Users";
-import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import RequireAuth from "./components/auth/RequireAuth";
 import { AuthProvider } from "./components/auth/AuthProvider";
-import Pos from "./pages/Pos";
 import Orders from "./pages/Orders";
 import Preorders from "./pages/Preorders";
 import SalesInvoices from "./pages/SalesInvoices";
 import PurchaseOrdersPage from "./pages/purchase-orders";
 import PurchaseInvoicePage from "./pages/PurchaseInvoice";
+import Login from "./pages/Login";
 
 const router = createBrowserRouter([
   {
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
     path: "/categories",
     element: (
       <RequireAuth>
-        <Categories />
+        <Catalog />
       </RequireAuth>
     ),
   },
@@ -87,7 +87,7 @@ const router = createBrowserRouter([
     path: "/users",
     element: (
       <RequireAuth>
-        <Users />
+        <Navigate to="/settings" replace />
       </RequireAuth>
     ),
   },
@@ -103,7 +103,7 @@ const router = createBrowserRouter([
     path: "/pos",
     element: (
       <RequireAuth>
-        <Pos />
+        <Navigate to="/products" replace />
       </RequireAuth>
     ),
   },
@@ -141,7 +141,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/purchase-invoices/:id",
-    element: <PurchaseInvoicePage />
+    element: (
+      <RequireAuth>
+        <PurchaseInvoicePage />
+      </RequireAuth>
+    ),
   },
 ]);
 

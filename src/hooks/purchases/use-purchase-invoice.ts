@@ -19,9 +19,23 @@ export function usePurchaseInvoice(invoiceId?: string) {
       const { data, error } = await supabase
         .from('purchase_invoices')
         .select(`
-          *,
-          supplier:suppliers(*),
-          purchase_order:purchase_orders(*)
+          id,
+          invoice_number,
+          supplier_id,
+          total_amount,
+          status,
+          created_at,
+          updated_at,
+          tax_amount,
+          payment_status,
+          due_date,
+          paid_amount,
+          remaining_amount,
+          discount,
+          notes,
+          shipping_cost,
+          supplier:suppliers(id, name, email, phone),
+          purchase_order:purchase_orders(id, order_number, created_at)
         `)
         .eq('id', invoiceId)
         .maybeSingle();
