@@ -30,7 +30,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     deliveryStatus, 
     paymentStatus, 
     updateStatus, 
-    updatePaymentStatus 
+    updatePaymentStatus,
+    orderItems
   } = usePurchaseEdit(orderId);
   
   const handleSave = async () => {
@@ -81,7 +82,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <h3 className="text-lg font-semibold mt-6">Produits</h3>
           
           <ProductsSection 
-            items={purchase.items || []}
+            items={orderItems || []}
             updateItemQuantity={updateItemQuantity}
             updateItemPrice={updateItemPrice}
             removeItem={removeItem}
