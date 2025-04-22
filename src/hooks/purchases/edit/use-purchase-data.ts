@@ -42,6 +42,11 @@ export function usePurchaseData(orderId?: string) {
           
         console.log("RPC data found:", data);
         
+        // Ensure data is an object before proceeding
+        if (typeof data !== 'object' || data === null) {
+          throw new Error("Format de données invalide");
+        }
+        
         // Ensure proper typing for enums and defaults
         const safeStatus = (status: any): PurchaseOrder['status'] => {
           return ['draft', 'pending', 'delivered', 'approved'].includes(status) 
@@ -55,17 +60,31 @@ export function usePurchaseData(orderId?: string) {
             : 'pending';
         };
 
-        // Ensure we have proper default values for all fields
+        // Create a properly typed PurchaseOrder object from the data
         const processedData: PurchaseOrder = {
-          ...data,
+          id: data.id as string,
+          order_number: data.order_number as string,
+          created_at: data.created_at as string,
+          updated_at: data.updated_at as string,
           status: safeStatus(data.status),
+          supplier_id: data.supplier_id as string,
+          discount: Number(data.discount || 0),
+          expected_delivery_date: data.expected_delivery_date as string,
+          notes: data.notes as string || '',
+          logistics_cost: Number(data.logistics_cost || 0),
+          transit_cost: Number(data.transit_cost || 0),
+          tax_rate: Number(data.tax_rate || 0),
+          shipping_cost: Number(data.shipping_cost || 0),
+          subtotal: Number(data.subtotal || 0),
+          tax_amount: Number(data.tax_amount || 0),
+          total_ttc: Number(data.total_ttc || 0),
+          total_amount: Number(data.total_amount || 0),
+          paid_amount: Number(data.paid_amount || 0),
           payment_status: safePaymentStatus(data.payment_status),
+          warehouse_id: data.warehouse_id as string,
+          supplier: data.supplier as PurchaseOrder['supplier'],
+          warehouse: data.warehouse as PurchaseOrder['warehouse'],
           items: Array.isArray(data.items) ? data.items : [],
-          discount: data.discount || 0,
-          logistics_cost: data.logistics_cost || 0,
-          transit_cost: data.transit_cost || 0,
-          tax_rate: data.tax_rate || 0,
-          shipping_cost: data.shipping_cost || 0,
           deleted: false
         };
 
