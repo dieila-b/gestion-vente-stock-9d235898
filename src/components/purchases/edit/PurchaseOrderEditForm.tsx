@@ -10,7 +10,7 @@ import {
   FormActions
 } from "./FormSections";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { Loader } from "lucide-react";
+import { Loader, AlertCircle } from "lucide-react";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -56,7 +56,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <p>Chargement...</p>
         </div>
       ) : !purchase ? (
-        <div className="p-6 text-center">Bon de commande non trouvé</div>
+        <div className="p-6 text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <p className="text-lg">Bon de commande non trouvé</p>
+          <p className="text-sm text-gray-400">Le bon de commande que vous essayez de modifier n'existe pas ou n'est pas accessible.</p>
+        </div>
       ) : (
         <div className="p-4 space-y-6">
           <h3 className="text-lg font-semibold">Informations générales</h3>

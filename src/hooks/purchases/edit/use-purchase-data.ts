@@ -34,7 +34,44 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
-        // First try to get the purchase order with items
+        // Try to use the database function first, which is more reliable
+        const { data: functionData, error: functionError } = await supabase
+          .rpc('get_purchase_order_by_id', { order_id: orderId });
+        
+        if (functionData && !functionError) {
+          console.log("Successfully fetched purchase order using RPC function:", functionData);
+          
+          // Process items if they exist
+          const processedItems: PurchaseOrderItem[] = functionData.items ? 
+            functionData.items.map((item: any) => ({
+              id: String(item.id),
+              product_id: String(item.product_id),
+              purchase_order_id: String(orderId),
+              quantity: Number(item.quantity || 0),
+              unit_price: Number(item.unit_price || 0),
+              selling_price: Number(item.selling_price || 0),
+              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+              product: item.product
+            })) : [];
+          
+          // Ensure status is one of the allowed values
+          const status = isValidStatus(functionData.status) ? functionData.status : 'pending';
+          // Ensure payment_status is one of the allowed values
+          const payment_status = isValidPaymentStatus(functionData.payment_status) ? functionData.payment_status : 'pending';
+          
+          const processedOrder: PurchaseOrder = {
+            ...functionData,
+            status,
+            payment_status,
+            items: processedItems
+          };
+          
+          return processedOrder;
+        }
+        
+        console.log("RPC function failed or returned no data, trying direct query");
+        
+        // Fallback to the original direct query approach
         const { data: orderData, error: orderError } = await supabase
           .from('purchase_orders')
           .select(`
@@ -43,7 +80,7 @@ export function usePurchaseData(orderId?: string) {
             warehouse:warehouses(*)
           `)
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
           
         if (orderError) {
           console.error("Error fetching purchase order:", orderError);

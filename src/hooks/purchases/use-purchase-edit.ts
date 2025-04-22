@@ -31,15 +31,18 @@ export function usePurchaseEdit(orderId?: string) {
   // Update delivery and payment status based on purchase data
   React.useEffect(() => {
     if (purchase) {
-      if (purchase.status && purchase.status !== deliveryStatus) {
-        setDeliveryStatus(purchase.status as 'pending' | 'delivered');
+      if (purchase.status && (purchase.status === 'pending' || purchase.status === 'delivered')) {
+        setDeliveryStatus(purchase.status);
       }
 
-      if (purchase.payment_status && purchase.payment_status !== paymentStatus) {
-        setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
+      if (purchase.payment_status && 
+         (purchase.payment_status === 'pending' || 
+          purchase.payment_status === 'partial' || 
+          purchase.payment_status === 'paid')) {
+        setPaymentStatus(purchase.payment_status);
       }
     }
-  }, [purchase, deliveryStatus, paymentStatus]);
+  }, [purchase]);
 
   // Handle update
   const handleUpdate = async (data: Partial<PurchaseOrder>) => {
@@ -91,11 +94,18 @@ export function usePurchaseEdit(orderId?: string) {
 
   // Save all form data
   const saveChanges = async () => {
-    // Ensure order total is updated before saving
-    await updateOrderTotal(orderId!, formData, refetch);
+    if (!orderId) return false;
     
-    const success = await handleUpdate(formData);
-    return success;
+    // Ensure order total is updated before saving
+    try {
+      await updateOrderTotal(orderId, formData, refetch);
+      const success = await handleUpdate(formData);
+      return success;
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast.error("Erreur lors de l'enregistrement des modifications");
+      return false;
+    }
   };
 
   return {

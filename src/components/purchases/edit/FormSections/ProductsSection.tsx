@@ -1,158 +1,142 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { formatGNF } from "@/lib/currency";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from '@/integrations/supabase/client';
+import { useState } from "react";
+import { ProductSelectionModal } from "@/components/purchases/edit/FormSections/ProductSelectionModal";
 import { Plus, Trash } from "lucide-react";
-import { useProducts } from "@/hooks/use-products";
-import { ProductSelectionModal } from "./ProductSelectionModal";
+import { Input } from "@/components/ui/input";
+import { formatGNF } from "@/lib/currency";
 
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
-  updateItemQuantity: (itemId: string, quantity: number) => void;
-  updateItemPrice: (itemId: string, price: number) => void;
-  removeItem?: (itemId: string) => void;
-  addItem?: (product: CatalogProduct) => void;
+  updateItemQuantity: (itemId: string, quantity: number) => Promise<boolean>;
+  updateItemPrice: (itemId: string, price: number) => Promise<boolean>;
+  removeItem: (itemId: string) => Promise<boolean>;
+  addItem: (product: CatalogProduct) => Promise<boolean>;
 }
 
-export function ProductsSection({ 
-  items, 
-  updateItemQuantity, 
-  updateItemPrice, 
+export function ProductsSection({
+  items,
+  updateItemQuantity,
+  updateItemPrice,
   removeItem,
   addItem
 }: ProductsSectionProps) {
-  console.log("ProductsSection received items:", items?.length, items);
-  const [showProductModal, setShowProductModal] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { products, isLoading } = useProducts();
   
-  // Handle quantity change
-  const handleQuantityChange = (itemId: string, value: string) => {
-    // If the value is empty, set to 0
-    if (value === "") {
-      updateItemQuantity(itemId, 0);
-      return;
-    }
-    
-    // Convert value to number
-    const quantity = parseInt(value);
-    updateItemQuantity(itemId, isNaN(quantity) ? 0 : quantity);
-  };
+  console.log("Product section rendering with items:", items.length);
 
-  // Handle price change
-  const handlePriceChange = (itemId: string, value: string) => {
-    // If the value is empty, set to 0
-    if (value === "") {
-      updateItemPrice(itemId, 0);
-      return;
+  // Fetch available products
+  const { data: products = [] } = useQuery<CatalogProduct[]>({
+    queryKey: ['catalog-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalog')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      return data as CatalogProduct[];
     }
-    
-    // Convert value to number
-    const price = parseInt(value);
-    updateItemPrice(itemId, isNaN(price) ? 0 : price);
-  };
-
-  // Calculate total
-  const totalAmount = items?.reduce((total, item) => total + (item.total_price || 0), 0) || 0;
+  });
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Produits</h3>
-        {addItem && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowProductModal(true)}
-            className="neo-blur"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter un produit
-          </Button>
-        )}
-      </div>
-      
-      <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">
-        {!items || items.length === 0 ? (
-          <p className="text-white/40 text-center">Aucun produit ajouté</p>
-        ) : (
-          <div className="space-y-4">
-            <div className="p-3 bg-white/5 rounded-md grid grid-cols-6 gap-3 hidden md:grid">
-              <div className="col-span-2 text-sm text-white/60">Produit</div>
-              <div className="text-sm text-white/60">Quantité</div>
-              <div className="text-sm text-white/60">Prix unitaire</div>
-              <div className="text-sm text-white/60">Total</div>
-              <div></div>
-            </div>
-            
-            {items.map((item) => (
-              <div key={item.id} className="p-3 bg-white/5 rounded-md grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
-                <div className="md:col-span-2">
-                  <p className="text-white font-medium">{item.product?.name || "Produit sans nom"}</p>
-                  {item.product?.reference && <p className="text-xs text-white/60">Ref: {item.product.reference}</p>}
-                </div>
-                <div>
-                  <Input
-                    type="text"
-                    value={item.quantity === 0 ? "" : item.quantity}
-                    onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                    className="neo-blur border-white/10"
-                    placeholder="1"
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="text"
-                    value={item.unit_price === 0 ? "" : item.unit_price}
-                    onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                    className="neo-blur border-white/10"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <span className="text-white/80">{formatGNF(item.total_price || 0)}</span>
-                </div>
-                <div className="flex justify-end">
-                  {removeItem && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            <div className="text-right px-4 py-2 bg-white/5 rounded-md">
-              <span className="text-white/60 mr-2">Sous-total produits:</span>
-              <span className="text-white font-medium">
-                {formatGNF(totalAmount)}
-              </span>
-            </div>
-          </div>
-        )}
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-white/70">Articles ({items.length})</h3>
+        </div>
+        <Button 
+          onClick={() => setIsProductModalOpen(true)}
+          variant="outline"
+          className="neo-blur"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter un produit
+        </Button>
       </div>
 
-      {/* Product selection modal */}
+      {items.length === 0 ? (
+        <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
+          <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
+          <Button 
+            onClick={() => setIsProductModalOpen(true)}
+            variant="outline"
+            className="mt-4 neo-blur"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter un produit
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-12 gap-4 p-2 text-sm text-white/60 font-medium">
+            <div className="col-span-4">Produit</div>
+            <div className="col-span-2 text-center">Quantité</div>
+            <div className="col-span-2 text-center">Prix unitaire</div>
+            <div className="col-span-3 text-center">Prix total</div>
+            <div className="col-span-1"></div>
+          </div>
+          
+          {items.map((item) => (
+            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-md border border-white/10 bg-black/40 neo-blur">
+              <div className="col-span-4">
+                <div className="font-medium text-white">{item.product?.name || "Produit inconnu"}</div>
+                <div className="text-xs text-white/60">{item.product?.reference || "Sans référence"}</div>
+              </div>
+              
+              <div className="col-span-2">
+                <Input
+                  type="number"
+                  value={item.quantity}
+                  min={1}
+                  onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value))}
+                  className="text-center neo-blur"
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Input
+                  type="number"
+                  value={item.unit_price}
+                  min={0}
+                  onChange={(e) => updateItemPrice(item.id, parseInt(e.target.value))}
+                  className="text-center neo-blur"
+                />
+              </div>
+              
+              <div className="col-span-3 text-center font-medium">
+                {formatGNF(item.quantity * item.unit_price)}
+              </div>
+              
+              <div className="col-span-1 flex justify-end">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => removeItem(item.id)}
+                  className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <ProductSelectionModal
-        isOpen={showProductModal}
-        onClose={() => setShowProductModal(false)}
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        products={products || []}
+        products={products}
         onSelectProduct={(product) => {
-          if (addItem) {
-            addItem(product);
-            setShowProductModal(false);
-          }
+          addItem(product);
+          setIsProductModalOpen(false);
         }}
       />
     </div>
