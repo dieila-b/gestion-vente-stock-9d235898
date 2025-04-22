@@ -56,8 +56,8 @@ export function usePurchaseData(orderId?: string) {
           // Try RPC as fallback
           console.log("Attempting RPC fallback");
           const { data: rpcData, error: rpcError } = await supabase.rpc(
-            'bypass_select_purchase_order_by_id', 
-            { p_order_id: orderId }
+            'get_purchase_order_by_id', 
+            { order_id: orderId }
           );
           
           if (rpcError) {
@@ -71,7 +71,8 @@ export function usePurchaseData(orderId?: string) {
           }
           
           console.log("RPC data found:", rpcData);
-          return rpcData as PurchaseOrder;
+          // Explicitly cast as PurchaseOrder after confirming the structure
+          return rpcData as unknown as PurchaseOrder;
         }
 
         console.log("Purchase order found:", data);
