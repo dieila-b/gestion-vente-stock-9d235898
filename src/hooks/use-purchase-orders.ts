@@ -1,3 +1,4 @@
+
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -13,6 +14,12 @@ export function usePurchaseOrders() {
   // Log if errors occur
   if (error) {
     console.error("Error in usePurchaseOrders:", error);
+  }
+
+  // Log the orders data to debug
+  console.log("Use Purchase Orders - Orders count:", orders?.length || 0);
+  if (orders?.length > 0) {
+    console.log("First order items:", orders[0]?.items?.length || 0);
   }
 
   // Force refresh the data with minimal stale time

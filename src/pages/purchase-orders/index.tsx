@@ -19,7 +19,8 @@ export default function PurchaseOrdersPage() {
     handleApprove,
     handleDelete,
     handleEdit,
-    EditDialog
+    EditDialog,
+    refreshOrders
   } = usePurchaseOrders();
   
   const { printPurchaseOrder } = usePurchasePrint();
@@ -42,6 +43,12 @@ export default function PurchaseOrdersPage() {
       );
       
       console.log("Filtered orders:", filtered.length);
+      
+      // Check if filtered orders have items
+      filtered.forEach(order => {
+        console.log(`Order ${order.order_number} has ${order.items?.length || 0} items`);
+      });
+      
       setFilteredOrders(filtered);
     } catch (error) {
       console.error("Error processing orders:", error);
@@ -52,6 +59,8 @@ export default function PurchaseOrdersPage() {
 
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
+    // Log the order before printing to debug
+    console.log("Printing order with items:", order.items);
     printPurchaseOrder(order);
   };
 

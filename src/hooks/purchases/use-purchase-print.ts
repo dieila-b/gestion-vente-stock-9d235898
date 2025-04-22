@@ -26,6 +26,10 @@ export function usePurchasePrint() {
       return;
     }
 
+    // Log the order data to debug
+    console.log("Printing order:", order);
+    console.log("Order items:", order.items);
+
     // Create print content for the purchase order
     const printContent = `
       <html>
@@ -80,14 +84,17 @@ export function usePurchasePrint() {
               </tr>
             </thead>
             <tbody>
-              ${order.items?.map(item => `
-                <tr>
-                  <td>${item.designation || item.product?.name || 'Produit inconnu'}</td>
-                  <td>${item.quantity}</td>
-                  <td>${formatGNF(item.unit_price)}</td>
-                  <td>${formatGNF(item.total_price)}</td>
-                </tr>
-              `).join('') || '<tr><td colspan="4">Aucun produit</td></tr>'}
+              ${Array.isArray(order.items) && order.items.length > 0 
+                ? order.items.map(item => `
+                    <tr>
+                      <td>${item.product?.name || item.designation || 'Produit inconnu'}</td>
+                      <td>${item.quantity}</td>
+                      <td>${formatGNF(item.unit_price || 0)}</td>
+                      <td>${formatGNF(item.total_price || (item.unit_price * item.quantity) || 0)}</td>
+                    </tr>
+                  `).join('') 
+                : '<tr><td colspan="4" style="text-align: center;">Aucun produit</td></tr>'
+              }
             </tbody>
           </table>
           
@@ -95,31 +102,31 @@ export function usePurchasePrint() {
             <table class="total-table">
               <tr>
                 <td>Sous-total:</td>
-                <td>${formatGNF(order.subtotal)}</td>
+                <td>${formatGNF(order.subtotal || 0)}</td>
               </tr>
               <tr>
-                <td>TVA (${order.tax_rate}%):</td>
-                <td>${formatGNF(order.tax_amount)}</td>
+                <td>TVA (${order.tax_rate || 0}%):</td>
+                <td>${formatGNF(order.tax_amount || 0)}</td>
               </tr>
               <tr>
                 <td>Frais de livraison:</td>
-                <td>${formatGNF(order.shipping_cost)}</td>
+                <td>${formatGNF(order.shipping_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Logistique:</td>
-                <td>${formatGNF(order.logistics_cost)}</td>
+                <td>${formatGNF(order.logistics_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Transit:</td>
-                <td>${formatGNF(order.transit_cost)}</td>
+                <td>${formatGNF(order.transit_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Remise:</td>
-                <td>${formatGNF(order.discount)}</td>
+                <td>${formatGNF(order.discount || 0)}</td>
               </tr>
               <tr>
                 <td><strong>Total TTC:</strong></td>
-                <td><strong>${formatGNF(order.total_ttc)}</strong></td>
+                <td><strong>${formatGNF(order.total_ttc || 0)}</strong></td>
               </tr>
             </table>
           </div>

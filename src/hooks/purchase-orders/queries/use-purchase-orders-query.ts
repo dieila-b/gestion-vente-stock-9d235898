@@ -2,57 +2,50 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { toast } from "sonner";
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
     queryKey: ['purchase-orders'],
     queryFn: async (): Promise<PurchaseOrder[]> => {
-      console.log("Fetching purchase orders...");
+      console.log("Fetching purchase orders with items...");
       
-      try {
-        // First, try direct query with detailed logging
-        console.log("Attempting direct query to purchase_orders table...");
-        const { data: directData, error: directError } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:suppliers(*)
-          `)
-          .order('created_at', { ascending: false });
-          
-        if (!directError && directData && directData.length > 0) {
-          console.log("Purchase orders fetched successfully via direct query:", directData.length);
-          return directData as PurchaseOrder[];
-        }
-        
-        console.log("Direct query result:", directData?.length || 0, "records. Error:", directError);
-        
-        // If direct query fails or returns no data, try RPC function
-        console.log("Attempting RPC function bypass_select_purchase_orders...");
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          'bypass_select_purchase_orders'
-        );
-        
-        if (rpcError) {
-          console.error("RPC function failed:", rpcError);
-          throw rpcError;
-        }
-        
-        if (rpcData && rpcData.length > 0) {
-          console.log("Processed purchase orders via RPC:", rpcData.length);
-          return rpcData as unknown as PurchaseOrder[];
-        }
-        
-        console.log("No purchase orders found in either direct query or RPC.");
-        return [];
-      } catch (error) {
+      // First fetch all purchase orders with suppliers
+      const { data: orders, error } = await supabase
+        .from('purchase_orders')
+        .select(`
+          *,
+          supplier:supplier_id(*),
+          warehouse:warehouse_id(*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
         console.error("Error fetching purchase orders:", error);
-        toast.error("Erreur lors du chargement des bons de commande");
-        return [];
+        throw error;
       }
-    },
-    staleTime: 0, // Always refetch on component mount
-    refetchOnWindowFocus: true,
+      
+      // Now fetch items for each order
+      const ordersWithItems = await Promise.all(
+        orders.map(async (order) => {
+          const { data: items, error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .select(`
+              *,
+              product:product_id(*)
+            `)
+            .eq('purchase_order_id', order.id);
+          
+          if (itemsError) {
+            console.error(`Error fetching items for order ${order.id}:`, itemsError);
+            return { ...order, items: [] };
+          }
+          
+          console.log(`Order ${order.order_number}: Found ${items.length} items`);
+          return { ...order, items };
+        })
+      );
+      
+      return ordersWithItems;
+    }
   });
 }
