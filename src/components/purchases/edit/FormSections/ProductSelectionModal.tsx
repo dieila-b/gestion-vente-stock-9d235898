@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,8 @@ export function ProductSelectionModal({
 }: ProductSelectionModalProps) {
   // Filter products safely with null checks
   const filteredProducts = products.filter(product => {
+    if (!product || !searchQuery) return true; // Show all products when no search query
+    
     const productName = product.name?.toLowerCase() || '';
     const productReference = product.reference?.toLowerCase() || '';
     const query = searchQuery.toLowerCase();
@@ -54,7 +55,7 @@ export function ProductSelectionModal({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 max-h-[60vh] overflow-y-auto">
             {filteredProducts.length === 0 ? (
               <p className="text-white/60 col-span-full text-center py-8">
-                Aucun produit ne correspond à votre recherche
+                {searchQuery ? "Aucun produit ne correspond à votre recherche" : "Aucun produit disponible"}
               </p>
             ) : (
               filteredProducts.map((product) => (

@@ -29,17 +29,8 @@ export function ProductsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const { products } = useProducts();
   
-  // Filter products with null/undefined safety checks
-  const filteredProducts = products?.filter(product => {
-    if (!product || !searchQuery) return false;
-    
-    const productName = product.name?.toLowerCase() || '';
-    const productReference = product.reference?.toLowerCase() || '';
-    const query = searchQuery.toLowerCase();
-    
-    return productName.includes(query) || productReference.includes(query);
-  }) || [];
-
+  // No filtering here, we'll do it in the modal component
+  
   // Handle quantity change
   const handleQuantityChange = (itemId: string, value: string) => {
     // If the value is empty, set to 0
@@ -159,7 +150,7 @@ export function ProductsSection({
           onClose={() => setShowProductModal(false)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          products={filteredProducts}
+          products={products || []}
           onSelectProduct={(product) => {
             addItem(product);
             setShowProductModal(false);
