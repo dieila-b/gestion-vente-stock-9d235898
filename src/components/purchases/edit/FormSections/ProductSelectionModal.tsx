@@ -24,6 +24,15 @@ export function ProductSelectionModal({
   products,
   onSelectProduct
 }: ProductSelectionModalProps) {
+  // Filter products safely with null checks
+  const filteredProducts = products.filter(product => {
+    const productName = product.name?.toLowerCase() || '';
+    const productReference = product.reference?.toLowerCase() || '';
+    const query = searchQuery.toLowerCase();
+    
+    return productName.includes(query) || productReference.includes(query);
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
@@ -43,12 +52,12 @@ export function ProductSelectionModal({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 max-h-[60vh] overflow-y-auto">
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <p className="text-white/60 col-span-full text-center py-8">
                 Aucun produit ne correspond à votre recherche
               </p>
             ) : (
-              products.map((product) => (
+              filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   className="p-4 border border-white/10 rounded-lg hover:bg-white/5 cursor-pointer"
@@ -56,7 +65,7 @@ export function ProductSelectionModal({
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="text-white font-medium">{product.name}</h4>
+                      <h4 className="text-white font-medium">{product.name || 'Sans nom'}</h4>
                       <p className="text-xs text-white/60">
                         Ref: {product.reference || "N/A"}
                       </p>
