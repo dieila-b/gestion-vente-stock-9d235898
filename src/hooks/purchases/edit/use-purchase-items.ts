@@ -138,24 +138,20 @@ export function usePurchaseItems(
     console.log("Adding product to order:", product);
     
     try {
-      // Create new item with default values
-      const newItem = {
+      // Create item data without product field, which is not in the database schema
+      const itemData = {
         purchase_order_id: orderId,
         product_id: product.id,
         quantity: 1,
-        unit_price: product.price || 0,
+        unit_price: product.purchase_price || 0,
         selling_price: product.price || 0,
-        total_price: product.price || 0,
-        product: {
-          name: product.name,
-          reference: product.reference
-        }
+        total_price: product.purchase_price || 0
       };
       
       // Add the item to the database
       const { data, error } = await supabase
         .from('purchase_order_items')
-        .insert(newItem)
+        .insert(itemData)
         .select('*')
         .single();
 
@@ -163,8 +159,23 @@ export function usePurchaseItems(
       
       console.log("Added product to database:", data);
       
-      // Update local state with the new item from the database
-      setOrderItems([...orderItems, data as PurchaseOrderItem]);
+      // Create a full item object with product info for the UI
+      const newItem: PurchaseOrderItem = {
+        ...data,
+        id: data.id,
+        product_id: data.product_id,
+        quantity: data.quantity,
+        unit_price: data.unit_price,
+        selling_price: data.selling_price,
+        total_price: data.total_price,
+        product: {
+          name: product.name,
+          reference: product.reference
+        }
+      };
+      
+      // Update local state with the new item
+      setOrderItems([...orderItems, newItem]);
       
       // Update the order total
       await updateOrderTotal(orderId, null, refetch);

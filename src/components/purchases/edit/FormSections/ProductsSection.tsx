@@ -29,39 +29,39 @@ export function ProductsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const { products } = useProducts();
   
-  // Filtrer les produits en fonction de la recherche
+  // Filter products based on search query
   const filteredProducts = products?.filter(product => 
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase()))
   ) || [];
 
-  // Fonction pour gérer le changement de quantité
+  // Handle quantity change
   const handleQuantityChange = (itemId: string, value: string) => {
-    // Si la valeur est vide, on laisse le champ vide pour l'édition
+    // If the value is empty, set to 0
     if (value === "") {
       updateItemQuantity(itemId, 0);
       return;
     }
     
-    // Sinon, on convertit la valeur en nombre
+    // Convert value to number
     const quantity = parseInt(value);
     updateItemQuantity(itemId, isNaN(quantity) ? 0 : quantity);
   };
 
-  // Fonction pour gérer le changement de prix
+  // Handle price change
   const handlePriceChange = (itemId: string, value: string) => {
-    // Si la valeur est vide, on met 0
+    // If the value is empty, set to 0
     if (value === "") {
       updateItemPrice(itemId, 0);
       return;
     }
     
-    // Sinon, on convertit la valeur en nombre
+    // Convert value to number
     const price = parseInt(value);
     updateItemPrice(itemId, isNaN(price) ? 0 : price);
   };
 
-  // Calcul du total
+  // Calculate total
   const totalAmount = items?.reduce((total, item) => total + (item.total_price || 0), 0) || 0;
 
   return (
@@ -147,7 +147,7 @@ export function ProductsSection({
         )}
       </div>
 
-      {/* Modal de sélection de produits */}
+      {/* Product selection modal */}
       {addItem && showProductModal && (
         <ProductSelectionModal
           isOpen={showProductModal}
