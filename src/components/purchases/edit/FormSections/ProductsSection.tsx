@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatGNF } from "@/lib/currency";
 import { PurchaseOrderItem } from "@/types/purchase-order";
-import { Trash, Plus } from "lucide-react";
+import { Trash } from "lucide-react";
 
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemPrice: (itemId: string, price: number) => void;
-  setShowProductModal?: (show: boolean) => void;
   removeItem?: (itemId: string) => void;
 }
 
@@ -17,7 +16,6 @@ export function ProductsSection({
   items, 
   updateItemQuantity, 
   updateItemPrice, 
-  setShowProductModal,
   removeItem
 }: ProductsSectionProps) {
   // Fonction pour gérer le changement de quantité
@@ -53,16 +51,6 @@ export function ProductsSection({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Produits</h3>
-        {setShowProductModal && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowProductModal(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter un produit
-          </Button>
-        )}
       </div>
       
       <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">

@@ -2,14 +2,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { updateOrderTotal } from './use-purchase-calculations';
+import { PurchaseOrderItem } from '@/types/purchase-order';
 
 /**
  * Hook for managing purchase order item operations
  */
 export function usePurchaseItems(
   orderId: string | undefined,
-  orderItems: any[],
-  setOrderItems: (items: any[]) => void,
+  orderItems: PurchaseOrderItem[],
+  setOrderItems: (items: PurchaseOrderItem[]) => void,
   refetch: () => Promise<any>
 ) {
   // Update order item quantity
@@ -20,7 +21,7 @@ export function usePurchaseItems(
       // First, get the current item to calculate new total price
       const itemToUpdate = orderItems.find(item => item.id === itemId);
       if (!itemToUpdate) {
-        throw new Error("Item not found");
+        throw new Error("Article non trouvé");
       }
       
       const newTotalPrice = newQuantity * itemToUpdate.unit_price;
@@ -64,7 +65,7 @@ export function usePurchaseItems(
       // Get the current item to calculate new total price
       const itemToUpdate = orderItems.find(item => item.id === itemId);
       if (!itemToUpdate) {
-        throw new Error("Item not found");
+        throw new Error("Article non trouvé");
       }
       
       const newTotalPrice = itemToUpdate.quantity * newPrice;
@@ -100,29 +101,6 @@ export function usePurchaseItems(
     }
   };
 
-  // Handle update of specific items
-  const updateOrderItem = async (itemId: string, updates: any) => {
-    if (!orderId) return false;
-
-    try {
-      const { error } = await supabase
-        .from('purchase_order_items')
-        .update(updates)
-        .eq('id', itemId);
-
-      if (error) throw error;
-      
-      // Update the order total
-      await updateOrderTotal(orderId, null, refetch);
-
-      toast.success('Produit mis à jour avec succès');
-      return true;
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-      return false;
-    }
-  };
-
   // Remove item from order
   const removeItem = async (itemId: string) => {
     if (!orderId) return false;
@@ -143,7 +121,7 @@ export function usePurchaseItems(
       // Update the order total
       await updateOrderTotal(orderId, null, refetch);
       
-      toast.success('Produit supprimé avec succès');
+      toast.success('Article supprimé avec succès');
       return true;
     } catch (error: any) {
       toast.error(`Erreur: ${error.message}`);
@@ -154,7 +132,6 @@ export function usePurchaseItems(
   return {
     updateItemQuantity,
     updateItemPrice,
-    updateOrderItem,
     removeItem
   };
 }
