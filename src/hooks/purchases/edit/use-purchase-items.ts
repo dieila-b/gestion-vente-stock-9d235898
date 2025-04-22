@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { updateOrderTotal } from './use-purchase-calculations';
 import { PurchaseOrderItem } from '@/types/purchase-order';
+import { CatalogProduct } from '@/types/catalog';
 
 /**
  * Hook for managing purchase order item operations
@@ -129,9 +130,52 @@ export function usePurchaseItems(
     }
   };
 
+  // Add new item to order
+  const addItem = async (product: CatalogProduct) => {
+    if (!orderId) return false;
+    
+    try {
+      // Create new item with default values
+      const newItem = {
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: 1,
+        unit_price: product.price || 0,
+        selling_price: product.price || 0,
+        total_price: product.price || 0,
+        product: {
+          name: product.name,
+          reference: product.reference
+        }
+      };
+      
+      // Add the item to the database
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .insert(newItem)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      
+      // Update local state with the new item from the database
+      setOrderItems([...orderItems, data as PurchaseOrderItem]);
+      
+      // Update the order total
+      await updateOrderTotal(orderId, null, refetch);
+      
+      toast.success('Article ajouté avec succès');
+      return true;
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+      return false;
+    }
+  };
+
   return {
     updateItemQuantity,
     updateItemPrice,
-    removeItem
+    removeItem,
+    addItem
   };
 }

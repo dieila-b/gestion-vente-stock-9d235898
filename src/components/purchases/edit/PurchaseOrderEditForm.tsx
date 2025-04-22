@@ -26,6 +26,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     updateItemQuantity,
     updateItemPrice,
     removeItem,
+    addItem,
     deliveryStatus, 
     paymentStatus, 
     updateStatus, 
@@ -84,6 +85,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             updateItemQuantity={updateItemQuantity}
             updateItemPrice={updateItemPrice}
             removeItem={removeItem}
+            addItem={addItem}
           />
           
           <FormActions 

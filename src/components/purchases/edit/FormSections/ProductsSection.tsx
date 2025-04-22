@@ -1,23 +1,39 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatGNF } from "@/lib/currency";
 import { PurchaseOrderItem } from "@/types/purchase-order";
-import { Trash } from "lucide-react";
+import { CatalogProduct } from "@/types/catalog";
+import { Plus, Trash } from "lucide-react";
+import { useProducts } from "@/hooks/use-products";
+import { ProductSelectionModal } from "./ProductSelectionModal";
 
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemPrice: (itemId: string, price: number) => void;
   removeItem?: (itemId: string) => void;
+  addItem?: (product: CatalogProduct) => void;
 }
 
 export function ProductsSection({ 
   items, 
   updateItemQuantity, 
   updateItemPrice, 
-  removeItem
+  removeItem,
+  addItem
 }: ProductsSectionProps) {
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { products } = useProducts();
+  
+  // Filtrer les produits en fonction de la recherche
+  const filteredProducts = products?.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) || [];
+
   // Fonction pour gérer le changement de quantité
   const handleQuantityChange = (itemId: string, value: string) => {
     // Si la valeur est vide, on laisse le champ vide pour l'édition
@@ -51,6 +67,17 @@ export function ProductsSection({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Produits</h3>
+        {addItem && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowProductModal(true)}
+            className="neo-blur"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter un produit
+          </Button>
+        )}
       </div>
       
       <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">
@@ -118,6 +145,21 @@ export function ProductsSection({
           </div>
         )}
       </div>
+
+      {/* Modal de sélection de produits */}
+      {addItem && showProductModal && (
+        <ProductSelectionModal
+          isOpen={showProductModal}
+          onClose={() => setShowProductModal(false)}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          products={filteredProducts}
+          onSelectProduct={(product) => {
+            addItem(product);
+            setShowProductModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

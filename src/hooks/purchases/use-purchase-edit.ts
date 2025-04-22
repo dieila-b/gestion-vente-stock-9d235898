@@ -8,6 +8,7 @@ import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
 import { updateOrderTotal } from './edit/use-purchase-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
+import { CatalogProduct } from '@/types/catalog';
 
 export function usePurchaseEdit(orderId?: string) {
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +68,8 @@ export function usePurchaseEdit(orderId?: string) {
   const { 
     updateItemQuantity, 
     updateItemPrice, 
-    removeItem
+    removeItem,
+    addItem
   } = usePurchaseItems(
     orderId,
     orderItems,
@@ -102,6 +104,7 @@ export function usePurchaseEdit(orderId?: string) {
     updateItemQuantity,
     updateItemPrice,
     removeItem,
+    addItem,
     saveChanges,
     deliveryStatus,
     paymentStatus,
