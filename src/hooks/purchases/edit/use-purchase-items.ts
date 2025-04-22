@@ -14,6 +14,8 @@ export function usePurchaseItems(
   setOrderItems: (items: PurchaseOrderItem[]) => void,
   refetch: () => Promise<any>
 ) {
+  console.log("usePurchaseItems initialized with", { orderId, itemsCount: orderItems?.length });
+
   // Update order item quantity
   const updateItemQuantity = async (itemId: string, newQuantity: number) => {
     if (!orderId) return false;
@@ -133,6 +135,7 @@ export function usePurchaseItems(
   // Add new item to order
   const addItem = async (product: CatalogProduct) => {
     if (!orderId) return false;
+    console.log("Adding product to order:", product);
     
     try {
       // Create new item with default values
@@ -158,6 +161,8 @@ export function usePurchaseItems(
 
       if (error) throw error;
       
+      console.log("Added product to database:", data);
+      
       // Update local state with the new item from the database
       setOrderItems([...orderItems, data as PurchaseOrderItem]);
       
@@ -167,6 +172,7 @@ export function usePurchaseItems(
       toast.success('Article ajouté avec succès');
       return true;
     } catch (error: any) {
+      console.error("Error adding product:", error);
       toast.error(`Erreur: ${error.message}`);
       return false;
     }

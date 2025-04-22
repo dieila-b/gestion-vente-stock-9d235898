@@ -24,6 +24,7 @@ export function ProductsSection({
   removeItem,
   addItem
 }: ProductsSectionProps) {
+  console.log("ProductsSection received items:", items);
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { products } = useProducts();

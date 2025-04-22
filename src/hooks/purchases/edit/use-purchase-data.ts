@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { PurchaseOrder } from '@/types/purchase-order';
+import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchase-order';
 
 /**
  * Hook to fetch and manage purchase order data
  */
 export function usePurchaseData(orderId?: string) {
   const [formData, setFormData] = useState<Partial<PurchaseOrder>>({});
-  const [orderItems, setOrderItems] = useState<PurchaseOrder['items']>([]);
+  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
 
   // Fetch the purchase order 
   const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery<PurchaseOrder | null>({
@@ -140,9 +140,13 @@ export function usePurchaseData(orderId?: string) {
         deleted: false
       });
 
-      // Set order items
-      if (purchase.items) {
+      // Set order items if they exist
+      if (purchase.items && Array.isArray(purchase.items)) {
+        console.log("Setting order items:", purchase.items);
         setOrderItems(purchase.items);
+      } else {
+        console.log("No order items found or items is not an array:", purchase.items);
+        setOrderItems([]);
       }
     }
   }, [purchase]);
