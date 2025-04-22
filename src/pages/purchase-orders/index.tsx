@@ -19,10 +19,16 @@ export default function PurchaseOrdersPage() {
     handleApprove,
     handleDelete,
     handleEdit,
-    EditDialog
+    EditDialog,
+    refreshOrders
   } = usePurchaseOrders();
   
   const { printPurchaseOrder } = usePurchasePrint();
+
+  // Initial data load
+  useEffect(() => {
+    refreshOrders();
+  }, []);
 
   // Process and filter orders
   useEffect(() => {
@@ -52,6 +58,7 @@ export default function PurchaseOrdersPage() {
 
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
+    console.log("Printing order with items:", order.items);
     printPurchaseOrder(order);
   };
 

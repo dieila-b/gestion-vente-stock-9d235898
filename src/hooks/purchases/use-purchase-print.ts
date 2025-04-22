@@ -26,6 +26,8 @@ export function usePurchasePrint() {
       return;
     }
 
+    console.log("Items to print:", order.items);
+
     // Create print content for the purchase order
     const printContent = `
       <html>
@@ -80,14 +82,17 @@ export function usePurchasePrint() {
               </tr>
             </thead>
             <tbody>
-              ${order.items?.map(item => `
-                <tr>
-                  <td>${item.designation || item.product?.name || 'Produit inconnu'}</td>
-                  <td>${item.quantity}</td>
-                  <td>${formatGNF(item.unit_price)}</td>
-                  <td>${formatGNF(item.total_price)}</td>
-                </tr>
-              `).join('') || '<tr><td colspan="4">Aucun produit</td></tr>'}
+              ${order.items && order.items.length > 0 
+                ? order.items.map((item: PurchaseOrderItem) => `
+                  <tr>
+                    <td>${item.product?.name || item.designation || 'Produit inconnu'}</td>
+                    <td>${item.quantity}</td>
+                    <td>${formatGNF(item.unit_price)}</td>
+                    <td>${formatGNF(item.total_price)}</td>
+                  </tr>
+                `).join('') 
+                : '<tr><td colspan="4">Aucun produit</td></tr>'
+              }
             </tbody>
           </table>
           

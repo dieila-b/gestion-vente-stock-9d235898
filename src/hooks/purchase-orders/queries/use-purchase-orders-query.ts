@@ -17,7 +17,11 @@ export function usePurchaseOrdersQuery() {
           .from('purchase_orders')
           .select(`
             *,
-            supplier:suppliers(*)
+            supplier:suppliers(*),
+            items:purchase_order_items(
+              *,
+              product:catalog(*)
+            )
           `)
           .order('created_at', { ascending: false });
           
