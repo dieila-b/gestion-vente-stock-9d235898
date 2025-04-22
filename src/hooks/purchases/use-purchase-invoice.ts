@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PurchaseInvoice } from "@/types/purchase-invoice";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { usePurchaseItems } from "./edit/use-purchase-items";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 export function usePurchaseInvoice(invoiceId?: string) {
   const [invoiceItems, setInvoiceItems] = useState<PurchaseOrderItem[]>([]);
@@ -42,6 +43,10 @@ export function usePurchaseInvoice(invoiceId?: string) {
       if (error) {
         toast.error(`Erreur lors du chargement de la facture: ${error.message}`);
         throw error;
+      }
+      
+      if (!data) {
+        return null;
       }
       
       // Return the data with default values for any missing fields
