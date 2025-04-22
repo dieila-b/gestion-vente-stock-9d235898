@@ -42,7 +42,7 @@ export function usePurchaseData(orderId?: string) {
           
         console.log("RPC data found:", rawData);
         
-        // Safely cast the raw data to a Record<string, any> to avoid TypeScript errors
+        // Ensure the rawData is treated as a Record<string, any>
         const data = rawData as Record<string, any>;
         
         // Ensure data is an object before proceeding
