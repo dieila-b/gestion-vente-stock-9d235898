@@ -27,9 +27,7 @@ export function ProductsSection({
   console.log("ProductsSection received items:", items);
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { products } = useProducts();
-  
-  // We'll pass all products to the modal and let it handle filtering
+  const { products, isLoading } = useProducts();
   
   // Handle quantity change
   const handleQuantityChange = (itemId: string, value: string) => {
@@ -144,21 +142,19 @@ export function ProductsSection({
       </div>
 
       {/* Product selection modal */}
-      {addItem && (
-        <ProductSelectionModal
-          isOpen={showProductModal}
-          onClose={() => setShowProductModal(false)}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          products={products || []}
-          onSelectProduct={(product) => {
-            if (addItem) {
-              addItem(product);
-              setShowProductModal(false);
-            }
-          }}
-        />
-      )}
+      <ProductSelectionModal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        products={products || []}
+        onSelectProduct={(product) => {
+          if (addItem) {
+            addItem(product);
+            setShowProductModal(false);
+          }
+        }}
+      />
     </div>
   );
 }

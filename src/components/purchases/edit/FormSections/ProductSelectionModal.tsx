@@ -35,8 +35,11 @@ export function ProductSelectionModal({
     return productName.includes(query) || productReference.includes(query);
   });
 
+  console.log("ProductSelectionModal - Available products:", products?.length || 0);
+  console.log("ProductSelectionModal - Filtered products:", filteredProducts?.length || 0);
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Ajouter un produit</DialogTitle>
@@ -54,7 +57,7 @@ export function ProductSelectionModal({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 max-h-[60vh] overflow-y-auto">
-            {filteredProducts.length === 0 ? (
+            {!filteredProducts || filteredProducts.length === 0 ? (
               <p className="text-white/60 col-span-full text-center py-8">
                 {searchQuery ? "Aucun produit ne correspond à votre recherche" : "Aucun produit disponible"}
               </p>
