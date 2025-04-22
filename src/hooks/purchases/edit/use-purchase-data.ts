@@ -25,7 +25,7 @@ export function usePurchaseData(orderId?: string) {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
         // First try to get the purchase order with items
-        const { data, error } = await supabase.rpc(
+        const { data: rawData, error } = await supabase.rpc(
           'get_purchase_order_by_id', 
           { order_id: orderId }
         );
@@ -35,12 +35,15 @@ export function usePurchaseData(orderId?: string) {
           throw new Error(`Erreur lors de la récupération du bon de commande: ${error.message}`);
         }
           
-        if (!data) {
+        if (!rawData) {
           console.error("No data found via RPC");
           throw new Error("Bon de commande non trouvé");
         }
           
-        console.log("RPC data found:", data);
+        console.log("RPC data found:", rawData);
+        
+        // Safely cast the raw data to a Record<string, any> to avoid TypeScript errors
+        const data = rawData as Record<string, any>;
         
         // Ensure data is an object before proceeding
         if (typeof data !== 'object' || data === null) {
@@ -49,28 +52,28 @@ export function usePurchaseData(orderId?: string) {
         
         // Ensure proper typing for enums and defaults
         const safeStatus = (status: any): PurchaseOrder['status'] => {
-          return ['draft', 'pending', 'delivered', 'approved'].includes(status) 
+          return ['draft', 'pending', 'delivered', 'approved'].includes(String(status)) 
             ? status as PurchaseOrder['status'] 
             : 'draft';
         };
 
         const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
-          return ['pending', 'partial', 'paid'].includes(status) 
+          return ['pending', 'partial', 'paid'].includes(String(status)) 
             ? status as PurchaseOrder['payment_status'] 
             : 'pending';
         };
 
         // Create a properly typed PurchaseOrder object from the data
         const processedData: PurchaseOrder = {
-          id: data.id as string,
-          order_number: data.order_number as string,
-          created_at: data.created_at as string,
-          updated_at: data.updated_at as string,
+          id: String(data.id || ''),
+          order_number: String(data.order_number || ''),
+          created_at: String(data.created_at || ''),
+          updated_at: String(data.updated_at || ''),
           status: safeStatus(data.status),
-          supplier_id: data.supplier_id as string,
+          supplier_id: String(data.supplier_id || ''),
           discount: Number(data.discount || 0),
-          expected_delivery_date: data.expected_delivery_date as string,
-          notes: data.notes as string || '',
+          expected_delivery_date: String(data.expected_delivery_date || ''),
+          notes: String(data.notes || ''),
           logistics_cost: Number(data.logistics_cost || 0),
           transit_cost: Number(data.transit_cost || 0),
           tax_rate: Number(data.tax_rate || 0),
@@ -81,7 +84,7 @@ export function usePurchaseData(orderId?: string) {
           total_amount: Number(data.total_amount || 0),
           paid_amount: Number(data.paid_amount || 0),
           payment_status: safePaymentStatus(data.payment_status),
-          warehouse_id: data.warehouse_id as string,
+          warehouse_id: String(data.warehouse_id || ''),
           supplier: data.supplier as PurchaseOrder['supplier'],
           warehouse: data.warehouse as PurchaseOrder['warehouse'],
           items: Array.isArray(data.items) ? data.items : [],
