@@ -5,6 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchase-order';
 
+// Type guard function to check if a string is a valid status
+function isValidStatus(status: string): status is PurchaseOrder['status'] {
+  return ['draft', 'pending', 'delivered', 'approved'].includes(status);
+}
+
+// Type guard function to check if a string is a valid payment status
+function isValidPaymentStatus(status: string): status is PurchaseOrder['payment_status'] {
+  return ['pending', 'partial', 'paid'].includes(status);
+}
+
 /**
  * Hook to fetch and manage purchase order data
  */
@@ -72,9 +82,16 @@ export function usePurchaseData(orderId?: string) {
           product: item.product
         })) : [];
 
+        // Ensure status is one of the allowed values, default to 'pending' if not
+        const status = isValidStatus(orderData.status) ? orderData.status : 'pending';
+        // Ensure payment_status is one of the allowed values, default to 'pending' if not
+        const payment_status = isValidPaymentStatus(orderData.payment_status) ? orderData.payment_status : 'pending';
+
         // Create a properly typed PurchaseOrder object from the data
         const processedOrder: PurchaseOrder = {
           ...orderData,
+          status,
+          payment_status,
           items: processedItems
         };
 
