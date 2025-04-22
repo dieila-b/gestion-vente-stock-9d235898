@@ -25,7 +25,8 @@ export function ProductSelectionModal({
 }: ProductSelectionModalProps) {
   // Filter products safely with null checks
   const filteredProducts = products.filter(product => {
-    if (!product || !searchQuery) return true; // Show all products when no search query
+    if (!product) return false; // Skip invalid products
+    if (!searchQuery) return true; // Show all products when no search query
     
     const productName = product.name?.toLowerCase() || '';
     const productReference = product.reference?.toLowerCase() || '';
