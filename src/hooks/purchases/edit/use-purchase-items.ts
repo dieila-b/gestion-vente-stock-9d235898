@@ -129,9 +129,36 @@ export function usePurchaseItems(
     }
   };
 
+  // Get purchase order items
+  const getPurchaseOrderItems = async (purchaseOrderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .select(`
+          id,
+          purchase_order_id,
+          product_id,
+          quantity,
+          unit_price,
+          selling_price,
+          total_price,
+          product:catalog(id, name, reference)
+        `)
+        .eq('purchase_order_id', purchaseOrderId);
+
+      if (error) throw error;
+      
+      return data as PurchaseOrderItem[];
+    } catch (error: any) {
+      toast.error(`Erreur lors de la récupération des articles: ${error.message}`);
+      return [];
+    }
+  };
+
   return {
     updateItemQuantity,
     updateItemPrice,
-    removeItem
+    removeItem,
+    getPurchaseOrderItems
   };
 }
