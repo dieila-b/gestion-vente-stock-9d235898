@@ -50,6 +50,31 @@ export function usePurchaseInvoice(invoiceId?: string) {
           return null;
         }
         
+        // Check if data is a SelectQueryError before accessing properties
+        if (isSelectQueryError(data)) {
+          console.error("Query error:", data);
+          toast.error("Erreur de structure dans les données de la facture");
+          return {
+            id: '',
+            invoice_number: '',
+            supplier_id: '',
+            total_amount: 0,
+            status: 'error',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tax_amount: 0,
+            payment_status: 'pending',
+            due_date: '',
+            paid_amount: 0,
+            remaining_amount: 0,
+            discount: 0,
+            notes: '',
+            shipping_cost: 0,
+            supplier: { id: '', name: 'Fournisseur inconnu', phone: '', email: '' },
+            purchase_order: { id: '', order_number: '', created_at: '' }
+          } as PurchaseInvoice;
+        }
+        
         // Return the data with default values for any missing fields
         return {
           id: data.id,
