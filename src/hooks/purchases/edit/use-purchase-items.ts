@@ -158,7 +158,7 @@ export function usePurchaseItems(
       const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
-      // Create a new item locally first for immediate UI update
+      // Create a new item object for local state update
       const newItem: PurchaseOrderItem = {
         id: newItemId,
         purchase_order_id: orderId,
@@ -168,12 +168,13 @@ export function usePurchaseItems(
         selling_price: product.price || 0,
         total_price: totalPrice,
         product: {
+          id: product.id,
           name: product.name,
           reference: product.reference
         }
       };
       
-      console.log("Created local item:", newItem);
+      console.log("Created new item object:", newItem);
       
       // Update local state IMMEDIATELY for responsive UI
       const updatedItems = [...orderItems, newItem];
@@ -181,7 +182,7 @@ export function usePurchaseItems(
       
       console.log("Updated local items array, now has", updatedItems.length, "items");
       
-      // Create the item data array for the RPC function
+      // Prepare the item data for database insertion
       const itemData = [{
         id: newItemId,
         purchase_order_id: orderId,
@@ -198,7 +199,7 @@ export function usePurchaseItems(
       // Send to database using RPC to bypass RLS
       const { data, error } = await supabase
         .rpc('bypass_insert_purchase_order_items', {
-          items_data: itemData
+          items_data: JSON.stringify(itemData)
         });
       
       if (error) {

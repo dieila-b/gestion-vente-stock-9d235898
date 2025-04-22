@@ -30,8 +30,12 @@ export function ProductsSection({
   const [isLoading, setIsLoading] = useState(false);
   const [actionItemId, setActionItemId] = useState<string | null>(null);
   
+  useEffect(() => {
+    console.log("ProductsSection rendered with items:", items);
+  }, [items]);
+  
   // Fetch available products
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<CatalogProduct[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       console.log("Fetching catalog products...");
@@ -50,16 +54,6 @@ export function ProductsSection({
     },
     staleTime: 60000, // 1 minute
   });
-
-  useEffect(() => {
-    if (productsError) {
-      console.error("Error loading products:", productsError);
-    }
-  }, [productsError]);
-  
-  useEffect(() => {
-    console.log("Current items in ProductsSection:", items);
-  }, [items]);
 
   // Handle product addition
   const handleAddProduct = async (product: CatalogProduct) => {

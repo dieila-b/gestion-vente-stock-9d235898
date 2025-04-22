@@ -104,7 +104,7 @@ export function usePurchaseData(orderId?: string) {
             items: processedItems
           };
           
-          // Update the orderItems state with the items from the purchase order
+          // IMPORTANT: Update the orderItems state with the items from the purchase order
           setOrderItems(processedItems);
           console.log("Setting items from purchase RPC:", processedItems.length);
           
@@ -177,7 +177,7 @@ export function usePurchaseData(orderId?: string) {
         console.log("Processed purchase order:", processedOrder);
         console.log("Processed items:", processedItems.length);
         
-        // Update the orderItems state with the items from the purchase order
+        // IMPORTANT: Update the orderItems state with the items from the purchase order
         setOrderItems(processedItems);
         console.log("Setting items from direct query:", processedItems.length);
 
@@ -198,9 +198,10 @@ export function usePurchaseData(orderId?: string) {
     enabled: !!orderId
   });
 
-  // Set states when data is loaded
+  // Set form data when purchase is loaded
   useEffect(() => {
     if (purchase) {
+      console.log("Purchase data loaded, setting form data");
       setFormData({
         order_number: purchase.order_number,
         supplier_id: purchase.supplier_id,
@@ -217,9 +218,9 @@ export function usePurchaseData(orderId?: string) {
         deleted: false
       });
 
-      // If there are items in the purchase, use them
+      // If there are items in the purchase, update our order items state
       if (purchase.items && Array.isArray(purchase.items) && purchase.items.length > 0) {
-        console.log("Setting order items from purchase:", purchase.items.length);
+        console.log("Setting order items from purchase.items:", purchase.items.length);
         setOrderItems(purchase.items);
       }
     }
