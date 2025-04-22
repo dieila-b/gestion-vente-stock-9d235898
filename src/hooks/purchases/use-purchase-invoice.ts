@@ -75,30 +75,27 @@ export function usePurchaseInvoice(invoiceId?: string) {
           } as PurchaseInvoice;
         }
         
-        // Use type assertion to tell TypeScript that data is not a SelectQueryError
-        const invoiceData = data as any;
-
         // Return the data with default values for any missing fields
         return {
-          id: invoiceData.id || '',
-          invoice_number: invoiceData.invoice_number || '',
-          supplier_id: invoiceData.supplier_id || '',
-          total_amount: invoiceData.total_amount || 0,
-          status: invoiceData.status || '',
-          created_at: invoiceData.created_at || '',
-          updated_at: invoiceData.updated_at || '',
+          id: data.id,
+          invoice_number: data.invoice_number,
+          supplier_id: data.supplier_id,
+          total_amount: data.total_amount,
+          status: data.status,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
           tax_amount: 0, // Default value since this column doesn't exist
-          payment_status: invoiceData.payment_status || 'pending',
-          due_date: invoiceData.due_date || '',
-          paid_amount: invoiceData.paid_amount || 0,
-          remaining_amount: invoiceData.remaining_amount || 0,
-          discount: invoiceData.discount || 0,
-          notes: invoiceData.notes || '',
-          shipping_cost: invoiceData.shipping_cost || 0,
-          supplier: isSelectQueryError(invoiceData.supplier) ? 
-            { id: '', name: 'Fournisseur inconnu', phone: '', email: '' } : invoiceData.supplier || { id: '', name: 'Fournisseur inconnu', phone: '', email: '' },
-          purchase_order: isSelectQueryError(invoiceData.purchase_order) ? 
-            { id: '', order_number: '', created_at: '' } : invoiceData.purchase_order || { id: '', order_number: '', created_at: '' },
+          payment_status: data.payment_status || 'pending',
+          due_date: data.due_date || '',
+          paid_amount: data.paid_amount || 0,
+          remaining_amount: data.remaining_amount || 0,
+          discount: data.discount || 0,
+          notes: data.notes || '',
+          shipping_cost: data.shipping_cost || 0,
+          supplier: isSelectQueryError(data.supplier) ? 
+            { id: '', name: 'Fournisseur inconnu', phone: '', email: '' } : data.supplier,
+          purchase_order: isSelectQueryError(data.purchase_order) ? 
+            { id: '', order_number: '', created_at: '' } : data.purchase_order,
         } as PurchaseInvoice;
       } catch (error) {
         console.error("Error fetching purchase invoice:", error);
