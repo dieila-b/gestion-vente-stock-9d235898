@@ -62,6 +62,9 @@ export function ProductSelectionModal({
       // Call the provided onSelectProduct function
       await onSelectProduct(product);
       
+      // Clear search query after selection
+      setSearchQuery('');
+      
       // Close the modal after selection
       onClose();
     } catch (error) {

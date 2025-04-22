@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,6 +104,10 @@ export function usePurchaseData(orderId?: string) {
             items: processedItems
           };
           
+          // Update the orderItems state with the items from the purchase order
+          setOrderItems(processedItems);
+          console.log("Setting items from purchase RPC:", processedItems.length);
+          
           return processedOrder;
         }
         
@@ -171,6 +176,10 @@ export function usePurchaseData(orderId?: string) {
 
         console.log("Processed purchase order:", processedOrder);
         console.log("Processed items:", processedItems.length);
+        
+        // Update the orderItems state with the items from the purchase order
+        setOrderItems(processedItems);
+        console.log("Setting items from direct query:", processedItems.length);
 
         return processedOrder;
       } catch (error) {
