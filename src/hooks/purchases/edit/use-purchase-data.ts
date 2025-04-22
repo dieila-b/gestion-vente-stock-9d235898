@@ -16,11 +16,16 @@ export function usePurchaseData(orderId?: string) {
   const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery<PurchaseOrder | null>({
     queryKey: ['purchase', orderId],
     queryFn: async () => {
-      if (!orderId) return null;
+      if (!orderId) {
+        console.log("No order ID provided");
+        return null;
+      }
 
       try {
-        // Try direct query first
-        console.log("Fetching purchase order with ID:", orderId);
+        console.log(`Fetching purchase order with ID: ${orderId}`);
+        
+        // Try direct query first with complete log
+        console.log("Attempting direct query to purchase_orders");
         const { data, error } = await supabase
           .from('purchase_orders')
           .select(`
@@ -41,122 +46,77 @@ export function usePurchaseData(orderId?: string) {
           .maybeSingle(); // Using maybeSingle instead of single to avoid errors when no data found
 
         if (error) {
-          console.error("Error fetching purchase order:", error);
-          toast.error(`Erreur: ${error.message}`);
-          
-          // Fallback to RPC if direct query fails
-          console.log("Attempting to fetch purchase order via RPC...");
-          const { data: rpcDataRaw, error: rpcError } = await supabase.rpc(
-            'get_purchase_order_by_id',
-            { order_id: orderId }
-          );
-
-          if (rpcError) {
-            console.error("RPC fetch error:", rpcError);
-            throw new Error(rpcError.message);
-          }
-
-          if (!rpcDataRaw) {
-            throw new Error("Bon de commande non trouvé");
-          }
-
-          // Parse RPC jsonb data into PurchaseOrder type
-          const rpcData = typeof rpcDataRaw === 'string' ? JSON.parse(rpcDataRaw) : rpcDataRaw;
-
-          // Construct full PurchaseOrder with defaults
-          const safeStatus = (status: any): PurchaseOrder['status'] => {
-            if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
-              return status as PurchaseOrder['status'];
-            }
-            return 'draft';
-          };
-
-          const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
-            if (['pending', 'partial', 'paid'].includes(status)) {
-              return status as PurchaseOrder['payment_status'];
-            }
-            return 'pending';
-          };
-
-          const processedRpcData: PurchaseOrder = {
-            id: rpcData.id,
-            order_number: rpcData.order_number,
-            created_at: rpcData.created_at,
-            updated_at: rpcData.updated_at,
-            status: safeStatus(rpcData.status),
-            supplier_id: rpcData.supplier_id,
-            discount: rpcData.discount || 0,
-            expected_delivery_date: rpcData.expected_delivery_date || '',
-            notes: rpcData.notes || '',
-            logistics_cost: rpcData.logistics_cost || 0,
-            transit_cost: rpcData.transit_cost || 0,
-            tax_rate: rpcData.tax_rate || 0,
-            shipping_cost: rpcData.shipping_cost || 0,
-            subtotal: rpcData.subtotal || 0,
-            tax_amount: rpcData.tax_amount || 0,
-            total_ttc: rpcData.total_ttc || 0,
-            total_amount: rpcData.total_amount || 0,
-            paid_amount: rpcData.paid_amount || 0,
-            payment_status: safePaymentStatus(rpcData.payment_status),
-            warehouse_id: rpcData.warehouse_id || undefined,
-            supplier: {
-              id: rpcData.supplier?.id,
-              name: rpcData.supplier?.name,
-              email: rpcData.supplier?.email,
-              phone: rpcData.supplier?.phone,
-              address: rpcData.supplier?.address,
-              city: ''
-            },
-            warehouse: rpcData.warehouse ? {
-              id: rpcData.warehouse.id,
-              name: rpcData.warehouse.name
-            } : undefined,
-            items: rpcData.items || [],
-            deleted: false
-          };
-
-          console.log("Purchase order fetched via RPC:", processedRpcData);
-          return processedRpcData;
+          console.error("Error in direct query:", error);
+          throw error;
         }
 
         if (!data) {
-          console.log("No purchase order found with ID:", orderId);
-          throw new Error("Bon de commande non trouvé");
+          console.log("No data found with direct query for ID:", orderId);
+          
+          // Try RPC as fallback
+          console.log("Attempting RPC fallback");
+          const { data: rpcData, error: rpcError } = await supabase.rpc(
+            'bypass_select_purchase_order_by_id', 
+            { p_order_id: orderId }
+          );
+          
+          if (rpcError) {
+            console.error("RPC error:", rpcError);
+            throw new Error(`Erreur lors de la récupération du bon de commande: ${rpcError.message}`);
+          }
+          
+          if (!rpcData) {
+            console.error("No data found via RPC");
+            throw new Error("Bon de commande non trouvé");
+          }
+          
+          console.log("RPC data found:", rpcData);
+          return rpcData as PurchaseOrder;
         }
 
-        // We don't try to access data.deleted directly since it might not exist in the database
-        // Instead, we treat all purchase orders as non-deleted by default
-        // Also ensure status is one of the valid enum values
+        console.log("Purchase order found:", data);
+        
+        // Ensure proper typing for enums and defaults
         const safeStatus = (status: any): PurchaseOrder['status'] => {
-          if (['draft', 'pending', 'delivered', 'approved'].includes(status)) {
-            return status as PurchaseOrder['status'];
-          }
-          return 'draft';
+          return ['draft', 'pending', 'delivered', 'approved'].includes(status) 
+            ? status as PurchaseOrder['status'] 
+            : 'draft';
         };
 
         const safePaymentStatus = (status: any): PurchaseOrder['payment_status'] => {
-          if (['pending', 'partial', 'paid'].includes(status)) {
-            return status as PurchaseOrder['payment_status'];
-          }
-          return 'pending';
+          return ['pending', 'partial', 'paid'].includes(status) 
+            ? status as PurchaseOrder['payment_status'] 
+            : 'pending';
         };
 
+        // Ensure we have proper default values for all fields
         const processedData: PurchaseOrder = {
           ...data,
-          deleted: false, // Default value, since column doesn't exist in the database
           status: safeStatus(data.status),
           payment_status: safePaymentStatus(data.payment_status),
-          items: data.items || []
+          items: data.items || [],
+          discount: data.discount || 0,
+          logistics_cost: data.logistics_cost || 0,
+          transit_cost: data.transit_cost || 0,
+          tax_rate: data.tax_rate || 0,
+          shipping_cost: data.shipping_cost || 0,
+          deleted: false
         };
 
-        console.log("Fetched purchase order:", processedData);
         return processedData;
       } catch (error) {
         console.error("Failed to fetch purchase order:", error);
-        toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+        
+        if (error instanceof Error) {
+          toast.error(`Erreur: ${error.message}`);
+        } else {
+          toast.error("Erreur lors de la récupération du bon de commande");
+        }
+        
         throw error;
       }
     },
+    retry: 1,
     enabled: !!orderId
   });
 
@@ -176,7 +136,7 @@ export function usePurchaseData(orderId?: string) {
         transit_cost: purchase.transit_cost,
         logistics_cost: purchase.logistics_cost,
         tax_rate: purchase.tax_rate,
-        deleted: false // Set default value, since column doesn't exist in the database
+        deleted: false
       });
 
       // Set order items
@@ -204,4 +164,3 @@ export function usePurchaseData(orderId?: string) {
     refetch
   };
 }
-

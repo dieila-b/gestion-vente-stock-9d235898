@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PurchaseOrderEditForm } from "@/components/purchases/edit/PurchaseOrderEditForm";
 
 export function useEditPurchaseOrder() {
@@ -15,7 +15,7 @@ export function useEditPurchaseOrder() {
       return;
     }
     
-    console.log("Editing purchase order with direct dialog:", id);
+    console.log("Editing purchase order with ID:", id);
     setSelectedOrderId(id);
     setIsDialogOpen(true);
   };
@@ -32,10 +32,15 @@ export function useEditPurchaseOrder() {
     return (
       <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <PurchaseOrderEditForm 
-            orderId={selectedOrderId || ''} 
-            onClose={handleCloseDialog} 
-          />
+          <DialogTitle>Modifier Bon de Commande</DialogTitle>
+          {selectedOrderId ? (
+            <PurchaseOrderEditForm 
+              orderId={selectedOrderId} 
+              onClose={handleCloseDialog} 
+            />
+          ) : (
+            <div className="p-4 text-center">Identifiant de bon de commande invalide</div>
+          )}
         </DialogContent>
       </Dialog>
     );
