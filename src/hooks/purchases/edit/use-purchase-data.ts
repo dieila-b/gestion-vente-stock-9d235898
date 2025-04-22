@@ -24,58 +24,23 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
-        // Try direct query first with complete log
-        console.log("Attempting direct query to purchase_orders");
-        const { data, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:suppliers(*),
-            items:purchase_order_items(
-              id,
-              product_id,
-              quantity,
-              unit_price,
-              selling_price,
-              total_price,
-              product:catalog(id, name, reference)
-            ),
-            warehouse:warehouses(id, name)
-          `)
-          .eq('id', orderId)
-          .maybeSingle(); // Using maybeSingle instead of single to avoid errors when no data found
-
+        // First try to get the purchase order with items
+        const { data, error } = await supabase.rpc(
+          'get_purchase_order_by_id', 
+          { order_id: orderId }
+        );
+          
         if (error) {
-          console.error("Error in direct query:", error);
-          throw error;
+          console.error("RPC error:", error);
+          throw new Error(`Erreur lors de la récupération du bon de commande: ${error.message}`);
         }
-
+          
         if (!data) {
-          console.log("No data found with direct query for ID:", orderId);
-          
-          // Try RPC as fallback
-          console.log("Attempting RPC fallback");
-          const { data: rpcData, error: rpcError } = await supabase.rpc(
-            'get_purchase_order_by_id', 
-            { order_id: orderId }
-          );
-          
-          if (rpcError) {
-            console.error("RPC error:", rpcError);
-            throw new Error(`Erreur lors de la récupération du bon de commande: ${rpcError.message}`);
-          }
-          
-          if (!rpcData) {
-            console.error("No data found via RPC");
-            throw new Error("Bon de commande non trouvé");
-          }
-          
-          console.log("RPC data found:", rpcData);
-          // Explicitly cast as PurchaseOrder after confirming the structure
-          return rpcData as unknown as PurchaseOrder;
+          console.error("No data found via RPC");
+          throw new Error("Bon de commande non trouvé");
         }
-
-        console.log("Purchase order found:", data);
+          
+        console.log("RPC data found:", data);
         
         // Ensure proper typing for enums and defaults
         const safeStatus = (status: any): PurchaseOrder['status'] => {
@@ -95,7 +60,7 @@ export function usePurchaseData(orderId?: string) {
           ...data,
           status: safeStatus(data.status),
           payment_status: safePaymentStatus(data.payment_status),
-          items: data.items || [],
+          items: Array.isArray(data.items) ? data.items : [],
           discount: data.discount || 0,
           logistics_cost: data.logistics_cost || 0,
           transit_cost: data.transit_cost || 0,
@@ -140,13 +105,39 @@ export function usePurchaseData(orderId?: string) {
         deleted: false
       });
 
-      // Set order items if they exist
+      // If there are items in the purchase, use them
       if (purchase.items && Array.isArray(purchase.items)) {
         console.log("Setting order items:", purchase.items);
         setOrderItems(purchase.items);
       } else {
-        console.log("No order items found or items is not an array:", purchase.items);
-        setOrderItems([]);
+        console.log("No order items found or items is not an array");
+        
+        // If no items are found, fetch them directly
+        const fetchOrderItems = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('purchase_order_items')
+              .select(`
+                *,
+                product:catalog(id, name, reference)
+              `)
+              .eq('purchase_order_id', purchase.id);
+            
+            if (error) throw error;
+            
+            console.log("Fetched items directly:", data);
+            if (data && data.length > 0) {
+              setOrderItems(data);
+            } else {
+              setOrderItems([]);
+            }
+          } catch (err) {
+            console.error("Error fetching order items:", err);
+            setOrderItems([]);
+          }
+        };
+        
+        fetchOrderItems();
       }
     }
   }, [purchase]);

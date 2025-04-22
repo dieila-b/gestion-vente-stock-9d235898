@@ -62,7 +62,7 @@ export function ProductsSection({
   };
 
   // Calcul du total
-  const totalAmount = items.reduce((total, item) => total + item.total_price, 0);
+  const totalAmount = items?.reduce((total, item) => total + (item.total_price || 0), 0) || 0;
 
   return (
     <div className="space-y-4">
@@ -82,7 +82,7 @@ export function ProductsSection({
       </div>
       
       <div className="min-h-[50px] p-4 border border-dashed border-white/20 rounded-md">
-        {items.length === 0 ? (
+        {!items || items.length === 0 ? (
           <p className="text-white/40 text-center">Aucun produit ajouté</p>
         ) : (
           <div className="space-y-4">
@@ -119,7 +119,7 @@ export function ProductsSection({
                   />
                 </div>
                 <div>
-                  <span className="text-white/80">{formatGNF(item.total_price)}</span>
+                  <span className="text-white/80">{formatGNF(item.total_price || 0)}</span>
                 </div>
                 <div className="flex justify-end">
                   {removeItem && (

@@ -1,5 +1,5 @@
 
-import React from 'react'; // Add this import to fix TS2686
+import React from 'react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,16 +26,20 @@ export function usePurchaseEdit(orderId?: string) {
     refetch 
   } = usePurchaseData(orderId);
 
-  // Update delivery and payment status based on purchase data (avoid infinite loop with useEffect)
-  React.useEffect(() => {
-    if (purchase && purchase.status && purchase.status !== deliveryStatus) {
-      setDeliveryStatus(purchase.status as 'pending' | 'delivered');
-    }
+  console.log("usePurchaseEdit initialized with orderItems:", orderItems?.length || 0);
 
-    if (purchase && purchase.payment_status && purchase.payment_status !== paymentStatus) {
-      setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
+  // Update delivery and payment status based on purchase data
+  React.useEffect(() => {
+    if (purchase) {
+      if (purchase.status && purchase.status !== deliveryStatus) {
+        setDeliveryStatus(purchase.status as 'pending' | 'delivered');
+      }
+
+      if (purchase.payment_status && purchase.payment_status !== paymentStatus) {
+        setPaymentStatus(purchase.payment_status as 'pending' | 'partial' | 'paid');
+      }
     }
-  }, [purchase]);
+  }, [purchase, deliveryStatus, paymentStatus]);
 
   // Handle update
   const handleUpdate = async (data: Partial<PurchaseOrder>) => {

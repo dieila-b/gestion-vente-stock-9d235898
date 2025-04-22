@@ -17,6 +17,8 @@ interface PurchaseOrderEditFormProps {
 }
 
 export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFormProps) {
+  console.log("Editing purchase order with ID:", orderId);
+  
   const { 
     purchase, 
     isLoading, 
@@ -33,6 +35,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     updatePaymentStatus,
     orderItems
   } = usePurchaseEdit(orderId);
+  
+  console.log("Order items in form:", orderItems?.length || 0);
   
   const handleSave = async () => {
     const success = await saveChanges();
