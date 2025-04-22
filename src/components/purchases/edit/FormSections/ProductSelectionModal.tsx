@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, X } from "lucide-react";
+import { Search, Plus, X, Loader } from "lucide-react";
 import { CatalogProduct } from "@/types/catalog";
 import { formatGNF } from "@/lib/currency";
 
@@ -13,6 +13,7 @@ interface ProductSelectionModalProps {
   setSearchQuery: (query: string) => void;
   products: CatalogProduct[];
   onSelectProduct: (product: CatalogProduct) => void;
+  isLoading?: boolean;
 }
 
 export function ProductSelectionModal({
@@ -21,9 +22,10 @@ export function ProductSelectionModal({
   searchQuery,
   setSearchQuery,
   products,
-  onSelectProduct
+  onSelectProduct,
+  isLoading = false
 }: ProductSelectionModalProps) {
-  console.log("ProductSelectionModal - Available products:", products.length);
+  console.log("ProductSelectionModal - Available products:", products?.length || 0);
   
   // Filter products based on search query
   const filteredProducts = searchQuery
@@ -33,7 +35,7 @@ export function ProductSelectionModal({
       )
     : products;
   
-  console.log("ProductSelectionModal - Filtered products:", filteredProducts.length);
+  console.log("ProductSelectionModal - Filtered products:", filteredProducts?.length || 0);
 
   if (!isOpen) return null;
 
@@ -48,6 +50,7 @@ export function ProductSelectionModal({
             size="icon"
             onClick={onClose}
             className="text-white/60 hover:text-white"
+            disabled={isLoading}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -65,38 +68,46 @@ export function ProductSelectionModal({
             />
           </div>
           
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto p-1">
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-8 text-white/60">
-                Aucun produit trouvé
-              </div>
-            ) : (
-              filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors"
-                >
-                  <div>
-                    <p className="font-medium text-white">{product.name}</p>
-                    <div className="flex text-sm text-white/60 space-x-4">
-                      <span>Ref: {product.reference || "N/A"}</span>
-                      <span>Prix: {formatGNF(product.purchase_price || 0)}</span>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onSelectProduct(product)}
-                    className="neo-blur"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter
-                  </Button>
+          {isLoading ? (
+            <div className="flex justify-center items-center p-8">
+              <Loader className="h-6 w-6 animate-spin text-white/60 mr-2" />
+              <span className="text-white/60">Chargement des produits...</span>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto p-1">
+              {filteredProducts?.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  {products?.length === 0 ? "Aucun produit disponible" : "Aucun produit trouvé"}
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium text-white">{product.name}</p>
+                      <div className="flex text-sm text-white/60 space-x-4">
+                        <span>Ref: {product.reference || "N/A"}</span>
+                        <span>Prix: {formatGNF(product.purchase_price || 0)}</span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSelectProduct(product)}
+                      className="neo-blur"
+                      disabled={isLoading}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

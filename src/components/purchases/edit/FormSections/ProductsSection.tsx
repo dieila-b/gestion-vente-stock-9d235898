@@ -4,9 +4,9 @@ import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from '@/integrations/supabase/client';
-import { useState } from "react";
-import { ProductSelectionModal } from "@/components/purchases/edit/FormSections/ProductSelectionModal";
-import { Plus, Trash } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ProductSelectionModal } from "./ProductSelectionModal";
+import { Plus, Trash, Loader } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatGNF } from "@/lib/currency";
 
@@ -27,11 +27,12 @@ export function ProductsSection({
 }: ProductsSectionProps) {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   
-  console.log("Product section rendering with items:", items.length);
+  console.log("Product section rendering with items:", items?.length || 0);
 
   // Fetch available products
-  const { data: products = [] } = useQuery<CatalogProduct[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,35 +41,69 @@ export function ProductsSection({
         .order('name');
         
       if (error) throw error;
+      console.log("Fetched catalog products:", data?.length || 0);
       return data as CatalogProduct[];
     }
   });
+
+  // Handle product addition with loading state
+  const handleAddProduct = async (product: CatalogProduct) => {
+    setIsLoading(true);
+    try {
+      const success = await addItem(product);
+      if (success) {
+        setIsProductModalOpen(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle item removal with loading state
+  const handleRemoveItem = async (itemId: string) => {
+    setIsLoading(true);
+    try {
+      await removeItem(itemId);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-white/70">Articles ({items.length})</h3>
+          <h3 className="text-sm font-medium text-white/70">Articles ({items?.length || 0})</h3>
         </div>
         <Button 
           onClick={() => setIsProductModalOpen(true)}
           variant="outline"
           className="neo-blur"
+          disabled={isLoading}
         >
-          <Plus className="w-4 h-4 mr-2" />
+          {isLoading ? (
+            <Loader className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4 mr-2" />
+          )}
           Ajouter un produit
         </Button>
       </div>
 
-      {items.length === 0 ? (
+      {items?.length === 0 ? (
         <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
           <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
           <Button 
             onClick={() => setIsProductModalOpen(true)}
             variant="outline"
             className="mt-4 neo-blur"
+            disabled={isLoading}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            {isLoading ? (
+              <Loader className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             Ajouter un produit
           </Button>
         </div>
@@ -117,10 +152,15 @@ export function ProductsSection({
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => handleRemoveItem(item.id)}
                   className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                  disabled={isLoading}
                 >
-                  <Trash className="h-4 w-4" />
+                  {isLoading ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -134,10 +174,8 @@ export function ProductsSection({
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         products={products}
-        onSelectProduct={(product) => {
-          addItem(product);
-          setIsProductModalOpen(false);
-        }}
+        onSelectProduct={handleAddProduct}
+        isLoading={productsLoading || isLoading}
       />
     </div>
   );

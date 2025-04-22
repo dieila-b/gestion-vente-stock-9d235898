@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { updateOrderTotal } from './use-purchase-calculations';
 import { PurchaseOrderItem } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Hook for managing purchase order item operations
@@ -18,7 +19,7 @@ export function usePurchaseItems(
 
   // Update order item quantity
   const updateItemQuantity = async (itemId: string, newQuantity: number) => {
-    if (!orderId) return false;
+    if (!orderId || !itemId) return false;
     
     try {
       // First, get the current item to calculate new total price
@@ -62,7 +63,7 @@ export function usePurchaseItems(
 
   // Update item price
   const updateItemPrice = async (itemId: string, newPrice: number) => {
-    if (!orderId) return false;
+    if (!orderId || !itemId) return false;
     
     try {
       // Get the current item to calculate new total price
@@ -106,7 +107,7 @@ export function usePurchaseItems(
 
   // Remove item from order
   const removeItem = async (itemId: string) => {
-    if (!orderId) return false;
+    if (!orderId || !itemId) return false;
     
     try {
       // Delete the item from the database
@@ -134,7 +135,11 @@ export function usePurchaseItems(
 
   // Add new item to order
   const addItem = async (product: CatalogProduct) => {
-    if (!orderId) return false;
+    if (!orderId || !product || !product.id) {
+      console.error("Missing required data:", { orderId, productId: product?.id });
+      return false;
+    }
+    
     console.log("Adding product to order:", product);
     
     try {
