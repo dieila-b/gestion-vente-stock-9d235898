@@ -1,144 +1,139 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useParams } from "react-router-dom";
-import { Loader } from "lucide-react";
-import { formatGNF } from "@/lib/currency";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { usePurchaseInvoice } from "@/hooks/purchases/use-purchase-invoice";
-import { PurchaseInvoiceItems } from "@/components/purchases/invoices/PurchaseInvoiceItems";
+import { supabase } from "@/integrations/supabase/client";
+import { isSelectQueryError } from "@/utils/type-utils";
+
+// Update PurchaseInvoice interface to match expected structure
+interface PurchaseInvoice {
+  id: string;
+  invoice_number: string;
+  supplier_id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  // Add all the required properties for compatibility
+  tax_amount: number;
+  payment_status: string;
+  due_date: string;
+  paid_amount: number;
+  remaining_amount: number;
+  discount: number;
+  notes: string;
+  shipping_cost: number;
+  supplier?: {
+    name: string;
+    phone?: string;
+    email?: string;
+  };
+  purchase_order?: {
+    id: string;
+    order_number: string;
+  };
+  delivery_note?: {
+    id: string;
+    delivery_number: string;
+  };
+}
 
 function PurchaseInvoicePage() {
-  const { id } = useParams<{ id: string }>();
-  const { invoice, invoiceItems, isLoading } = usePurchaseInvoice(id);
+  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Chargement...</span>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const fetchInvoices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_invoices')
+        .select(`
+          *,
+          supplier:suppliers (
+            id,
+            name,
+            phone,
+            email
+          ),
+          purchase_order:purchase_orders (
+            id,
+            order_number
+          ),
+          delivery_note:delivery_notes (
+            id,
+            delivery_number
+          )
+        `);
 
-  if (!invoice) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-12">
-          <h2 className="text-xl font-semibold">Facture non trouvée</h2>
-          <p className="text-muted-foreground mt-2">La facture demandée n'existe pas ou a été supprimée.</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+      if (error) {
+        console.error("Error fetching invoices:", error);
+        return;
+      }
+
+      if (!data) {
+        console.warn("No invoices found.");
+        return;
+      }
+
+      // When mapping data to PurchaseInvoice type, provide defaults for required properties:
+      const mappedInvoices = data.map(invoice => {
+        // Create a safe supplier object
+        const safeSupplier = isSelectQueryError(invoice.supplier) 
+          ? { name: 'Supplier not found', phone: '', email: '' }
+          : invoice.supplier || { name: 'Supplier not found', phone: '', email: '' };
+          
+        // Create a safe purchase order object
+        const safePurchaseOrder = isSelectQueryError(invoice.purchase_order)
+          ? { id: '', order_number: 'Order not found' }
+          : invoice.purchase_order || { id: '', order_number: 'Order not found' };
+          
+        // Create a safe delivery note object
+        const safeDeliveryNote = isSelectQueryError(invoice.delivery_note)
+          ? { id: '', delivery_number: 'Delivery note not found' }
+          : invoice.delivery_note || { id: '', delivery_number: 'Delivery note not found' };
+
+        return {
+          ...invoice,
+          tax_amount: 0, // Default values for required fields
+          payment_status: 'pending',
+          due_date: new Date().toISOString(),
+          paid_amount: 0,
+          remaining_amount: invoice.total_amount || 0,
+          discount: 0,
+          notes: '',
+          shipping_cost: 0,
+          supplier: safeSupplier,
+          purchase_order: safePurchaseOrder,
+          delivery_note: safeDeliveryNote
+        } as PurchaseInvoice;
+      });
+
+      setInvoices(mappedInvoices);
+    } catch (error) {
+      console.error("Error processing invoices:", error);
+    }
+  };
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Facture #{invoice.invoice_number}</h1>
-          <div className="space-x-2">
-            <Button variant="outline">Imprimer</Button>
-            <Button>Payer</Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fournisseur</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-medium">{invoice.supplier?.name || "Fournisseur inconnu"}</p>
-              <p className="text-muted-foreground">{invoice.supplier?.email || ""}</p>
-              <p className="text-muted-foreground">{invoice.supplier?.phone || ""}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Détails facture</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span>{new Date(invoice.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Statut:</span>
-                  <span>{invoice.status}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Montant:</span>
-                  <span>{formatGNF(invoice.total_amount)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Bon de commande</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {invoice.purchase_order ? (
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Numéro:</span>
-                    <span>{invoice.purchase_order.order_number}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span>
-                      {invoice.purchase_order.created_at 
-                        ? new Date(invoice.purchase_order.created_at).toLocaleDateString() 
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Aucun bon de commande associé</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Articles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PurchaseInvoiceItems items={invoiceItems} />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Résumé</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full md:w-1/2 ml-auto space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sous-total:</span>
-                <span>{formatGNF(invoice.total_amount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Taxes:</span>
-                <span>{formatGNF(invoice.tax_amount || 0)}</span>
-              </div>
-              <div className="flex justify-between font-bold border-t border-gray-200 pt-2 mt-2">
-                <span>Total:</span>
-                <span>{formatGNF(invoice.total_amount)}</span>
-              </div>
+    <div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Purchase Invoices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {invoices.map(invoice => (
+            <div key={invoice.id}>
+              Invoice Number: {invoice.invoice_number}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

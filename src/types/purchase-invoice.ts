@@ -7,7 +7,7 @@ export interface PurchaseInvoice {
   status: string;
   created_at: string;
   updated_at: string;
-  tax_amount?: number; // Make tax_amount optional since it might not exist in the database
+  tax_amount: number;
   payment_status: string;
   due_date: string;
   paid_amount: number;
@@ -15,8 +15,7 @@ export interface PurchaseInvoice {
   discount: number;
   notes: string;
   shipping_cost: number;
-  supplier?: {
-    id?: string;
+  supplier: {
     name: string;
     phone?: string;
     email?: string;
@@ -24,7 +23,6 @@ export interface PurchaseInvoice {
   purchase_order?: {
     id?: string;
     order_number?: string;
-    created_at?: string;
   };
   delivery_note?: {
     id?: string;
