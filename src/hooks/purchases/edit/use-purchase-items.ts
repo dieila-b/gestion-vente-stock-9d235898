@@ -133,7 +133,7 @@ export function usePurchaseItems(
     }
   };
 
-  // Add new item to order - VERSION CORRIGÉE AVEC BYPASS RPC
+  // Add new item to order - CORRECTED IMPLEMENTATION
   const addItem = async (product: CatalogProduct) => {
     if (!orderId) {
       console.error("Missing orderId in addItem");
@@ -150,7 +150,7 @@ export function usePurchaseItems(
     console.log("Adding product to order:", { orderId, productId: product.id, productName: product.name });
     
     try {
-      // Create a new item ID
+      // Generate a unique ID for the new item
       const newItemId = uuidv4();
       
       // Prepare item data
@@ -158,34 +158,7 @@ export function usePurchaseItems(
       const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
-      // Create the item data array for the RPC function
-      const itemData = [{
-        id: newItemId,
-        purchase_order_id: orderId,
-        product_id: product.id,
-        quantity: quantity,
-        unit_price: unitPrice,
-        selling_price: product.price || 0,
-        total_price: totalPrice,
-        created_at: new Date().toISOString()
-      }];
-      
-      console.log("Inserting new item using RPC:", itemData);
-      
-      // Utiliser la fonction RPC qui contourne les politiques RLS
-      const { data, error } = await supabase
-        .rpc('bypass_insert_purchase_order_items', {
-          items_data: itemData
-        });
-      
-      if (error) {
-        console.error("Error inserting item with RPC:", error);
-        throw error;
-      }
-      
-      console.log("RPC insert result:", data);
-      
-      // Create an item with product info for UI display
+      // Create a new item locally first for immediate UI update
       const newItem: PurchaseOrderItem = {
         id: newItemId,
         purchase_order_id: orderId,
@@ -200,9 +173,42 @@ export function usePurchaseItems(
         }
       };
       
-      // Update local state IMMEDIATELY instead of waiting for refetch
-      const updatedItems = [...(orderItems || []), newItem];
+      console.log("Created local item:", newItem);
+      
+      // Update local state IMMEDIATELY for responsive UI
+      const updatedItems = [...orderItems, newItem];
       setOrderItems(updatedItems);
+      
+      console.log("Updated local items array, now has", updatedItems.length, "items");
+      
+      // Create the item data array for the RPC function
+      const itemData = [{
+        id: newItemId,
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: quantity,
+        unit_price: unitPrice,
+        selling_price: product.price || 0,
+        total_price: totalPrice,
+        created_at: new Date().toISOString()
+      }];
+      
+      console.log("Sending item data to RPC:", itemData);
+      
+      // Send to database using RPC to bypass RLS
+      const { data, error } = await supabase
+        .rpc('bypass_insert_purchase_order_items', {
+          items_data: itemData
+        });
+      
+      if (error) {
+        console.error("Error inserting item with RPC:", error);
+        // Revert local state if DB operation fails
+        setOrderItems(orderItems);
+        throw error;
+      }
+      
+      console.log("RPC insert result:", data);
       
       // Update order total
       await updateOrderTotal(orderId, null, refetch);

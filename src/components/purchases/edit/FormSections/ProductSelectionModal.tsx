@@ -122,6 +122,7 @@ export function ProductSelectionModal({
                   <div
                     key={product.id}
                     className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
+                    onClick={() => handleSelectProduct(product)}
                   >
                     <div>
                       <p className="font-medium text-white">{product.name}</p>
@@ -134,7 +135,10 @@ export function ProductSelectionModal({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSelectProduct(product)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectProduct(product);
+                      }}
                       className="neo-blur"
                       disabled={selectionInProgress && selectedProductId === product.id}
                     >
