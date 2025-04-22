@@ -19,53 +19,39 @@ export default function PurchaseOrdersPage() {
     handleApprove,
     handleDelete,
     handleEdit,
-    EditDialog,
-    refreshOrders
+    EditDialog
   } = usePurchaseOrders();
   
   const { printPurchaseOrder } = usePurchasePrint();
 
-  // Traitement et filtrage des commandes
+  // Process and filter orders
   useEffect(() => {
-    console.log("Traitement des bons de commande bruts:", rawOrders?.length || 0);
+    console.log("Raw orders available for processing:", rawOrders?.length || 0);
     
     if (!rawOrders || rawOrders.length === 0) {
-      console.log("Aucune commande à traiter");
+      console.log("No orders to process");
       setFilteredOrders([]);
       return;
     }
     
     try {
-      // Appliquer le filtre de recherche
+      // Apply search filter
       const filtered = rawOrders.filter(order => 
         order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       
-      console.log("Commandes filtrées:", filtered.length);
-      
-      // Vérification des articles
-      filtered.forEach(order => {
-        console.log(`Commande ${order.order_number} contient ${order.items?.length || 0} articles`);
-      });
-      
+      console.log("Filtered orders:", filtered.length);
       setFilteredOrders(filtered);
     } catch (error) {
-      console.error("Erreur lors du traitement des commandes:", error);
+      console.error("Error processing orders:", error);
       toast.error("Erreur lors du traitement des bons de commande");
       setFilteredOrders([]);
     }
   }, [rawOrders, searchQuery]);
 
-  // Rafraîchir les données au chargement initial
-  useEffect(() => {
-    console.log("Chargement initial - rafraîchissement des bons de commande");
-    refreshOrders();
-  }, [refreshOrders]);
-
-  // Gestion de l'impression
+  // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
-    console.log("Impression de la commande avec articles:", order.items?.length || 0);
     printPurchaseOrder(order);
   };
 
@@ -90,7 +76,7 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
         
-        {/* Rendu du composant EditDialog */}
+        {/* Render the EditDialog component */}
         <EditDialog />
       </div>
     </DashboardLayout>
