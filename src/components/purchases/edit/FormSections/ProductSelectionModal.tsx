@@ -27,6 +27,9 @@ export function ProductSelectionModal({
 }: ProductSelectionModalProps) {
   const [filteredProducts, setFilteredProducts] = useState<CatalogProduct[]>([]);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  
+  console.log("ProductSelectionModal rendered with products count:", products?.length, "isOpen:", isOpen);
   
   // Filter products based on search query when products or searchQuery changes
   useEffect(() => {
@@ -35,12 +38,13 @@ export function ProductSelectionModal({
       return;
     }
     
-    console.log("ProductSelectionModal - Available products:", products.length);
+    console.log("ProductSelectionModal - Filtering products with query:", searchQuery);
     
-    if (searchQuery) {
+    if (searchQuery && searchQuery.trim() !== '') {
+      const lowercaseQuery = searchQuery.toLowerCase().trim();
       const filtered = products.filter(product =>
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
+        (product.name?.toLowerCase().includes(lowercaseQuery)) ||
+        (product.reference?.toLowerCase().includes(lowercaseQuery))
       );
       setFilteredProducts(filtered);
       console.log("ProductSelectionModal - Filtered products:", filtered.length);
@@ -56,12 +60,15 @@ export function ProductSelectionModal({
     
     try {
       setIsSelecting(true);
-      console.log("Selecting product:", product.name);
+      setSelectedProductId(product.id);
+      console.log("Selecting product:", product);
       await onSelectProduct(product);
+      console.log("Product selection completed");
     } catch (error) {
       console.error("Error selecting product:", error);
     } finally {
       setIsSelecting(false);
+      setSelectedProductId(null);
     }
   };
 
@@ -126,9 +133,9 @@ export function ProductSelectionModal({
                       size="sm"
                       onClick={() => handleSelectProduct(product)}
                       className="neo-blur"
-                      disabled={isSelecting}
+                      disabled={isSelecting && selectedProductId === product.id}
                     >
-                      {isSelecting ? (
+                      {isSelecting && selectedProductId === product.id ? (
                         <Loader className="h-4 w-4 animate-spin mr-2" />
                       ) : (
                         <Plus className="h-4 w-4 mr-2" />

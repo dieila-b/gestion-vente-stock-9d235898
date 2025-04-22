@@ -135,43 +135,59 @@ export function usePurchaseItems(
 
   // Add new item to order
   const addItem = async (product: CatalogProduct) => {
-    if (!orderId || !product || !product.id) {
-      console.error("Missing required data:", { orderId, productId: product?.id });
+    // Input validation
+    if (!orderId) {
+      console.error("Missing orderId in addItem");
+      toast.error("Erreur: ID de commande manquant");
       return false;
     }
     
-    console.log("Adding product to order:", product);
+    if (!product || !product.id) {
+      console.error("Invalid product in addItem:", product);
+      toast.error("Erreur: Produit invalide");
+      return false;
+    }
+    
+    console.log("Adding product to order:", { orderId, productId: product.id, productName: product.name });
     
     try {
-      // Create a unique ID for the new item
+      // Generate a new unique ID for the item
       const newItemId = uuidv4();
+      console.log("Generated new item ID:", newItemId);
       
-      // Create item data
+      // Prepare the item data
+      const unitPrice = product.purchase_price || 0;
+      const quantity = 1;
+      const totalPrice = quantity * unitPrice;
+      
       const itemData = {
         id: newItemId,
         purchase_order_id: orderId,
         product_id: product.id,
-        quantity: 1,
-        unit_price: product.purchase_price || 0,
+        quantity: quantity,
+        unit_price: unitPrice,
         selling_price: product.price || 0,
-        total_price: product.purchase_price || 0
+        total_price: totalPrice,
+        created_at: new Date().toISOString()
       };
       
-      console.log("Item data to insert:", itemData);
+      console.log("Inserting new item data:", itemData);
       
-      // Add the item to the database
-      const { error } = await supabase
+      // Insert the item into the database
+      const { data, error } = await supabase
         .from('purchase_order_items')
-        .insert(itemData);
+        .insert(itemData)
+        .select('*')
+        .single();
 
       if (error) {
         console.error("Error inserting item:", error);
         throw error;
       }
       
-      console.log("Item successfully added to the database");
+      console.log("Item successfully added to database:", data);
       
-      // Create a full item object with product info for the UI
+      // Create a new item object for the UI with product info
       const newItem: PurchaseOrderItem = {
         ...itemData,
         product: {
@@ -180,16 +196,17 @@ export function usePurchaseItems(
         }
       };
       
-      // Update local state with the new item
-      setOrderItems([...orderItems, newItem]);
+      // Update the local state
+      const newItems = [...orderItems, newItem];
+      setOrderItems(newItems);
       
       // Update the order total
       await updateOrderTotal(orderId, null, refetch);
       
-      toast.success('Article ajouté avec succès');
+      toast.success(`Produit "${product.name}" ajouté avec succès`);
       return true;
     } catch (error: any) {
-      console.error("Error adding product:", error);
+      console.error("Failed to add product:", error);
       toast.error(`Erreur: ${error.message}`);
       return false;
     }

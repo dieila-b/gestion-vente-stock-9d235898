@@ -30,26 +30,33 @@ export function ProductsSection({
   const [isLoading, setIsLoading] = useState(false);
   const [actionItemId, setActionItemId] = useState<string | null>(null);
   
-  console.log("Product section rendering with items:", items?.length || 0);
+  console.log("ProductsSection rendering with items:", items?.length || 0);
 
   // Fetch available products
   const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       console.log("Fetching catalog products...");
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('*')
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('catalog')
+          .select('*')
+          .order('name');
+          
+        if (error) {
+          console.error("Error fetching products:", error);
+          throw error;
+        }
         
-      if (error) {
-        console.error("Error fetching products:", error);
-        throw error;
+        console.log("Fetched catalog products:", data?.length || 0);
+        return data as CatalogProduct[];
+      } catch (e) {
+        console.error("Exception fetching products:", e);
+        throw e;
       }
-      
-      console.log("Fetched catalog products:", data?.length || 0);
-      return data as CatalogProduct[];
-    }
+    },
+    staleTime: 60000, // 1 minute
+    retry: 2
   });
 
   useEffect(() => {
@@ -62,11 +69,14 @@ export function ProductsSection({
   const handleAddProduct = async (product: CatalogProduct) => {
     setIsLoading(true);
     try {
-      console.log("Adding product:", product);
+      console.log("Adding product to order:", product);
       const success = await addItem(product);
       if (success) {
         setIsProductModalOpen(false);
         setSearchQuery("");
+        console.log("Product added successfully");
+      } else {
+        console.error("Failed to add product");
       }
     } catch (error) {
       console.error("Error adding product:", error);
@@ -87,6 +97,22 @@ export function ProductsSection({
     }
   };
 
+  // Handle quantity change with debouncing
+  const handleQuantityChange = async (itemId: string, value: string) => {
+    const quantity = parseInt(value);
+    if (!isNaN(quantity) && quantity > 0) {
+      await updateItemQuantity(itemId, quantity);
+    }
+  };
+
+  // Handle price change with debouncing
+  const handlePriceChange = async (itemId: string, value: string) => {
+    const price = parseInt(value);
+    if (!isNaN(price) && price >= 0) {
+      await updateItemPrice(itemId, price);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -97,9 +123,9 @@ export function ProductsSection({
           onClick={() => setIsProductModalOpen(true)}
           variant="outline"
           className="neo-blur"
-          disabled={isLoading}
+          disabled={isLoading || productsLoading}
         >
-          {isLoading && !actionItemId ? (
+          {(isLoading && !actionItemId) || productsLoading ? (
             <Loader className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Plus className="w-4 h-4 mr-2" />
@@ -115,9 +141,9 @@ export function ProductsSection({
             onClick={() => setIsProductModalOpen(true)}
             variant="outline"
             className="mt-4 neo-blur"
-            disabled={isLoading}
+            disabled={isLoading || productsLoading}
           >
-            {isLoading ? (
+            {isLoading || productsLoading ? (
               <Loader className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Plus className="w-4 h-4 mr-2" />
@@ -147,7 +173,7 @@ export function ProductsSection({
                   type="number"
                   value={item.quantity}
                   min={1}
-                  onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 1)}
+                  onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                   className="text-center neo-blur"
                 />
               </div>
@@ -157,7 +183,7 @@ export function ProductsSection({
                   type="number"
                   value={item.unit_price}
                   min={0}
-                  onChange={(e) => updateItemPrice(item.id, parseInt(e.target.value) || 0)}
+                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
                   className="text-center neo-blur"
                 />
               </div>
