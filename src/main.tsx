@@ -2,7 +2,6 @@
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx'
 import './index.css'
 import { Toaster } from "@/components/ui/toaster";
@@ -19,10 +18,8 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
-        <App />
-        <Toaster />
-      </BrowserRouter>
+      <App />
+      <Toaster />
     </TooltipProvider>
   </QueryClientProvider>
 );

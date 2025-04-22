@@ -7,7 +7,7 @@ export interface PurchaseInvoice {
   status: string;
   created_at: string;
   updated_at: string;
-  tax_amount: number;
+  tax_amount?: number; // Make tax_amount optional since it might not exist in the database
   payment_status: string;
   due_date: string;
   paid_amount: number;

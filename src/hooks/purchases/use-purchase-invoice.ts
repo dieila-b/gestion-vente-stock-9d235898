@@ -26,7 +26,6 @@ export function usePurchaseInvoice(invoiceId?: string) {
           status,
           created_at,
           updated_at,
-          tax_amount,
           payment_status,
           due_date,
           paid_amount,
@@ -45,7 +44,26 @@ export function usePurchaseInvoice(invoiceId?: string) {
         throw error;
       }
       
-      return data as PurchaseInvoice;
+      // Return the data with default values for any missing fields
+      return {
+        id: data.id,
+        invoice_number: data.invoice_number,
+        supplier_id: data.supplier_id,
+        total_amount: data.total_amount,
+        status: data.status,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        tax_amount: 0, // Default value since this column doesn't exist
+        payment_status: data.payment_status,
+        due_date: data.due_date,
+        paid_amount: data.paid_amount || 0,
+        remaining_amount: data.remaining_amount || 0,
+        discount: data.discount || 0,
+        notes: data.notes || '',
+        shipping_cost: data.shipping_cost || 0,
+        supplier: data.supplier,
+        purchase_order: data.purchase_order,
+      } as PurchaseInvoice;
     },
     enabled: !!invoiceId
   });
