@@ -29,35 +29,32 @@ export function usePurchaseOrdersQuery() {
         console.log(`Found ${ordersData.length} purchase orders`);
         
         // Convertir les données JSON en objets PurchaseOrder
-        const formattedOrdersPromises = ordersData.map((orderData: any) => {
-          // Récupérer les éléments du bon de commande
-          // Convert PromiseLike to full Promise to ensure .catch is available
-          return Promise.resolve(
-            supabase
-              .rpc('get_purchase_order_items', { order_id: orderData.id })
-          )
-            .then(({ data: itemsData, error: itemsError }) => {
-              if (itemsError) {
-                console.error(`Error fetching items for order ${orderData.id}:`, itemsError);
-                return {
-                  ...orderData,
-                  items: []
-                };
-              }
-              
-              return {
-                ...orderData,
-                items: itemsData || []
-              };
-            })
-            .catch(error => {
-              // Handle promise rejection
-              console.error(`Unexpected error fetching items for order ${orderData.id}:`, error);
+        const formattedOrdersPromises = ordersData.map(async (orderData: any) => {
+          try {
+            // Récupérer les éléments du bon de commande en utilisant async/await plutôt que .then/.catch
+            const { data: itemsData, error: itemsError } = await supabase
+              .rpc('get_purchase_order_items', { order_id: orderData.id });
+            
+            if (itemsError) {
+              console.error(`Error fetching items for order ${orderData.id}:`, itemsError);
               return {
                 ...orderData,
                 items: []
               };
-            });
+            }
+            
+            return {
+              ...orderData,
+              items: itemsData || []
+            };
+          } catch (error) {
+            // Gérer toute autre erreur inattendue
+            console.error(`Unexpected error fetching items for order ${orderData.id}:`, error);
+            return {
+              ...orderData,
+              items: []
+            };
+          }
         });
         
         // Attendre que toutes les promesses soient résolues

@@ -42,13 +42,12 @@ export function usePurchaseOrders() {
     return result;
   };
 
-  // Handle the approve function properly with improved error handling
+  // Handle the approve function with improved error handling
   const handleApprove = async (id: string): Promise<void> => {
     try {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      // Call the approve function from the hook and await it properly
       await approveOrderFn(id);
       
       console.log("Approval completed for:", id);
