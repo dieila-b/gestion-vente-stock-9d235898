@@ -19,10 +19,8 @@ export function useEditPurchaseOrder() {
     
     console.log("Editing purchase order with ID:", id);
     setSelectedOrderId(id);
-    // Force un delay de 0ms pour s'assurer que l'état est mis à jour
-    setTimeout(() => {
-      setIsDialogOpen(true);
-    }, 0);
+    // Set the dialog to open immediately
+    setIsDialogOpen(true);
   };
   
   const handleCloseDialog = useCallback(() => {

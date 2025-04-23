@@ -50,8 +50,7 @@ export function useUpdatePurchaseOrder() {
         }
 
         // Check if data exists and has content
-        // Fixed: TypeScript error by checking if data is not an array with data.length
-        if (!data || Array.isArray(data) && data.length === 0) {
+        if (!data || (Array.isArray(data) && data.length === 0)) {
           console.warn("Update succeeded but no data returned, fetching record manually");
           
           const { data: fetchedData, error: fetchError } = await supabase

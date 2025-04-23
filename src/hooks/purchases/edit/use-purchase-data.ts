@@ -107,7 +107,6 @@ export function usePurchaseData(orderId?: string) {
           });
           
           console.log(`Processed ${processedItems.length} items from order data:`, processedItems);
-          setOrderItems(processedItems);
         } else {
           console.warn("No items array in order data, or invalid format");
         }
@@ -160,6 +159,9 @@ export function usePurchaseData(orderId?: string) {
           items: processedItems
         };
         
+        // Set the order items immediately when data is received
+        setOrderItems(processedItems);
+        
         return purchaseOrder;
       } catch (error) {
         console.error("Error fetching purchase order:", error);
@@ -189,7 +191,7 @@ export function usePurchaseData(orderId?: string) {
         paid_amount: purchase.paid_amount
       });
       
-      // Ensure the orderItems are updated from purchase data if available
+      // Also ensure the orderItems are updated from purchase data if available
       if (purchase.items && purchase.items.length > 0) {
         console.log("Setting order items from purchase data:", purchase.items.length);
         setOrderItems(purchase.items);
