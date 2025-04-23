@@ -28,10 +28,10 @@ export function usePurchaseOrdersQuery() {
         
         console.log(`Found ${ordersData.length} purchase orders`);
         
-        // Convertir les données JSON en objets PurchaseOrder
+        // Convertir les données JSON en objets PurchaseOrder en utilisant async/await
         const formattedOrdersPromises = ordersData.map(async (orderData: any) => {
           try {
-            // Récupérer les éléments du bon de commande en utilisant async/await plutôt que .then/.catch
+            // Récupérer les éléments du bon de commande
             const { data: itemsData, error: itemsError } = await supabase
               .rpc('get_purchase_order_items', { order_id: orderData.id });
             
@@ -48,7 +48,6 @@ export function usePurchaseOrdersQuery() {
               items: itemsData || []
             };
           } catch (error) {
-            // Gérer toute autre erreur inattendue
             console.error(`Unexpected error fetching items for order ${orderData.id}:`, error);
             return {
               ...orderData,
@@ -58,15 +57,9 @@ export function usePurchaseOrdersQuery() {
         });
         
         // Attendre que toutes les promesses soient résolues
-        try {
-          const ordersWithItems = await Promise.all(formattedOrdersPromises);
-          console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
-          return ordersWithItems as PurchaseOrder[];
-        } catch (error) {
-          console.error("Error resolving order items promises:", error);
-          // Retourner les commandes sans articles en cas d'erreur
-          return ordersData.map((order: any) => ({ ...order, items: [] })) as PurchaseOrder[];
-        }
+        const ordersWithItems = await Promise.all(formattedOrdersPromises);
+        console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
+        return ordersWithItems as PurchaseOrder[];
       } catch (error) {
         console.error("Error in usePurchaseOrdersQuery:", error);
         toast.error("Impossible de charger les bons de commande");
