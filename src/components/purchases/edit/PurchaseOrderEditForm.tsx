@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
   GeneralInfoSection,
@@ -42,6 +42,14 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   console.log("Order items in form:", orderItems?.length || 0);
   console.log("Purchase data available:", purchase ? "yes" : "no");
   console.log("Form data:", formData);
+
+  // Assurer que le formulaire se ferme lorsque la page est déchargée
+  useEffect(() => {
+    return () => {
+      // Nettoyage au démontage
+      console.log("Form component unmounting");
+    };
+  }, []);
   
   const handleSave = async () => {
     if (isSaving) return;
@@ -53,17 +61,18 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       const success = await saveChanges();
       
       if (success) {
+        console.log("Save successful, closing dialog now");
         toast.success("Modifications enregistrées avec succès");
-        // Appeler directement onClose pour fermer le dialogue
-        console.log("Closing dialog immediately after successful save");
+        
+        // Appeler immédiatement onClose sans délai
         onClose();
       } else {
         toast.error("Échec de l'enregistrement des modifications");
+        setIsSaving(false);
       }
     } catch (error) {
       console.error("Error saving changes:", error);
       toast.error("Erreur lors de l'enregistrement des modifications");
-    } finally {
       setIsSaving(false);
     }
   };

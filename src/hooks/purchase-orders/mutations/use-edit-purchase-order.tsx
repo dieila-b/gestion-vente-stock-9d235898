@@ -23,15 +23,10 @@ export function useEditPurchaseOrder() {
   };
   
   const handleCloseDialog = () => {
-    console.log("Closing edit dialog");
-    // Ferme d'abord le dialogue pour déclencher l'animation
+    console.log("Closing edit dialog immediately");
+    // Ferme simplement le dialogue sans délai
     setIsDialogOpen(false);
-    
-    // Réinitialise l'ID de la commande sélectionnée après un court délai
-    // pour permettre à l'animation de dialogue de se terminer
-    setTimeout(() => {
-      setSelectedOrderId(null);
-    }, 200);
+    setSelectedOrderId(null);
   };
   
   const EditDialog = () => {
