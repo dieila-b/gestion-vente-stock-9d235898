@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Loader } from "lucide-react";
+import { Search, Plus, Loader, X } from "lucide-react";
 import { CatalogProduct } from "@/types/catalog";
 import { v4 as uuidv4 } from "uuid";
 
@@ -50,12 +50,17 @@ export function ProductSelectionModal({
   }, [searchQuery, products]);
   
   const handleAddEmptyProduct = () => {
+    // Create a complete CatalogProduct object with all required properties
     const emptyProduct: CatalogProduct = {
       id: uuidv4(),
       name: "Produit manuel",
+      description: "",
       price: 0,
       purchase_price: 0,
-      stock: 0
+      category: "",
+      stock: 0,
+      reference: "MANUAL-" + Date.now(),
+      created_at: new Date().toISOString()
     };
     
     onSelectProduct(emptyProduct);
@@ -146,6 +151,3 @@ export function ProductSelectionModal({
     </Dialog>
   );
 }
-
-// Importation manquante du composant X
-import { X } from "lucide-react";
