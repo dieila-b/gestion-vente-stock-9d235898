@@ -14,9 +14,9 @@ import { toast } from "sonner";
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
   isLoading: boolean;
-  onApprove: (id: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
+  onApprove: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onEdit: (id: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
 }
 

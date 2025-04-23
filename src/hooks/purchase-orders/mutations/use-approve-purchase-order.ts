@@ -48,6 +48,8 @@ export function useApprovePurchaseOrder() {
     }
   });
 
-  // Return a function with the proper signature
-  return (id: string) => mutation.mutate(id);
+  // Return a function with the proper signature for async/await use
+  return async (id: string) => {
+    return mutation.mutateAsync(id);
+  };
 }

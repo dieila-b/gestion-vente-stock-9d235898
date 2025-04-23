@@ -7,13 +7,24 @@ import { DeliveryNote } from "@/types/delivery-note";
 import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 import { useFetchDeliveryNotes } from "./delivery-notes/use-fetch-delivery-notes";
 import { formatDate } from "@/lib/formatters";
+import { syncApprovedPurchaseOrders } from "./delivery-notes/sync/sync-approved-purchase-orders";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   // Query to fetch delivery notes using the updated hook
-  const { data: deliveryNotes = [], isLoading } = useFetchDeliveryNotes();
+  const { data: deliveryNotes = [], isLoading, refetch } = useFetchDeliveryNotes();
+
+  // Force sync from approved purchase orders
+  const syncFromApprovedOrders = async () => {
+    console.log("Manually syncing from approved orders");
+    const result = await syncApprovedPurchaseOrders();
+    if (result) {
+      await refetch();
+    }
+    return result;
+  };
 
   // Handle view
   const handleView = (id: string) => {
@@ -143,6 +154,8 @@ export function useDeliveryNotes() {
     isLoading,
     handleView,
     handleDelete,
-    createDeliveryNoteFromPO
+    createDeliveryNoteFromPO,
+    syncFromApprovedOrders,
+    refetch
   };
 }

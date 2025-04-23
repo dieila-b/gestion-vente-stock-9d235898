@@ -4,10 +4,12 @@ import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purch
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
 
 export function usePurchaseOrders() {
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleApprove, handleDelete, handleCreate } = usePurchaseOrderMutations();
+  const { handleDelete, handleCreate } = usePurchaseOrderMutations();
+  const approveOrder = useApprovePurchaseOrder();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
@@ -36,6 +38,19 @@ export function usePurchaseOrders() {
     }
     
     return result;
+  };
+
+  // Correctly handle the approve function to ensure it returns a Promise
+  const handleApprove = async (id: string) => {
+    try {
+      console.log("Starting approval process for:", id);
+      await approveOrder(id);
+      console.log("Approval completed for:", id);
+      await refreshOrders();
+    } catch (error) {
+      console.error("Error in handleApprove:", error);
+      throw error;
+    }
   };
 
   return {
