@@ -7,7 +7,7 @@ interface PurchaseOrderListProps {
   isLoading: boolean;
   onApprove: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onEdit: (id: string) => void;
+  onEdit: (id: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
 }
 
@@ -21,7 +21,17 @@ export function PurchaseOrderList({
 }: PurchaseOrderListProps) {
   // Log for debugging
   console.log("Orders in PurchaseOrderList:", orders);
-  console.log("First order items:", orders && orders.length > 0 ? orders[0].items : "No orders");
+  
+  if (orders && orders.length > 0) {
+    console.log("First order items:", orders[0].items?.length || 0);
+    console.log("First order details:", {
+      id: orders[0].id,
+      order_number: orders[0].order_number,
+      item_count: orders[0].items?.length || 0
+    });
+  } else {
+    console.log("No orders available");
+  }
   
   return (
     <PurchaseOrderTable

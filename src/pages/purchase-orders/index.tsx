@@ -82,6 +82,20 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  // Wrapping the callbacks in promises to match the expected type
+  const handleApprovePromise = async (id: string): Promise<void> => {
+    return handleApprove(id);
+  };
+
+  const handleDeletePromise = async (id: string): Promise<void> => {
+    return handleDelete(id);
+  };
+
+  const handleEditPromise = async (id: string): Promise<void> => {
+    handleEdit(id);
+    return Promise.resolve();
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto p-6">
@@ -95,9 +109,9 @@ export default function PurchaseOrdersPage() {
             <PurchaseOrderList 
               orders={filteredOrders}
               isLoading={isLoading}
-              onApprove={handleApprove}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
+              onApprove={handleApprovePromise}
+              onDelete={handleDeletePromise}
+              onEdit={handleEditPromise}
               onPrint={handlePrint}
             />
           </CardContent>

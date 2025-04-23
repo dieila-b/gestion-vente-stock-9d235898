@@ -38,7 +38,7 @@ export function usePurchaseOrdersQuery() {
         
         console.log("Direct query result:", directData?.length || 0, "records. Error:", directError);
         
-        // Si la requête directe échoue, essayons la fonction RPC
+        // If direct query fails, try the RPC function
         console.log("Attempting RPC function bypass_select_purchase_orders...");
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'bypass_select_purchase_orders'
@@ -62,20 +62,27 @@ export function usePurchaseOrdersQuery() {
                 );
                 
                 if (!detailsError && orderDetails) {
-                  console.log(`Items for order ${order.id}:`, orderDetails.items?.length || 0);
+                  // Type-safe approach: Check if orderDetails is an object and has items property
+                  const hasItems = typeof orderDetails === 'object' && 
+                                  orderDetails !== null && 
+                                  'items' in orderDetails;
+                  
+                  console.log(`Items for order ${order.id}:`, hasItems ? (orderDetails.items as any[])?.length || 0 : 'No items');
+                  
+                  // Safely convert to PurchaseOrder type
                   return orderDetails as PurchaseOrder;
                 }
                 
                 console.log(`No details found for order ${order.id}, error:`, detailsError);
-                return order;
+                return order as PurchaseOrder;
               } catch (err) {
                 console.error(`Error fetching details for order ${order.id}:`, err);
-                return order;
+                return order as PurchaseOrder;
               }
             })
           );
           
-          return ordersWithItems as PurchaseOrder[];
+          return ordersWithItems;
         }
         
         console.log("No purchase orders found in either direct query or RPC.");
