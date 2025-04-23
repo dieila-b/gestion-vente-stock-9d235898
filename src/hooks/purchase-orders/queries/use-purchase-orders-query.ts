@@ -28,7 +28,7 @@ export function usePurchaseOrdersQuery() {
         
         console.log(`Found ${ordersData.length} purchase orders`);
         
-        // Convertir les données JSON en objets PurchaseOrder en utilisant async/await
+        // Transformer les données en utilisant des promesses parallèles
         const formattedOrdersPromises = ordersData.map(async (orderData: any) => {
           try {
             // Récupérer les éléments du bon de commande
@@ -56,14 +56,21 @@ export function usePurchaseOrdersQuery() {
           }
         });
         
-        // Attendre que toutes les promesses soient résolues
-        const ordersWithItems = await Promise.all(formattedOrdersPromises);
-        console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
-        return ordersWithItems as PurchaseOrder[];
+        // Résoudre toutes les promesses avec gestion d'erreur robuste
+        try {
+          const ordersWithItems = await Promise.all(formattedOrdersPromises);
+          console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
+          return ordersWithItems as PurchaseOrder[];
+        } catch (error) {
+          console.error("Error resolving order promises:", error);
+          toast.error("Erreur lors du traitement des commandes");
+          // Fallback à des commandes sans articles
+          return ordersData.map((order: any) => ({ ...order, items: [] })) as PurchaseOrder[];
+        }
       } catch (error) {
         console.error("Error in usePurchaseOrdersQuery:", error);
         toast.error("Impossible de charger les bons de commande");
-        throw error; // Laisser la query gérer l'état d'erreur correctement
+        throw error; // Rethrow to handle in the UI
       }
     },
     staleTime: 1000 * 30, // 30 secondes

@@ -24,22 +24,28 @@ export function usePurchaseOrders() {
   const refreshOrders = async () => {
     console.log("Refreshing purchase orders...");
     
-    // First invalidate the query
-    await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    
-    // Then trigger a refetch
-    const result = await refetch();
-    
-    console.log("Refresh result:", result);
-    
-    if (result.isSuccess) {
-      toast.success("Liste des bons de commande rafraîchie");
-    } else if (result.isError) {
-      console.error("Error refreshing orders:", result.error);
-      toast.error("Erreur lors du rafraîchissement");
+    try {
+      // First invalidate the query
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      
+      // Then trigger a refetch
+      const result = await refetch();
+      
+      console.log("Refresh result:", result);
+      
+      if (result.isSuccess) {
+        toast.success("Liste des bons de commande rafraîchie");
+      } else if (result.isError) {
+        console.error("Error refreshing orders:", result.error);
+        toast.error("Erreur lors du rafraîchissement");
+      }
+      
+      return result;
+    } catch (refreshError) {
+      console.error("Exception during refresh:", refreshError);
+      toast.error("Erreur pendant le rafraîchissement des données");
+      return { isSuccess: false, isError: true, error: refreshError };
     }
-    
-    return result;
   };
 
   // Handle the approve function with improved error handling
@@ -48,15 +54,17 @@ export function usePurchaseOrders() {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      await approveOrderFn(id);
+      const result = await approveOrderFn(id);
       
-      console.log("Approval completed for:", id);
+      console.log("Approval completed for:", id, "Result:", result);
       
-      // Refresh the orders list
-      await refreshOrders();
-      
-      // Also refresh delivery notes to show newly created ones
-      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      if (result && result.success) {
+        // Refresh the orders list
+        await refreshOrders();
+        
+        // Also refresh delivery notes to show newly created ones
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      }
     } catch (error) {
       console.error("Error in handleApprove:", error);
       toast.error("Erreur lors de l'approbation de la commande");

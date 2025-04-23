@@ -55,11 +55,13 @@ export function useApprovePurchaseOrder() {
         
         // 3. Synchroniser avec les bons de livraison
         try {
+          console.log("Starting sync after approval");
           const syncResult = await syncApprovedPurchaseOrders();
           console.log("Sync result after approval:", syncResult);
-        } catch (syncError) {
+        } catch (syncError: any) {
           console.error("Error in sync after approval:", syncError);
-          // Ne pas échouer ici, nous voulons toujours considérer l'approbation comme réussie
+          toast.error(`Erreur pendant la synchronisation: ${syncError.message || 'Erreur inconnue'}`);
+          // On continue car l'approbation elle-même a réussi
         }
         
         toast.success("Commande approuvée avec succès");
@@ -72,14 +74,9 @@ export function useApprovePurchaseOrder() {
     },
   });
 
-  // Retourner une fonction qui appelle directement mutateAsync pour garantir une gestion correcte des Promesses
+  // Retourner une fonction qui appelle directement mutateAsync
   return async (id: string) => {
     console.log("useApprovePurchaseOrder called with id:", id);
-    try {
-      return await mutation.mutateAsync(id);
-    } catch (error) {
-      console.error("Mutation failed with error:", error);
-      throw error; // Répropager l'erreur pour permettre sa gestion au niveau supérieur
-    }
+    return mutation.mutateAsync(id);
   };
 }
