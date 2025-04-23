@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchase-order';
 
+// Type definitions for Supabase JSON response
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+
 // Type guard function to check if a string is a valid status
 function isValidStatus(status: string): status is PurchaseOrder['status'] {
   return ['draft', 'pending', 'delivered', 'approved'].includes(status);
@@ -16,8 +19,13 @@ function isValidPaymentStatus(status: string): status is PurchaseOrder['payment_
 }
 
 // Type guard to check if object has a specific property
-function hasProperty<K extends string>(obj: any, prop: K): obj is { [key in K]: any } {
+function hasProperty<K extends string, T extends object>(obj: T, prop: K): obj is T & { [key in K]: unknown } {
   return obj && typeof obj === 'object' && prop in obj;
+}
+
+// Function to check if value is an object
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**
@@ -58,7 +66,7 @@ export function usePurchaseData(orderId?: string) {
         console.log("Purchase order data retrieved:", data);
         
         // Ensure data is an object before trying to process it
-        if (typeof data !== 'object' || data === null) {
+        if (!isObject(data)) {
           throw new Error("Invalid data format received: data is not an object");
         }
         
@@ -68,7 +76,7 @@ export function usePurchaseData(orderId?: string) {
         if (hasProperty(data, 'items') && Array.isArray(data.items)) {
           processedItems = data.items.map(item => {
             // Ensure each item is an object
-            if (typeof item !== 'object' || item === null) {
+            if (!isObject(item)) {
               return {
                 id: '',
                 product_id: '',
@@ -88,7 +96,7 @@ export function usePurchaseData(orderId?: string) {
               unit_price: hasProperty(item, 'unit_price') ? Number(item.unit_price || 0) : 0,
               selling_price: hasProperty(item, 'selling_price') ? Number(item.selling_price || 0) : 0,
               total_price: hasProperty(item, 'total_price') ? Number(item.total_price || 0) : 0,
-              product: hasProperty(item, 'product') && typeof item.product === 'object' && item.product ? {
+              product: hasProperty(item, 'product') && isObject(item.product) ? {
                 id: hasProperty(item.product, 'id') ? String(item.product.id || '') : '',
                 name: hasProperty(item.product, 'name') ? String(item.product.name || '') : '',
                 reference: hasProperty(item.product, 'reference') ? String(item.product.reference) : undefined
@@ -103,58 +111,54 @@ export function usePurchaseData(orderId?: string) {
         }
         
         // Create a properly typed PurchaseOrder object with type checking
-        if (typeof data === 'object') {
-          const purchaseOrder: PurchaseOrder = {
-            id: hasProperty(data, 'id') ? String(data.id || '') : '',
-            order_number: hasProperty(data, 'order_number') ? String(data.order_number || '') : '',
-            created_at: hasProperty(data, 'created_at') ? String(data.created_at || '') : '',
-            updated_at: hasProperty(data, 'updated_at') ? String(data.updated_at) : undefined,
-            status: hasProperty(data, 'status') && isValidStatus(String(data.status)) 
-              ? String(data.status) as PurchaseOrder['status'] 
-              : 'pending',
-            supplier_id: hasProperty(data, 'supplier_id') ? String(data.supplier_id || '') : '',
-            discount: hasProperty(data, 'discount') ? Number(data.discount || 0) : 0,
-            expected_delivery_date: hasProperty(data, 'expected_delivery_date') ? String(data.expected_delivery_date || '') : '',
-            notes: hasProperty(data, 'notes') ? String(data.notes || '') : '',
-            logistics_cost: hasProperty(data, 'logistics_cost') ? Number(data.logistics_cost || 0) : 0,
-            transit_cost: hasProperty(data, 'transit_cost') ? Number(data.transit_cost || 0) : 0,
-            tax_rate: hasProperty(data, 'tax_rate') ? Number(data.tax_rate || 0) : 0,
-            shipping_cost: hasProperty(data, 'shipping_cost') ? Number(data.shipping_cost || 0) : 0,
-            subtotal: hasProperty(data, 'subtotal') ? Number(data.subtotal || 0) : 0,
-            tax_amount: hasProperty(data, 'tax_amount') ? Number(data.tax_amount || 0) : 0,
-            total_ttc: hasProperty(data, 'total_ttc') ? Number(data.total_ttc || 0) : 0,
-            total_amount: hasProperty(data, 'total_amount') ? Number(data.total_amount || 0) : 0,
-            paid_amount: hasProperty(data, 'paid_amount') ? Number(data.paid_amount || 0) : 0,
-            payment_status: hasProperty(data, 'payment_status') && isValidPaymentStatus(String(data.payment_status)) 
-              ? String(data.payment_status) as PurchaseOrder['payment_status'] 
-              : 'pending',
-            warehouse_id: hasProperty(data, 'warehouse_id') ? String(data.warehouse_id) : undefined,
-            supplier: hasProperty(data, 'supplier') && typeof data.supplier === 'object' && data.supplier ? {
-              id: hasProperty(data.supplier, 'id') ? String(data.supplier.id || '') : '',
-              name: hasProperty(data.supplier, 'name') ? String(data.supplier.name || '') : '',
-              email: hasProperty(data.supplier, 'email') ? String(data.supplier.email || '') : '',
-              phone: hasProperty(data.supplier, 'phone') ? String(data.supplier.phone || '') : '',
-              address: hasProperty(data.supplier, 'address') ? String(data.supplier.address || '') : '',
-              contact: hasProperty(data.supplier, 'contact') ? String(data.supplier.contact || '') : ''
-            } : {
-              id: '',
-              name: '',
-              email: '',
-              phone: '',
-              address: '',
-              contact: ''
-            },
-            warehouse: hasProperty(data, 'warehouse') && typeof data.warehouse === 'object' && data.warehouse ? {
-              id: hasProperty(data.warehouse, 'id') ? String(data.warehouse.id || '') : '',
-              name: hasProperty(data.warehouse, 'name') ? String(data.warehouse.name || '') : ''
-            } : undefined,
-            items: processedItems
-          };
-          
-          return purchaseOrder;
-        }
+        const purchaseOrder: PurchaseOrder = {
+          id: hasProperty(data, 'id') ? String(data.id || '') : '',
+          order_number: hasProperty(data, 'order_number') ? String(data.order_number || '') : '',
+          created_at: hasProperty(data, 'created_at') ? String(data.created_at || '') : '',
+          updated_at: hasProperty(data, 'updated_at') ? String(data.updated_at) : undefined,
+          status: hasProperty(data, 'status') && isValidStatus(String(data.status)) 
+            ? String(data.status) as PurchaseOrder['status'] 
+            : 'pending',
+          supplier_id: hasProperty(data, 'supplier_id') ? String(data.supplier_id || '') : '',
+          discount: hasProperty(data, 'discount') ? Number(data.discount || 0) : 0,
+          expected_delivery_date: hasProperty(data, 'expected_delivery_date') ? String(data.expected_delivery_date || '') : '',
+          notes: hasProperty(data, 'notes') ? String(data.notes || '') : '',
+          logistics_cost: hasProperty(data, 'logistics_cost') ? Number(data.logistics_cost || 0) : 0,
+          transit_cost: hasProperty(data, 'transit_cost') ? Number(data.transit_cost || 0) : 0,
+          tax_rate: hasProperty(data, 'tax_rate') ? Number(data.tax_rate || 0) : 0,
+          shipping_cost: hasProperty(data, 'shipping_cost') ? Number(data.shipping_cost || 0) : 0,
+          subtotal: hasProperty(data, 'subtotal') ? Number(data.subtotal || 0) : 0,
+          tax_amount: hasProperty(data, 'tax_amount') ? Number(data.tax_amount || 0) : 0,
+          total_ttc: hasProperty(data, 'total_ttc') ? Number(data.total_ttc || 0) : 0,
+          total_amount: hasProperty(data, 'total_amount') ? Number(data.total_amount || 0) : 0,
+          paid_amount: hasProperty(data, 'paid_amount') ? Number(data.paid_amount || 0) : 0,
+          payment_status: hasProperty(data, 'payment_status') && isValidPaymentStatus(String(data.payment_status)) 
+            ? String(data.payment_status) as PurchaseOrder['payment_status'] 
+            : 'pending',
+          warehouse_id: hasProperty(data, 'warehouse_id') ? String(data.warehouse_id) : undefined,
+          supplier: hasProperty(data, 'supplier') && isObject(data.supplier) ? {
+            id: hasProperty(data.supplier, 'id') ? String(data.supplier.id || '') : '',
+            name: hasProperty(data.supplier, 'name') ? String(data.supplier.name || '') : '',
+            email: hasProperty(data.supplier, 'email') ? String(data.supplier.email || '') : '',
+            phone: hasProperty(data.supplier, 'phone') ? String(data.supplier.phone || '') : '',
+            address: hasProperty(data.supplier, 'address') ? String(data.supplier.address || '') : '',
+            contact: hasProperty(data.supplier, 'contact') ? String(data.supplier.contact || '') : ''
+          } : {
+            id: '',
+            name: '',
+            email: '',
+            phone: '',
+            address: '',
+            contact: ''
+          },
+          warehouse: hasProperty(data, 'warehouse') && isObject(data.warehouse) ? {
+            id: hasProperty(data.warehouse, 'id') ? String(data.warehouse.id || '') : '',
+            name: hasProperty(data.warehouse, 'name') ? String(data.warehouse.name || '') : ''
+          } : undefined,
+          items: processedItems
+        };
         
-        throw new Error("Invalid data format received from the server");
+        return purchaseOrder;
       } catch (error) {
         console.error("Error fetching purchase order:", error);
         toast.error("Erreur lors du chargement du bon de commande");
