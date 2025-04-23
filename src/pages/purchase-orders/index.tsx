@@ -48,6 +48,12 @@ export default function PurchaseOrdersPage() {
       );
       
       console.log("Filtered orders:", filtered.length);
+      
+      // Check if items are properly loaded
+      filtered.forEach((order, index) => {
+        console.log(`Order ${index} (${order.order_number}) has ${order.items?.length || 0} items`);
+      });
+      
       setFilteredOrders(filtered);
     } catch (error) {
       console.error("Error processing orders:", error);
@@ -58,8 +64,22 @@ export default function PurchaseOrdersPage() {
 
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
-    console.log("Printing order with items:", order.items);
-    printPurchaseOrder(order);
+    console.log("Printing order:", order);
+    console.log("Printing order with items:", order.items?.length || 0);
+    
+    // If order doesn't have items, try to find the complete order from rawOrders
+    if (!order.items || order.items.length === 0) {
+      const completeOrder = rawOrders.find(o => o.id === order.id);
+      if (completeOrder && completeOrder.items && completeOrder.items.length > 0) {
+        console.log("Found complete order with items:", completeOrder.items.length);
+        printPurchaseOrder(completeOrder);
+      } else {
+        console.log("Could not find items for order, printing as is");
+        printPurchaseOrder(order);
+      }
+    } else {
+      printPurchaseOrder(order);
+    }
   };
 
   return (

@@ -1,12 +1,12 @@
 
-import { PurchaseOrderTable } from "@/components/purchases/PurchaseOrderTable";
-import type { PurchaseOrder } from "@/types/purchase-order";
+import { PurchaseOrderTable } from "./PurchaseOrderTable";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];
   isLoading: boolean;
-  onApprove: (id: string) => void;
-  onDelete: (id: string) => void;
+  onApprove: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onEdit: (id: string) => void;
   onPrint: (order: PurchaseOrder) => void;
 }
@@ -19,16 +19,18 @@ export function PurchaseOrderList({
   onEdit,
   onPrint
 }: PurchaseOrderListProps) {
+  // Log for debugging
+  console.log("Orders in PurchaseOrderList:", orders);
+  console.log("First order items:", orders && orders.length > 0 ? orders[0].items : "No orders");
+  
   return (
-    <div className="space-y-4">
-      <PurchaseOrderTable
-        orders={orders}
-        isLoading={isLoading}
-        onApprove={onApprove}
-        onDelete={onDelete}
-        onEdit={onEdit}
-        onPrint={onPrint}
-      />
-    </div>
+    <PurchaseOrderTable
+      orders={orders}
+      isLoading={isLoading}
+      onApprove={onApprove}
+      onDelete={onDelete}
+      onEdit={onEdit}
+      onPrint={onPrint}
+    />
   );
 }

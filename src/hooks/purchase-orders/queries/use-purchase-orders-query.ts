@@ -51,7 +51,31 @@ export function usePurchaseOrdersQuery() {
         
         if (rpcData && rpcData.length > 0) {
           console.log("Processed purchase orders via RPC:", rpcData.length);
-          return rpcData as unknown as PurchaseOrder[];
+          
+          // Fetch items for each purchase order
+          const ordersWithItems = await Promise.all(
+            rpcData.map(async (order: any) => {
+              try {
+                const { data: orderDetails, error: detailsError } = await supabase.rpc(
+                  'get_purchase_order_by_id',
+                  { order_id: order.id }
+                );
+                
+                if (!detailsError && orderDetails) {
+                  console.log(`Items for order ${order.id}:`, orderDetails.items?.length || 0);
+                  return orderDetails as PurchaseOrder;
+                }
+                
+                console.log(`No details found for order ${order.id}, error:`, detailsError);
+                return order;
+              } catch (err) {
+                console.error(`Error fetching details for order ${order.id}:`, err);
+                return order;
+              }
+            })
+          );
+          
+          return ordersWithItems as PurchaseOrder[];
         }
         
         console.log("No purchase orders found in either direct query or RPC.");

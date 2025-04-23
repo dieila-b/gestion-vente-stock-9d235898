@@ -26,6 +26,7 @@ export function usePurchasePrint() {
       return;
     }
 
+    console.log("Order to print:", order);
     console.log("Items to print:", order.items);
 
     // Génération du contenu des articles
@@ -57,6 +58,10 @@ export function usePurchasePrint() {
             .total-section { display: flex; justify-content: flex-end; }
             .total-table { width: 300px; }
             .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
+            @media print {
+              body { margin: 0; padding: 10px; }
+              button { display: none; }
+            }
           </style>
         </head>
         <body>
@@ -138,18 +143,22 @@ export function usePurchasePrint() {
             <p>Notes: ${order.notes || 'Aucune note'}</p>
             <p>Bon de commande généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
           </div>
+          
+          <script>
+            window.onload = function() {
+              // Focus and print after a small delay to ensure content is loaded
+              window.focus();
+              setTimeout(() => {
+                window.print();
+              }, 1000);
+            }
+          </script>
         </body>
       </html>
     `;
 
     printWindow.document.write(printContent);
     printWindow.document.close();
-
-    // Focus and print
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
   };
 
   const downloadPdf = async (order: PurchaseOrder) => {
