@@ -31,7 +31,12 @@ export function useEditPurchaseOrder() {
     if (!isDialogOpen) return null;
     
     return (
-      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) handleCloseDialog();
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>Modifier Bon de Commande</DialogTitle>
           {selectedOrderId ? (
