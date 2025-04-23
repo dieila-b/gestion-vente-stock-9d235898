@@ -29,7 +29,7 @@ export function usePurchaseOrdersQuery() {
         console.log(`Found ${ordersData.length} purchase orders`);
         
         // Convertir les données JSON en objets PurchaseOrder
-        const formattedOrders = ordersData.map((orderData: any) => {
+        const formattedOrdersPromises = ordersData.map((orderData: any) => {
           // Récupérer les éléments du bon de commande
           return supabase
             .rpc('get_purchase_order_items', { order_id: orderData.id })
@@ -48,6 +48,7 @@ export function usePurchaseOrdersQuery() {
               };
             })
             .catch(error => {
+              // Handle promise rejection
               console.error(`Unexpected error fetching items for order ${orderData.id}:`, error);
               return {
                 ...orderData,
@@ -58,7 +59,7 @@ export function usePurchaseOrdersQuery() {
         
         // Attendre que toutes les promesses soient résolues
         try {
-          const ordersWithItems = await Promise.all(formattedOrders);
+          const ordersWithItems = await Promise.all(formattedOrdersPromises);
           console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
           return ordersWithItems as PurchaseOrder[];
         } catch (error) {
