@@ -11,13 +11,25 @@ export function usePurchaseOrderMutations() {
     mutationFn: async (id: string) => {
       console.log("Approving purchase order:", id);
       
-      const { error } = await supabase
-        .from('purchase_orders')
-        .update({ status: 'approved' })
-        .eq('id', id);
-      
-      if (error) throw error;
-      return id;
+      try {
+        // Mettre à jour le statut du bon de commande
+        const { error } = await supabase
+          .from('purchase_orders')
+          .update({ status: 'approved' })
+          .eq('id', id);
+        
+        if (error) {
+          console.error("Error updating purchase order status:", error);
+          throw error;
+        }
+        
+        console.log("Purchase order status updated successfully");
+        
+        return id;
+      } catch (error: any) {
+        console.error("Error in approve mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -25,7 +37,7 @@ export function usePurchaseOrderMutations() {
     },
     onError: (error: Error) => {
       console.error('Approval error:', error);
-      toast.error("Erreur lors de l'approbation");
+      toast.error(`Erreur lors de l'approbation: ${error.message}`);
     }
   });
 
@@ -36,13 +48,23 @@ export function usePurchaseOrderMutations() {
       }
       
       console.log("Deleting purchase order:", id);
-      const { error } = await supabase
-        .from('purchase_orders')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      return true;
+      try {
+        const { error } = await supabase
+          .from('purchase_orders')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error("Error deleting purchase order:", error);
+          throw error;
+        }
+        
+        console.log("Purchase order deleted successfully");
+        return true;
+      } catch (error: any) {
+        console.error("Error in delete mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -50,20 +72,31 @@ export function usePurchaseOrderMutations() {
     },
     onError: (error: Error) => {
       console.error('Delete error:', error);
-      toast.error("Erreur lors de la suppression");
+      toast.error(`Erreur lors de la suppression: ${error.message}`);
     }
   });
 
   const createMutation = useMutation({
     mutationFn: async (orderData: Partial<PurchaseOrder>) => {
-      const { data, error } = await supabase
-        .from('purchase_orders')
-        .insert(orderData)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      console.log("Creating purchase order:", orderData);
+      try {
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .insert(orderData)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Error creating purchase order:", error);
+          throw error;
+        }
+        
+        console.log("Purchase order created successfully:", data);
+        return data;
+      } catch (error: any) {
+        console.error("Error in create mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -71,7 +104,7 @@ export function usePurchaseOrderMutations() {
     },
     onError: (error: Error) => {
       console.error('Create error:', error);
-      toast.error("Erreur lors de la création");
+      toast.error(`Erreur lors de la création: ${error.message}`);
     }
   });
 

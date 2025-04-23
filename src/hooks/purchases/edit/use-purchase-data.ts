@@ -44,24 +44,33 @@ export function usePurchaseData(orderId?: string) {
           .rpc('get_purchase_order_by_id', { order_id: orderId });
         
         if (functionData && !functionError && isPlainObject(functionData)) {
-          console.log("Successfully fetched purchase order using RPC function:", functionData);
+          console.log("Successfully fetched purchase order using RPC function");
+          console.log("Purchase order data:", functionData);
           
           // Cast functionData to a Record<string, any> to ensure TypeScript recognizes it as an object
           const dataObject = functionData as Record<string, any>;
           
           // Process items if they exist
-          const processedItems: PurchaseOrderItem[] = 
-            Array.isArray(dataObject.items) ? 
-              dataObject.items.map((item: any) => ({
-                id: String(item.id),
-                product_id: String(item.product_id),
-                purchase_order_id: String(orderId),
-                quantity: Number(item.quantity || 0),
-                unit_price: Number(item.unit_price || 0),
-                selling_price: Number(item.selling_price || 0),
-                total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-                product: item.product
-              })) : [];
+          let processedItems: PurchaseOrderItem[] = [];
+          if (Array.isArray(dataObject.items)) {
+            console.log("Items found in purchase order:", dataObject.items.length);
+            processedItems = dataObject.items.map((item: any) => ({
+              id: String(item.id),
+              product_id: String(item.product_id),
+              purchase_order_id: String(orderId),
+              quantity: Number(item.quantity || 0),
+              unit_price: Number(item.unit_price || 0),
+              selling_price: Number(item.selling_price || 0),
+              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+              product: item.product ? {
+                id: String(item.product.id),
+                name: String(item.product.name || ''),
+                reference: item.product.reference ? String(item.product.reference) : undefined
+              } : undefined
+            }));
+          } else {
+            console.log("No items found in purchase order data");
+          }
           
           // Ensure status is one of the allowed values
           const status = typeof dataObject.status === 'string' && 
@@ -105,15 +114,15 @@ export function usePurchaseData(orderId?: string) {
           };
           
           // IMPORTANT: Update the orderItems state with the items from the purchase order
+          console.log("Setting processed items:", processedItems.length);
           setOrderItems(processedItems);
-          console.log("Setting items from purchase RPC:", processedItems.length);
           
           return processedOrder;
         }
         
         console.log("RPC function failed or returned no data, trying direct query");
         
-        // Fallback to the original direct query approach
+        // Requête directe au bon de commande
         const { data: orderData, error: orderError } = await supabase
           .from('purchase_orders')
           .select(`
@@ -134,7 +143,8 @@ export function usePurchaseData(orderId?: string) {
           throw new Error("Bon de commande non trouvé");
         }
 
-        // Separately fetch items with product information
+        // Requête séparée pour les articles
+        console.log("Fetching items for purchase order:", orderId);
         const { data: itemsData, error: itemsError } = await supabase
           .from('purchase_order_items')
           .select(`
@@ -145,11 +155,12 @@ export function usePurchaseData(orderId?: string) {
           
         if (itemsError) {
           console.error("Error fetching items:", itemsError);
+          throw new Error(`Erreur lors de la récupération des articles: ${itemsError.message}`);
         }
           
         console.log("Fetched items:", itemsData?.length || 0);
         
-        // Process items
+        // Traiter les articles
         const processedItems: PurchaseOrderItem[] = itemsData ? itemsData.map(item => ({
           id: String(item.id),
           product_id: String(item.product_id),
@@ -158,15 +169,19 @@ export function usePurchaseData(orderId?: string) {
           unit_price: Number(item.unit_price || 0),
           selling_price: Number(item.selling_price || 0),
           total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-          product: item.product
+          product: item.product ? {
+            id: String(item.product.id),
+            name: String(item.product.name || ''),
+            reference: item.product.reference ? String(item.product.reference) : undefined
+          } : undefined
         })) : [];
 
-        // Ensure status is one of the allowed values, default to 'pending' if not
+        // S'assurer que le statut est une valeur valide
         const status = isValidStatus(orderData.status) ? orderData.status : 'pending';
-        // Ensure payment_status is one of the allowed values, default to 'pending' if not
+        // S'assurer que le statut de paiement est une valeur valide
         const payment_status = isValidPaymentStatus(orderData.payment_status) ? orderData.payment_status : 'pending';
 
-        // Create a properly typed PurchaseOrder object from the data
+        // Créer un objet PurchaseOrder complet
         const processedOrder: PurchaseOrder = {
           ...orderData,
           status,
@@ -174,12 +189,12 @@ export function usePurchaseData(orderId?: string) {
           items: processedItems
         };
 
-        console.log("Processed purchase order:", processedOrder);
+        console.log("Processed purchase order:", processedOrder.id);
         console.log("Processed items:", processedItems.length);
         
-        // IMPORTANT: Update the orderItems state with the items from the purchase order
-        setOrderItems(processedItems);
+        // Mettre à jour le state local avec les articles
         console.log("Setting items from direct query:", processedItems.length);
+        setOrderItems(processedItems);
 
         return processedOrder;
       } catch (error) {
@@ -228,6 +243,7 @@ export function usePurchaseData(orderId?: string) {
 
   // Handle form data changes
   const updateFormField = (field: string, value: any) => {
+    console.log(`Updating form field ${field} to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value

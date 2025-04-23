@@ -17,7 +17,13 @@ export function usePurchaseOrdersQuery() {
           .from('purchase_orders')
           .select(`
             *,
-            supplier:suppliers(*),
+            supplier:suppliers(
+              id,
+              name,
+              email,
+              phone,
+              contact
+            ),
             items:purchase_order_items(
               *,
               product:catalog(*)
@@ -32,7 +38,7 @@ export function usePurchaseOrdersQuery() {
         
         console.log("Direct query result:", directData?.length || 0, "records. Error:", directError);
         
-        // If direct query fails or returns no data, try RPC function
+        // Si la requête directe échoue, essayons la fonction RPC
         console.log("Attempting RPC function bypass_select_purchase_orders...");
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'bypass_select_purchase_orders'

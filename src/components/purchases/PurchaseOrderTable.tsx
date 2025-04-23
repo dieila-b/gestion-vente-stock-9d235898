@@ -1,17 +1,13 @@
 
-import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/formatters";
+import { formatGNF } from "@/lib/currency";
 import { PurchaseOrder } from "@/types/purchase-order";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-  TableHead
-} from "@/components/ui/table";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Edit, FileText, Trash, Printer } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Printer, Edit, Trash2, Box, Check, X, Loader } from "lucide-react";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -28,125 +24,147 @@ export function PurchaseOrderTable({
   onApprove,
   onDelete,
   onEdit,
-  onPrint,
+  onPrint
 }: PurchaseOrderTableProps) {
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-500 text-white';
-      case 'pending':
-        return 'bg-yellow-500 text-white';
-      case 'draft':
-        return 'bg-gray-500 text-white';
-      case 'delivered':
-        return 'bg-blue-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  const handleApprove = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await onApprove(id);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  
+  const handleDelete = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await onDelete(id);
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Approuvé';
-      case 'pending':
-        return 'En attente';
-      case 'draft':
-        return 'Brouillon';
-      case 'delivered':
-        return 'Livré';
-      default:
-        return status;
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="py-8 text-center">
+        <Loader className="h-6 w-6 animate-spin mx-auto mb-2" />
+        <p>Chargement des bons de commande...</p>
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <Alert>
+        <Box className="h-5 w-5" />
+        <AlertDescription>
+          Aucun bon de commande trouvé. Créez votre premier bon de commande.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="border rounded-lg">
-      <Table>
+    <div className="border rounded-md">
+      <Table className="whitespace-nowrap">
         <TableHeader>
           <TableRow>
-            <TableHead>N° Commande</TableHead>
+            <TableHead>Numéro</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
+            <TableHead>Montant</TableHead>
             <TableHead>Statut</TableHead>
-            <TableHead>Montant Total</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Statut Paiement</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                Chargement...
+          {orders.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell className="font-medium">{order.order_number}</TableCell>
+              <TableCell>{formatDate(order.created_at)}</TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{order.supplier?.name || 'Non spécifié'}</div>
+                  <div className="text-xs text-muted-foreground">{order.supplier?.contact || 'Contact non spécifié'}</div>
+                </div>
               </TableCell>
-            </TableRow>
-          ) : !orders?.length ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                Aucun bon de commande trouvé
+              <TableCell>{formatGNF(order.total_amount)}</TableCell>
+              <TableCell>
+                <StatusBadge
+                  status={order.status}
+                  statusMap={{
+                    draft: { label: "Brouillon", variant: "outline" },
+                    pending: { label: "En attente", variant: "warning" },
+                    approved: { label: "Approuvé", variant: "success" },
+                    delivered: { label: "Livré", variant: "info" }
+                  }}
+                />
               </TableCell>
-            </TableRow>
-          ) : (
-            orders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>{order.order_number}</TableCell>
-                <TableCell>
-                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
-                </TableCell>
-                <TableCell>{order.supplier?.name}</TableCell>
-                <TableCell>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-                    {getStatusText(order.status)}
-                  </span>
-                </TableCell>
-                <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
-                <TableCell>
-                  <div className="flex gap-2 items-center">
-                    {order.status !== 'approved' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                          onClick={() => onEdit(order.id)}
-                          title="Modifier"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                          onClick={() => onApprove(order.id)}
-                          title="Approuver"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-red-500 hover:bg-red-600 text-white"
-                          onClick={() => onDelete(order.id)}
-                          title="Supprimer"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </>
+              <TableCell>
+                <StatusBadge
+                  status={order.payment_status}
+                  statusMap={{
+                    pending: { label: "En attente", variant: "warning" },
+                    partial: { label: "Partiel", variant: "info" },
+                    paid: { label: "Payé", variant: "success" }
+                  }}
+                />
+              </TableCell>
+              <TableCell className="text-right space-x-1">
+                {/* Bouton Approuver, montré seulement si le statut est 'pending' */}
+                {order.status === 'pending' && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleApprove(order.id)}
+                    disabled={processingId === order.id}
+                    title="Approuver"
+                  >
+                    {processingId === order.id ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4 text-green-500" />
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
-                      onClick={() => onPrint(order)}
-                      title="Imprimer"
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+                  </Button>
+                )}
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onEdit(order.id)}
+                  title="Modifier"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onPrint(order)}
+                  title="Imprimer"
+                >
+                  <Printer className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDelete(order.id)}
+                  disabled={processingId === order.id}
+                  title="Supprimer"
+                >
+                  {processingId === order.id ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  )}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, X, Loader } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Plus, Loader } from "lucide-react";
 import { CatalogProduct } from "@/types/catalog";
-import { formatGNF } from "@/lib/currency";
+import { v4 as uuidv4 } from "uuid";
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface ProductSelectionModalProps {
   setSearchQuery: (query: string) => void;
   products: CatalogProduct[];
   onSelectProduct: (product: CatalogProduct) => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
 export function ProductSelectionModal({
@@ -21,144 +22,130 @@ export function ProductSelectionModal({
   onClose,
   searchQuery,
   setSearchQuery,
-  products = [],
+  products,
   onSelectProduct,
-  isLoading = false
+  isLoading
 }: ProductSelectionModalProps) {
   const [filteredProducts, setFilteredProducts] = useState<CatalogProduct[]>([]);
-  const [selectionInProgress, setSelectionInProgress] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   
-  // Filter products based on search query when products or searchQuery changes
+  // Filter products when search query changes
   useEffect(() => {
-    if (!products || products.length === 0) {
+    if (!products) {
       setFilteredProducts([]);
       return;
     }
     
-    if (searchQuery && searchQuery.trim() !== '') {
-      const lowercaseQuery = searchQuery.toLowerCase().trim();
-      const filtered = products.filter(product =>
-        (product.name?.toLowerCase().includes(lowercaseQuery)) ||
-        (product.reference?.toLowerCase().includes(lowercaseQuery))
-      );
-      setFilteredProducts(filtered);
-      console.log("Filtered products:", filtered.length);
-    } else {
+    if (!searchQuery.trim()) {
       setFilteredProducts(products);
-      console.log("Showing all products:", products.length);
+      return;
     }
-  }, [searchQuery, products]);
-
-  // Handle product selection with loading state
-  const handleSelectProduct = async (product: CatalogProduct) => {
-    if (!product || selectionInProgress) return;
     
-    try {
-      setSelectionInProgress(true);
-      setSelectedProductId(product.id);
-      console.log("Selecting product:", product.name);
-      
-      // Call the provided onSelectProduct function
-      await onSelectProduct(product);
-      
-      // Clear search query after selection
-      setSearchQuery('');
-      
-      // Close the modal after selection
-      onClose();
-    } catch (error) {
-      console.error("Error selecting product:", error);
-    } finally {
-      setSelectionInProgress(false);
-      setSelectedProductId(null);
-    }
+    const query = searchQuery.toLowerCase().trim();
+    const filtered = products.filter(product => 
+      (product.name?.toLowerCase().includes(query)) || 
+      (product.reference?.toLowerCase().includes(query))
+    );
+    
+    setFilteredProducts(filtered);
+  }, [searchQuery, products]);
+  
+  const handleAddEmptyProduct = () => {
+    const emptyProduct: CatalogProduct = {
+      id: uuidv4(),
+      name: "Produit manuel",
+      price: 0,
+      purchase_price: 0,
+      stock: 0
+    };
+    
+    onSelectProduct(emptyProduct);
+    onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-black border border-white/10 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden neo-blur">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Sélectionner un produit</h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-white/60 hover:text-white"
-            disabled={isLoading || selectionInProgress}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        <div className="p-4">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Rechercher un produit..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 neo-blur"
-              autoFocus
-            />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/80 p-6">
+        <div className="bg-black/90 border border-white/10 rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col text-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Sélectionner un produit</h2>
+            <Button variant="ghost" onClick={onClose} className="text-white/60 hover:text-white">
+              <span className="sr-only">Fermer</span>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <Loader className="h-6 w-6 animate-spin text-white/60 mr-2" />
-              <span className="text-white/60">Chargement des produits...</span>
+          <div className="flex w-full mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/60" />
+              <Input
+                type="search"
+                placeholder="Rechercher un produit..."
+                className="pl-8 bg-black/50 border-white/10 text-white"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          ) : (
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto p-1">
-              {filteredProducts.length === 0 ? (
-                <div className="text-center py-8 text-white/60">
-                  {!products || products.length === 0 
-                    ? "Aucun produit disponible" 
-                    : "Aucun produit trouvé"}
-                </div>
-              ) : (
-                filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="p-3 bg-white/5 rounded-md flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
-                    onClick={() => handleSelectProduct(product)}
+            <Button 
+              className="ml-2 bg-white/10 hover:bg-white/20 text-white"
+              onClick={handleAddEmptyProduct}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto border border-white/10 rounded-md">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full py-8">
+                <Loader className="h-6 w-6 animate-spin mb-2 text-white/60" />
+                <p className="text-white/60">Chargement des produits...</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full py-8">
+                <p className="text-white/60 mb-4">Aucun produit trouvé</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddEmptyProduct}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter un produit manuel
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 p-2">
+                {filteredProducts.map(product => (
+                  <div 
+                    key={product.id} 
+                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
+                    onClick={() => onSelectProduct(product)}
                   >
                     <div>
-                      <p className="font-medium text-white">{product.name}</p>
-                      <div className="flex text-sm text-white/60 space-x-4">
-                        <span>Ref: {product.reference || "N/A"}</span>
-                        <span>Prix: {formatGNF(product.purchase_price || 0)}</span>
-                      </div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-white/60">
+                        {product.reference ? `Ref: ${product.reference}` : "Sans référence"}
+                      </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectProduct(product);
-                      }}
-                      className="neo-blur"
-                      disabled={selectionInProgress && selectedProductId === product.id}
-                    >
-                      {selectionInProgress && selectedProductId === product.id ? (
-                        <Loader className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      Ajouter
-                    </Button>
+                    <div className="text-right">
+                      <p className="text-sm">{product.purchase_price ? `${product.purchase_price} GNF` : "Sans prix"}</p>
+                      <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose} className="border-white/20 text-white">
+              Annuler
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
+
+// Importation manquante du composant X
+import { X } from "lucide-react";
