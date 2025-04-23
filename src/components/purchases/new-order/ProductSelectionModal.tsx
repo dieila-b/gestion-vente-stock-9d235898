@@ -42,6 +42,7 @@ export const ProductSelectionModal = ({
       selling_price: product.price || 0,
       total_price: product.purchase_price || 0,
       product: {
+        id: product.id, // Include the id property to match the updated type
         name: product.name,
         reference: product.reference
       }
@@ -52,6 +53,9 @@ export const ProductSelectionModal = ({
   };
 
   const handleAddEmptyProduct = () => {
+    // Create a unique ID for the empty product
+    const emptyProductId = crypto.randomUUID();
+    
     const newItem: PurchaseOrderItem = {
       id: crypto.randomUUID(),
       purchase_order_id: "",
@@ -59,7 +63,12 @@ export const ProductSelectionModal = ({
       quantity: 1,
       unit_price: 0,
       selling_price: 0,
-      total_price: 0
+      total_price: 0,
+      product: {
+        id: emptyProductId, // Add a generated ID for the empty product
+        name: "Produit manuel",
+        reference: ""
+      }
     };
     
     onAddProduct(newItem);
