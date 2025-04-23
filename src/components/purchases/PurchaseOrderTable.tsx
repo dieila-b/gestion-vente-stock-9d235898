@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -30,18 +31,32 @@ export function PurchaseOrderTable({
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   const handleApprove = async (id: string) => {
-    setProcessingId(id);
     try {
+      setProcessingId(id);
+      console.log("Handling approve for order:", id);
       await onApprove(id);
+      toast.success("Bon de commande approuvé avec succès");
+    } catch (error) {
+      console.error("Error approving order:", error);
+      toast.error("Erreur lors de l'approbation du bon de commande");
     } finally {
       setProcessingId(null);
     }
   };
   
   const handleDelete = async (id: string) => {
-    setProcessingId(id);
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
+      return;
+    }
+    
     try {
+      setProcessingId(id);
+      console.log("Handling delete for order:", id);
       await onDelete(id);
+      toast.success("Bon de commande supprimé avec succès");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Erreur lors de la suppression du bon de commande");
     } finally {
       setProcessingId(null);
     }
