@@ -59,8 +59,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         console.log("Save successful, closing dialog via onClose()");
         toast.success("Modifications enregistrées avec succès");
         
-        // Call onClose immediately without relying on other mechanisms
-        onClose();
+        // Forcer la fermeture immédiate
+        setTimeout(() => {
+          console.log("Calling onClose after success");
+          onClose();
+        }, 0);
       } else {
         console.error("Save failed");
         toast.error("Échec de l'enregistrement des modifications");

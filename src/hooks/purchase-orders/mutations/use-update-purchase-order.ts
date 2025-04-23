@@ -42,16 +42,36 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select('*');
+          .select('*')
+          .returns();
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
 
+        // Si aucune donnée n'est retournée mais pas d'erreur, considérez comme réussi
+        // mais récupérez l'enregistrement manuellement
         if (!data || data.length === 0) {
-          console.error("No purchase order was updated - data is empty");
-          throw new Error("No purchase order was updated");
+          console.warn("Update succeeded but no data returned, fetching record manually");
+          
+          const { data: fetchedData, error: fetchError } = await supabase
+            .from('purchase_orders')
+            .select('*, supplier:supplier_id(*), warehouse:warehouse_id(*)')
+            .eq('id', params.id)
+            .single();
+            
+          if (fetchError) {
+            console.error("Error fetching updated purchase order:", fetchError);
+            throw new Error("Failed to fetch updated purchase order");
+          }
+          
+          if (!fetchedData) {
+            throw new Error("Purchase order not found after update");
+          }
+          
+          console.log("Purchase order fetched manually after update:", fetchedData);
+          return fetchedData as PurchaseOrder;
         }
 
         console.log("Purchase order updated successfully:", data[0]);

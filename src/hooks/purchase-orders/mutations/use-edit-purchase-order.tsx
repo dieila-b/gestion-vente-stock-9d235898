@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PurchaseOrderEditForm } from "@/components/purchases/edit/PurchaseOrderEditForm";
@@ -19,15 +19,22 @@ export function useEditPurchaseOrder() {
     
     console.log("Editing purchase order with ID:", id);
     setSelectedOrderId(id);
-    setIsDialogOpen(true);
+    // Force un delay de 0ms pour s'assurer que l'état est mis à jour
+    setTimeout(() => {
+      setIsDialogOpen(true);
+    }, 0);
   };
   
-  const handleCloseDialog = () => {
+  const handleCloseDialog = useCallback(() => {
     console.log("Closing edit dialog - setting isDialogOpen to false");
     setIsDialogOpen(false);
-    console.log("Setting selectedOrderId to null");
-    setSelectedOrderId(null);
-  };
+    
+    // Delay resetting orderId to prevent UI flickering
+    setTimeout(() => {
+      console.log("Setting selectedOrderId to null");
+      setSelectedOrderId(null);
+    }, 100);
+  }, []);
   
   const EditDialog = () => {
     if (!selectedOrderId) return null;
