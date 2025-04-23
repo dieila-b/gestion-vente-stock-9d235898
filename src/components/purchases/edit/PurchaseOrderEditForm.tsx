@@ -48,11 +48,21 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     try {
       setIsSaving(true);
       console.log("Saving changes with form data:", formData);
+      
+      // Make sure formData has updated_at set to current timestamp
+      const dataToSave = {
+        ...formData,
+        updated_at: new Date().toISOString()
+      };
+      
       const success = await saveChanges();
       
       if (success) {
         toast.success("Modifications enregistrées avec succès");
-        onClose();
+        // Delay closing to allow the UI to update
+        setTimeout(() => {
+          onClose();
+        }, 500);
       } else {
         toast.error("Échec de l'enregistrement des modifications");
       }

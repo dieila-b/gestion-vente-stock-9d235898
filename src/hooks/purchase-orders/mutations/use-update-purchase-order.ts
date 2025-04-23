@@ -32,6 +32,9 @@ export function useUpdatePurchaseOrder() {
           validatedData.payment_status = 'pending';
         }
 
+        // Ensure updated_at is set
+        validatedData.updated_at = new Date().toISOString();
+
         // Execute the update
         const { data, error } = await supabase
           .from('purchase_orders')
@@ -53,9 +56,10 @@ export function useUpdatePurchaseOrder() {
         throw err;
       }
     },
-    onSuccess: () => {
-      // Invalidate the purchase orders query to refetch updated data
+    onSuccess: (data) => {
+      // Force invalidate the specific purchase order and the list
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
       toast.success("Bon de commande mis à jour avec succès");
     },
     onError: (error) => {

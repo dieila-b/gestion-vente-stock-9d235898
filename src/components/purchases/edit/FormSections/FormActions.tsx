@@ -15,6 +15,7 @@ export function FormActions({ onSave, onCancel, isSaving = false }: FormActionsP
         variant="outline"
         onClick={onCancel}
         disabled={isSaving}
+        type="button"
       >
         <X className="w-4 h-4 mr-2" />
         Annuler
@@ -22,6 +23,7 @@ export function FormActions({ onSave, onCancel, isSaving = false }: FormActionsP
       <Button 
         onClick={onSave}
         disabled={isSaving}
+        type="button"
         className="bg-green-600 hover:bg-green-700"
       >
         <Save className="w-4 h-4 mr-2" />

@@ -10,12 +10,14 @@ import { updateOrderTotal } from './edit/use-purchase-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePurchaseOrderMutations } from '@/hooks/purchase-orders/mutations/use-purchase-order-mutations';
 
 export function usePurchaseEdit(orderId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<'pending' | 'delivered'>('pending');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
   const queryClient = useQueryClient();
+  const { handleUpdate } = usePurchaseOrderMutations();
   
   // Get purchase data using the extracted hook
   const { 
@@ -47,44 +49,6 @@ export function usePurchaseEdit(orderId?: string) {
     }
   }, [purchase]);
 
-  // Handle update
-  const handleUpdate = async (data: Partial<PurchaseOrder>) => {
-    if (!orderId) return false;
-
-    setIsLoading(true);
-    try {
-      console.log("Updating purchase order with data:", data);
-      
-      // Update purchase order
-      const { error } = await supabase
-        .from('purchase_orders')
-        .update(data)
-        .eq('id', orderId);
-
-      if (error) {
-        console.error("Error updating purchase order:", error);
-        toast.error(`Erreur: ${error.message}`);
-        setIsLoading(false);
-        return false;
-      }
-
-      // Refetch the purchase order to get updated data
-      await refetch();
-      
-      // Also invalidate the main purchase orders query
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-
-      console.log("Purchase order updated successfully");
-      setIsLoading(false);
-      return true;
-    } catch (error: any) {
-      console.error("Error in handleUpdate:", error);
-      toast.error(`Erreur: ${error.message}`);
-      setIsLoading(false);
-      return false;
-    }
-  };
-
   // Get items management functions
   const { 
     updateItemQuantity, 
@@ -115,26 +79,40 @@ export function usePurchaseEdit(orderId?: string) {
     
     try {
       // First ensure order total is updated
-      await updateOrderTotal(orderId, formData);
+      const totalResult = await updateOrderTotal(orderId, formData);
+      
+      if (!totalResult.success) {
+        throw new Error("Échec de la mise à jour des totaux");
+      }
       
       // Then save the rest of the form data
       const dataToUpdate = {
         ...formData,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Include the calculated totals to ensure consistency
+        subtotal: totalResult.subtotal,
+        tax_amount: totalResult.taxAmount,
+        total_ttc: totalResult.totalTTC,
+        total_amount: totalResult.totalAmount
       };
       
       console.log("Data being sent to update:", dataToUpdate);
       
-      const success = await handleUpdate(dataToUpdate);
+      const updatedOrder = await handleUpdate(orderId, dataToUpdate);
       
-      if (success) {
-        // Force invalidate and refetch to ensure we have latest data
-        queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        await refetch();
+      if (!updatedOrder) {
+        throw new Error("Échec de la mise à jour du bon de commande");
       }
       
+      console.log("Purchase order updated successfully:", updatedOrder);
+      
+      // Force invalidate and refetch to ensure we have latest data
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
+      await refetch();
+      
       setIsLoading(false);
-      return success;
+      return true;
     } catch (error) {
       console.error("Error saving changes:", error);
       toast.error("Erreur lors de l'enregistrement des modifications");
@@ -148,7 +126,6 @@ export function usePurchaseEdit(orderId?: string) {
     formData,
     orderItems,
     isLoading: isLoading || isPurchaseLoading,
-    handleUpdate,
     updateFormField,
     updateItemQuantity,
     updateItemPrice,
