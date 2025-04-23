@@ -12,6 +12,7 @@ import { toast } from "sonner";
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>([]);
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   
   const { 
     orders: rawOrders, 
@@ -63,29 +64,38 @@ export default function PurchaseOrdersPage() {
   // Wrapper functions to ensure Promise<void> return types
   const handleApproveWrapper = async (id: string): Promise<void> => {
     try {
+      setProcessingOrderId(id);
       console.log("Calling handleApprove wrapper with ID:", id);
       const result = await handleApprove(id);
       console.log("Approve result:", result);
     } catch (error) {
       console.error("Error in approval wrapper:", error);
       toast.error("Erreur lors de l'approbation");
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
   const handleDeleteWrapper = async (id: string): Promise<void> => {
     try {
+      setProcessingOrderId(id);
       await handleDelete(id);
       await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
+      setProcessingOrderId(id);
       await handleEdit(id);
     } catch (error) {
       console.error("Error in edit wrapper:", error);
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
@@ -112,6 +122,7 @@ export default function PurchaseOrdersPage() {
               onDelete={handleDeleteWrapper}
               onEdit={handleEditWrapper}
               onPrint={handlePrint}
+              processingOrderId={processingOrderId}
             />
           </CardContent>
         </Card>

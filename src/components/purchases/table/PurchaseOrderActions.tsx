@@ -31,6 +31,8 @@ export function PurchaseOrderActions({
     try {
       console.log("PurchaseOrderActions: Approving order", order.id);
       await onApprove(order.id);
+    } catch (error) {
+      console.error("Error in handleApproveClick:", error);
     } finally {
       setLocalLoading(false);
     }

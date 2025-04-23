@@ -12,21 +12,26 @@ export function useApprovePurchaseOrder() {
       try {
         console.log("Starting approval process for order:", id);
         
-        // 1. Vérifier d'abord l'existence du bon de commande
-        const { data: checkOrder, error: checkError } = await supabase
+        // 1. Vérifier d'abord l'existence du bon de commande - utilisons get() au lieu de maybeSingle()
+        const { data: orders, error: checkError } = await supabase
           .from('purchase_orders')
           .select('id, status')
-          .eq('id', id)
-          .maybeSingle();
+          .eq('id', id);
           
         if (checkError) {
           console.error("Error checking purchase order:", checkError);
           throw new Error(`Erreur lors de la vérification: ${checkError.message}`);
         }
         
-        if (!checkOrder) {
+        // Vérifier si nous avons récupéré des données
+        if (!orders || orders.length === 0) {
+          console.error("Purchase order not found:", id);
           throw new Error("Bon de commande introuvable");
         }
+        
+        const checkOrder = orders[0];
+        
+        console.log("Found purchase order:", checkOrder);
         
         if (checkOrder.status === 'approved') {
           console.log("Order already approved:", id);

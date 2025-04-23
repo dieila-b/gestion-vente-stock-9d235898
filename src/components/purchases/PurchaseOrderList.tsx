@@ -5,6 +5,7 @@ import { PurchaseOrder } from "@/types/purchase-order";
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];
   isLoading: boolean;
+  processingOrderId: string | null;
   onApprove: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string) => Promise<void>;
@@ -14,6 +15,7 @@ interface PurchaseOrderListProps {
 export function PurchaseOrderList({
   orders,
   isLoading,
+  processingOrderId,
   onApprove,
   onDelete,
   onEdit,
@@ -30,6 +32,7 @@ export function PurchaseOrderList({
       onDelete={onDelete}
       onEdit={onEdit}
       onPrint={onPrint}
+      processingOrderId={processingOrderId}
     />
   );
 }

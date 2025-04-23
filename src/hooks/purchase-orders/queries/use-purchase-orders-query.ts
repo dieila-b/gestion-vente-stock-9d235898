@@ -2,207 +2,67 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { toast } from "sonner";
-import { isObject } from "@/utils/type-utils";
-
-// Type guard to check if an object is a valid PurchaseOrder
-function isPurchaseOrder(obj: unknown): obj is PurchaseOrder {
-  return isObject(obj) && 
-    'id' in obj && 
-    'order_number' in obj && 
-    'status' in obj;
-}
-
-// Helper to safely convert to PurchaseOrder
-function toPurchaseOrder(data: unknown): PurchaseOrder {
-  if (isPurchaseOrder(data)) {
-    return data;
-  }
-  
-  // If it's not a valid PurchaseOrder but has an id, create a minimal valid object
-  if (isObject(data) && 'id' in data) {
-    console.warn("Incomplete PurchaseOrder data, creating minimal object:", data);
-    return {
-      id: String(data.id),
-      order_number: isObject(data) && 'order_number' in data ? String(data.order_number) : 'Unknown',
-      created_at: new Date().toISOString(),
-      status: 'pending', // Using a valid status value
-      supplier_id: '',
-      discount: 0,
-      expected_delivery_date: '',
-      notes: '',
-      logistics_cost: 0,
-      transit_cost: 0,
-      tax_rate: 0,
-      shipping_cost: 0,
-      subtotal: 0,
-      tax_amount: 0,
-      total_ttc: 0,
-      total_amount: 0,
-      paid_amount: 0,
-      payment_status: 'pending', // Using a valid payment status value
-      supplier: { id: '', name: 'Unknown', email: '', phone: '' },
-      items: []
-    };
-  }
-  
-  // Last resort, create an empty object with a random ID
-  console.error("Invalid PurchaseOrder data:", data);
-  return {
-    id: `invalid-${Date.now()}`,
-    order_number: 'Invalid Order',
-    created_at: new Date().toISOString(),
-    status: 'draft', // Using a valid status value
-    supplier_id: '',
-    discount: 0,
-    expected_delivery_date: '',
-    notes: '',
-    logistics_cost: 0,
-    transit_cost: 0,
-    tax_rate: 0,
-    shipping_cost: 0,
-    subtotal: 0,
-    tax_amount: 0,
-    total_ttc: 0,
-    total_amount: 0,
-    paid_amount: 0,
-    payment_status: 'pending', // Using a valid payment status value
-    supplier: { id: '', name: 'Unknown', email: '', phone: '' },
-    items: []
-  };
-}
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
     queryKey: ['purchase-orders'],
-    queryFn: async (): Promise<PurchaseOrder[]> => {
-      console.log("Fetching purchase orders...");
-      
+    queryFn: async () => {
       try {
-        // First, try direct query with detailed logging
-        console.log("Attempting direct query to purchase_orders table...");
-        const { data: directData, error: directError } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:suppliers(
-              id,
-              name,
-              email,
-              phone,
-              contact
-            ),
-            items:purchase_order_items(
-              *,
-              product:catalog(*)
-            )
-          `)
-          .order('created_at', { ascending: false });
+        console.log("Fetching purchase orders from database");
+        
+        // D'abord, récupérer les commandes via la fonction bypass plus sûre
+        const { data: ordersData, error: ordersError } = await supabase
+          .rpc('bypass_select_purchase_orders');
           
-        if (!directError && directData && directData.length > 0) {
-          console.log("Purchase orders fetched successfully via direct query:", directData.length);
-          
-          // Debug items for first few orders
-          directData.slice(0, 3).forEach((order, index) => {
-            console.log(`Order ${index} (${order.order_number}) items:`, 
-              order.items ? `${order.items.length} items` : 'No items array');
-          });
-          
-          return directData as PurchaseOrder[];
+        if (ordersError) {
+          console.error("Error fetching purchase orders:", ordersError);
+          throw ordersError;
         }
         
-        console.log("Direct query result:", directData?.length || 0, "records. Error:", directError);
+        if (!ordersData) {
+          console.log("No purchase orders found");
+          return [];
+        }
         
-        // If direct query fails, try the RPC function
-        console.log("Attempting RPC function bypass_select_purchase_orders...");
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          'bypass_select_purchase_orders'
+        console.log(`Found ${ordersData.length} purchase orders`);
+        
+        // Ensuite, récupérer les articles pour chaque commande
+        const ordersWithItems = await Promise.all(
+          ordersData.map(async (orderData: any) => {
+            try {
+              // Récupérer les articles via une fonction RPC
+              const { data: itemsData, error: itemsError } = await supabase
+                .rpc('get_purchase_order_items', { order_id: orderData.id });
+                
+              if (itemsError) {
+                console.error(`Error fetching items for order ${orderData.id}:`, itemsError);
+                return {
+                  ...orderData,
+                  items: []
+                };
+              }
+              
+              return {
+                ...orderData,
+                items: itemsData || []
+              };
+            } catch (error) {
+              console.error(`Error processing items for order ${orderData.id}:`, error);
+              return {
+                ...orderData,
+                items: []
+              };
+            }
+          })
         );
         
-        if (rpcError) {
-          console.error("RPC function failed:", rpcError);
-          throw rpcError;
-        }
-        
-        if (rpcData && rpcData.length > 0) {
-          console.log("Processed purchase orders via RPC:", rpcData.length);
-          
-          // Fetch items for each purchase order
-          const ordersWithItems = await Promise.all(
-            rpcData.map(async (order: any) => {
-              try {
-                // First, fetch items directly from purchase_order_items table
-                const { data: itemsData, error: itemsError } = await supabase
-                  .from('purchase_order_items')
-                  .select(`
-                    *,
-                    product:catalog(*)
-                  `)
-                  .eq('purchase_order_id', order.id);
-                
-                if (!itemsError && itemsData && itemsData.length > 0) {
-                  console.log(`Found ${itemsData.length} items directly for order ${order.id}`);
-                  
-                  // Convert the order to a PurchaseOrder object with items
-                  const orderWithItems = {
-                    ...order,
-                    items: itemsData
-                  };
-                  
-                  return toPurchaseOrder(orderWithItems);
-                }
-                
-                console.log(`No items found directly for order ${order.id}, trying RPC...`);
-                
-                // If direct items fetch fails, try the RPC function
-                const { data: orderDetails, error: detailsError } = await supabase.rpc(
-                  'get_purchase_order_by_id',
-                  { order_id: order.id }
-                );
-                
-                if (!detailsError && orderDetails) {
-                  // Type-safe approach: Check if orderDetails is a valid object with items
-                  const hasItems = isObject(orderDetails) && 'items' in orderDetails;
-                  
-                  console.log(`Items for order ${order.id} via RPC:`, 
-                    hasItems && Array.isArray(orderDetails.items) 
-                      ? orderDetails.items.length 
-                      : 'No items or invalid items array');
-                  
-                  // Safely convert to PurchaseOrder type with proper validation
-                  return toPurchaseOrder(orderDetails);
-                }
-                
-                console.log(`No details found for order ${order.id}, error:`, detailsError);
-                return toPurchaseOrder(order);
-              } catch (err) {
-                console.error(`Error fetching details for order ${order.id}:`, err);
-                return toPurchaseOrder(order);
-              }
-            })
-          );
-          
-          // Debug the first few orders to see if they have items
-          ordersWithItems.slice(0, 3).forEach((order, index) => {
-            console.log(`Processed order ${index} (${order.order_number}):`, 
-              order.items ? `${order.items.length} items` : 'No items array');
-            if (order.items && order.items.length > 0) {
-              console.log(`First item sample:`, order.items[0]);
-            }
-          });
-          
-          return ordersWithItems;
-        }
-        
-        console.log("No purchase orders found in either direct query or RPC.");
-        return [];
+        return ordersWithItems as PurchaseOrder[];
       } catch (error) {
-        console.error("Error fetching purchase orders:", error);
-        toast.error("Erreur lors du chargement des bons de commande");
-        return [];
+        console.error("Error in usePurchaseOrdersQuery:", error);
+        throw error;
       }
     },
-    staleTime: 0, // Always refetch on component mount
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
 }

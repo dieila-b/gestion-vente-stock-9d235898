@@ -11,7 +11,7 @@ export async function syncApprovedPurchaseOrders() {
   try {
     console.log("Synchronizing approved purchase orders to delivery notes");
     
-    // Get all approved purchase orders that don't have delivery notes yet
+    // Get all approved purchase orders - implémentation plus robuste
     const { data: approvedOrders, error: fetchError } = await supabase
       .from('purchase_orders')
       .select(`
@@ -21,12 +21,7 @@ export async function syncApprovedPurchaseOrders() {
         status,
         items:purchase_order_items(*)
       `)
-      .eq('status', 'approved')
-      .not('id', 'in', 
-        supabase
-          .from('delivery_notes')
-          .select('purchase_order_id')
-      );
+      .eq('status', 'approved');
     
     if (fetchError) {
       console.error("Error fetching approved purchase orders:", fetchError);
@@ -34,13 +29,36 @@ export async function syncApprovedPurchaseOrders() {
       return false;
     }
     
-    console.log(`Found ${approvedOrders?.length || 0} approved orders without delivery notes:`, approvedOrders);
+    if (!approvedOrders || approvedOrders.length === 0) {
+      console.log("No approved orders found");
+      return false;
+    }
+    
+    console.log(`Found ${approvedOrders?.length || 0} approved orders total`);
+    
+    // Récupérer tous les bons de livraison existants
+    const { data: existingNotes, error: notesError } = await supabase
+      .from('delivery_notes')
+      .select('purchase_order_id');
+      
+    if (notesError) {
+      console.error("Error fetching existing delivery notes:", notesError);
+      toast.error("Erreur lors de la vérification des bons de livraison existants");
+      return false;
+    }
+    
+    // Filtrer pour ne garder que les commandes sans bon de livraison
+    const ordersWithoutNotes = approvedOrders.filter(order => 
+      !existingNotes?.some(note => note.purchase_order_id === order.id)
+    );
+    
+    console.log(`Found ${ordersWithoutNotes?.length || 0} approved orders without delivery notes:`, ordersWithoutNotes);
     
     // Create delivery notes for each approved order
-    if (approvedOrders && approvedOrders.length > 0) {
+    if (ordersWithoutNotes && ordersWithoutNotes.length > 0) {
       let createdCount = 0;
       
-      for (const order of approvedOrders) {
+      for (const order of ordersWithoutNotes) {
         try {
           // Generate a unique delivery note number with date and random component
           const date = new Date();

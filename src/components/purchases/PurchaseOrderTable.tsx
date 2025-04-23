@@ -1,116 +1,94 @@
 
-import { useState } from "react";
-import { formatDate } from "@/lib/formatters";
-import { formatGNF } from "@/lib/currency";
-import { PurchaseOrder } from "@/types/purchase-order";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { PurchaseOrderActions } from "./table/PurchaseOrderActions";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import type { PurchaseOrder } from "@/types/purchase-order";
 import { LoadingState } from "./table/LoadingState";
 import { EmptyState } from "./table/EmptyState";
+import { PurchaseOrderActions } from "./table/PurchaseOrderActions";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
   isLoading: boolean;
-  onApprove: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  onEdit: (id: string) => Promise<void>;
+  processingOrderId: string | null;
+  onApprove: (orderId: string) => Promise<void>;
+  onDelete: (orderId: string) => Promise<void>;
+  onEdit: (orderId: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
 }
 
-export function PurchaseOrderTable({
+export const PurchaseOrderTable = ({
   orders,
   isLoading,
+  processingOrderId,
   onApprove,
   onDelete,
   onEdit,
   onPrint
-}: PurchaseOrderTableProps) {
-  const [processingId, setProcessingId] = useState<string | null>(null);
-
-  const handleApprove = async (id: string) => {
-    if (processingId) return;
-    setProcessingId(id);
-    try {
-      await onApprove(id);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (processingId) return;
-    setProcessingId(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleEdit = async (id: string) => {
-    if (processingId) return;
-    setProcessingId(id);
-    try {
-      await onEdit(id);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!orders || orders.length === 0) {
-    return <EmptyState />;
-  }
-
+}: PurchaseOrderTableProps) => {
   return (
-    <div className="rounded-md bg-background/95 border">
+    <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>N° Commande</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
+            <TableHead>Nombre articles</TableHead>
             <TableHead>Statut</TableHead>
-            <TableHead>Montant Total</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Montant net</TableHead>
+            <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">{order.order_number}</TableCell>
-              <TableCell>{formatDate(order.created_at)}</TableCell>
-              <TableCell>{order.supplier?.name || 'Non spécifié'}</TableCell>
-              <TableCell>
-                <StatusBadge
-                  status={order.status}
-                  statusMap={{
-                    draft: { label: "Brouillon", variant: "outline" },
-                    pending: { label: "En attente", variant: "warning" },
-                    approved: { label: "Approuvé", variant: "success" },
-                    delivered: { label: "Livré", variant: "info" }
-                  }}
-                />
-              </TableCell>
-              <TableCell>{formatGNF(order.total_amount)}</TableCell>
-              <TableCell>
-                <PurchaseOrderActions
-                  order={order}
-                  processingId={processingId}
-                  onApprove={handleApprove}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onPrint={onPrint}
-                />
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={7}>
+                <LoadingState />
               </TableCell>
             </TableRow>
-          ))}
+          ) : orders?.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7}>
+                <EmptyState />
+              </TableCell>
+            </TableRow>
+          ) : (
+            orders?.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>{order.order_number}</TableCell>
+                <TableCell>
+                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+                </TableCell>
+                <TableCell>{order.supplier?.name}</TableCell>
+                <TableCell>{order.items?.length || 0}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    order.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {order.status === 'approved' ? 'Approuvé' :
+                     order.status === 'draft' ? 'Brouillon' :
+                     'En attente'}
+                  </span>
+                </TableCell>
+                <TableCell>{order.total_amount?.toLocaleString('fr-FR') || '0'} GNF</TableCell>
+                <TableCell>
+                  <PurchaseOrderActions 
+                    order={order}
+                    processingId={processingOrderId}
+                    onApprove={onApprove}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onPrint={onPrint}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
   );
-}
+};
