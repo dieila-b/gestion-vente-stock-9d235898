@@ -3,15 +3,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PurchaseOrderEditForm } from "@/components/purchases/edit/PurchaseOrderEditForm";
+import { toast } from "sonner";
 
 export function useEditPurchaseOrder() {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   
-  const handleEdit = (id: string) => {
+  const handleEdit = async (id: string) => {
     if (!id) {
       console.error("No purchase order ID provided for editing");
+      toast.error("ID de bon de commande manquant");
       return;
     }
     

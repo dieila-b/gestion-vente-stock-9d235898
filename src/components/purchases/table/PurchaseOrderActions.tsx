@@ -1,9 +1,13 @@
 
 import { Button } from "@/components/ui/button";
-import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Printer, Edit, Trash2, Loader } from "lucide-react";
+import { MoreHorizontal, Printer, Check, Trash2, Pencil } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -22,137 +26,56 @@ export function PurchaseOrderActions({
   onDelete,
   onPrint
 }: PurchaseOrderActionsProps) {
-  const [localLoading, setLocalLoading] = useState(false);
+  const isProcessing = processingId === order.id;
   
-  const handleApproveClick = async () => {
-    if (processingId === order.id || localLoading) return;
-    
-    setLocalLoading(true);
-    try {
-      console.log("PurchaseOrderActions: Approving order", order.id);
-      await onApprove(order.id);
-    } catch (error) {
-      console.error("Error in handleApproveClick:", error);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  const handleDeleteClick = async () => {
-    if (processingId === order.id || localLoading) return;
-    
-    setLocalLoading(true);
-    try {
-      await onDelete(order.id);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  const handleEditClick = async () => {
-    if (processingId === order.id || localLoading) return;
-    
-    setLocalLoading(true);
-    try {
-      await onEdit(order.id);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  const isProcessing = processingId === order.id || localLoading;
+  // Don't show approve button for already approved orders
+  const canApprove = order.status !== 'approved';
 
   return (
-    <div className="flex items-center justify-end gap-2">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onPrint(order)}
-              className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
+    <div className="flex items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {canApprove && (
+            <DropdownMenuItem 
+              onClick={() => onApprove(order.id)}
               disabled={isProcessing}
             >
-              <Printer className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Imprimer</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {order.status !== 'approved' && order.status !== 'delivered' && (
-        <>
-          {order.status === 'pending' && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleApproveClick}
-                    disabled={isProcessing}
-                    className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
-                  >
-                    {isProcessing ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Approuver</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+              <Check className="mr-2 h-4 w-4" />
+              {isProcessing ? "Traitement..." : "Approuver"}
+            </DropdownMenuItem>
           )}
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleEditClick}
-                  disabled={isProcessing}
-                  className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Modifier</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDeleteClick}
-                  disabled={isProcessing}
-                  className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
-                >
-                  {isProcessing ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Supprimer</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </>
-      )}
+          <DropdownMenuItem 
+            onClick={() => onEdit(order.id)}
+            disabled={isProcessing}
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Modifier
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => onPrint(order)}
+            disabled={isProcessing}
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimer
+          </DropdownMenuItem>
+          {canApprove && (
+            <DropdownMenuItem 
+              onClick={() => onDelete(order.id)}
+              disabled={isProcessing}
+              className="text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

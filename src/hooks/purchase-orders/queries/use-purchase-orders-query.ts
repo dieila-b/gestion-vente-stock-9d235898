@@ -10,29 +10,39 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders from database");
         
-        // D'abord, récupérer les commandes via la fonction bypass plus sûre
+        // First, retrieve the purchase orders directly from the table for better error handling
         const { data: ordersData, error: ordersError } = await supabase
-          .rpc('bypass_select_purchase_orders');
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:supplier_id(*)
+          `)
+          .order('created_at', { ascending: false });
           
         if (ordersError) {
           console.error("Error fetching purchase orders:", ordersError);
           throw ordersError;
         }
         
-        if (!ordersData) {
+        if (!ordersData || ordersData.length === 0) {
           console.log("No purchase orders found");
           return [];
         }
         
         console.log(`Found ${ordersData.length} purchase orders`);
         
-        // Ensuite, récupérer les articles pour chaque commande
+        // Then, retrieve the items for each order
         const ordersWithItems = await Promise.all(
           ordersData.map(async (orderData: any) => {
             try {
-              // Récupérer les articles via une fonction RPC
+              // Retrieve items directly with a join
               const { data: itemsData, error: itemsError } = await supabase
-                .rpc('get_purchase_order_items', { order_id: orderData.id });
+                .from('purchase_order_items')
+                .select(`
+                  *,
+                  product:product_id(*)
+                `)
+                .eq('purchase_order_id', orderData.id);
                 
               if (itemsError) {
                 console.error(`Error fetching items for order ${orderData.id}:`, itemsError);

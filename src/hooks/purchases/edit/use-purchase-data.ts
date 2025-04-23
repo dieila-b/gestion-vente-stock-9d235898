@@ -39,43 +39,49 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
-        // Use the RPC get_purchase_order_by_id to retrieve the data
+        // Use direct query instead of RPC for better error handling
         const { data, error } = await supabase
-          .rpc('get_purchase_order_by_id', { order_id: orderId });
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:supplier_id(*),
+            warehouse:warehouse_id(*),
+            items:purchase_order_items(
+              *,
+              product:product_id(*)
+            )
+          `)
+          .eq('id', orderId)
+          .single();
         
         if (error) {
           console.error("Error fetching purchase order:", error);
+          toast.error(`Erreur: ${error.message}`);
           throw error;
         }
         
         if (!data) {
           console.error("No purchase order found with ID:", orderId);
+          toast.error("Bon de commande non trouvé");
           return null;
         }
 
-        // Ensure data is an object before proceeding
-        if (!isPlainObject(data)) {
-          console.error("Invalid data format received:", data);
-          return null;
-        }
-        
-        // Process the data with proper type checking
-        const typedData = data as Record<string, any>;
+        console.log("Purchase order data retrieved:", data);
         
         // Ensure the status is valid
-        const validStatus: PurchaseOrder['status'] = typedData.status && isValidStatus(String(typedData.status)) 
-          ? String(typedData.status) as PurchaseOrder['status']
+        const validStatus: PurchaseOrder['status'] = data.status && isValidStatus(String(data.status)) 
+          ? String(data.status) as PurchaseOrder['status']
           : 'pending';
           
-        const validPaymentStatus: PurchaseOrder['payment_status'] = typedData.payment_status && isValidPaymentStatus(String(typedData.payment_status)) 
-          ? String(typedData.payment_status) as PurchaseOrder['payment_status']
+        const validPaymentStatus: PurchaseOrder['payment_status'] = data.payment_status && isValidPaymentStatus(String(data.payment_status)) 
+          ? String(data.payment_status) as PurchaseOrder['payment_status']
           : 'pending';
         
         // Process the items with proper type checking
         let processedItems: PurchaseOrderItem[] = [];
         
-        if (typedData.items && Array.isArray(typedData.items)) {
-          processedItems = typedData.items.map(item => ({
+        if (data.items && Array.isArray(data.items)) {
+          processedItems = data.items.map(item => ({
             id: String(item.id || ''),
             product_id: String(item.product_id || ''),
             purchase_order_id: orderId,
@@ -98,33 +104,33 @@ export function usePurchaseData(orderId?: string) {
         
         // Create a properly typed PurchaseOrder object
         const purchaseOrder: PurchaseOrder = {
-          id: String(typedData.id || ''),
-          order_number: String(typedData.order_number || ''),
-          created_at: String(typedData.created_at || ''),
-          updated_at: typedData.updated_at ? String(typedData.updated_at) : undefined,
+          id: String(data.id || ''),
+          order_number: String(data.order_number || ''),
+          created_at: String(data.created_at || ''),
+          updated_at: data.updated_at ? String(data.updated_at) : undefined,
           status: validStatus,
-          supplier_id: String(typedData.supplier_id || ''),
-          discount: Number(typedData.discount || 0),
-          expected_delivery_date: String(typedData.expected_delivery_date || ''),
-          notes: String(typedData.notes || ''),
-          logistics_cost: Number(typedData.logistics_cost || 0),
-          transit_cost: Number(typedData.transit_cost || 0),
-          tax_rate: Number(typedData.tax_rate || 0),
-          shipping_cost: Number(typedData.shipping_cost || 0),
-          subtotal: Number(typedData.subtotal || 0),
-          tax_amount: Number(typedData.tax_amount || 0),
-          total_ttc: Number(typedData.total_ttc || 0),
-          total_amount: Number(typedData.total_amount || 0),
-          paid_amount: Number(typedData.paid_amount || 0),
+          supplier_id: String(data.supplier_id || ''),
+          discount: Number(data.discount || 0),
+          expected_delivery_date: String(data.expected_delivery_date || ''),
+          notes: String(data.notes || ''),
+          logistics_cost: Number(data.logistics_cost || 0),
+          transit_cost: Number(data.transit_cost || 0),
+          tax_rate: Number(data.tax_rate || 0),
+          shipping_cost: Number(data.shipping_cost || 0),
+          subtotal: Number(data.subtotal || 0),
+          tax_amount: Number(data.tax_amount || 0),
+          total_ttc: Number(data.total_ttc || 0),
+          total_amount: Number(data.total_amount || 0),
+          paid_amount: Number(data.paid_amount || 0),
           payment_status: validPaymentStatus,
-          warehouse_id: typedData.warehouse_id ? String(typedData.warehouse_id) : undefined,
-          supplier: typedData.supplier ? {
-            id: String(typedData.supplier.id || ''),
-            name: String(typedData.supplier.name || ''),
-            email: typedData.supplier.email ? String(typedData.supplier.email) : '',
-            phone: typedData.supplier.phone ? String(typedData.supplier.phone) : '',
-            address: typedData.supplier.address ? String(typedData.supplier.address) : '',
-            contact: typedData.supplier.contact ? String(typedData.supplier.contact) : ''
+          warehouse_id: data.warehouse_id ? String(data.warehouse_id) : undefined,
+          supplier: data.supplier ? {
+            id: String(data.supplier.id || ''),
+            name: String(data.supplier.name || ''),
+            email: data.supplier.email ? String(data.supplier.email) : '',
+            phone: data.supplier.phone ? String(data.supplier.phone) : '',
+            address: data.supplier.address ? String(data.supplier.address) : '',
+            contact: data.supplier.contact ? String(data.supplier.contact) : ''
           } : {
             id: '',
             name: '',
@@ -133,9 +139,9 @@ export function usePurchaseData(orderId?: string) {
             address: '',
             contact: ''
           },
-          warehouse: typedData.warehouse ? {
-            id: String(typedData.warehouse.id || ''),
-            name: String(typedData.warehouse.name || '')
+          warehouse: data.warehouse ? {
+            id: String(data.warehouse.id || ''),
+            name: String(data.warehouse.name || '')
           } : undefined,
           items: processedItems
         };
@@ -147,7 +153,8 @@ export function usePurchaseData(orderId?: string) {
         return null;
       }
     },
-    enabled: !!orderId
+    enabled: !!orderId,
+    retry: 1
   });
 
   // Update form data when purchase data is loaded
