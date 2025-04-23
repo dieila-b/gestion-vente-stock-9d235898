@@ -29,6 +29,21 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
     return match ? match[0].trim() : "";
   };
 
+  // Format the number as a string with proper formatting
+  const formatNumberWithSeparator = (num: number): string => {
+    return num.toLocaleString('fr-FR', {
+      minimumFractionDigits: value.toString().includes(".") ? 1 : 0,
+      maximumFractionDigits: value.toString().includes(".") ? 1 : 0
+    });
+  };
+
+  const numericValue = extractNumber(value);
+  const suffixText = getSuffix(value);
+  
+  // Format trend value
+  const formattedTrendValue = trend?.value?.toFixed(1);
+  const trendPrefix = trend?.isPositive ? '↑ ' : '↓ ';
+
   return (
     <Card 
       className={`enhanced-glass p-4 card-hover animate-float group backdrop-blur-xl transform transition-all duration-300 hover:scale-105 ${className} ${onClick ? 'cursor-pointer' : ''}`}
@@ -38,13 +53,10 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
         <div className="animate-slide-in z-10">
           <p className="text-xs text-muted-foreground font-medium">{title}</p>
           <h3 className="text-lg font-bold mt-1 group-hover:text-gradient">
-            <CountUp
-              end={extractNumber(value)}
-              separator=","
-              decimal="."
-              decimals={value.toString().includes(".") ? 1 : 0}
-              suffix={` ${getSuffix(value)}`}
+            <CountUp 
+              end={numericValue} 
               className="tabular-nums text-lg"
+              formattingFn={(value) => `${formatNumberWithSeparator(value)}${suffixText ? ` ${suffixText}` : ''}`}
             />
           </h3>
           {trend && (
@@ -53,14 +65,9 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
                 trend.isPositive ? 'text-green-400' : 'text-red-400'
               }`}
             >
-              <CountUp
-                start={0}
-                end={trend.value}
-                decimals={1}
-                suffix="%"
-                prefix={trend.isPositive ? '↑ ' : '↓ '}
-                className="tabular-nums"
-              />
+              <span className="tabular-nums">
+                {trendPrefix}{formattedTrendValue}%
+              </span>
             </p>
           )}
         </div>
