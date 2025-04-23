@@ -46,9 +46,9 @@ export function usePurchaseOrders() {
       console.log("Starting approval process for:", id);
       
       // Call the approve function from the hook and await it properly
-      const result = await approveOrderFn(id);
+      await approveOrderFn(id);
       
-      console.log("Approval completed for:", id, "Result:", result);
+      console.log("Approval completed for:", id);
       
       // Refresh the orders list
       await refreshOrders();

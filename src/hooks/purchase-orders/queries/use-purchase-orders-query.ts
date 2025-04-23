@@ -59,7 +59,7 @@ export function usePurchaseOrdersQuery() {
       } catch (error) {
         console.error("Error in usePurchaseOrdersQuery:", error);
         toast.error("Impossible de charger les bons de commande");
-        return []; // Retourner un tableau vide plutôt que de propager l'erreur
+        throw error; // Let the query handle the error state properly
       }
     },
     staleTime: 1000 * 60, // 1 minute

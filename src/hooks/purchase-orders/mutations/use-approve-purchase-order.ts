@@ -39,15 +39,15 @@ export function useApprovePurchaseOrder() {
         }
         
         // 2. Update the purchase order status
-        const { data: updatedData, error } = await supabase
+        const { data: updatedData, error: updateError } = await supabase
           .from('purchase_orders')
           .update({ status: 'approved' })
           .eq('id', id)
-          .select('*');
+          .select();
 
-        if (error) {
-          console.error("Error updating purchase order status:", error);
-          throw new Error(`Erreur lors de la mise à jour: ${error.message}`);
+        if (updateError) {
+          console.error("Error updating purchase order status:", updateError);
+          throw new Error(`Erreur lors de la mise à jour: ${updateError.message}`);
         }
         
         if (!updatedData || updatedData.length === 0) {
@@ -88,6 +88,7 @@ export function useApprovePurchaseOrder() {
     }
   });
 
+  // Return a function that directly calls mutateAsync to ensure proper Promise handling
   return (id: string) => {
     console.log("useApprovePurchaseOrder called with id:", id);
     return mutation.mutateAsync(id);
