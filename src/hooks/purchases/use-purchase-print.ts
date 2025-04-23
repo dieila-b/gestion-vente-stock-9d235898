@@ -28,6 +28,19 @@ export function usePurchasePrint() {
 
     console.log("Items to print:", order.items);
 
+    // Génération du contenu des articles
+    const itemsContent = order.items && order.items.length > 0 
+      ? order.items.map((item: PurchaseOrderItem, index: number) => `
+        <tr>
+          <td>${item.product?.reference || `Produit #${index + 1}`}</td>
+          <td>${item.product?.name || item.designation || 'Produit inconnu'}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">${formatGNF(item.unit_price)}</td>
+          <td style="text-align: right;">${formatGNF(item.total_price)}</td>
+        </tr>
+      `).join('') 
+      : '<tr><td colspan="5">Aucun produit</td></tr>';
+
     // Create print content for the purchase order
     const printContent = `
       <html>
@@ -57,6 +70,7 @@ export function usePurchasePrint() {
             <div class="supplier-info">
               <h2>Fournisseur</h2>
               <p>${order.supplier?.name || 'Non spécifié'}</p>
+              <p>Contact: ${order.supplier?.contact || 'Non spécifié'}</p>
               <p>Tel: ${order.supplier?.phone || 'Non spécifié'}</p>
               <p>Email: ${order.supplier?.email || 'Non spécifié'}</p>
             </div>
@@ -75,24 +89,15 @@ export function usePurchasePrint() {
           <table>
             <thead>
               <tr>
+                <th>Référence</th>
                 <th>Produit</th>
-                <th>Quantité</th>
-                <th>Prix unitaire</th>
-                <th>Total</th>
+                <th style="text-align: center;">Quantité</th>
+                <th style="text-align: right;">Prix unitaire</th>
+                <th style="text-align: right;">Total</th>
               </tr>
             </thead>
             <tbody>
-              ${order.items && order.items.length > 0 
-                ? order.items.map((item: PurchaseOrderItem) => `
-                  <tr>
-                    <td>${item.product?.name || item.designation || 'Produit inconnu'}</td>
-                    <td>${item.quantity}</td>
-                    <td>${formatGNF(item.unit_price)}</td>
-                    <td>${formatGNF(item.total_price)}</td>
-                  </tr>
-                `).join('') 
-                : '<tr><td colspan="4">Aucun produit</td></tr>'
-              }
+              ${itemsContent}
             </tbody>
           </table>
           
