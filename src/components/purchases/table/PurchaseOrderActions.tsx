@@ -31,6 +31,18 @@ export function PurchaseOrderActions({
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
+  // Handle approve function safely
+  const handleApprove = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Attempting to approve order:", order.id);
+    try {
+      await onApprove(order.id);
+    } catch (error) {
+      console.error("Error in approve handler:", error);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -43,7 +55,7 @@ export function PurchaseOrderActions({
         <DropdownMenuContent align="end">
           {canApprove && (
             <DropdownMenuItem 
-              onClick={() => onApprove(order.id)}
+              onClick={handleApprove}
               disabled={isProcessing}
               className="cursor-pointer"
             >

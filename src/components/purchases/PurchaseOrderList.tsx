@@ -22,7 +22,7 @@ export function PurchaseOrderList({
   onEdit,
   onPrint
 }: PurchaseOrderListProps) {
-  console.log("PurchaseOrderList renders with orders:", orders?.length || 0);
+  console.log("PurchaseOrderList renders with orders:", orders?.length || 0, "processingId:", processingOrderId);
   
   if (isLoading) {
     return (

@@ -26,7 +26,7 @@ export function PurchaseOrderTable({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) {
-  console.log("PurchaseOrderTable rendering with", orders?.length || 0, "orders");
+  console.log("PurchaseOrderTable rendering with", orders?.length || 0, "orders", "processingId:", processingOrderId);
   
   if (isLoading) {
     return <LoadingState />;
