@@ -20,18 +20,7 @@ export function PurchaseOrderList({
   onPrint
 }: PurchaseOrderListProps) {
   // Log for debugging
-  console.log("Orders in PurchaseOrderList:", orders);
-  
-  if (orders && orders.length > 0) {
-    console.log("First order items:", orders[0].items?.length || 0);
-    console.log("First order details:", {
-      id: orders[0].id,
-      order_number: orders[0].order_number,
-      item_count: orders[0].items?.length || 0
-    });
-  } else {
-    console.log("No orders available");
-  }
+  console.log("PurchaseOrderList renders with orders:", orders?.length || 0);
   
   return (
     <PurchaseOrderTable

@@ -4,12 +4,11 @@ import { formatGNF } from "@/lib/currency";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Printer, Edit, Trash2, Box, Check, X, Loader } from "lucide-react";
+import { Printer, Edit, Trash2, Box, Check, Loader } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "sonner";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -31,32 +30,32 @@ export function PurchaseOrderTable({
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   const handleApprove = async (id: string) => {
+    if (processingId) return; // Prevent multiple clicks
+    
     try {
+      console.log("Table: Handling approve for order:", id);
       setProcessingId(id);
-      console.log("Handling approve for order:", id);
       await onApprove(id);
-      toast.success("Bon de commande approuvé avec succès");
     } catch (error) {
-      console.error("Error approving order:", error);
-      toast.error("Erreur lors de l'approbation du bon de commande");
+      console.error("Table: Error approving order:", error);
     } finally {
       setProcessingId(null);
     }
   };
   
   const handleDelete = async (id: string) => {
+    if (processingId) return; // Prevent multiple clicks
+    
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
       return;
     }
     
     try {
       setProcessingId(id);
-      console.log("Handling delete for order:", id);
+      console.log("Table: Handling delete for order:", id);
       await onDelete(id);
-      toast.success("Bon de commande supprimé avec succès");
     } catch (error) {
-      console.error("Error deleting order:", error);
-      toast.error("Erreur lors de la suppression du bon de commande");
+      console.error("Table: Error deleting order:", error);
     } finally {
       setProcessingId(null);
     }
@@ -167,6 +166,7 @@ export function PurchaseOrderTable({
                               variant="ghost"
                               size="icon"
                               onClick={() => onEdit(order.id)}
+                              disabled={processingId === order.id}
                               className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
                             >
                               <Edit className="h-4 w-4" />

@@ -27,7 +27,10 @@ export default function PurchaseOrdersPage() {
 
   // Initial data load
   useEffect(() => {
-    refreshOrders();
+    console.log("Purchase orders page mounted, refreshing orders");
+    refreshOrders().catch(error => {
+      console.error("Error refreshing orders on mount:", error);
+    });
   }, []);
 
   // Process and filter orders
@@ -49,16 +52,6 @@ export default function PurchaseOrdersPage() {
       
       console.log("Filtered orders:", filtered.length);
       
-      // Check if items are properly loaded
-      filtered.forEach((order, index) => {
-        if (index < 3) { // Only log first 3 orders to avoid console spam
-          console.log(`Order ${index} (${order.order_number}) has ${order.items?.length || 0} items`);
-          if (order.items && order.items.length > 0) {
-            console.log(`First item: ${order.items[0].product?.name || 'No product name'}`);
-          }
-        }
-      });
-      
       setFilteredOrders(filtered);
     } catch (error) {
       console.error("Error processing orders:", error);
@@ -70,36 +63,7 @@ export default function PurchaseOrdersPage() {
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id, order.order_number);
-    console.log("Printing order with items:", order.items?.length || 0);
-    
-    // If order doesn't have items, try to find the complete order from rawOrders
-    if (!order.items || order.items.length === 0) {
-      console.log("Order has no items, searching for complete order...");
-      const completeOrder = rawOrders.find(o => o.id === order.id);
-      if (completeOrder && completeOrder.items && completeOrder.items.length > 0) {
-        console.log("Found complete order with items:", completeOrder.items.length);
-        printPurchaseOrder(completeOrder);
-      } else {
-        console.log("Could not find items for order, printing as is");
-        printPurchaseOrder(order);
-      }
-    } else {
-      printPurchaseOrder(order);
-    }
-  };
-
-  // Wrapping the callbacks in promises to match the expected type
-  const handleApprovePromise = async (id: string): Promise<void> => {
-    return handleApprove(id);
-  };
-
-  const handleDeletePromise = async (id: string): Promise<void> => {
-    return handleDelete(id);
-  };
-
-  const handleEditPromise = async (id: string): Promise<void> => {
-    handleEdit(id);
-    return Promise.resolve();
+    printPurchaseOrder(order);
   };
 
   return (
@@ -115,9 +79,9 @@ export default function PurchaseOrdersPage() {
             <PurchaseOrderList 
               orders={filteredOrders}
               isLoading={isLoading}
-              onApprove={handleApprovePromise}
-              onDelete={handleDeletePromise}
-              onEdit={handleEditPromise}
+              onApprove={handleApprove}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
               onPrint={handlePrint}
             />
           </CardContent>

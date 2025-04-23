@@ -9,7 +9,7 @@ import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve
 export function usePurchaseOrders() {
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
   const { handleDelete, handleCreate } = usePurchaseOrderMutations();
-  const approveOrder = useApprovePurchaseOrder();
+  const approveOrderFn = useApprovePurchaseOrder();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
@@ -40,15 +40,26 @@ export function usePurchaseOrders() {
     return result;
   };
 
-  // Correctly handle the approve function to ensure it returns a Promise
+  // Handle the approve function properly
   const handleApprove = async (id: string) => {
     try {
       console.log("Starting approval process for:", id);
-      await approveOrder(id);
+      
+      // Call the approve function from the hook
+      await approveOrderFn(id);
+      
       console.log("Approval completed for:", id);
+      
+      // Refresh the orders list
       await refreshOrders();
+      
+      // Also refresh delivery notes to show newly created ones
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      
+      return true;
     } catch (error) {
       console.error("Error in handleApprove:", error);
+      toast.error("Erreur lors de l'approbation de la commande");
       throw error;
     }
   };
