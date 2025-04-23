@@ -1,9 +1,7 @@
 
 import { PurchaseOrderTable } from "./PurchaseOrderTable";
-import { DataTable } from "@/components/ui/data-table";
-import { columns } from "./table/columns";
-import { PurchaseOrder } from "@/types/purchase-order";
 import { Loader } from "lucide-react";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];

@@ -52,10 +52,10 @@ export function usePurchaseData(orderId?: string) {
 
         console.log("Purchase order data retrieved:", data);
         
-        // Process the items with proper type checking
+        // Process the items with proper type checking and type conversion
         let processedItems: PurchaseOrderItem[] = [];
         
-        if (data.items && Array.isArray(data.items)) {
+        if (data && typeof data === 'object' && data.items && Array.isArray(data.items)) {
           processedItems = data.items.map(item => ({
             id: String(item.id || ''),
             product_id: String(item.product_id || ''),
@@ -77,53 +77,57 @@ export function usePurchaseData(orderId?: string) {
           console.warn("No items array in order data, or invalid format");
         }
         
-        // Create a properly typed PurchaseOrder object
-        const purchaseOrder: PurchaseOrder = {
-          id: String(data.id || ''),
-          order_number: String(data.order_number || ''),
-          created_at: String(data.created_at || ''),
-          updated_at: data.updated_at ? String(data.updated_at) : undefined,
-          status: isValidStatus(String(data.status)) ? String(data.status) as PurchaseOrder['status'] : 'pending',
-          supplier_id: String(data.supplier_id || ''),
-          discount: Number(data.discount || 0),
-          expected_delivery_date: String(data.expected_delivery_date || ''),
-          notes: String(data.notes || ''),
-          logistics_cost: Number(data.logistics_cost || 0),
-          transit_cost: Number(data.transit_cost || 0),
-          tax_rate: Number(data.tax_rate || 0),
-          shipping_cost: Number(data.shipping_cost || 0),
-          subtotal: Number(data.subtotal || 0),
-          tax_amount: Number(data.tax_amount || 0),
-          total_ttc: Number(data.total_ttc || 0),
-          total_amount: Number(data.total_amount || 0),
-          paid_amount: Number(data.paid_amount || 0),
-          payment_status: isValidPaymentStatus(String(data.payment_status)) 
-            ? String(data.payment_status) as PurchaseOrder['payment_status'] 
-            : 'pending',
-          warehouse_id: data.warehouse_id ? String(data.warehouse_id) : undefined,
-          supplier: data.supplier ? {
-            id: String(data.supplier.id || ''),
-            name: String(data.supplier.name || ''),
-            email: data.supplier.email ? String(data.supplier.email) : '',
-            phone: data.supplier.phone ? String(data.supplier.phone) : '',
-            address: data.supplier.address ? String(data.supplier.address) : '',
-            contact: data.supplier.contact ? String(data.supplier.contact) : ''
-          } : {
-            id: '',
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
-            contact: ''
-          },
-          warehouse: data.warehouse ? {
-            id: String(data.warehouse.id || ''),
-            name: String(data.warehouse.name || '')
-          } : undefined,
-          items: processedItems
-        };
+        // Create a properly typed PurchaseOrder object with type checking
+        if (data && typeof data === 'object') {
+          const purchaseOrder: PurchaseOrder = {
+            id: String(data.id || ''),
+            order_number: String(data.order_number || ''),
+            created_at: String(data.created_at || ''),
+            updated_at: data.updated_at ? String(data.updated_at) : undefined,
+            status: isValidStatus(String(data.status)) ? String(data.status) as PurchaseOrder['status'] : 'pending',
+            supplier_id: String(data.supplier_id || ''),
+            discount: Number(data.discount || 0),
+            expected_delivery_date: String(data.expected_delivery_date || ''),
+            notes: String(data.notes || ''),
+            logistics_cost: Number(data.logistics_cost || 0),
+            transit_cost: Number(data.transit_cost || 0),
+            tax_rate: Number(data.tax_rate || 0),
+            shipping_cost: Number(data.shipping_cost || 0),
+            subtotal: Number(data.subtotal || 0),
+            tax_amount: Number(data.tax_amount || 0),
+            total_ttc: Number(data.total_ttc || 0),
+            total_amount: Number(data.total_amount || 0),
+            paid_amount: Number(data.paid_amount || 0),
+            payment_status: isValidPaymentStatus(String(data.payment_status)) 
+              ? String(data.payment_status) as PurchaseOrder['payment_status'] 
+              : 'pending',
+            warehouse_id: data.warehouse_id ? String(data.warehouse_id) : undefined,
+            supplier: data.supplier && typeof data.supplier === 'object' ? {
+              id: String(data.supplier.id || ''),
+              name: String(data.supplier.name || ''),
+              email: data.supplier.email ? String(data.supplier.email) : '',
+              phone: data.supplier.phone ? String(data.supplier.phone) : '',
+              address: data.supplier.address ? String(data.supplier.address) : '',
+              contact: data.supplier.contact ? String(data.supplier.contact) : ''
+            } : {
+              id: '',
+              name: '',
+              email: '',
+              phone: '',
+              address: '',
+              contact: ''
+            },
+            warehouse: data.warehouse && typeof data.warehouse === 'object' ? {
+              id: String(data.warehouse.id || ''),
+              name: String(data.warehouse.name || '')
+            } : undefined,
+            items: processedItems
+          };
+          
+          return purchaseOrder;
+        }
         
-        return purchaseOrder;
+        throw new Error("Invalid data format received from the server");
       } catch (error) {
         console.error("Error fetching purchase order:", error);
         toast.error("Erreur lors du chargement du bon de commande");
