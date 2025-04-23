@@ -74,9 +74,11 @@ export function usePurchaseData(orderId?: string) {
         let processedItems: PurchaseOrderItem[] = [];
         
         if (hasProperty(data, 'items') && Array.isArray(data.items)) {
+          console.log("Items data:", data.items);
           processedItems = data.items.map(item => {
             // Ensure each item is an object
             if (!isObject(item)) {
+              console.error("Item is not an object:", item);
               return {
                 id: '',
                 product_id: '',
@@ -104,7 +106,7 @@ export function usePurchaseData(orderId?: string) {
             };
           });
           
-          console.log(`Processed ${processedItems.length} items from order data`);
+          console.log(`Processed ${processedItems.length} items from order data:`, processedItems);
           setOrderItems(processedItems);
         } else {
           console.warn("No items array in order data, or invalid format");
@@ -186,6 +188,12 @@ export function usePurchaseData(orderId?: string) {
         tax_rate: purchase.tax_rate,
         paid_amount: purchase.paid_amount
       });
+      
+      // Ensure the orderItems are updated from purchase data if available
+      if (purchase.items && purchase.items.length > 0) {
+        console.log("Setting order items from purchase data:", purchase.items.length);
+        setOrderItems(purchase.items);
+      }
     }
   }, [purchase]);
 

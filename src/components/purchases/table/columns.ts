@@ -1,6 +1,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { formatGNF } from "@/lib/currency";
 
 export const columns: ColumnDef<PurchaseOrder>[] = [
   {
@@ -9,7 +10,11 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
   },
   {
     accessorKey: "created_at",
-    header: "Date"
+    header: "Date",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("created_at"));
+      return date.toLocaleDateString("fr-FR");
+    }
   },
   {
     accessorKey: "supplier.name",
@@ -24,10 +29,24 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
   },
   {
     accessorKey: "status",
-    header: "Statut"
+    header: "Statut",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const statusMap: Record<string, string> = {
+        draft: "Brouillon",
+        pending: "En attente",
+        delivered: "Livré",
+        approved: "Approuvé"
+      };
+      
+      return statusMap[status] || status;
+    }
   },
   {
     accessorKey: "total_amount",
-    header: "Montant net"
+    header: "Montant net",
+    cell: ({ row }) => {
+      return formatGNF(row.getValue("total_amount") as number);
+    }
   }
 ];
