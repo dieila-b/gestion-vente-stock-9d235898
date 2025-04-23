@@ -72,7 +72,10 @@ export function usePurchaseEdit(orderId?: string) {
 
   // Save all form data
   const saveChanges = async () => {
-    if (!orderId) return false;
+    if (!orderId) {
+      console.error("Missing orderId in saveChanges");
+      return false;
+    }
     
     console.log("Saving changes with form data:", formData);
     setIsLoading(true);
@@ -105,6 +108,7 @@ export function usePurchaseEdit(orderId?: string) {
       const updatedOrder = await updatePurchaseOrder(orderId, dataToUpdate);
       
       if (!updatedOrder) {
+        console.error("Failed to update purchase order");
         throw new Error("Échec de la mise à jour du bon de commande");
       }
       
