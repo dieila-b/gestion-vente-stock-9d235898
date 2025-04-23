@@ -40,7 +40,6 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
           <h3 className="text-lg font-bold mt-1 group-hover:text-gradient">
             <CountUp
               end={extractNumber(value)}
-              duration={2.5}
               separator=","
               decimal="."
               decimals={value.toString().includes(".") ? 1 : 0}
@@ -57,7 +56,6 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
               <CountUp
                 start={0}
                 end={trend.value}
-                duration={2}
                 decimals={1}
                 suffix="%"
                 prefix={trend.isPositive ? '↑ ' : '↓ '}
