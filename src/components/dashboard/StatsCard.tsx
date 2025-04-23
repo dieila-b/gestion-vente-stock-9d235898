@@ -54,10 +54,10 @@ export function StatsCard({ title, value, icon: Icon, trend, className, onClick 
           <p className="text-xs text-muted-foreground font-medium">{title}</p>
           <h3 className="text-lg font-bold mt-1 group-hover:text-gradient">
             <CountUp 
-              end={numericValue} 
+              end={numericValue}
               className="tabular-nums text-lg"
-              formattingFn={(value) => `${formatNumberWithSeparator(value)}${suffixText ? ` ${suffixText}` : ''}`}
             />
+            {suffixText && <span className="ml-1">{suffixText}</span>}
           </h3>
           {trend && (
             <p 
