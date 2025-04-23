@@ -117,49 +117,56 @@ export function PurchaseOrderTable({
                 {/* Bouton Approuver, montré seulement si le statut est 'pending' */}
                 {order.status === 'pending' && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => handleApprove(order.id)}
                     disabled={processingId === order.id}
+                    className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
                     title="Approuver"
                   >
                     {processingId === order.id ? (
                       <Loader className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-4 w-4" />
                     )}
                   </Button>
                 )}
                 
+                {/* Bouton Modifier - désactivé si la commande est approuvée */}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => onEdit(order.id)}
+                  disabled={order.status === 'approved'}
+                  className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
                   title="Modifier"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => onPrint(order)}
+                  className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
                   title="Imprimer"
                 >
                   <Printer className="h-4 w-4" />
                 </Button>
                 
+                {/* Bouton Supprimer - désactivé si la commande est approuvée */}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => handleDelete(order.id)}
-                  disabled={processingId === order.id}
+                  disabled={order.status === 'approved' || processingId === order.id}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
                   title="Supprimer"
                 >
                   {processingId === order.id ? (
                     <Loader className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4" />
                   )}
                 </Button>
               </TableCell>
