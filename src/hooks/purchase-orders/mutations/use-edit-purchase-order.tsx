@@ -23,6 +23,7 @@ export function useEditPurchaseOrder() {
   };
   
   const handleCloseDialog = () => {
+    console.log("Closing edit dialog");
     setIsDialogOpen(false);
     setSelectedOrderId(null);
   };
