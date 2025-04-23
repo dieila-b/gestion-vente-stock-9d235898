@@ -58,6 +58,7 @@ export function useUpdatePurchaseOrder() {
     },
     onSuccess: (data) => {
       // Force invalidate the specific purchase order and the list
+      console.log("Invalidating queries after update success");
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
       toast.success("Bon de commande mis à jour avec succès");

@@ -78,8 +78,14 @@ export function usePurchaseEdit(orderId?: string) {
     setIsLoading(true);
     
     try {
+      // Ensure formData has updated_at set to current timestamp
+      const dataWithTimestamp = {
+        ...formData,
+        updated_at: new Date().toISOString()
+      };
+      
       // First ensure order total is updated
-      const totalResult = await updateOrderTotal(orderId, formData);
+      const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
       
       if (!totalResult.success) {
         throw new Error("Échec de la mise à jour des totaux");
@@ -87,8 +93,7 @@ export function usePurchaseEdit(orderId?: string) {
       
       // Then save the rest of the form data
       const dataToUpdate = {
-        ...formData,
-        updated_at: new Date().toISOString(),
+        ...dataWithTimestamp,
         // Include the calculated totals to ensure consistency
         subtotal: totalResult.subtotal,
         tax_amount: totalResult.taxAmount,
