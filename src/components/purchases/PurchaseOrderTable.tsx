@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, Pencil, Printer, Trash2 } from "lucide-react";
+import { Pencil, Printer, Check, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
@@ -81,45 +81,39 @@ export function PurchaseOrderTable({
                   <>
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="icon"
                       onClick={() => onEdit(order.id)}
                       disabled={processingOrderId === order.id}
-                      className="flex items-center gap-2"
                     >
                       <Pencil className="h-4 w-4" />
-                      <span>Éditer</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="icon"
                       onClick={() => onApprove(order.id)}
                       disabled={processingOrderId === order.id}
-                      className="flex items-center gap-2 text-green-600"
+                      className="text-green-600"
                     >
                       <Check className="h-4 w-4" />
-                      <span>Approuver</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="icon"
                       onClick={() => onDelete(order.id)}
                       disabled={processingOrderId === order.id}
-                      className="flex items-center gap-2 text-red-600"
+                      className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span>Supprimer</span>
                     </Button>
                   </>
                 )}
                 <Button 
                   variant="outline" 
-                  size="sm"
+                  size="icon"
                   onClick={() => onPrint(order)}
                   disabled={processingOrderId === order.id}
-                  className="flex items-center gap-2"
                 >
                   <Printer className="h-4 w-4" />
-                  <span>Imprimer</span>
                 </Button>
               </div>
             </TableCell>
