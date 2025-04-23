@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
@@ -43,6 +44,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   console.log("Form data:", formData);
   
   const handleSave = async () => {
+    if (isSaving) return;
+    
     try {
       setIsSaving(true);
       console.log("Saving changes with form data:", formData);
@@ -51,6 +54,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       
       if (success) {
         toast.success("Modifications enregistrées avec succès");
+        // Appeler directement onClose pour fermer le dialogue
+        console.log("Closing dialog immediately after successful save");
         onClose();
       } else {
         toast.error("Échec de l'enregistrement des modifications");

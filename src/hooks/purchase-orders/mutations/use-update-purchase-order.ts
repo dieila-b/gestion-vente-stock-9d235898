@@ -40,7 +40,7 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select();
+          .select('*');
 
         if (error) {
           console.error("Error updating purchase order:", error);
@@ -61,10 +61,10 @@ export function useUpdatePurchaseOrder() {
     },
     onSuccess: (data) => {
       // Force invalidate the specific purchase order and the list
-      console.log("Invalidating queries after update success");
+      console.log("Invalidating queries after update success for ID:", data.id);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
-      toast.success("Bon de commande mis à jour avec succès");
+      // Ne pas afficher de toast ici pour éviter les doublons avec celui de PurchaseOrderEditForm
     },
     onError: (error) => {
       console.error("Purchase order update error:", error);
@@ -75,7 +75,9 @@ export function useUpdatePurchaseOrder() {
   // Return a function with explicit type definition
   return async (id: string, data: Partial<PurchaseOrder>): Promise<PurchaseOrder | null> => {
     try {
-      return await mutation.mutateAsync({ id, data });
+      const result = await mutation.mutateAsync({ id, data });
+      console.log("Update complete with result:", result);
+      return result;
     } catch (error) {
       console.error("useUpdatePurchaseOrder hook error:", error);
       return null;
