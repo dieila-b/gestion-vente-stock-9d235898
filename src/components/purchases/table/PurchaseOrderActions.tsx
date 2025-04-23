@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Printer, Edit, Trash2, Loader } from "lucide-react";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -21,6 +22,44 @@ export function PurchaseOrderActions({
   onDelete,
   onPrint
 }: PurchaseOrderActionsProps) {
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  const handleApproveClick = async () => {
+    if (processingId === order.id || localLoading) return;
+    
+    setLocalLoading(true);
+    try {
+      console.log("PurchaseOrderActions: Approving order", order.id);
+      await onApprove(order.id);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const handleDeleteClick = async () => {
+    if (processingId === order.id || localLoading) return;
+    
+    setLocalLoading(true);
+    try {
+      await onDelete(order.id);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const handleEditClick = async () => {
+    if (processingId === order.id || localLoading) return;
+    
+    setLocalLoading(true);
+    try {
+      await onEdit(order.id);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const isProcessing = processingId === order.id || localLoading;
+
   return (
     <div className="flex items-center justify-end gap-2">
       <TooltipProvider>
@@ -31,6 +70,7 @@ export function PurchaseOrderActions({
               size="icon"
               onClick={() => onPrint(order)}
               className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
+              disabled={isProcessing}
             >
               <Printer className="h-4 w-4" />
             </Button>
@@ -50,11 +90,11 @@ export function PurchaseOrderActions({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onApprove(order.id)}
-                    disabled={processingId === order.id}
+                    onClick={handleApproveClick}
+                    disabled={isProcessing}
                     className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
                   >
-                    {processingId === order.id ? (
+                    {isProcessing ? (
                       <Loader className="h-4 w-4 animate-spin" />
                     ) : (
                       <Check className="h-4 w-4" />
@@ -74,8 +114,8 @@ export function PurchaseOrderActions({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onEdit(order.id)}
-                  disabled={processingId === order.id}
+                  onClick={handleEditClick}
+                  disabled={isProcessing}
                   className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
                 >
                   <Edit className="h-4 w-4" />
@@ -93,11 +133,11 @@ export function PurchaseOrderActions({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onDelete(order.id)}
-                  disabled={processingId === order.id}
+                  onClick={handleDeleteClick}
+                  disabled={isProcessing}
                   className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
                 >
-                  {processingId === order.id ? (
+                  {isProcessing ? (
                     <Loader className="h-4 w-4 animate-spin" />
                   ) : (
                     <Trash2 className="h-4 w-4" />

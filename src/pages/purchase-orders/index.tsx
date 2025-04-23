@@ -63,15 +63,19 @@ export default function PurchaseOrdersPage() {
   // Wrapper functions to ensure Promise<void> return types
   const handleApproveWrapper = async (id: string): Promise<void> => {
     try {
-      await handleApprove(id);
+      console.log("Calling handleApprove wrapper with ID:", id);
+      const result = await handleApprove(id);
+      console.log("Approve result:", result);
     } catch (error) {
       console.error("Error in approval wrapper:", error);
+      toast.error("Erreur lors de l'approbation");
     }
   };
 
   const handleDeleteWrapper = async (id: string): Promise<void> => {
     try {
       await handleDelete(id);
+      await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
     }

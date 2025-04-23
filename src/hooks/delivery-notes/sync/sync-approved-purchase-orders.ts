@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Synchronizes approved purchase orders by creating delivery notes for them
@@ -37,11 +38,15 @@ export async function syncApprovedPurchaseOrders() {
     
     // Create delivery notes for each approved order
     if (approvedOrders && approvedOrders.length > 0) {
+      let createdCount = 0;
+      
       for (const order of approvedOrders) {
         try {
-          // Generate a delivery note number with timestamp to ensure uniqueness
-          const timestamp = new Date().getTime().toString().slice(-6);
-          const deliveryNumber = `BL-${timestamp}`;
+          // Generate a unique delivery note number with date and random component
+          const date = new Date();
+          const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+          const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+          const deliveryNumber = `BL-${dateStr}-${randomId}`;
           
           console.log(`Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
           
@@ -55,20 +60,26 @@ export async function syncApprovedPurchaseOrders() {
               deleted: false,
               notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
             })
-            .select()
-            .single();
+            .select();
             
           if (createError) {
             console.error(`Error creating delivery note for order ${order.id}:`, createError);
             continue;
           }
           
-          console.log(`Created delivery note for order ${order.id}:`, newNote);
+          if (!newNote || newNote.length === 0) {
+            console.error(`Failed to create delivery note for order ${order.id}: No data returned`);
+            continue;
+          }
+          
+          const createdDeliveryNote = newNote[0];
+          console.log(`Created delivery note for order ${order.id}:`, createdDeliveryNote);
           
           // Create delivery note items based on purchase order items
-          if (order.items && order.items.length > 0 && newNote) {
+          if (order.items && order.items.length > 0 && createdDeliveryNote) {
             const itemsData = order.items.map((item: any) => ({
-              delivery_note_id: newNote.id,
+              id: uuidv4(), // Générer un ID unique pour chaque item
+              delivery_note_id: createdDeliveryNote.id,
               product_id: item.product_id,
               quantity_ordered: item.quantity,
               quantity_received: 0,
@@ -80,9 +91,10 @@ export async function syncApprovedPurchaseOrders() {
               .insert(itemsData);
               
             if (itemsError) {
-              console.error(`Error creating delivery note items for note ${newNote.id}:`, itemsError);
+              console.error(`Error creating delivery note items for note ${createdDeliveryNote.id}:`, itemsError);
             } else {
-              console.log(`Created ${itemsData.length} items for delivery note ${newNote.id}`);
+              console.log(`Created ${itemsData.length} items for delivery note ${createdDeliveryNote.id}`);
+              createdCount++;
             }
           } else {
             console.warn(`No items found for order ${order.id} or delivery note not created`);
@@ -92,8 +104,10 @@ export async function syncApprovedPurchaseOrders() {
         }
       }
       
-      toast.success(`${approvedOrders.length} bon(s) de livraison créé(s) avec succès`);
-      return true;
+      if (createdCount > 0) {
+        toast.success(`${createdCount} bon(s) de livraison créé(s) avec succès`);
+      }
+      return createdCount > 0;
     } else {
       console.log("No approved orders without delivery notes found");
     }

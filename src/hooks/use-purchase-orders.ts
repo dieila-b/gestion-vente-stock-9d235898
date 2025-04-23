@@ -40,15 +40,15 @@ export function usePurchaseOrders() {
     return result;
   };
 
-  // Handle the approve function properly
+  // Handle the approve function properly with improved error handling
   const handleApprove = async (id: string) => {
     try {
       console.log("Starting approval process for:", id);
       
-      // Call the approve function from the hook
-      await approveOrderFn(id);
+      // Call the approve function from the hook and await it properly
+      const result = await approveOrderFn(id);
       
-      console.log("Approval completed for:", id);
+      console.log("Approval completed for:", id, "Result:", result);
       
       // Refresh the orders list
       await refreshOrders();
@@ -60,7 +60,7 @@ export function usePurchaseOrders() {
     } catch (error) {
       console.error("Error in handleApprove:", error);
       toast.error("Erreur lors de l'approbation de la commande");
-      throw error;
+      return false;
     }
   };
 
