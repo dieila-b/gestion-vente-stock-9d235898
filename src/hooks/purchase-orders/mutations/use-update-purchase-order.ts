@@ -40,17 +40,20 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select('*')
-          .single();
+          .select();  // Removed .single() which was causing the error
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
 
-        console.log("Purchase order updated successfully:", data);
+        if (!data || data.length === 0) {
+          throw new Error("No purchase order was updated");
+        }
+
+        console.log("Purchase order updated successfully:", data[0]);
         
-        return data as PurchaseOrder;
+        return data[0] as PurchaseOrder;
       } catch (err) {
         console.error("Update purchase order error:", err);
         throw err;
