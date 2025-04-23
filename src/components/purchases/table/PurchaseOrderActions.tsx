@@ -31,30 +31,6 @@ export function PurchaseOrderActions({
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
-  const handleApprove = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onApprove(order.id);
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onEdit(order.id);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onDelete(order.id);
-  };
-
-  const handlePrint = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onPrint(order);
-  };
-
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -67,7 +43,7 @@ export function PurchaseOrderActions({
         <DropdownMenuContent align="end">
           {canApprove && (
             <DropdownMenuItem 
-              onClick={handleApprove}
+              onClick={() => onApprove(order.id)}
               disabled={isProcessing}
             >
               <Check className="mr-2 h-4 w-4" />
@@ -75,14 +51,14 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={handleEdit}
+            onClick={() => onEdit(order.id)}
             disabled={isProcessing}
           >
             <Pencil className="mr-2 h-4 w-4" />
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={handlePrint}
+            onClick={() => onPrint(order)}
             disabled={isProcessing}
           >
             <Printer className="mr-2 h-4 w-4" />
@@ -90,7 +66,7 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={handleDelete}
+              onClick={() => onDelete(order.id)}
               disabled={isProcessing}
               className="text-red-600"
             >

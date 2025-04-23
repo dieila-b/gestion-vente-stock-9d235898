@@ -2,6 +2,7 @@
 import { PurchaseOrderTable } from "./PurchaseOrderTable";
 import { Loader } from "lucide-react";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { columns } from "./table/columns";
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];

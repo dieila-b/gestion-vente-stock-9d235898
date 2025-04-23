@@ -77,9 +77,8 @@ export default function PurchaseOrdersPage() {
     try {
       setProcessingOrderId(id);
       console.log("Calling handleApprove with ID:", id);
-      await handleApprove(id);
-      console.log("Approve completed");
-      await refreshOrders();
+      const result = await handleApprove(id);
+      console.log("Approve result:", result);
     } catch (error) {
       console.error("Error in approval wrapper:", error);
       toast.error("Erreur lors de l'approbation");
@@ -92,7 +91,6 @@ export default function PurchaseOrdersPage() {
     try {
       setProcessingOrderId(id);
       await handleDelete(id);
-      await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
       toast.error("Erreur lors de la suppression");
