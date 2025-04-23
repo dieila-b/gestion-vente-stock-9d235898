@@ -101,6 +101,13 @@ export function usePurchaseOrdersQuery() {
           
         if (!directError && directData && directData.length > 0) {
           console.log("Purchase orders fetched successfully via direct query:", directData.length);
+          
+          // Debug items for first few orders
+          directData.slice(0, 3).forEach((order, index) => {
+            console.log(`Order ${index} (${order.order_number}) items:`, 
+              order.items ? `${order.items.length} items` : 'No items array');
+          });
+          
           return directData as PurchaseOrder[];
         }
         
@@ -124,6 +131,30 @@ export function usePurchaseOrdersQuery() {
           const ordersWithItems = await Promise.all(
             rpcData.map(async (order: any) => {
               try {
+                // First, fetch items directly from purchase_order_items table
+                const { data: itemsData, error: itemsError } = await supabase
+                  .from('purchase_order_items')
+                  .select(`
+                    *,
+                    product:catalog(*)
+                  `)
+                  .eq('purchase_order_id', order.id);
+                
+                if (!itemsError && itemsData && itemsData.length > 0) {
+                  console.log(`Found ${itemsData.length} items directly for order ${order.id}`);
+                  
+                  // Convert the order to a PurchaseOrder object with items
+                  const orderWithItems = {
+                    ...order,
+                    items: itemsData
+                  };
+                  
+                  return toPurchaseOrder(orderWithItems);
+                }
+                
+                console.log(`No items found directly for order ${order.id}, trying RPC...`);
+                
+                // If direct items fetch fails, try the RPC function
                 const { data: orderDetails, error: detailsError } = await supabase.rpc(
                   'get_purchase_order_by_id',
                   { order_id: order.id }
@@ -133,7 +164,7 @@ export function usePurchaseOrdersQuery() {
                   // Type-safe approach: Check if orderDetails is a valid object with items
                   const hasItems = isObject(orderDetails) && 'items' in orderDetails;
                   
-                  console.log(`Items for order ${order.id}:`, 
+                  console.log(`Items for order ${order.id} via RPC:`, 
                     hasItems && Array.isArray(orderDetails.items) 
                       ? orderDetails.items.length 
                       : 'No items or invalid items array');
@@ -150,6 +181,15 @@ export function usePurchaseOrdersQuery() {
               }
             })
           );
+          
+          // Debug the first few orders to see if they have items
+          ordersWithItems.slice(0, 3).forEach((order, index) => {
+            console.log(`Processed order ${index} (${order.order_number}):`, 
+              order.items ? `${order.items.length} items` : 'No items array');
+            if (order.items && order.items.length > 0) {
+              console.log(`First item sample:`, order.items[0]);
+            }
+          });
           
           return ordersWithItems;
         }
