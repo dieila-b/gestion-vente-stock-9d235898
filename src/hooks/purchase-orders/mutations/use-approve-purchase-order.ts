@@ -12,26 +12,36 @@ export function useApprovePurchaseOrder() {
       try {
         console.log("Starting approval process for order:", id);
         
-        // Update the purchase order status
-        const { data, error } = await supabase
+        // Update the purchase order status - Fixed: Removed .single() which was causing the error
+        const { error } = await supabase
           .from('purchase_orders')
           .update({ status: 'approved' })
-          .eq('id', id)
-          .select()
-          .single();
+          .eq('id', id);
 
         if (error) {
           console.error("Error updating purchase order status:", error);
           throw error;
         }
 
-        console.log("Purchase order approved successfully:", data);
+        // Fetch the updated order to confirm changes
+        const { data: updatedOrder, error: fetchError } = await supabase
+          .from('purchase_orders')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+          
+        if (fetchError) {
+          console.error("Error fetching updated purchase order:", fetchError);
+          // Continue execution - we can still try to sync
+        }
+
+        console.log("Purchase order approved successfully:", updatedOrder);
         
         // Trigger synchronization to create delivery notes
         const syncResult = await syncApprovedPurchaseOrders();
         console.log("Sync result after approval:", syncResult);
         
-        return data;
+        return updatedOrder || { id };
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;

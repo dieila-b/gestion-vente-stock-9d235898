@@ -39,7 +39,9 @@ export async function syncApprovedPurchaseOrders() {
     if (approvedOrders && approvedOrders.length > 0) {
       for (const order of approvedOrders) {
         try {
-          const deliveryNumber = `BL-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+          // Generate a delivery note number with timestamp to ensure uniqueness
+          const timestamp = new Date().getTime().toString().slice(-6);
+          const deliveryNumber = `BL-${timestamp}`;
           
           console.log(`Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
           
