@@ -3,96 +3,91 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
- * Utility functions for purchase order calculations
+ * Updates the order total based on its items and additional costs
  */
-
-// Calculate the total items amount
-export const calculateItemsTotal = (items: any[]) => {
-  return items.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-};
-
-// Update the purchase order total based on item changes
-export const updateOrderTotal = async (
-  orderId: string,
-  formData: any | null,
-  refetch: () => Promise<any>
-) => {
-  if (!orderId) return false;
-  
+export async function updateOrderTotal(orderId: string, formData: any, refetch?: () => Promise<any>) {
   try {
-    // Fetch current purchase order to get the latest formData values if not provided
-    let currentFormData = formData;
-    if (!currentFormData) {
-      const { data: purchaseOrder } = await supabase
-        .from('purchase_orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
-        
-      if (!purchaseOrder) {
-        throw new Error("Purchase order not found");
-      }
-      
-      currentFormData = purchaseOrder;
-    }
+    console.log("Updating order total for order:", orderId);
     
-    // Fetch all items for this purchase order
-    const { data: items } = await supabase
+    // First, get the current items to calculate subtotal
+    const { data: itemsData, error: itemsError } = await supabase
       .from('purchase_order_items')
       .select('total_price')
       .eq('purchase_order_id', orderId);
     
-    if (!items) return false;
+    if (itemsError) {
+      console.error("Error fetching items for total calculation:", itemsError);
+      throw itemsError;
+    }
     
-    // Get the items total
-    const itemsTotal = calculateItemsTotal(items);
+    // Calculate subtotal from all items
+    const subtotal = itemsData?.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) || 0;
+    console.log("Calculated subtotal:", subtotal);
     
-    // Calculate the new total amount
-    const discount = Number(currentFormData.discount) || 0;
-    const shippingCost = Number(currentFormData.shipping_cost) || 0;
-    const transitCost = Number(currentFormData.transit_cost) || 0;
-    const logisticsCost = Number(currentFormData.logistics_cost) || 0;
-    
-    // Calculate subtotal (items total - discount)
-    const subtotal = Math.max(0, itemsTotal - discount);
+    // Get additional costs from form data
+    const discount = Number(formData?.discount || 0);
+    const shippingCost = Number(formData?.shipping_cost || 0);
+    const logisticsCost = Number(formData?.logistics_cost || 0);
+    const transitCost = Number(formData?.transit_cost || 0);
+    const taxRate = Number(formData?.tax_rate || 0);
     
     // Calculate tax amount
-    const taxRate = Number(currentFormData.tax_rate) || 0;
     const taxAmount = subtotal * (taxRate / 100);
     
-    // Calculate total TTC (subtotal + tax)
+    // Calculate total with tax
     const totalTTC = subtotal + taxAmount;
     
-    // Calculate total amount (total TTC + additional costs)
-    const totalAmount = totalTTC + shippingCost + transitCost + logisticsCost;
+    // Calculate total amount with all costs
+    const totalAmount = totalTTC + shippingCost + logisticsCost + transitCost - discount;
     
-    console.log("Updating purchase order with new totals:", {
+    console.log("Calculated amounts:", {
       subtotal,
       taxAmount,
       totalTTC,
-      totalAmount
+      totalAmount,
+      additionalCosts: {
+        discount,
+        shippingCost,
+        logisticsCost,
+        transitCost,
+        taxRate
+      }
     });
     
-    // Update the purchase order totals
-    const { error } = await supabase
+    // Update the order with new totals
+    const { error: updateError } = await supabase
       .from('purchase_orders')
       .update({
         subtotal: subtotal,
         tax_amount: taxAmount,
         total_ttc: totalTTC,
-        total_amount: totalAmount
+        total_amount: totalAmount,
+        updated_at: new Date().toISOString()
       })
       .eq('id', orderId);
     
-    if (error) throw error;
+    if (updateError) {
+      console.error("Error updating order totals:", updateError);
+      throw updateError;
+    }
     
-    // Refetch the purchase order to update the UI
-    await refetch();
+    console.log("Order totals updated successfully");
     
-    return true;
-  } catch (error: any) {
-    console.error("Error updating order total:", error);
-    toast.error(`Erreur lors de la mise à jour du total: ${error.message}`);
-    return false;
+    // Refetch if function is provided
+    if (refetch) {
+      await refetch();
+    }
+    
+    return {
+      success: true,
+      subtotal,
+      taxAmount,
+      totalTTC,
+      totalAmount
+    };
+  } catch (error) {
+    console.error("Error in updateOrderTotal:", error);
+    toast.error("Erreur lors de la mise à jour des totaux de commande");
+    return { success: false };
   }
-};
+}

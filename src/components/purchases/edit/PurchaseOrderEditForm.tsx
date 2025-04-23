@@ -11,6 +11,8 @@ import {
 } from "./FormSections";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { Loader, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -19,6 +21,7 @@ interface PurchaseOrderEditFormProps {
 
 export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFormProps) {
   console.log("Editing purchase order with ID:", orderId);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { 
     purchase, 
@@ -39,11 +42,25 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   
   console.log("Order items in form:", orderItems?.length || 0);
   console.log("Purchase data available:", purchase ? "yes" : "no");
+  console.log("Form data:", formData);
   
   const handleSave = async () => {
-    const success = await saveChanges();
-    if (success) {
-      onClose();
+    try {
+      setIsSaving(true);
+      console.log("Saving changes with form data:", formData);
+      const success = await saveChanges();
+      
+      if (success) {
+        toast.success("Modifications enregistrées avec succès");
+        onClose();
+      } else {
+        toast.error("Échec de l'enregistrement des modifications");
+      }
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast.error("Erreur lors de l'enregistrement des modifications");
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -103,6 +120,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <FormActions 
             onSave={handleSave}
             onCancel={onClose}
+            isSaving={isSaving}
           />
         </>
       )}
