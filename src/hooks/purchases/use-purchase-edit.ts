@@ -117,7 +117,6 @@ export function usePurchaseEdit(orderId?: string) {
       await refetch();
       
       setIsLoading(false);
-      toast.success("Bon de commande mis à jour avec succès");
       return true;
     } catch (error) {
       console.error("Error saving changes:", error);
