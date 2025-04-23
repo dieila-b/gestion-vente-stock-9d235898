@@ -62,25 +62,8 @@ BEGIN
     WHERE w.id = (order_data->>'warehouse_id')::uuid;
   END IF;
   
-  -- Get the order items
-  SELECT jsonb_agg(
-    jsonb_build_object(
-      'id', poi.id,
-      'product_id', poi.product_id,
-      'quantity', poi.quantity,
-      'unit_price', poi.unit_price,
-      'selling_price', poi.selling_price,
-      'total_price', poi.total_price,
-      'product', jsonb_build_object(
-        'id', p.id,
-        'name', p.name,
-        'reference', p.reference
-      )
-    )
-  ) INTO items_data
-  FROM purchase_order_items poi
-  LEFT JOIN catalog p ON poi.product_id = p.id
-  WHERE poi.purchase_order_id = order_id;
+  -- Get the order items using the new function
+  items_data := public.get_purchase_order_items(order_id);
   
   -- Combine all data
   order_data = jsonb_set(order_data, '{supplier}', COALESCE(supplier_data, '{}'::jsonb));

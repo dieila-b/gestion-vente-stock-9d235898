@@ -1715,6 +1715,10 @@ export type Database = {
         Args: { order_id: string }
         Returns: Json
       }
+      get_purchase_order_items: {
+        Args: { order_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

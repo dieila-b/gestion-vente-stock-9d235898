@@ -6,10 +6,10 @@ CREATE OR REPLACE FUNCTION public.bypass_insert_purchase_order_items(items_data 
 AS $function$
 DECLARE
   result jsonb = '[]'::jsonb;
-  item_array jsonb[];
   item_record jsonb;
   inserted_id uuid;
   item_result jsonb;
+  i integer;
 BEGIN
   -- Check if items_data is an array
   IF jsonb_typeof(items_data) = 'array' THEN
@@ -18,6 +18,12 @@ BEGIN
     LOOP
       item_record := items_data->i;
       
+      -- Generate a new UUID if not provided
+      IF (item_record->>'id') IS NULL OR (item_record->>'id') = '' THEN
+        item_record := jsonb_set(item_record, '{id}', to_jsonb(gen_random_uuid()));
+      END IF;
+      
+      -- Insert the item with explicit values
       INSERT INTO public.purchase_order_items (
         id,
         purchase_order_id,
@@ -31,11 +37,11 @@ BEGIN
         (item_record->>'id')::uuid,
         (item_record->>'purchase_order_id')::uuid,
         (item_record->>'product_id')::uuid,
-        (item_record->>'quantity')::integer,
-        (item_record->>'unit_price')::numeric,
-        (item_record->>'selling_price')::numeric,
-        (item_record->>'total_price')::numeric,
-        (item_record->>'created_at')::timestamp with time zone
+        COALESCE((item_record->>'quantity')::integer, 1),
+        COALESCE((item_record->>'unit_price')::numeric, 0),
+        COALESCE((item_record->>'selling_price')::numeric, 0),
+        COALESCE((item_record->>'total_price')::numeric, 0),
+        COALESCE((item_record->>'created_at')::timestamp with time zone, now())
       ) RETURNING id INTO inserted_id;
       
       -- Build result JSON for this item
@@ -59,6 +65,11 @@ BEGIN
     -- If it's a single item as a JSON object (not an array)
     -- This is a fallback for when a single JSON object is passed instead of an array
     IF jsonb_typeof(items_data) = 'object' THEN
+      -- Generate a new UUID if not provided
+      IF (items_data->>'id') IS NULL OR (items_data->>'id') = '' THEN
+        items_data := jsonb_set(items_data, '{id}', to_jsonb(gen_random_uuid()));
+      END IF;
+      
       INSERT INTO public.purchase_order_items (
         id,
         purchase_order_id,
@@ -72,11 +83,11 @@ BEGIN
         (items_data->>'id')::uuid,
         (items_data->>'purchase_order_id')::uuid,
         (items_data->>'product_id')::uuid,
-        (items_data->>'quantity')::integer,
-        (items_data->>'unit_price')::numeric,
-        (items_data->>'selling_price')::numeric,
-        (items_data->>'total_price')::numeric,
-        (items_data->>'created_at')::timestamp with time zone
+        COALESCE((items_data->>'quantity')::integer, 1),
+        COALESCE((items_data->>'unit_price')::numeric, 0),
+        COALESCE((items_data->>'selling_price')::numeric, 0),
+        COALESCE((items_data->>'total_price')::numeric, 0),
+        COALESCE((items_data->>'created_at')::timestamp with time zone, now())
       ) RETURNING id INTO inserted_id;
       
       -- Build result JSON for this item

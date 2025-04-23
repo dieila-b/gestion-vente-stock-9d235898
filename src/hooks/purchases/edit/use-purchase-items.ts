@@ -162,7 +162,7 @@ export function usePurchaseItems(
       const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
-      // Prepare the item data for database insertion
+      // Prepare the item data
       const newItem = {
         id: newItemId,
         purchase_order_id: orderId,
@@ -174,21 +174,34 @@ export function usePurchaseItems(
         created_at: new Date().toISOString()
       };
       
-      console.log("Sending new item to database:", newItem);
+      console.log("Trying to insert item via RPC function");
       
-      // Insert directly to the database table
-      const { data: insertedData, error: insertError } = await supabase
-        .from('purchase_order_items')
-        .insert(newItem)
-        .select('*')
-        .single();
+      // First try inserting via RPC function
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'bypass_insert_purchase_order_items',
+        { items_data: newItem }
+      );
       
-      if (insertError) {
-        console.error("Error inserting item:", insertError);
-        throw insertError;
+      if (rpcError) {
+        console.error("Error inserting item via RPC:", rpcError);
+        // Try fallback direct insertion
+        console.log("Falling back to direct insertion");
+        
+        const { data: insertedData, error: insertError } = await supabase
+          .from('purchase_order_items')
+          .insert(newItem)
+          .select('*')
+          .single();
+        
+        if (insertError) {
+          console.error("Direct insertion also failed:", insertError);
+          throw new Error(`Impossible d'ajouter l'article. ${insertError.message}`);
+        }
+        
+        console.log("Successfully inserted via direct insertion:", insertedData);
+      } else {
+        console.log("Successfully inserted via RPC:", rpcResult);
       }
-      
-      console.log("Successfully inserted item:", insertedData);
       
       // Create a new item object for local state update
       const newItemForState: PurchaseOrderItem = {
