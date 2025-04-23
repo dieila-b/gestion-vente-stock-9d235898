@@ -51,7 +51,12 @@ export default function PurchaseOrdersPage() {
       
       // Check if items are properly loaded
       filtered.forEach((order, index) => {
-        console.log(`Order ${index} (${order.order_number}) has ${order.items?.length || 0} items`);
+        if (index < 3) { // Only log first 3 orders to avoid console spam
+          console.log(`Order ${index} (${order.order_number}) has ${order.items?.length || 0} items`);
+          if (order.items && order.items.length > 0) {
+            console.log(`First item: ${order.items[0].product?.name || 'No product name'}`);
+          }
+        }
       });
       
       setFilteredOrders(filtered);
@@ -64,11 +69,12 @@ export default function PurchaseOrdersPage() {
 
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
-    console.log("Printing order:", order);
+    console.log("Printing order:", order.id, order.order_number);
     console.log("Printing order with items:", order.items?.length || 0);
     
     // If order doesn't have items, try to find the complete order from rawOrders
     if (!order.items || order.items.length === 0) {
+      console.log("Order has no items, searching for complete order...");
       const completeOrder = rawOrders.find(o => o.id === order.id);
       if (completeOrder && completeOrder.items && completeOrder.items.length > 0) {
         console.log("Found complete order with items:", completeOrder.items.length);

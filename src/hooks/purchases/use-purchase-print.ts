@@ -29,17 +29,26 @@ export function usePurchasePrint() {
     console.log("Order to print:", order);
     console.log("Items to print:", order.items);
 
+    // Check if items exist and fallback to empty array if not
+    const orderItems = order.items || [];
+    console.log("Using items:", orderItems.length);
+
     // Génération du contenu des articles
-    const itemsContent = order.items && order.items.length > 0 
-      ? order.items.map((item: PurchaseOrderItem, index: number) => `
-        <tr>
-          <td>${item.product?.reference || `Produit #${index + 1}`}</td>
-          <td>${item.product?.name || item.designation || 'Produit inconnu'}</td>
-          <td style="text-align: center;">${item.quantity}</td>
-          <td style="text-align: right;">${formatGNF(item.unit_price)}</td>
-          <td style="text-align: right;">${formatGNF(item.total_price)}</td>
-        </tr>
-      `).join('') 
+    const itemsContent = orderItems && orderItems.length > 0 
+      ? orderItems.map((item: PurchaseOrderItem, index: number) => {
+          console.log("Processing item:", item);
+          const productName = item.product?.name || item.designation || 'Produit inconnu';
+          const productRef = item.product?.reference || `Prod-${index + 1}`;
+          return `
+            <tr>
+              <td>${productRef}</td>
+              <td>${productName}</td>
+              <td style="text-align: center;">${item.quantity}</td>
+              <td style="text-align: right;">${formatGNF(item.unit_price)}</td>
+              <td style="text-align: right;">${formatGNF(item.total_price)}</td>
+            </tr>
+          `;
+        }).join('') 
       : '<tr><td colspan="5">Aucun produit</td></tr>';
 
     // Create print content for the purchase order
@@ -110,31 +119,31 @@ export function usePurchasePrint() {
             <table class="total-table">
               <tr>
                 <td>Sous-total:</td>
-                <td>${formatGNF(order.subtotal)}</td>
+                <td>${formatGNF(order.subtotal || 0)}</td>
               </tr>
               <tr>
-                <td>TVA (${order.tax_rate}%):</td>
-                <td>${formatGNF(order.tax_amount)}</td>
+                <td>TVA (${order.tax_rate || 0}%):</td>
+                <td>${formatGNF(order.tax_amount || 0)}</td>
               </tr>
               <tr>
                 <td>Frais de livraison:</td>
-                <td>${formatGNF(order.shipping_cost)}</td>
+                <td>${formatGNF(order.shipping_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Logistique:</td>
-                <td>${formatGNF(order.logistics_cost)}</td>
+                <td>${formatGNF(order.logistics_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Transit:</td>
-                <td>${formatGNF(order.transit_cost)}</td>
+                <td>${formatGNF(order.transit_cost || 0)}</td>
               </tr>
               <tr>
                 <td>Remise:</td>
-                <td>${formatGNF(order.discount)}</td>
+                <td>${formatGNF(order.discount || 0)}</td>
               </tr>
               <tr>
                 <td><strong>Total TTC:</strong></td>
-                <td><strong>${formatGNF(order.total_ttc)}</strong></td>
+                <td><strong>${formatGNF(order.total_ttc || 0)}</strong></td>
               </tr>
             </table>
           </div>
@@ -145,6 +154,14 @@ export function usePurchasePrint() {
           </div>
           
           <script>
+            // Log the items for debugging
+            console.log("Printing items:", ${JSON.stringify(orderItems.map(item => ({
+              id: item.id,
+              name: item.product?.name || item.designation || 'Produit inconnu',
+              quantity: item.quantity,
+              unit_price: item.unit_price
+            })))});
+            
             window.onload = function() {
               // Focus and print after a small delay to ensure content is loaded
               window.focus();
