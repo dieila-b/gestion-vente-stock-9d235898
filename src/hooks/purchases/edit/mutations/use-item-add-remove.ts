@@ -11,6 +11,44 @@ export function useItemAddRemove(
   orderItems: PurchaseOrderItem[],
   setOrderItems: (items: PurchaseOrderItem[]) => void
 ) {
+  const updateItemQuantity = async (itemId: string, newQuantity: number) => {
+    if (!orderId || !itemId) return false;
+    
+    try {
+      const itemToUpdate = orderItems.find(item => item.id === itemId);
+      if (!itemToUpdate) {
+        throw new Error("Article non trouvé");
+      }
+      
+      const newTotalPrice = newQuantity * itemToUpdate.unit_price;
+      
+      const { error } = await supabase
+        .from('purchase_order_items')
+        .update({ 
+          quantity: newQuantity,
+          total_price: newTotalPrice 
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+      
+      const updatedItems = orderItems.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity: newQuantity, total_price: newTotalPrice } 
+          : item
+      );
+      
+      setOrderItems(updatedItems);
+      await updateOrderTotal(orderId, {});
+      
+      toast.success('Quantité mise à jour avec succès');
+      return true;
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message}`);
+      return false;
+    }
+  };
+
   const removeItem = async (itemId: string) => {
     if (!orderId || !itemId) return false;
     
@@ -112,6 +150,7 @@ export function useItemAddRemove(
 
   return {
     removeItem,
-    addItem
+    addItem,
+    updateItemQuantity
   };
 }

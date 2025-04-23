@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { usePurchaseData } from './edit/use-purchase-data';
 import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
-import { updateOrderTotal } from './edit/use-purchase-calculations';
+import { updateOrderTotal } from './edit/calculations/use-order-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
