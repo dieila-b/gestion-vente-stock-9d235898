@@ -49,12 +49,6 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       setIsSaving(true);
       console.log("Saving changes with form data:", formData);
       
-      // Make sure formData has updated_at set to current timestamp
-      const dataToSave = {
-        ...formData,
-        updated_at: new Date().toISOString()
-      };
-      
       const success = await saveChanges();
       
       if (success) {
