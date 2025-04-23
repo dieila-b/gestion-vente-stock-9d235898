@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -26,7 +27,8 @@ export function PurchaseOrderActions({
   onDelete,
   onPrint
 }: PurchaseOrderActionsProps) {
-  const isProcessing = processingId === order.id;
+  const [localProcessing, setLocalProcessing] = useState(false);
+  const isProcessing = processingId === order.id || localProcessing;
   
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
@@ -35,11 +37,17 @@ export function PurchaseOrderActions({
   const handleApprove = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (isProcessing) return;
+    
     console.log("Attempting to approve order:", order.id);
     try {
+      setLocalProcessing(true);
       await onApprove(order.id);
     } catch (error) {
       console.error("Error in approve handler:", error);
+    } finally {
+      setLocalProcessing(false);
     }
   };
 

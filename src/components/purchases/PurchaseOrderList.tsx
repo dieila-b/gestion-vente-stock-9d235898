@@ -45,11 +45,11 @@ export function PurchaseOrderList({
     <PurchaseOrderTable
       orders={orders}
       isLoading={isLoading}
+      processingOrderId={processingOrderId}
       onApprove={onApprove}
       onDelete={onDelete}
       onEdit={onEdit}
       onPrint={onPrint}
-      processingOrderId={processingOrderId}
     />
   );
 }

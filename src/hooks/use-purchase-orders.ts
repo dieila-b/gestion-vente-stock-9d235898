@@ -56,6 +56,7 @@ export function usePurchaseOrders() {
       // Also refresh delivery notes to show newly created ones
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       
+      toast.success("Bon de commande approuvé avec succès");
       return true;
     } catch (error) {
       console.error("Error in handleApprove:", error);
