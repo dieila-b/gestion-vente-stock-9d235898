@@ -100,25 +100,25 @@ export function PurchaseOrderTable({
               <TableCell>{formatGNF(order.total_amount)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                  {order.status === 'approved' || order.status === 'delivered' ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onPrint(order)}
-                            className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Imprimer</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onPrint(order)}
+                          className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Imprimer</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {order.status !== 'approved' && order.status !== 'delivered' && (
                     <>
                       {order.status === 'pending' && (
                         <TooltipProvider>
