@@ -3,6 +3,74 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { toast } from "sonner";
+import { isObject } from "@/utils/type-utils";
+
+// Type guard to check if an object is a valid PurchaseOrder
+function isPurchaseOrder(obj: unknown): obj is PurchaseOrder {
+  return isObject(obj) && 
+    'id' in obj && 
+    'order_number' in obj && 
+    'status' in obj;
+}
+
+// Helper to safely convert to PurchaseOrder
+function toPurchaseOrder(data: unknown): PurchaseOrder {
+  if (isPurchaseOrder(data)) {
+    return data;
+  }
+  
+  // If it's not a valid PurchaseOrder but has an id, create a minimal valid object
+  if (isObject(data) && 'id' in data) {
+    console.warn("Incomplete PurchaseOrder data, creating minimal object:", data);
+    return {
+      id: String(data.id),
+      order_number: isObject(data) && 'order_number' in data ? String(data.order_number) : 'Unknown',
+      created_at: new Date().toISOString(),
+      status: 'unknown',
+      supplier_id: '',
+      discount: 0,
+      expected_delivery_date: '',
+      notes: '',
+      logistics_cost: 0,
+      transit_cost: 0,
+      tax_rate: 0,
+      shipping_cost: 0,
+      subtotal: 0,
+      tax_amount: 0,
+      total_ttc: 0,
+      total_amount: 0,
+      paid_amount: 0,
+      payment_status: 'unknown',
+      supplier: { id: '', name: 'Unknown', email: '', phone: '' },
+      items: []
+    };
+  }
+  
+  // Last resort, create an empty object with a random ID
+  console.error("Invalid PurchaseOrder data:", data);
+  return {
+    id: `invalid-${Date.now()}`,
+    order_number: 'Invalid Order',
+    created_at: new Date().toISOString(),
+    status: 'error',
+    supplier_id: '',
+    discount: 0,
+    expected_delivery_date: '',
+    notes: '',
+    logistics_cost: 0,
+    transit_cost: 0,
+    tax_rate: 0,
+    shipping_cost: 0,
+    subtotal: 0,
+    tax_amount: 0,
+    total_ttc: 0,
+    total_amount: 0,
+    paid_amount: 0,
+    payment_status: 'error',
+    supplier: { id: '', name: 'Unknown', email: '', phone: '' },
+    items: []
+  };
+}
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
@@ -62,22 +130,23 @@ export function usePurchaseOrdersQuery() {
                 );
                 
                 if (!detailsError && orderDetails) {
-                  // Type-safe approach: Check if orderDetails is an object and has items property
-                  const hasItems = typeof orderDetails === 'object' && 
-                                  orderDetails !== null && 
-                                  'items' in orderDetails;
+                  // Type-safe approach: Check if orderDetails is a valid object with items
+                  const hasItems = isObject(orderDetails) && 'items' in orderDetails;
                   
-                  console.log(`Items for order ${order.id}:`, hasItems ? (orderDetails.items as any[])?.length || 0 : 'No items');
+                  console.log(`Items for order ${order.id}:`, 
+                    hasItems && Array.isArray(orderDetails.items) 
+                      ? orderDetails.items.length 
+                      : 'No items or invalid items array');
                   
-                  // Safely convert to PurchaseOrder type
-                  return orderDetails as PurchaseOrder;
+                  // Safely convert to PurchaseOrder type with proper validation
+                  return toPurchaseOrder(orderDetails);
                 }
                 
                 console.log(`No details found for order ${order.id}, error:`, detailsError);
-                return order as PurchaseOrder;
+                return toPurchaseOrder(order);
               } catch (err) {
                 console.error(`Error fetching details for order ${order.id}:`, err);
-                return order as PurchaseOrder;
+                return toPurchaseOrder(order);
               }
             })
           );
