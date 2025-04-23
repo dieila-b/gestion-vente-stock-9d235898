@@ -31,8 +31,11 @@ export function usePurchaseOrdersQuery() {
         // Convertir les données JSON en objets PurchaseOrder
         const formattedOrdersPromises = ordersData.map((orderData: any) => {
           // Récupérer les éléments du bon de commande
-          return supabase
-            .rpc('get_purchase_order_items', { order_id: orderData.id })
+          // Convert PromiseLike to full Promise to ensure .catch is available
+          return Promise.resolve(
+            supabase
+              .rpc('get_purchase_order_items', { order_id: orderData.id })
+          )
             .then(({ data: itemsData, error: itemsError }) => {
               if (itemsError) {
                 console.error(`Error fetching items for order ${orderData.id}:`, itemsError);
