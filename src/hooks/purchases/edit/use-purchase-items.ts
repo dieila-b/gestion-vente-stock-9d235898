@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { updateOrderTotal } from './use-purchase-calculations';
@@ -146,8 +145,17 @@ export function usePurchaseItems(
       toast.error("Erreur: Produit invalide");
       return false;
     }
+
+    // Vérifier si le produit existe déjà dans la commande
+    const existingItem = orderItems.find(item => item.product_id === product.id);
     
-    console.log("Adding product to order:", { 
+    if (existingItem) {
+      console.log("Product already exists in order, incrementing quantity");
+      const newQuantity = existingItem.quantity + 1;
+      return await updateItemQuantity(existingItem.id, newQuantity);
+    }
+    
+    console.log("Adding new product to order:", { 
       orderId, 
       productId: product.id, 
       productName: product.name 
