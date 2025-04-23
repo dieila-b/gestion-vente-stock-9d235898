@@ -26,7 +26,7 @@ function toPurchaseOrder(data: unknown): PurchaseOrder {
       id: String(data.id),
       order_number: isObject(data) && 'order_number' in data ? String(data.order_number) : 'Unknown',
       created_at: new Date().toISOString(),
-      status: 'unknown',
+      status: 'pending', // Using a valid status value
       supplier_id: '',
       discount: 0,
       expected_delivery_date: '',
@@ -40,7 +40,7 @@ function toPurchaseOrder(data: unknown): PurchaseOrder {
       total_ttc: 0,
       total_amount: 0,
       paid_amount: 0,
-      payment_status: 'unknown',
+      payment_status: 'pending', // Using a valid payment status value
       supplier: { id: '', name: 'Unknown', email: '', phone: '' },
       items: []
     };
@@ -52,7 +52,7 @@ function toPurchaseOrder(data: unknown): PurchaseOrder {
     id: `invalid-${Date.now()}`,
     order_number: 'Invalid Order',
     created_at: new Date().toISOString(),
-    status: 'error',
+    status: 'draft', // Using a valid status value
     supplier_id: '',
     discount: 0,
     expected_delivery_date: '',
@@ -66,7 +66,7 @@ function toPurchaseOrder(data: unknown): PurchaseOrder {
     total_ttc: 0,
     total_amount: 0,
     paid_amount: 0,
-    payment_status: 'error',
+    payment_status: 'pending', // Using a valid payment status value
     supplier: { id: '', name: 'Unknown', email: '', phone: '' },
     items: []
   };
