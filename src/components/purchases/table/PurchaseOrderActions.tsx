@@ -27,13 +27,11 @@ export function PurchaseOrderActions({
   onDelete,
   onPrint
 }: PurchaseOrderActionsProps) {
-  const [localProcessing, setLocalProcessing] = useState(false);
-  const isProcessing = processingId === order.id || localProcessing;
+  const isProcessing = processingId === order.id;
   
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
-  // Handle approve function safely
   const handleApprove = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -42,12 +40,9 @@ export function PurchaseOrderActions({
     
     console.log("Attempting to approve order:", order.id);
     try {
-      setLocalProcessing(true);
       await onApprove(order.id);
     } catch (error) {
       console.error("Error in approve handler:", error);
-    } finally {
-      setLocalProcessing(false);
     }
   };
 

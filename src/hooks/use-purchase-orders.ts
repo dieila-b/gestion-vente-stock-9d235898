@@ -5,8 +5,10 @@ import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purch
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
+import { useState } from "react";
 
 export function usePurchaseOrders() {
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
   const { handleDelete, handleCreate } = usePurchaseOrderMutations();
   const approveOrderFn = useApprovePurchaseOrder();
@@ -44,6 +46,7 @@ export function usePurchaseOrders() {
   const handleApprove = async (id: string) => {
     try {
       console.log("Starting approval process for:", id);
+      setProcessingOrderId(id);
       
       // Call the approve function from the hook and await it properly
       await approveOrderFn(id);
@@ -56,33 +59,40 @@ export function usePurchaseOrders() {
       // Also refresh delivery notes to show newly created ones
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       
-      toast.success("Bon de commande approuvé avec succès");
       return true;
     } catch (error) {
       console.error("Error in handleApprove:", error);
       toast.error("Erreur lors de l'approbation de la commande");
       return false;
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
   // Create wrapper functions with correct signature for Promise<void>
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
+      setProcessingOrderId(id);
       console.log("Wrapping edit for order ID:", id);
       await handleEdit(id);
     } catch (error) {
       console.error("Error in handleEditWrapper:", error);
       toast.error("Erreur lors de l'ouverture du formulaire d'édition");
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
   const handleDeleteWrapper = async (id: string): Promise<void> => {
     try {
+      setProcessingOrderId(id);
       await handleDelete(id);
       await refreshOrders();
     } catch (error) {
       console.error("Error in handleDeleteWrapper:", error);
       toast.error("Erreur lors de la suppression");
+    } finally {
+      setProcessingOrderId(null);
     }
   };
 
@@ -90,6 +100,7 @@ export function usePurchaseOrders() {
     orders,
     isLoading,
     error,
+    processingOrderId,
     handleApprove,
     handleDelete: handleDeleteWrapper,
     handleEdit: handleEditWrapper,

@@ -46,23 +46,33 @@ export function usePurchaseOrdersQuery() {
                 ...orderData,
                 items: itemsData || []
               };
+            })
+            .catch(error => {
+              console.error(`Unexpected error fetching items for order ${orderData.id}:`, error);
+              return {
+                ...orderData,
+                items: []
+              };
             });
         });
         
         // Attendre que toutes les promesses soient résolues
-        const ordersWithItems = await Promise.all(formattedOrders);
-        
-        console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
-        
-        // Assurer que le résultat est un tableau valide de PurchaseOrder
-        return ordersWithItems as PurchaseOrder[];
+        try {
+          const ordersWithItems = await Promise.all(formattedOrders);
+          console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
+          return ordersWithItems as PurchaseOrder[];
+        } catch (error) {
+          console.error("Error resolving order items promises:", error);
+          // Retourner les commandes sans articles en cas d'erreur
+          return ordersData.map((order: any) => ({ ...order, items: [] })) as PurchaseOrder[];
+        }
       } catch (error) {
         console.error("Error in usePurchaseOrdersQuery:", error);
         toast.error("Impossible de charger les bons de commande");
-        throw error; // Let the query handle the error state properly
+        throw error; // Laisser la query gérer l'état d'erreur correctement
       }
     },
-    staleTime: 1000 * 60, // 1 minute
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 30, // 30 secondes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }

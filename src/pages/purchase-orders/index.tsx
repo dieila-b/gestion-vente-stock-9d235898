@@ -12,12 +12,12 @@ import { toast } from "sonner";
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>([]);
-  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const { 
     orders: rawOrders, 
     isLoading,
+    processingOrderId,
     handleApprove,
     handleDelete,
     handleEdit,
@@ -72,46 +72,6 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
-  // Wrapper functions to ensure Promise<void> return and manage processing state
-  const handleApproveWrapper = async (id: string): Promise<void> => {
-    try {
-      setProcessingOrderId(id);
-      console.log("Calling handleApprove with ID:", id);
-      await handleApprove(id);
-      console.log("Approve completed for ID:", id);
-    } catch (error) {
-      console.error("Error in approval wrapper:", error);
-      toast.error("Erreur lors de l'approbation");
-    } finally {
-      setProcessingOrderId(null);
-    }
-  };
-
-  const handleDeleteWrapper = async (id: string): Promise<void> => {
-    try {
-      setProcessingOrderId(id);
-      await handleDelete(id);
-    } catch (error) {
-      console.error("Error in delete wrapper:", error);
-      toast.error("Erreur lors de la suppression");
-    } finally {
-      setProcessingOrderId(null);
-    }
-  };
-
-  const handleEditWrapper = async (id: string): Promise<void> => {
-    try {
-      setProcessingOrderId(id);
-      console.log("Calling edit wrapper with ID:", id);
-      await handleEdit(id);
-    } catch (error) {
-      console.error("Error in edit wrapper:", error);
-      toast.error("Erreur lors de l'édition");
-    } finally {
-      setProcessingOrderId(null);
-    }
-  };
-
   // Handle purchase order printing
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id, order.order_number);
@@ -136,9 +96,9 @@ export default function PurchaseOrdersPage() {
             <PurchaseOrderList 
               orders={filteredOrders}
               isLoading={isLoading || !initialLoadDone}
-              onApprove={handleApproveWrapper}
-              onDelete={handleDeleteWrapper}
-              onEdit={handleEditWrapper}
+              onApprove={handleApprove}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
               onPrint={handlePrint}
               processingOrderId={processingOrderId}
             />
