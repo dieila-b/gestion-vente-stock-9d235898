@@ -42,17 +42,16 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select('*')
-          .returns();
+          .select('*');
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
 
-        // Si aucune donnée n'est retournée mais pas d'erreur, considérez comme réussi
-        // mais récupérez l'enregistrement manuellement
-        if (!data || data.length === 0) {
+        // Check if data exists and has content
+        // Fixed: TypeScript error by checking if data is not an array with data.length
+        if (!data || Array.isArray(data) && data.length === 0) {
           console.warn("Update succeeded but no data returned, fetching record manually");
           
           const { data: fetchedData, error: fetchError } = await supabase
@@ -74,9 +73,12 @@ export function useUpdatePurchaseOrder() {
           return fetchedData as PurchaseOrder;
         }
 
-        console.log("Purchase order updated successfully:", data[0]);
+        // If data is an array, take the first item
+        const resultData = Array.isArray(data) ? data[0] : data;
         
-        return data[0] as PurchaseOrder;
+        console.log("Purchase order updated successfully:", resultData);
+        
+        return resultData as PurchaseOrder;
       } catch (err) {
         console.error("Update purchase order error:", err);
         throw err;
