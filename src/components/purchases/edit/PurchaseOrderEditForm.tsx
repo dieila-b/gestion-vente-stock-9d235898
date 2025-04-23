@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
@@ -52,14 +51,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       
       if (success) {
         toast.success("Modifications enregistrées avec succès");
-        console.log("Save successful, closing form...");
-        
-        // Use a slightly longer timeout to ensure everything is processed before closing
-        setTimeout(() => {
-          console.log("Executing dialog close callback");
-          // Force close the dialog
-          onClose();
-        }, 1000);
+        onClose();
       } else {
         toast.error("Échec de l'enregistrement des modifications");
       }

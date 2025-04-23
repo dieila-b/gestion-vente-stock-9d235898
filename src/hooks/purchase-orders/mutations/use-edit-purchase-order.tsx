@@ -24,14 +24,8 @@ export function useEditPurchaseOrder() {
   
   const handleCloseDialog = () => {
     console.log("Closing edit dialog");
-    // First close the dialog to trigger animation
     setIsDialogOpen(false);
-    
-    // Reset order ID after the dialog animation completes
-    setTimeout(() => {
-      console.log("Resetting selected order ID");
-      setSelectedOrderId(null);
-    }, 300);
+    setSelectedOrderId(null);
   };
   
   const EditDialog = () => {
