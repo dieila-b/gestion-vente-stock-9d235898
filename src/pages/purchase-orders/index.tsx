@@ -60,6 +60,31 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
+  // Wrapper functions to ensure Promise<void> return types
+  const handleApproveWrapper = async (id: string): Promise<void> => {
+    try {
+      await handleApprove(id);
+    } catch (error) {
+      console.error("Error in approval wrapper:", error);
+    }
+  };
+
+  const handleDeleteWrapper = async (id: string): Promise<void> => {
+    try {
+      await handleDelete(id);
+    } catch (error) {
+      console.error("Error in delete wrapper:", error);
+    }
+  };
+
+  const handleEditWrapper = async (id: string): Promise<void> => {
+    try {
+      await handleEdit(id);
+    } catch (error) {
+      console.error("Error in edit wrapper:", error);
+    }
+  };
+
   // Handle print action
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id, order.order_number);
@@ -79,9 +104,9 @@ export default function PurchaseOrdersPage() {
             <PurchaseOrderList 
               orders={filteredOrders}
               isLoading={isLoading}
-              onApprove={handleApprove}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
+              onApprove={handleApproveWrapper}
+              onDelete={handleDeleteWrapper}
+              onEdit={handleEditWrapper}
               onPrint={handlePrint}
             />
           </CardContent>
