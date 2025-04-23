@@ -27,6 +27,47 @@ export function usePurchaseData(orderId?: string) {
   const [formData, setFormData] = useState<Partial<PurchaseOrder>>({});
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
 
+  // Separate query to fetch purchase order items directly
+  const { data: directItems = [], refetch: refetchItems } = useQuery<PurchaseOrderItem[]>({
+    queryKey: ['purchase-order-items', orderId],
+    queryFn: async () => {
+      if (!orderId) return [];
+      
+      console.log(`Directly fetching purchase order items for order ID: ${orderId}`);
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .select(`
+          *,
+          product:catalog(*)
+        `)
+        .eq('purchase_order_id', orderId);
+        
+      if (error) {
+        console.error("Error fetching purchase order items:", error);
+        throw error;
+      }
+      
+      console.log(`Successfully fetched ${data?.length || 0} items directly`);
+      
+      // Process and return the items
+      return data?.map(item => ({
+        id: String(item.id),
+        product_id: String(item.product_id),
+        purchase_order_id: String(orderId),
+        quantity: Number(item.quantity || 0),
+        unit_price: Number(item.unit_price || 0),
+        selling_price: Number(item.selling_price || 0),
+        total_price: Number(item.total_price || (item.quantity * item.unit_price)),
+        product: item.product ? {
+          id: String(item.product.id),
+          name: String(item.product.name || ''),
+          reference: item.product.reference ? String(item.product.reference) : undefined
+        } : undefined
+      })) || [];
+    },
+    enabled: !!orderId
+  });
+
   // Fetch the purchase order 
   const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery<PurchaseOrder | null>({
     queryKey: ['purchase', orderId],
@@ -61,7 +102,7 @@ export function usePurchaseData(orderId?: string) {
               quantity: Number(item.quantity || 0),
               unit_price: Number(item.unit_price || 0),
               selling_price: Number(item.selling_price || 0),
-              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+              total_price: Number(item.total_price || (item.quantity * item.unit_price)),
               product: item.product ? {
                 id: String(item.product.id),
                 name: String(item.product.name || ''),
@@ -69,7 +110,7 @@ export function usePurchaseData(orderId?: string) {
               } : undefined
             }));
           } else {
-            console.log("No items found in purchase order data");
+            console.log("No items found in purchase order data from RPC function");
           }
           
           // Ensure status is one of the allowed values
@@ -110,12 +151,14 @@ export function usePurchaseData(orderId?: string) {
             ...baseObject as PurchaseOrder,
             status,
             payment_status,
-            items: processedItems
+            items: processedItems.length > 0 ? processedItems : directItems
           };
           
-          // IMPORTANT: Update the orderItems state with the items from the purchase order
-          console.log("Setting processed items:", processedItems.length);
-          setOrderItems(processedItems);
+          // Update orderItems state with the processed items
+          if (processedItems.length > 0) {
+            console.log("Setting processed items from RPC function:", processedItems.length);
+            setOrderItems(processedItems);
+          }
           
           return processedOrder;
         }
@@ -143,39 +186,6 @@ export function usePurchaseData(orderId?: string) {
           throw new Error("Bon de commande non trouvé");
         }
 
-        // Requête séparée pour les articles
-        console.log("Fetching items for purchase order:", orderId);
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('purchase_order_items')
-          .select(`
-            *,
-            product:catalog(*)
-          `)
-          .eq('purchase_order_id', orderId);
-          
-        if (itemsError) {
-          console.error("Error fetching items:", itemsError);
-          throw new Error(`Erreur lors de la récupération des articles: ${itemsError.message}`);
-        }
-          
-        console.log("Fetched items:", itemsData?.length || 0);
-        
-        // Traiter les articles
-        const processedItems: PurchaseOrderItem[] = itemsData ? itemsData.map(item => ({
-          id: String(item.id),
-          product_id: String(item.product_id),
-          purchase_order_id: String(orderId),
-          quantity: Number(item.quantity || 0),
-          unit_price: Number(item.unit_price || 0),
-          selling_price: Number(item.selling_price || 0),
-          total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-          product: item.product ? {
-            id: String(item.product.id),
-            name: String(item.product.name || ''),
-            reference: item.product.reference ? String(item.product.reference) : undefined
-          } : undefined
-        })) : [];
-
         // S'assurer que le statut est une valeur valide
         const status = isValidStatus(orderData.status) ? orderData.status : 'pending';
         // S'assurer que le statut de paiement est une valeur valide
@@ -186,16 +196,12 @@ export function usePurchaseData(orderId?: string) {
           ...orderData,
           status,
           payment_status,
-          items: processedItems
+          items: directItems
         };
 
         console.log("Processed purchase order:", processedOrder.id);
-        console.log("Processed items:", processedItems.length);
+        console.log("Using direct items:", directItems.length);
         
-        // Mettre à jour le state local avec les articles
-        console.log("Setting items from direct query:", processedItems.length);
-        setOrderItems(processedItems);
-
         return processedOrder;
       } catch (error) {
         console.error("Failed to fetch purchase order:", error);
@@ -232,14 +238,16 @@ export function usePurchaseData(orderId?: string) {
         tax_rate: purchase.tax_rate,
         deleted: false
       });
-
-      // If there are items in the purchase, update our order items state
-      if (purchase.items && Array.isArray(purchase.items) && purchase.items.length > 0) {
-        console.log("Setting order items from purchase.items:", purchase.items.length);
-        setOrderItems(purchase.items);
-      }
     }
   }, [purchase]);
+
+  // Effect to update orderItems state whenever directItems changes
+  useEffect(() => {
+    if (directItems && directItems.length > 0) {
+      console.log("Direct items loaded, updating order items:", directItems.length);
+      setOrderItems(directItems);
+    }
+  }, [directItems]);
 
   // Handle form data changes
   const updateFormField = (field: string, value: any) => {
@@ -250,6 +258,12 @@ export function usePurchaseData(orderId?: string) {
     }));
   };
 
+  const refreshAll = async () => {
+    console.log("Refreshing purchase order and items data");
+    await refetch();
+    await refetchItems();
+  };
+
   return {
     purchase,
     formData,
@@ -257,6 +271,6 @@ export function usePurchaseData(orderId?: string) {
     setOrderItems,
     updateFormField,
     isPurchaseLoading,
-    refetch
+    refetch: refreshAll
   };
 }

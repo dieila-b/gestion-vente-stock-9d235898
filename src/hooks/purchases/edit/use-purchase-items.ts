@@ -133,7 +133,7 @@ export function usePurchaseItems(
     }
   };
 
-  // Add new item to order - CORRECTED IMPLEMENTATION
+  // Add new item to order
   const addItem = async (product: CatalogProduct) => {
     if (!orderId) {
       console.error("Missing orderId in addItem");
@@ -147,7 +147,11 @@ export function usePurchaseItems(
       return false;
     }
     
-    console.log("Adding product to order:", { orderId, productId: product.id, productName: product.name });
+    console.log("Adding product to order:", { 
+      orderId, 
+      productId: product.id, 
+      productName: product.name 
+    });
     
     try {
       // Generate a unique ID for the new item
@@ -158,8 +162,36 @@ export function usePurchaseItems(
       const unitPrice = product.purchase_price || 0;
       const totalPrice = quantity * unitPrice;
       
+      // Prepare the item data for database insertion
+      const newItem = {
+        id: newItemId,
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: quantity,
+        unit_price: unitPrice,
+        selling_price: product.price || 0,
+        total_price: totalPrice,
+        created_at: new Date().toISOString()
+      };
+      
+      console.log("Sending new item to database:", newItem);
+      
+      // Insert directly to the database table
+      const { data: insertedData, error: insertError } = await supabase
+        .from('purchase_order_items')
+        .insert(newItem)
+        .select('*')
+        .single();
+      
+      if (insertError) {
+        console.error("Error inserting item:", insertError);
+        throw insertError;
+      }
+      
+      console.log("Successfully inserted item:", insertedData);
+      
       // Create a new item object for local state update
-      const newItem: PurchaseOrderItem = {
+      const newItemForState: PurchaseOrderItem = {
         id: newItemId,
         purchase_order_id: orderId,
         product_id: product.id,
@@ -174,42 +206,9 @@ export function usePurchaseItems(
         }
       };
       
-      console.log("Created new item object:", newItem);
-      
-      // Update local state IMMEDIATELY for responsive UI
-      const updatedItems = [...orderItems, newItem];
+      // Update local state
+      const updatedItems = [...orderItems, newItemForState];
       setOrderItems(updatedItems);
-      
-      console.log("Updated local items array, now has", updatedItems.length, "items");
-      
-      // Prepare the item data for database insertion
-      const itemData = [{
-        id: newItemId,
-        purchase_order_id: orderId,
-        product_id: product.id,
-        quantity: quantity,
-        unit_price: unitPrice,
-        selling_price: product.price || 0,
-        total_price: totalPrice,
-        created_at: new Date().toISOString()
-      }];
-      
-      console.log("Sending item data to RPC:", itemData);
-      
-      // Send to database using RPC to bypass RLS
-      const { data, error } = await supabase
-        .rpc('bypass_insert_purchase_order_items', {
-          items_data: JSON.stringify(itemData)
-        });
-      
-      if (error) {
-        console.error("Error inserting item with RPC:", error);
-        // Revert local state if DB operation fails
-        setOrderItems(orderItems);
-        throw error;
-      }
-      
-      console.log("RPC insert result:", data);
       
       // Update order total
       await updateOrderTotal(orderId, null, refetch);

@@ -32,6 +32,19 @@ export function ProductsSection({
   
   useEffect(() => {
     console.log("ProductsSection rendered with items:", items);
+    if (items && items.length > 0) {
+      items.forEach((item, index) => {
+        if (index < 3) { // Only log a few items to avoid console spam
+          console.log(`Item ${index}:`, {
+            id: item.id,
+            productId: item.product_id,
+            name: item.product?.name || 'Unknown product',
+            quantity: item.quantity,
+            price: item.unit_price
+          });
+        }
+      });
+    }
   }, [items]);
   
   // Fetch available products

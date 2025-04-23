@@ -46,7 +46,8 @@ BEGIN
     'name', s.name,
     'email', s.email,
     'phone', s.phone,
-    'address', s.address
+    'address', s.address,
+    'contact', s.contact
   ) INTO supplier_data
   FROM suppliers s
   WHERE s.id = (order_data->>'supplier_id')::uuid;
