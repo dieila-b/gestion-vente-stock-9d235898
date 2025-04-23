@@ -20,11 +20,19 @@ export function usePurchaseStatus(
       if (status === 'pending' || status === 'delivered') {
         updateFormField('status', status);
         console.log("Updating order status to:", status);
-        const result = await handleUpdate(orderId, { status });
+        const result = await handleUpdate(orderId, { 
+          status, 
+          updated_at: new Date().toISOString() 
+        });
+        
         if (!result) throw new Error("Failed to update status");
+        return true;
       }
+      return false;
     } catch (error: any) {
+      console.error("Status update error:", error);
       toast.error(`Erreur lors de la mise à jour du statut: ${error.message}`);
+      return false;
     }
   };
 
@@ -36,11 +44,19 @@ export function usePurchaseStatus(
       if (status === 'pending' || status === 'partial' || status === 'paid') {
         updateFormField('payment_status', status);
         console.log("Updating payment status to:", status);
-        const result = await handleUpdate(orderId, { payment_status: status });
+        const result = await handleUpdate(orderId, { 
+          payment_status: status,
+          updated_at: new Date().toISOString()
+        });
+        
         if (!result) throw new Error("Failed to update payment status");
+        return true;
       }
+      return false;
     } catch (error: any) {
+      console.error("Payment status update error:", error);
       toast.error(`Erreur lors de la mise à jour du statut de paiement: ${error.message}`);
+      return false;
     }
   };
 

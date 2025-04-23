@@ -55,7 +55,7 @@ export async function updateOrderTotal(orderId: string, formData: any, refetch?:
     });
     
     // Update the order with new totals
-    const { error: updateError } = await supabase
+    const { data: updatedOrder, error: updateError } = await supabase
       .from('purchase_orders')
       .update({
         subtotal: subtotal,
@@ -64,7 +64,9 @@ export async function updateOrderTotal(orderId: string, formData: any, refetch?:
         total_amount: totalAmount,
         updated_at: new Date().toISOString()
       })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .select('*')
+      .single();
     
     if (updateError) {
       console.error("Error updating order totals:", updateError);

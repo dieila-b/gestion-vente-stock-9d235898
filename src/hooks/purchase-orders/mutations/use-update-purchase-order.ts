@@ -40,7 +40,7 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select()
+          .select('*')
           .single();
 
         if (error) {
