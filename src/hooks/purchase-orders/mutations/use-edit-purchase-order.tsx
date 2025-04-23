@@ -24,15 +24,18 @@ export function useEditPurchaseOrder() {
   
   const handleCloseDialog = () => {
     console.log("Closing edit dialog");
+    // First close the dialog to trigger animation
     setIsDialogOpen(false);
+    
     // Reset order ID after the dialog animation completes
     setTimeout(() => {
+      console.log("Resetting selected order ID");
       setSelectedOrderId(null);
     }, 300);
   };
   
   const EditDialog = () => {
-    if (!isDialogOpen) return null;
+    if (!selectedOrderId) return null;
     
     return (
       <Dialog 
@@ -43,14 +46,10 @@ export function useEditPurchaseOrder() {
       >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>Modifier Bon de Commande</DialogTitle>
-          {selectedOrderId ? (
-            <PurchaseOrderEditForm 
-              orderId={selectedOrderId} 
-              onClose={handleCloseDialog}
-            />
-          ) : (
-            <div className="p-4 text-center">Identifiant de bon de commande invalide</div>
-          )}
+          <PurchaseOrderEditForm 
+            orderId={selectedOrderId} 
+            onClose={handleCloseDialog}
+          />
         </DialogContent>
       </Dialog>
     );
