@@ -1,12 +1,11 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Pencil, Printer, Check, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
 import { LoadingState } from "./table/LoadingState";
 import { EmptyState } from "./table/EmptyState";
+import { PurchaseOrderActions } from "./table/PurchaseOrderActions";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -48,7 +47,7 @@ export function PurchaseOrderTable({
             <TableHead>Nombre articles</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Montant net</TableHead>
-            <TableHead>Action</TableHead>
+            <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -72,47 +71,15 @@ export function PurchaseOrderTable({
                 </span>
               </TableCell>
               <TableCell>{(order.total_amount || 0).toLocaleString('fr-FR')} GNF</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {order.status !== 'approved' && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEdit(order.id)}
-                        disabled={processingOrderId === order.id}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-green-600"
-                        onClick={() => onApprove(order.id)}
-                        disabled={processingOrderId === order.id}
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600"
-                        onClick={() => onDelete(order.id)}
-                        disabled={processingOrderId === order.id}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPrint(order)}
-                    disabled={processingOrderId === order.id}
-                  >
-                    <Printer className="w-4 h-4" />
-                  </Button>
-                </div>
+              <TableCell className="text-right">
+                <PurchaseOrderActions 
+                  order={order}
+                  processingId={processingOrderId}
+                  onApprove={onApprove}
+                  onDelete={onDelete}
+                  onEdit={onEdit}
+                  onPrint={onPrint}
+                />
               </TableCell>
             </TableRow>
           ))}

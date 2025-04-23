@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Printer, Check, Trash2, Pencil } from "lucide-react";
+import { MoreHorizontal, Printer, Check, Trash2, Pencil, Loader2 } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -45,14 +45,25 @@ export function PurchaseOrderActions({
             <DropdownMenuItem 
               onClick={() => onApprove(order.id)}
               disabled={isProcessing}
+              className="cursor-pointer"
             >
-              <Check className="mr-2 h-4 w-4" />
-              {isProcessing ? "Traitement..." : "Approuver"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Traitement...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Approuver
+                </>
+              )}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
             onClick={() => onEdit(order.id)}
             disabled={isProcessing}
+            className="cursor-pointer"
           >
             <Pencil className="mr-2 h-4 w-4" />
             Modifier
@@ -60,6 +71,7 @@ export function PurchaseOrderActions({
           <DropdownMenuItem 
             onClick={() => onPrint(order)}
             disabled={isProcessing}
+            className="cursor-pointer"
           >
             <Printer className="mr-2 h-4 w-4" />
             Imprimer
@@ -68,7 +80,7 @@ export function PurchaseOrderActions({
             <DropdownMenuItem 
               onClick={() => onDelete(order.id)}
               disabled={isProcessing}
-              className="text-red-600"
+              className="text-red-600 cursor-pointer"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer

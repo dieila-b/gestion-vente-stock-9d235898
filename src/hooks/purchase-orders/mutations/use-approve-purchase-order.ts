@@ -12,25 +12,24 @@ export function useApprovePurchaseOrder() {
       try {
         console.log("Starting approval process for order:", id);
         
-        // 1. Vérifier d'abord l'existence du bon de commande - utilisons get() au lieu de maybeSingle()
+        // 1. Verify the purchase order exists
         const { data: orders, error: checkError } = await supabase
           .from('purchase_orders')
           .select('id, status')
-          .eq('id', id);
+          .eq('id', id)
+          .limit(1);
           
         if (checkError) {
           console.error("Error checking purchase order:", checkError);
           throw new Error(`Erreur lors de la vérification: ${checkError.message}`);
         }
         
-        // Vérifier si nous avons récupéré des données
         if (!orders || orders.length === 0) {
           console.error("Purchase order not found:", id);
           throw new Error("Bon de commande introuvable");
         }
         
         const checkOrder = orders[0];
-        
         console.log("Found purchase order:", checkOrder);
         
         if (checkOrder.status === 'approved') {
@@ -39,12 +38,12 @@ export function useApprovePurchaseOrder() {
           return { id, alreadyApproved: true };
         }
         
-        // 2. Mettre à jour le statut du bon de commande
+        // 2. Update the purchase order status
         const { data: updatedData, error } = await supabase
           .from('purchase_orders')
           .update({ status: 'approved' })
           .eq('id', id)
-          .select();
+          .select('*');
 
         if (error) {
           console.error("Error updating purchase order status:", error);
@@ -57,15 +56,14 @@ export function useApprovePurchaseOrder() {
 
         console.log("Purchase order approved successfully:", updatedData);
         
-        // 3. Synchroniser avec les bons de livraison après un délai pour permettre à la base de données de s'actualiser
-        setTimeout(async () => {
-          try {
-            const syncResult = await syncApprovedPurchaseOrders();
-            console.log("Sync result after approval:", syncResult);
-          } catch (syncError) {
-            console.error("Error in sync after approval:", syncError);
-          }
-        }, 500);
+        // 3. Sync with delivery notes after a delay to allow the database to update
+        try {
+          const syncResult = await syncApprovedPurchaseOrders();
+          console.log("Sync result after approval:", syncResult);
+        } catch (syncError) {
+          console.error("Error in sync after approval:", syncError);
+          // Don't throw here, we still want to consider the approval successful
+        }
         
         return { id, success: true };
       } catch (error: any) {
@@ -79,7 +77,7 @@ export function useApprovePurchaseOrder() {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       
-      // Afficher le message de succès uniquement si ce n'était pas déjà approuvé
+      // Display success message only if not already approved
       if (!data.alreadyApproved) {
         toast.success("Commande approuvée avec succès");
       }

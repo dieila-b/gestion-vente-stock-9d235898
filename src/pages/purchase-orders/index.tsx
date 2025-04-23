@@ -27,7 +27,7 @@ export default function PurchaseOrdersPage() {
   
   const { printPurchaseOrder } = usePurchasePrint();
 
-  // Chargement initial des données
+  // Initial data loading
   useEffect(() => {
     if (!initialLoadDone) {
       console.log("Purchase orders page mounted, refreshing orders");
@@ -43,7 +43,7 @@ export default function PurchaseOrdersPage() {
     }
   }, [initialLoadDone, refreshOrders]);
 
-  // Filtrer les bons de commande
+  // Filter purchase orders
   useEffect(() => {
     console.log("Raw orders available for processing:", rawOrders?.length || 0);
     
@@ -54,13 +54,13 @@ export default function PurchaseOrdersPage() {
     }
     
     try {
-      // Appliquer le filtre de recherche
+      // Apply search filter
       const filtered = searchQuery.trim() 
         ? rawOrders.filter(order => 
             (order.order_number?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
             (order.supplier?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
           )
-        : [...rawOrders]; // Copie de tous les bons de commande
+        : [...rawOrders]; // Copy all purchase orders
       
       console.log("Filtered orders:", filtered.length);
       
@@ -72,13 +72,16 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
-  // Fonctions wrapper pour assurer le retour de Promise<void> et gérer l'état de traitement
+  // Wrapper functions to ensure Promise<void> return and manage processing state
   const handleApproveWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
       console.log("Calling handleApprove with ID:", id);
-      const result = await handleApprove(id);
-      console.log("Approve result:", result);
+      await handleApprove(id);
+      console.log("Approve completed for ID:", id);
+      
+      // Refresh the list to show updated state
+      await refreshOrders();
     } catch (error) {
       console.error("Error in approval wrapper:", error);
       toast.error("Erreur lors de l'approbation");
@@ -91,6 +94,7 @@ export default function PurchaseOrdersPage() {
     try {
       setProcessingOrderId(id);
       await handleDelete(id);
+      await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
       toast.error("Erreur lors de la suppression");
@@ -112,7 +116,7 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  // Gérer l'impression des bons de commande
+  // Handle purchase order printing
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id, order.order_number);
     try {
@@ -145,7 +149,7 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
         
-        {/* Rendre le composant EditDialog */}
+        {/* Render EditDialog component */}
         <EditDialog />
       </div>
     </DashboardLayout>
