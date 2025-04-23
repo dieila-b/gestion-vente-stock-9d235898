@@ -15,11 +15,6 @@ function isValidPaymentStatus(status: string): status is PurchaseOrder['payment_
   return ['pending', 'partial', 'paid'].includes(status);
 }
 
-// Type guard to check if value is a plain object
-function isPlainObject(value: any): value is Record<string, any> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /**
  * Hook to fetch and manage purchase order data
  */
@@ -27,7 +22,7 @@ export function usePurchaseData(orderId?: string) {
   const [formData, setFormData] = useState<Partial<PurchaseOrder>>({});
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
 
-  // Fetch the purchase order with items included
+  // Fetch the purchase order using the Supabase RPC function
   const { data: purchase, isLoading: isPurchaseLoading, refetch } = useQuery<PurchaseOrder | null>({
     queryKey: ['purchase', orderId],
     queryFn: async () => {
@@ -39,20 +34,9 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
-        // Use direct query instead of RPC for better error handling
+        // Call the RPC function to get the purchase order by ID
         const { data, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:supplier_id(*),
-            warehouse:warehouse_id(*),
-            items:purchase_order_items(
-              *,
-              product:product_id(*)
-            )
-          `)
-          .eq('id', orderId)
-          .single();
+          .rpc('get_purchase_order_by_id', { order_id: orderId });
         
         if (error) {
           console.error("Error fetching purchase order:", error);
@@ -67,15 +51,6 @@ export function usePurchaseData(orderId?: string) {
         }
 
         console.log("Purchase order data retrieved:", data);
-        
-        // Ensure the status is valid
-        const validStatus: PurchaseOrder['status'] = data.status && isValidStatus(String(data.status)) 
-          ? String(data.status) as PurchaseOrder['status']
-          : 'pending';
-          
-        const validPaymentStatus: PurchaseOrder['payment_status'] = data.payment_status && isValidPaymentStatus(String(data.payment_status)) 
-          ? String(data.payment_status) as PurchaseOrder['payment_status']
-          : 'pending';
         
         // Process the items with proper type checking
         let processedItems: PurchaseOrderItem[] = [];
@@ -108,7 +83,7 @@ export function usePurchaseData(orderId?: string) {
           order_number: String(data.order_number || ''),
           created_at: String(data.created_at || ''),
           updated_at: data.updated_at ? String(data.updated_at) : undefined,
-          status: validStatus,
+          status: isValidStatus(String(data.status)) ? String(data.status) as PurchaseOrder['status'] : 'pending',
           supplier_id: String(data.supplier_id || ''),
           discount: Number(data.discount || 0),
           expected_delivery_date: String(data.expected_delivery_date || ''),
@@ -122,7 +97,9 @@ export function usePurchaseData(orderId?: string) {
           total_ttc: Number(data.total_ttc || 0),
           total_amount: Number(data.total_amount || 0),
           paid_amount: Number(data.paid_amount || 0),
-          payment_status: validPaymentStatus,
+          payment_status: isValidPaymentStatus(String(data.payment_status)) 
+            ? String(data.payment_status) as PurchaseOrder['payment_status'] 
+            : 'pending',
           warehouse_id: data.warehouse_id ? String(data.warehouse_id) : undefined,
           supplier: data.supplier ? {
             id: String(data.supplier.id || ''),

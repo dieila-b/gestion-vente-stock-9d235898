@@ -72,11 +72,11 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
-  // Fonctions wrapper pour assurer le retour de Promise<void>
+  // Fonctions wrapper pour assurer le retour de Promise<void> et gérer l'état de traitement
   const handleApproveWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
-      console.log("Calling handleApprove wrapper with ID:", id);
+      console.log("Calling handleApprove with ID:", id);
       const result = await handleApprove(id);
       console.log("Approve result:", result);
     } catch (error) {
@@ -91,7 +91,6 @@ export default function PurchaseOrdersPage() {
     try {
       setProcessingOrderId(id);
       await handleDelete(id);
-      await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
       toast.error("Erreur lors de la suppression");
@@ -103,6 +102,7 @@ export default function PurchaseOrdersPage() {
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
+      console.log("Calling edit wrapper with ID:", id);
       await handleEdit(id);
     } catch (error) {
       console.error("Error in edit wrapper:", error);

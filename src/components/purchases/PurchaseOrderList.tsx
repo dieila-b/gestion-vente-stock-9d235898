@@ -1,6 +1,9 @@
 
 import { PurchaseOrderTable } from "./PurchaseOrderTable";
+import { DataTable } from "@/components/ui/data-table";
+import { columns } from "./table/columns";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { Loader } from "lucide-react";
 
 interface PurchaseOrderListProps {
   orders: PurchaseOrder[];
@@ -21,12 +24,28 @@ export function PurchaseOrderList({
   onEdit,
   onPrint
 }: PurchaseOrderListProps) {
-  // Log pour le débogage
   console.log("PurchaseOrderList renders with orders:", orders?.length || 0);
+  
+  if (isLoading) {
+    return (
+      <div className="w-full flex justify-center items-center py-12">
+        <Loader className="h-8 w-8 animate-spin text-gray-500" />
+        <span className="ml-2 text-gray-500">Chargement des bons de commande...</span>
+      </div>
+    );
+  }
+  
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="text-center py-12 border rounded-lg">
+        <p className="text-gray-500">Aucun bon de commande trouvé</p>
+      </div>
+    );
+  }
   
   return (
     <PurchaseOrderTable
-      orders={orders || []}
+      orders={orders}
       isLoading={isLoading}
       onApprove={onApprove}
       onDelete={onDelete}

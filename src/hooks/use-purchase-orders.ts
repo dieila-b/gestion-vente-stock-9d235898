@@ -64,13 +64,34 @@ export function usePurchaseOrders() {
     }
   };
 
+  // Create wrapper functions with correct signature for Promise<void>
+  const handleEditWrapper = async (id: string): Promise<void> => {
+    try {
+      console.log("Wrapping edit for order ID:", id);
+      await handleEdit(id);
+    } catch (error) {
+      console.error("Error in handleEditWrapper:", error);
+      toast.error("Erreur lors de l'ouverture du formulaire d'édition");
+    }
+  };
+
+  const handleDeleteWrapper = async (id: string): Promise<void> => {
+    try {
+      await handleDelete(id);
+      await refreshOrders();
+    } catch (error) {
+      console.error("Error in handleDeleteWrapper:", error);
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
   return {
     orders,
     isLoading,
     error,
     handleApprove,
-    handleDelete,
-    handleEdit,
+    handleDelete: handleDeleteWrapper,
+    handleEdit: handleEditWrapper,
     EditDialog,
     isDialogOpen,
     handleCreate,

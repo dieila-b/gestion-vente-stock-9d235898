@@ -38,6 +38,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   } = usePurchaseEdit(orderId);
   
   console.log("Order items in form:", orderItems?.length || 0);
+  console.log("Purchase data available:", purchase ? "yes" : "no");
   
   const handleSave = async () => {
     const success = await saveChanges();
@@ -47,9 +48,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   };
   
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-      <DialogTitle>Modifier Bon de Commande</DialogTitle>
-      
+    <div className="p-4 space-y-6">
       {isLoading ? (
         <div className="p-6 text-center">
           <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -62,7 +61,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <p className="text-sm text-gray-400">Le bon de commande que vous essayez de modifier n'existe pas ou n'est pas accessible.</p>
         </div>
       ) : (
-        <div className="p-4 space-y-6">
+        <>
           <h3 className="text-lg font-semibold">Informations générales</h3>
           
           <GeneralInfoSection 
@@ -105,8 +104,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             onSave={handleSave}
             onCancel={onClose}
           />
-        </div>
+        </>
       )}
-    </DialogContent>
+    </div>
   );
 }
