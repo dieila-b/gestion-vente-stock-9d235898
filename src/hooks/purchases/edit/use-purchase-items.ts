@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { updateOrderTotal } from './use-purchase-calculations';
@@ -49,8 +50,8 @@ export function usePurchaseItems(
       
       setOrderItems(updatedItems);
       
-      // Update the order total
-      await updateOrderTotal(orderId, null, refetch);
+      // Update the order total - fix: remove the third argument
+      await updateOrderTotal(orderId, {});
       
       toast.success('Quantité mise à jour avec succès');
       return true;
@@ -93,8 +94,8 @@ export function usePurchaseItems(
       
       setOrderItems(updatedItems);
       
-      // Update the order total
-      await updateOrderTotal(orderId, null, refetch);
+      // Update the order total - fix: remove the third argument
+      await updateOrderTotal(orderId, {});
       
       toast.success('Prix mis à jour avec succès');
       return true;
@@ -121,8 +122,8 @@ export function usePurchaseItems(
       const updatedItems = orderItems.filter(item => item.id !== itemId);
       setOrderItems(updatedItems);
       
-      // Update the order total
-      await updateOrderTotal(orderId, null, refetch);
+      // Update the order total - fix: remove the third argument
+      await updateOrderTotal(orderId, {});
       
       toast.success('Article supprimé avec succès');
       return true;
@@ -231,8 +232,8 @@ export function usePurchaseItems(
       const updatedItems = [...orderItems, newItemForState];
       setOrderItems(updatedItems);
       
-      // Update order total
-      await updateOrderTotal(orderId, null, refetch);
+      // Update order total - fix: remove the third argument
+      await updateOrderTotal(orderId, {});
       
       toast.success(`Produit "${product.name}" ajouté avec succès`);
       return true;
