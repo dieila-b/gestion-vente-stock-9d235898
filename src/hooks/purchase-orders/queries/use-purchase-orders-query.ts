@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { toast } from "sonner";
 
 export function usePurchaseOrdersQuery() {
   return useQuery({
@@ -10,17 +11,13 @@ export function usePurchaseOrdersQuery() {
       try {
         console.log("Fetching purchase orders from database");
         
-        // First, retrieve the purchase orders directly from the table for better error handling
+        // Appel de la fonction RPC pour obtenir les données des bons de commande
         const { data: ordersData, error: ordersError } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:supplier_id(*)
-          `)
-          .order('created_at', { ascending: false });
+          .rpc('bypass_select_purchase_orders');
           
         if (ordersError) {
           console.error("Error fetching purchase orders:", ordersError);
+          toast.error("Erreur lors du chargement des bons de commande");
           throw ordersError;
         }
         
@@ -31,19 +28,12 @@ export function usePurchaseOrdersQuery() {
         
         console.log(`Found ${ordersData.length} purchase orders`);
         
-        // Then, retrieve the items for each order
-        const ordersWithItems = await Promise.all(
-          ordersData.map(async (orderData: any) => {
-            try {
-              // Retrieve items directly with a join
-              const { data: itemsData, error: itemsError } = await supabase
-                .from('purchase_order_items')
-                .select(`
-                  *,
-                  product:product_id(*)
-                `)
-                .eq('purchase_order_id', orderData.id);
-                
+        // Convertir les données JSON en objets PurchaseOrder
+        const formattedOrders = ordersData.map((orderData: any) => {
+          // Récupérer les éléments du bon de commande
+          return supabase
+            .rpc('get_purchase_order_items', { order_id: orderData.id })
+            .then(({ data: itemsData, error: itemsError }) => {
               if (itemsError) {
                 console.error(`Error fetching items for order ${orderData.id}:`, itemsError);
                 return {
@@ -56,23 +46,23 @@ export function usePurchaseOrdersQuery() {
                 ...orderData,
                 items: itemsData || []
               };
-            } catch (error) {
-              console.error(`Error processing items for order ${orderData.id}:`, error);
-              return {
-                ...orderData,
-                items: []
-              };
-            }
-          })
-        );
+            });
+        });
         
+        // Attendre que toutes les promesses soient résolues
+        const ordersWithItems = await Promise.all(formattedOrders);
+        
+        console.log("Successfully processed purchase orders with items:", ordersWithItems.length);
+        
+        // Assurer que le résultat est un tableau valide de PurchaseOrder
         return ordersWithItems as PurchaseOrder[];
       } catch (error) {
         console.error("Error in usePurchaseOrdersQuery:", error);
-        throw error;
+        toast.error("Impossible de charger les bons de commande");
+        return []; // Retourner un tableau vide plutôt que de propager l'erreur
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60, // 1 minute
+    gcTime: 1000 * 60 * 10, // 10 minutes
   });
 }

@@ -13,6 +13,7 @@ export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>([]);
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const { 
     orders: rawOrders, 
@@ -26,30 +27,40 @@ export default function PurchaseOrdersPage() {
   
   const { printPurchaseOrder } = usePurchasePrint();
 
-  // Initial data load
+  // Chargement initial des données
   useEffect(() => {
-    console.log("Purchase orders page mounted, refreshing orders");
-    refreshOrders().catch(error => {
-      console.error("Error refreshing orders on mount:", error);
-    });
-  }, []);
+    if (!initialLoadDone) {
+      console.log("Purchase orders page mounted, refreshing orders");
+      refreshOrders()
+        .then(() => {
+          console.log("Initial orders load complete");
+          setInitialLoadDone(true);
+        })
+        .catch(error => {
+          console.error("Error refreshing orders on mount:", error);
+          toast.error("Erreur lors du chargement initial des bons de commande");
+        });
+    }
+  }, [initialLoadDone, refreshOrders]);
 
-  // Process and filter orders
+  // Filtrer les bons de commande
   useEffect(() => {
     console.log("Raw orders available for processing:", rawOrders?.length || 0);
     
-    if (!rawOrders || rawOrders.length === 0) {
-      console.log("No orders to process");
+    if (!rawOrders) {
+      console.log("No orders to process - rawOrders is undefined");
       setFilteredOrders([]);
       return;
     }
     
     try {
-      // Apply search filter
-      const filtered = rawOrders.filter(order => 
-        order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      // Appliquer le filtre de recherche
+      const filtered = searchQuery.trim() 
+        ? rawOrders.filter(order => 
+            (order.order_number?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+            (order.supplier?.name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+          )
+        : [...rawOrders]; // Copie de tous les bons de commande
       
       console.log("Filtered orders:", filtered.length);
       
@@ -61,7 +72,7 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
-  // Wrapper functions to ensure Promise<void> return types
+  // Fonctions wrapper pour assurer le retour de Promise<void>
   const handleApproveWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
@@ -83,6 +94,7 @@ export default function PurchaseOrdersPage() {
       await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
+      toast.error("Erreur lors de la suppression");
     } finally {
       setProcessingOrderId(null);
     }
@@ -94,15 +106,21 @@ export default function PurchaseOrdersPage() {
       await handleEdit(id);
     } catch (error) {
       console.error("Error in edit wrapper:", error);
+      toast.error("Erreur lors de l'édition");
     } finally {
       setProcessingOrderId(null);
     }
   };
 
-  // Handle print action
+  // Gérer l'impression des bons de commande
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id, order.order_number);
-    printPurchaseOrder(order);
+    try {
+      printPurchaseOrder(order);
+    } catch (error) {
+      console.error("Error printing purchase order:", error);
+      toast.error("Erreur lors de l'impression");
+    }
   };
 
   return (
@@ -117,7 +135,7 @@ export default function PurchaseOrdersPage() {
           <CardContent className="pt-6">
             <PurchaseOrderList 
               orders={filteredOrders}
-              isLoading={isLoading}
+              isLoading={isLoading || !initialLoadDone}
               onApprove={handleApproveWrapper}
               onDelete={handleDeleteWrapper}
               onEdit={handleEditWrapper}
@@ -127,7 +145,7 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
         
-        {/* Render the EditDialog component */}
+        {/* Rendre le composant EditDialog */}
         <EditDialog />
       </div>
     </DashboardLayout>

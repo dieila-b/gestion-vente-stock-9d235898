@@ -21,12 +21,12 @@ export function PurchaseOrderList({
   onEdit,
   onPrint
 }: PurchaseOrderListProps) {
-  // Log for debugging
+  // Log pour le débogage
   console.log("PurchaseOrderList renders with orders:", orders?.length || 0);
   
   return (
     <PurchaseOrderTable
-      orders={orders}
+      orders={orders || []}
       isLoading={isLoading}
       onApprove={onApprove}
       onDelete={onDelete}
