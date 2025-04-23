@@ -10,14 +10,14 @@ import { updateOrderTotal } from './edit/use-purchase-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
-import { usePurchaseOrderMutations } from '@/hooks/purchase-orders/mutations/use-purchase-order-mutations';
+import { useUpdatePurchaseOrder } from '@/hooks/purchase-orders/mutations/use-update-purchase-order';
 
 export function usePurchaseEdit(orderId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<'pending' | 'delivered'>('pending');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'partial' | 'paid'>('pending');
   const queryClient = useQueryClient();
-  const { handleUpdate } = usePurchaseOrderMutations();
+  const updatePurchaseOrder = useUpdatePurchaseOrder();
   
   // Get purchase data using the extracted hook
   const { 
@@ -67,7 +67,7 @@ export function usePurchaseEdit(orderId?: string) {
     orderId,
     formData,
     updateFormField,
-    handleUpdate
+    updatePurchaseOrder
   );
 
   // Save all form data
@@ -98,7 +98,7 @@ export function usePurchaseEdit(orderId?: string) {
       
       console.log("Data being sent to update:", dataToUpdate);
       
-      const updatedOrder = await handleUpdate(orderId, dataToUpdate);
+      const updatedOrder = await updatePurchaseOrder(orderId, dataToUpdate);
       
       if (!updatedOrder) {
         throw new Error("Échec de la mise à jour du bon de commande");

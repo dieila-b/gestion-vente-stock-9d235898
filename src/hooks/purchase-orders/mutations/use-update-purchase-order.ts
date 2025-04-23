@@ -68,7 +68,7 @@ export function useUpdatePurchaseOrder() {
     }
   });
 
-  // Return a function that takes id and data and calls mutate
+  // Return a function with explicit type definition
   return async (id: string, data: Partial<PurchaseOrder>): Promise<PurchaseOrder | null> => {
     try {
       return await mutation.mutateAsync({ id, data });
