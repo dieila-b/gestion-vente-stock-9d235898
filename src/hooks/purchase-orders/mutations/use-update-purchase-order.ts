@@ -25,10 +25,12 @@ export function useUpdatePurchaseOrder() {
         const validatedData = { ...params.data };
 
         if (validatedData.status && !isValidOrderStatus(validatedData.status)) {
+          console.warn("Invalid status provided, defaulting to 'draft'");
           validatedData.status = 'draft';
         }
 
         if (validatedData.payment_status && !isValidPaymentStatus(validatedData.payment_status)) {
+          console.warn("Invalid payment_status provided, defaulting to 'pending'");
           validatedData.payment_status = 'pending';
         }
 
@@ -48,6 +50,7 @@ export function useUpdatePurchaseOrder() {
         }
 
         if (!data || data.length === 0) {
+          console.error("No purchase order was updated - data is empty");
           throw new Error("No purchase order was updated");
         }
 
@@ -61,10 +64,9 @@ export function useUpdatePurchaseOrder() {
     },
     onSuccess: (data) => {
       // Force invalidate the specific purchase order and the list
-      console.log("Invalidating queries after update success for ID:", data.id);
+      console.log("Update success! Invalidating queries for ID:", data.id);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
-      // Ne pas afficher de toast ici pour éviter les doublons avec celui de PurchaseOrderEditForm
     },
     onError: (error) => {
       console.error("Purchase order update error:", error);
@@ -75,6 +77,7 @@ export function useUpdatePurchaseOrder() {
   // Return a function with explicit type definition
   return async (id: string, data: Partial<PurchaseOrder>): Promise<PurchaseOrder | null> => {
     try {
+      console.log("Calling mutateAsync for update", id);
       const result = await mutation.mutateAsync({ id, data });
       console.log("Update complete with result:", result);
       return result;

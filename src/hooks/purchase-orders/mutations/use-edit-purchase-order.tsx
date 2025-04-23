@@ -23,9 +23,9 @@ export function useEditPurchaseOrder() {
   };
   
   const handleCloseDialog = () => {
-    console.log("Closing edit dialog immediately");
-    // Ferme simplement le dialogue sans délai
+    console.log("Closing edit dialog - setting isDialogOpen to false");
     setIsDialogOpen(false);
+    console.log("Setting selectedOrderId to null");
     setSelectedOrderId(null);
   };
   
@@ -36,6 +36,7 @@ export function useEditPurchaseOrder() {
       <Dialog 
         open={isDialogOpen} 
         onOpenChange={(open) => {
+          console.log("Dialog onOpenChange triggered with value:", open);
           if (!open) handleCloseDialog();
         }}
       >
