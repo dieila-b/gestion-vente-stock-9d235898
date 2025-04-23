@@ -43,7 +43,7 @@ export function usePurchaseOrders() {
   };
 
   // Handle the approve function properly with improved error handling
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string): Promise<void> => {
     try {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
@@ -58,12 +58,9 @@ export function usePurchaseOrders() {
       
       // Also refresh delivery notes to show newly created ones
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      
-      return true;
     } catch (error) {
       console.error("Error in handleApprove:", error);
       toast.error("Erreur lors de l'approbation de la commande");
-      return false;
     } finally {
       setProcessingOrderId(null);
     }

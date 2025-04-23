@@ -11,25 +11,25 @@ export function useApprovePurchaseOrder() {
         console.log("Starting approval process for order:", id);
         
         // 1. Vérifier que le bon de commande existe
-        const { data: orders, error: checkError } = await supabase
+        const { data: orderData, error: checkError } = await supabase
           .from('purchase_orders')
           .select('id, status')
           .eq('id', id)
-          .single();
+          .maybeSingle();
           
         if (checkError) {
           console.error("Error checking purchase order:", checkError);
           throw new Error(`Erreur lors de la vérification: ${checkError.message}`);
         }
         
-        if (!orders) {
+        if (!orderData) {
           console.error("Purchase order not found:", id);
           throw new Error("Bon de commande introuvable");
         }
         
-        console.log("Found purchase order:", orders);
+        console.log("Found purchase order:", orderData);
         
-        if (orders.status === 'approved') {
+        if (orderData.status === 'approved') {
           console.log("Order already approved:", id);
           toast.info("Ce bon de commande est déjà approuvé");
           return { id, alreadyApproved: true };
