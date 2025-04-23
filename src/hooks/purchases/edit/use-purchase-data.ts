@@ -39,7 +39,7 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log(`Fetching purchase order with ID: ${orderId}`);
         
-        // Utiliser la fonction RPC get_purchase_order_by_id pour récupérer les données
+        // Use the RPC get_purchase_order_by_id to retrieve the data
         const { data, error } = await supabase
           .rpc('get_purchase_order_by_id', { order_id: orderId });
         
@@ -52,23 +52,39 @@ export function usePurchaseData(orderId?: string) {
           console.error("No purchase order found with ID:", orderId);
           return null;
         }
+
+        // Ensure data is an object before proceeding
+        if (!isPlainObject(data)) {
+          console.error("Invalid data format received:", data);
+          return null;
+        }
         
-        // S'assurer que le statut est valide
-        const validStatus = isValidStatus(data.status) ? data.status : 'pending';
-        const validPaymentStatus = isValidPaymentStatus(data.payment_status) ? data.payment_status : 'pending';
+        // Process the data with proper type checking
+        const typedData = data as Record<string, any>;
         
-        // Traiter les articles s'ils existent
-        if (data.items && Array.isArray(data.items)) {
-          const processedItems = data.items.map(item => ({
-            id: String(item.id),
-            product_id: String(item.product_id),
+        // Ensure the status is valid
+        const validStatus = typedData.status && isValidStatus(String(typedData.status)) 
+          ? String(typedData.status) 
+          : 'pending';
+          
+        const validPaymentStatus = typedData.payment_status && isValidPaymentStatus(String(typedData.payment_status)) 
+          ? String(typedData.payment_status) 
+          : 'pending';
+        
+        // Process the items with proper type checking
+        let processedItems: PurchaseOrderItem[] = [];
+        
+        if (typedData.items && Array.isArray(typedData.items)) {
+          processedItems = typedData.items.map(item => ({
+            id: String(item.id || ''),
+            product_id: String(item.product_id || ''),
             purchase_order_id: orderId,
             quantity: Number(item.quantity || 0),
             unit_price: Number(item.unit_price || 0),
             selling_price: Number(item.selling_price || 0),
             total_price: Number(item.total_price || 0),
             product: item.product ? {
-              id: String(item.product.id),
+              id: String(item.product.id || ''),
               name: String(item.product.name || ''),
               reference: item.product.reference ? String(item.product.reference) : undefined
             } : undefined
@@ -80,12 +96,51 @@ export function usePurchaseData(orderId?: string) {
           console.warn("No items array in order data, or invalid format");
         }
         
-        return {
-          ...data,
+        // Create a properly typed PurchaseOrder object
+        const purchaseOrder: PurchaseOrder = {
+          id: String(typedData.id || ''),
+          order_number: String(typedData.order_number || ''),
+          created_at: String(typedData.created_at || ''),
+          updated_at: typedData.updated_at ? String(typedData.updated_at) : undefined,
           status: validStatus,
+          supplier_id: String(typedData.supplier_id || ''),
+          discount: Number(typedData.discount || 0),
+          expected_delivery_date: String(typedData.expected_delivery_date || ''),
+          notes: String(typedData.notes || ''),
+          logistics_cost: Number(typedData.logistics_cost || 0),
+          transit_cost: Number(typedData.transit_cost || 0),
+          tax_rate: Number(typedData.tax_rate || 0),
+          shipping_cost: Number(typedData.shipping_cost || 0),
+          subtotal: Number(typedData.subtotal || 0),
+          tax_amount: Number(typedData.tax_amount || 0),
+          total_ttc: Number(typedData.total_ttc || 0),
+          total_amount: Number(typedData.total_amount || 0),
+          paid_amount: Number(typedData.paid_amount || 0),
           payment_status: validPaymentStatus,
-          items: data.items || []
-        } as PurchaseOrder;
+          warehouse_id: typedData.warehouse_id ? String(typedData.warehouse_id) : undefined,
+          supplier: typedData.supplier ? {
+            id: String(typedData.supplier.id || ''),
+            name: String(typedData.supplier.name || ''),
+            email: typedData.supplier.email ? String(typedData.supplier.email) : '',
+            phone: typedData.supplier.phone ? String(typedData.supplier.phone) : '',
+            address: typedData.supplier.address ? String(typedData.supplier.address) : '',
+            contact: typedData.supplier.contact ? String(typedData.supplier.contact) : ''
+          } : {
+            id: '',
+            name: '',
+            email: '',
+            phone: '',
+            address: '',
+            contact: ''
+          },
+          warehouse: typedData.warehouse ? {
+            id: String(typedData.warehouse.id || ''),
+            name: String(typedData.warehouse.name || '')
+          } : undefined,
+          items: processedItems
+        };
+        
+        return purchaseOrder;
       } catch (error) {
         console.error("Error fetching purchase order:", error);
         toast.error("Erreur lors du chargement du bon de commande");
