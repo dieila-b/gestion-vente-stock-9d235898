@@ -9,10 +9,6 @@ export function useDeletePurchaseOrder() {
 
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
-        return false;
-      }
-      
       try {
         console.log("Deleting purchase order:", id);
         
@@ -51,5 +47,7 @@ export function useDeletePurchaseOrder() {
   });
 
   // Return a function with the proper signature
-  return (id: string) => mutation.mutate(id);
+  return async (id: string): Promise<void> => {
+    await mutation.mutateAsync(id);
+  };
 }

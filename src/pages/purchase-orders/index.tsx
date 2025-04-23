@@ -91,6 +91,7 @@ export default function PurchaseOrdersPage() {
     try {
       setProcessingOrderId(id);
       await handleDelete(id);
+      await refreshOrders();
     } catch (error) {
       console.error("Error in delete wrapper:", error);
       toast.error("Erreur lors de la suppression");

@@ -30,6 +30,14 @@ export function PurchaseOrderActions({
   
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
+  
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
+      await onDelete(order.id);
+    }
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -66,7 +74,7 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={() => onDelete(order.id)}
+              onClick={handleDelete}
               disabled={isProcessing}
               className="text-red-600"
             >
