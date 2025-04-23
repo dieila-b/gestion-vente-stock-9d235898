@@ -1,3 +1,4 @@
+
 import { formatDate } from "@/lib/formatters";
 import { formatGNF } from "@/lib/currency";
 import { PurchaseOrder } from "@/types/purchase-order";
@@ -97,61 +98,63 @@ export function PurchaseOrderTable({
               </TableCell>
               <TableCell>{formatGNF(order.total_amount)}</TableCell>
               <TableCell className="text-right">
-                {order.status === 'approved' ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPrint(order)}
-                    className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
-                    title="Imprimer"
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <>
-                    {order.status === 'pending' && (
+                <div className="flex items-center justify-end gap-2">
+                  {order.status === 'approved' || order.status === 'delivered' ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onPrint(order)}
+                      className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-500"
+                      title="Imprimer"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <>
+                      {order.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleApprove(order.id)}
+                          disabled={processingId === order.id}
+                          className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
+                          title="Approuver"
+                        >
+                          {processingId === order.id ? (
+                            <Loader className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleApprove(order.id)}
+                        onClick={() => onEdit(order.id)}
+                        className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
+                        title="Modifier"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(order.id)}
                         disabled={processingId === order.id}
-                        className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
-                        title="Approuver"
+                        className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                        title="Supprimer"
                       >
                         {processingId === order.id ? (
                           <Loader className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Check className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         )}
                       </Button>
-                    )}
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(order.id)}
-                      className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
-                      title="Modifier"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(order.id)}
-                      disabled={processingId === order.id}
-                      className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
-                      title="Supprimer"
-                    >
-                      {processingId === order.id ? (
-                        <Loader className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
