@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -27,7 +26,6 @@ export function useEditPurchaseOrder() {
     setSelectedOrderId(null);
   };
   
-  // This is the dialog component that will be rendered
   const EditDialog = () => {
     if (!isDialogOpen) return null;
     
@@ -38,7 +36,7 @@ export function useEditPurchaseOrder() {
           {selectedOrderId ? (
             <PurchaseOrderEditForm 
               orderId={selectedOrderId} 
-              onClose={handleCloseDialog} 
+              onClose={handleCloseDialog}
             />
           ) : (
             <div className="p-4 text-center">Identifiant de bon de commande invalide</div>
