@@ -63,12 +63,12 @@ export function usePurchaseData(orderId?: string) {
         const typedData = data as Record<string, any>;
         
         // Ensure the status is valid
-        const validStatus = typedData.status && isValidStatus(String(typedData.status)) 
-          ? String(typedData.status) 
+        const validStatus: PurchaseOrder['status'] = typedData.status && isValidStatus(String(typedData.status)) 
+          ? String(typedData.status) as PurchaseOrder['status']
           : 'pending';
           
-        const validPaymentStatus = typedData.payment_status && isValidPaymentStatus(String(typedData.payment_status)) 
-          ? String(typedData.payment_status) 
+        const validPaymentStatus: PurchaseOrder['payment_status'] = typedData.payment_status && isValidPaymentStatus(String(typedData.payment_status)) 
+          ? String(typedData.payment_status) as PurchaseOrder['payment_status']
           : 'pending';
         
         // Process the items with proper type checking
