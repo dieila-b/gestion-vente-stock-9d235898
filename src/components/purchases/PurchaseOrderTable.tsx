@@ -1,7 +1,6 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Pencil, Printer, Check, Trash2 } from "lucide-react";
+import { PurchaseOrderActions } from "./PurchaseOrderActions";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
@@ -25,101 +24,65 @@ export function PurchaseOrderTable({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) {
-  if (isLoading) {
-    return (
-      <div className="text-center py-4">
-        Chargement des bons de commande...
-      </div>
-    );
-  }
-
-  if (!orders || orders.length === 0) {
-    return (
-      <div className="text-center py-4">
-        Aucun bon de commande trouvé
-      </div>
-    );
-  }
-
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>N° Commande</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Fournisseur</TableHead>
-          <TableHead>Articles</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Montant</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {orders.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell>{order.order_number}</TableCell>
-            <TableCell>
-              {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
-            </TableCell>
-            <TableCell>{order.supplier?.name}</TableCell>
-            <TableCell>{order.items?.length || 0}</TableCell>
-            <TableCell>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                order.status === 'approved' ? 'bg-green-100 text-green-800' :
-                order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                'bg-yellow-100 text-yellow-800'
-              }`}>
-                {order.status === 'approved' ? 'Approuvé' :
-                 order.status === 'draft' ? 'Brouillon' :
-                 'En attente'}
-              </span>
-            </TableCell>
-            <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
-            <TableCell>
-              <div className="flex justify-end gap-2">
-                {order.status !== 'approved' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => onEdit(order.id)}
-                      disabled={processingOrderId === order.id}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => onApprove(order.id)}
-                      disabled={processingOrderId === order.id}
-                      className="text-green-600"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => onDelete(order.id)}
-                      disabled={processingOrderId === order.id}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => onPrint(order)}
-                  disabled={processingOrderId === order.id}
-                >
-                  <Printer className="h-4 w-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>N° Commande</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead>Nombre articles</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead>Montant net</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center">Chargement...</TableCell>
+            </TableRow>
+          ) : orders?.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center">Aucun bon de commande trouvé</TableCell>
+            </TableRow>
+          ) : (
+            orders?.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>{order.order_number}</TableCell>
+                <TableCell>
+                  {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+                </TableCell>
+                <TableCell>{order.supplier?.name}</TableCell>
+                <TableCell>{order.items?.length || 0}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    order.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {order.status === 'approved' ? 'Approuvé' :
+                     order.status === 'draft' ? 'Brouillon' :
+                     'En attente'}
+                  </span>
+                </TableCell>
+                <TableCell>{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
+                <TableCell>
+                  <PurchaseOrderActions
+                    order={order}
+                    processingId={processingOrderId}
+                    onApprove={onApprove}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onPrint={onPrint}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
