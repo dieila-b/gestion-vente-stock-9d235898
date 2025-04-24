@@ -74,6 +74,7 @@ export function usePurchaseEdit(orderId?: string) {
   const saveChanges = async () => {
     if (!orderId) {
       console.error("Missing orderId in saveChanges");
+      toast.error("Erreur: ID de commande manquant");
       return false;
     }
     
@@ -90,9 +91,6 @@ export function usePurchaseEdit(orderId?: string) {
       // First calculate order total
       const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
       
-      // Even if calculation had issues, we can still try to update with our calculated values
-      // using direct update instead of depending on DB calculation success
-      
       // Then save the rest of the form data
       const dataToUpdate = {
         ...dataWithTimestamp,
@@ -108,14 +106,20 @@ export function usePurchaseEdit(orderId?: string) {
       // Important: Wait for the update to complete
       const updatedOrder = await updatePurchaseOrder(orderId, dataToUpdate);
       
-      // Si updatedOrder est null, considérons quand même l'opération réussie
-      // puisque l'échec serait dû à une erreur de récupération et non de mise à jour
+      if (!updatedOrder) {
+        console.error("Failed to update purchase order");
+        toast.error("Erreur lors de la mise à jour du bon de commande");
+        setIsLoading(false);
+        return false;
+      }
       
-      console.log("Purchase order updated result:", updatedOrder ? "success" : "fetch failed but update may have succeeded");
+      console.log("Purchase order updated result:", updatedOrder);
       
       // Force invalidate and refetch to ensure we have latest data
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
+      
+      toast.success("Bon de commande mis à jour avec succès");
       
       // Ensure we finished loading state before returning
       setIsLoading(false);
