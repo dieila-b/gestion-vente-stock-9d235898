@@ -44,6 +44,7 @@ export function usePurchaseData(orderId?: string) {
           setOrderItems(purchaseData.items as PurchaseOrderItem[]);
         } else {
           // Fallback to fetch items separately if needed
+          console.log('No items in response, fetching separately');
           const { data: items, error: itemsError } = await supabase
             .from('purchase_order_items')
             .select(`
@@ -54,9 +55,12 @@ export function usePurchaseData(orderId?: string) {
 
           if (itemsError) {
             console.error('Error fetching purchase order items:', itemsError);
-          } else if (items) {
+          } else if (items && Array.isArray(items)) {
             console.log('Fetched items separately:', items.length);
             setOrderItems(items as PurchaseOrderItem[]);
+          } else {
+            console.log('No items found or items is not an array');
+            setOrderItems([]);
           }
         }
         
