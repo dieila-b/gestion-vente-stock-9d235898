@@ -2,6 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export async function validatePurchaseOrder(id: string) {
+  console.log("Validating purchase order:", id);
+  
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
     .select('id, status')
@@ -17,5 +19,6 @@ export async function validatePurchaseOrder(id: string) {
     throw new Error("Bon de commande introuvable");
   }
 
+  console.log("Validation successful, order status:", orderCheck.status);
   return orderCheck;
 }
