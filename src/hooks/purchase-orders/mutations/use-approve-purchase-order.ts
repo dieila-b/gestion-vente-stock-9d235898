@@ -130,13 +130,13 @@ export function useApprovePurchaseOrder() {
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        // Return the updated purchase order with delivery_note_created property
-        const result = {
+        // Create a fully-typed object with the correct properties
+        const finalOrder: Partial<PurchaseOrder> = {
           ...updatedOrder,
           delivery_note_created: true
         };
         
-        return constructPurchaseOrder(result);
+        return constructPurchaseOrder(finalOrder);
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;
