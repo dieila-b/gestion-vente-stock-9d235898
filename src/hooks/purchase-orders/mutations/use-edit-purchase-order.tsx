@@ -24,7 +24,6 @@ export function useEditPurchaseOrder() {
   
   const handleCloseDialog = useCallback(() => {
     console.log("Closing edit dialog - setting isDialogOpen to false");
-    // Immediately set dialog to closed
     setIsDialogOpen(false);
   }, []);
   

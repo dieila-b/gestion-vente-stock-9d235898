@@ -63,25 +63,41 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       return;
     }
     
+    setIsSaving(true);
+    
     try {
-      setIsSaving(true);
       console.log("Saving changes with form data:", formData);
       
-      const success = await saveChanges();
+      // Toujours appeler onClose après une tentative de sauvegarde, qu'elle réussisse ou échoue
+      const savePromise = saveChanges();
+      
+      // Définissons un délai maximum pour éviter de bloquer l'interface
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => resolve(false), 3000);
+      });
+      
+      // Utilisons Promise.race pour éviter de bloquer l'interface trop longtemps
+      const success = await Promise.race([savePromise, timeoutPromise]);
       
       if (success) {
         console.log("Save successful, closing dialog...");
         toast.success("Modifications enregistrées avec succès");
-        
-        // Call onClose directly to close the dialog
-        onClose();
       } else {
-        console.error("Save failed");
+        console.error("Save failed or timed out");
         toast.error("Échec de l'enregistrement des modifications");
       }
+      
+      // Appeler onClose de toute façon pour fermer le dialogue
+      console.log("Forcing dialog close regardless of save result");
+      onClose();
+      
     } catch (error) {
       console.error("Error saving changes:", error);
       toast.error("Erreur lors de l'enregistrement des modifications");
+      
+      // Même en cas d'erreur, fermer le dialogue
+      console.log("Closing dialog due to error");
+      onClose();
     } finally {
       setIsSaving(false);
     }
