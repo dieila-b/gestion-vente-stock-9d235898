@@ -1,14 +1,11 @@
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { PurchaseOrderItem } from "@/types/purchase-order";
 import { CatalogProduct } from "@/types/catalog";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from "react";
 import { ProductSelectionModal } from "./ProductSelectionModal";
-import { Plus, Trash, Loader } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { formatGNF } from "@/lib/currency";
+import { ProductsHeader } from "./products/ProductsHeader";
+import { EmptyState } from "./products/EmptyState";
+import { ProductItem } from "./products/ProductItem";
 
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
@@ -26,63 +23,17 @@ export function ProductsSection({
   addItem
 }: ProductsSectionProps) {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [actionItemId, setActionItemId] = useState<string | null>(null);
   
-  useEffect(() => {
-    console.log("ProductsSection rendered with items:", items);
-    if (items && items.length > 0) {
-      items.forEach((item, index) => {
-        if (index < 3) { // Only log a few items to avoid console spam
-          console.log(`Item ${index}:`, {
-            id: item.id,
-            productId: item.product_id,
-            name: item.product?.name || 'Unknown product',
-            quantity: item.quantity,
-            price: item.unit_price
-          });
-        }
-      });
-    }
-  }, [items]);
-  
-  // Fetch available products
-  const { data: products = [], isLoading: productsLoading } = useQuery<CatalogProduct[]>({
-    queryKey: ['catalog-products'],
-    queryFn: async () => {
-      console.log("Fetching catalog products...");
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('*')
-        .order('name');
-          
-      if (error) {
-        console.error("Error fetching products:", error);
-        throw error;
-      }
-        
-      console.log("Fetched catalog products:", data?.length || 0);
-      return data as CatalogProduct[];
-    },
-    staleTime: 60000, // 1 minute
-  });
-
   // Handle product addition
   const handleAddProduct = async (product: CatalogProduct) => {
-    console.log("Handling add product:", product);
     setIsLoading(true);
     try {
       const success = await addItem(product);
       if (success) {
         setIsProductModalOpen(false);
-        setSearchQuery("");
-        console.log("Product added successfully");
-      } else {
-        console.error("Failed to add product");
       }
-    } catch (error) {
-      console.error("Error adding product:", error);
     } finally {
       setIsLoading(false);
     }
@@ -132,101 +83,29 @@ export function ProductsSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex-1">
-          <h3 className="text-sm font-medium text-white/70">Articles ({items?.length || 0})</h3>
-        </div>
-        <Button 
-          onClick={() => setIsProductModalOpen(true)}
-          variant="outline"
-          className="neo-blur"
-          disabled={isLoading || productsLoading}
-        >
-          {(isLoading && !actionItemId) || productsLoading ? (
-            <Loader className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Plus className="w-4 h-4 mr-2" />
-          )}
-          Ajouter un produit
-        </Button>
-      </div>
+      <ProductsHeader 
+        itemCount={items?.length || 0}
+        onAddProduct={() => setIsProductModalOpen(true)}
+        isLoading={isLoading}
+      />
 
       {!items || items.length === 0 ? (
-        <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
-          <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
-          <Button 
-            onClick={() => setIsProductModalOpen(true)}
-            variant="outline"
-            className="mt-4 neo-blur"
-            disabled={isLoading || productsLoading}
-          >
-            {isLoading || productsLoading ? (
-              <Loader className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4 mr-2" />
-            )}
-            Ajouter un produit
-          </Button>
-        </div>
+        <EmptyState 
+          onAddProduct={() => setIsProductModalOpen(true)}
+          isLoading={isLoading}
+        />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-12 gap-4 p-2 text-sm text-white/60 font-medium">
-            <div className="col-span-4">Produit</div>
-            <div className="col-span-2 text-center">Quantité</div>
-            <div className="col-span-2 text-center">Prix unitaire</div>
-            <div className="col-span-3 text-center">Prix total</div>
-            <div className="col-span-1"></div>
-          </div>
-          
           {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-md border border-white/10 bg-black/40 neo-blur">
-              <div className="col-span-4">
-                <div className="font-medium text-white">{item.product?.name || "Produit inconnu"}</div>
-                <div className="text-xs text-white/60">{item.product?.reference || "Sans référence"}</div>
-              </div>
-              
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  value={item.quantity}
-                  min={1}
-                  onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                  className="text-center neo-blur"
-                  disabled={isLoading && actionItemId === item.id}
-                />
-              </div>
-              
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  value={item.unit_price}
-                  min={0}
-                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                  className="text-center neo-blur"
-                  disabled={isLoading && actionItemId === item.id}
-                />
-              </div>
-              
-              <div className="col-span-3 text-center font-medium">
-                {formatGNF(item.quantity * item.unit_price)}
-              </div>
-              
-              <div className="col-span-1 flex justify-end">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  disabled={isLoading && actionItemId === item.id}
-                >
-                  {isLoading && actionItemId === item.id ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
+            <ProductItem
+              key={item.id}
+              item={item}
+              onQuantityChange={handleQuantityChange}
+              onPriceChange={handlePriceChange}
+              onRemove={handleRemoveItem}
+              isLoading={isLoading}
+              actionItemId={actionItemId}
+            />
           ))}
         </div>
       )}
@@ -234,11 +113,8 @@ export function ProductsSection({
       <ProductSelectionModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        products={products || []}
         onSelectProduct={handleAddProduct}
-        isLoading={productsLoading || isLoading}
+        isLoading={isLoading}
       />
     </div>
   );
