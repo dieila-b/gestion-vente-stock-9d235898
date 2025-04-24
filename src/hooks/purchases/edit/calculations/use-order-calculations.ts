@@ -1,56 +1,46 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchase-order';
-import { toast } from 'sonner';
 
-/**
- * Calculate and update the total amounts for a purchase order
- */
-export async function updateOrderTotal(
-  orderId: string,
-  formData: Partial<PurchaseOrder>
-): Promise<{
-  subtotal: number;
-  taxAmount: number;
-  totalTTC: number;
-  totalAmount: number;
-  shippingCost?: number;
-  transitCost?: number;
-  logisticsCost?: number;
-  discount?: number;
-} | null> {
+export const updateOrderTotal = async (orderId: string, updateData: any) => {
   try {
     console.log("Calculating order total for ID:", orderId);
     
-    // First fetch the current items for this order
+    // Get current items
     const { data: items, error: itemsError } = await supabase
       .from('purchase_order_items')
-      .select('quantity, unit_price')
+      .select('quantity, unit_price, total_price')
       .eq('purchase_order_id', orderId);
-      
+    
     if (itemsError) {
-      console.error("Error fetching order items for calculation:", itemsError);
+      console.error("Error fetching order items for total calculation:", itemsError);
       throw itemsError;
     }
-
+    
     console.log("Found items for calculation:", items?.length || 0);
     
-    // Calculate the subtotal based on items
+    // Calculate subtotal
     const subtotal = items?.reduce((sum, item) => {
-      return sum + (item.quantity * item.unit_price);
+      const itemTotal = (item.quantity || 0) * (item.unit_price || 0);
+      return sum + itemTotal;
     }, 0) || 0;
     
-    // Get values from formData with fallbacks
-    const taxRate = formData.tax_rate || 0;
-    const shippingCost = formData.shipping_cost || 0;
-    const transitCost = formData.transit_cost || 0;
-    const logisticsCost = formData.logistics_cost || 0;
-    const discount = formData.discount || 0;
-    
-    // Calculate remaining totals
-    const taxAmount = (subtotal * taxRate) / 100;
+    // Calculate tax amount and total
+    const taxRate = updateData.tax_rate !== undefined ? updateData.tax_rate : 0;
+    const taxAmount = taxRate ? subtotal * (taxRate / 100) : 0;
     const totalTTC = subtotal + taxAmount;
-    const totalAmount = totalTTC + shippingCost + transitCost + logisticsCost - discount;
+    
+    // Get additional costs with defaults if not provided
+    const shippingCost = updateData.shipping_cost !== undefined ? updateData.shipping_cost : 0;
+    const transitCost = updateData.transit_cost !== undefined ? updateData.transit_cost : 0;
+    const logisticsCost = updateData.logistics_cost !== undefined ? updateData.logistics_cost : 0;
+    const discount = updateData.discount !== undefined ? updateData.discount : 0;
+    
+    // Calculate final total amount including additional costs
+    const totalAmount = totalTTC + 
+      shippingCost + 
+      transitCost + 
+      logisticsCost - 
+      discount;
     
     console.log("Calculated totals:", {
       subtotal,
@@ -62,21 +52,37 @@ export async function updateOrderTotal(
       logisticsCost,
       discount
     });
-
-    // Return the values without updating the database (that will be done in saveChanges)
+    
+    // Update the purchase order with new totals
+    const { error: updateError } = await supabase
+      .from('purchase_orders')
+      .update({
+        subtotal,
+        tax_amount: taxAmount,
+        total_ttc: totalTTC,
+        total_amount: totalAmount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+      
+    if (updateError) {
+      console.error("Error updating order totals:", updateError);
+      throw updateError;
+    }
+    
     return {
       subtotal,
       taxAmount,
       totalTTC,
-      totalAmount,
-      shippingCost,
-      transitCost,
-      logisticsCost,
-      discount
+      totalAmount
     };
   } catch (error) {
-    console.error("Error calculating order total:", error);
-    toast.error("Erreur lors du calcul du total de la commande");
-    return null;
+    console.error('Error updating order total:', error);
+    return {
+      subtotal: 0,
+      taxAmount: 0,
+      totalTTC: 0,
+      totalAmount: 0
+    };
   }
-}
+};

@@ -36,9 +36,6 @@ export function useUpdatePurchaseOrder() {
 
         // Ensure updated_at is set
         validatedData.updated_at = new Date().toISOString();
-        
-        // Log the final data being sent to the server
-        console.log("Final data for update:", validatedData);
 
         // Execute the update
         const { error } = await supabase
