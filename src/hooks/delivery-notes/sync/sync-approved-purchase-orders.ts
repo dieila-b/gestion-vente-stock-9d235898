@@ -38,10 +38,10 @@ export async function syncApprovedPurchaseOrders() {
           .insert({
             order_id: order.id,
             supplier_id: order.supplier_id,
-            reference: `DL-${order.reference || order.id.substring(0, 8)}`,
+            reference: `DL-${order.order_number || order.id.substring(0, 8)}`,
             status: "pending",
             expected_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-            notes: `Généré automatiquement à partir du bon de commande #${order.reference || order.id.substring(0, 8)}`,
+            notes: `Généré automatiquement à partir du bon de commande #${order.order_number || order.id.substring(0, 8)}`,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
