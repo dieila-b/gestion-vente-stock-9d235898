@@ -29,6 +29,7 @@ export interface PurchaseOrder {
   };
   items?: PurchaseOrderItem[];
   deleted?: boolean; // Keep this optional as it doesn't exist in the database
+  delivery_note_created?: boolean; // Add this property to match the database field
 }
 
 export interface PurchaseOrderItem {

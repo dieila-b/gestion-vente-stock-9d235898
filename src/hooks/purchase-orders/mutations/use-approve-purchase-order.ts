@@ -119,6 +119,7 @@ export function useApprovePurchaseOrder() {
         }
         
         // Mark the order as having a delivery note
+        // This property is now added to the PurchaseOrder interface
         await supabase
           .from('purchase_orders')
           .update({ delivery_note_created: true })
@@ -173,7 +174,8 @@ export function useApprovePurchaseOrder() {
       payment_status: (data.payment_status as "pending" | "partial" | "paid") || "pending",
       warehouse_id: data.warehouse_id || undefined,
       supplier: supplier,
-      items: data.items || []
+      items: data.items || [],
+      delivery_note_created: data.delivery_note_created || false // Include the property here
     };
   }
 
