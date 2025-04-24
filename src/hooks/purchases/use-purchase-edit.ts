@@ -105,6 +105,7 @@ export function usePurchaseEdit(orderId?: string) {
       
       console.log("Data being sent to update:", dataToUpdate);
       
+      // Important: Wait for the update to complete
       const updatedOrder = await updatePurchaseOrder(orderId, dataToUpdate);
       
       if (!updatedOrder) {
@@ -117,8 +118,8 @@ export function usePurchaseEdit(orderId?: string) {
       // Force invalidate and refetch to ensure we have latest data
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
-      await refetch();
       
+      // Ensure we finished loading state before returning
       setIsLoading(false);
       return true;
     } catch (error) {

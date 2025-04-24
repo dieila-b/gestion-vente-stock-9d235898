@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PurchaseOrderEditForm } from "@/components/purchases/edit/PurchaseOrderEditForm";
@@ -24,14 +24,22 @@ export function useEditPurchaseOrder() {
   
   const handleCloseDialog = useCallback(() => {
     console.log("Closing edit dialog - setting isDialogOpen to false");
+    // Immediately set dialog to closed
     setIsDialogOpen(false);
-    
-    // Delay resetting orderId to prevent UI flickering
-    setTimeout(() => {
-      console.log("Setting selectedOrderId to null");
-      setSelectedOrderId(null);
-    }, 100);
   }, []);
+  
+  // Effect to clear order ID after dialog is closed
+  useEffect(() => {
+    if (!isDialogOpen && selectedOrderId) {
+      // Add a slight delay to prevent any potential race conditions with React's state updates
+      const timer = setTimeout(() => {
+        console.log("Dialog is closed, clearing selectedOrderId");
+        setSelectedOrderId(null);
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isDialogOpen, selectedOrderId]);
   
   const EditDialog = () => {
     if (!selectedOrderId) return null;
@@ -40,7 +48,7 @@ export function useEditPurchaseOrder() {
     
     return (
       <Dialog 
-        open={isDialogOpen} 
+        open={isDialogOpen}
         onOpenChange={(open) => {
           console.log("Dialog onOpenChange triggered with value:", open);
           if (!open) handleCloseDialog();

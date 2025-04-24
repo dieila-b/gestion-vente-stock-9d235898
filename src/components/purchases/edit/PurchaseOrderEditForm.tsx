@@ -73,8 +73,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         console.log("Save successful, closing dialog...");
         toast.success("Modifications enregistrées avec succès");
         
-        // Close the dialog immediately with no delay
-        console.log("Calling onClose directly");
+        // Call onClose directly to close the dialog
         onClose();
       } else {
         console.error("Save failed");
