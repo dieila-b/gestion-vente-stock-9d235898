@@ -1,8 +1,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { validatePurchaseOrder } from "./utils/validate-purchase-order";
+import { updatePurchaseOrderToApproved, markDeliveryNoteCreated } from "./utils/update-purchase-order-status";
+import { createDeliveryNote } from "./utils/create-delivery-note";
+import { createDeliveryNoteItems } from "./utils/create-delivery-note-items";
+import { constructPurchaseOrder } from "./utils/construct-purchase-order";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
@@ -12,199 +16,42 @@ export function useApprovePurchaseOrder() {
       try {
         console.log("Starting approval process for order:", id);
         
-        // 1. Check if the order exists and its status
-        const { data: orderCheck, error: checkError } = await supabase
-          .from('purchase_orders')
-          .select('status')
-          .eq('id', id)
-          .single();
-          
-        if (checkError) {
-          console.error("Failed to check purchase order:", checkError);
-          throw new Error(`Erreur de vérification: ${checkError.message}`);
-        }
-        
-        if (!orderCheck) {
-          throw new Error("Bon de commande introuvable");
-        }
+        // 1. Validate the order
+        const orderCheck = await validatePurchaseOrder(id);
         
         if (orderCheck.status === 'approved') {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
-          
-          // Fetch the complete order to return
-          const { data: fullOrder, error: fetchError } = await supabase
-            .from('purchase_orders')
-            .select('*, supplier:supplier_id(*)')
-            .eq('id', id)
-            .single();
-            
-          if (fetchError || !fullOrder) {
-            throw new Error("Impossible de récupérer les détails du bon de commande");
-          }
-          
-          return constructPurchaseOrder({...fullOrder, delivery_note_created: true});
+          return constructPurchaseOrder({ ...orderCheck, delivery_note_created: true });
         }
         
-        // 2. Update purchase order status to approved
-        console.log("Updating purchase order status to approved");
-        const updateData: Partial<PurchaseOrder> = { 
-          status: 'approved' as const, 
-          updated_at: new Date().toISOString(),
-          // Add delivery_note_created field to the update data so we can track this
-          delivery_note_created: false
-        };
+        // 2. Update purchase order status
+        const updatedOrder = await updatePurchaseOrderToApproved(id);
         
-        const { data: updatedOrder, error: updateError } = await supabase
-          .from('purchase_orders')
-          .update(updateData)
-          .eq('id', id)
-          .select('*, supplier:supplier_id(*)')
-          .single();
-          
-        if (updateError) {
-          console.error("Error updating purchase order:", updateError);
-          throw new Error(`Erreur lors de l'approbation: ${updateError.message}`);
+        // 3. Create delivery note
+        const deliveryNote = await createDeliveryNote(updatedOrder);
+        
+        if (deliveryNote) {
+          // 4. Create delivery note items
+          await createDeliveryNoteItems(deliveryNote.id, id);
         }
         
-        if (!updatedOrder) {
-          throw new Error("Échec de mise à jour du bon de commande");
-        }
-
-        console.log("Purchase order approved:", updatedOrder);
+        // 5. Mark delivery note as created
+        await markDeliveryNoteCreated(id);
         
-        // 3. Create a delivery note based on the purchase order
-        const { data: deliveryNote, error: deliveryError } = await supabase
-          .from("delivery_notes")
-          .insert({
-            supplier_id: updatedOrder.supplier_id,
-            purchase_order_id: id,
-            delivery_number: `BL-${updatedOrder.order_number?.replace(/\D/g, '') || new Date().getTime().toString().slice(-6)}`,
-            status: "pending",
-            notes: `Généré automatiquement depuis le bon de commande #${updatedOrder.order_number || id.substring(0, 8)}`,
-            warehouse_id: updatedOrder.warehouse_id
-          })
-          .select()
-          .single();
-          
-        if (deliveryError) {
-          console.error("Error creating delivery note:", deliveryError);
-          // Continue despite error, the purchase order is still approved
-        } else {
-          console.log("Delivery note created:", deliveryNote);
-          
-          // Create delivery note items from purchase order items
-          const { data: orderItems, error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .select('*')
-            .eq('purchase_order_id', id);
-            
-          if (itemsError) {
-            console.error("Error fetching purchase order items:", itemsError);
-          } else if (orderItems && orderItems.length > 0 && deliveryNote) {
-            const deliveryItems = orderItems.map(item => ({
-              delivery_note_id: deliveryNote.id,
-              product_id: item.product_id,
-              quantity_ordered: item.quantity,
-              unit_price: item.unit_price,
-              quantity_received: 0
-            }));
-            
-            const { error: insertError } = await supabase
-              .from('delivery_note_items')
-              .insert(deliveryItems);
-              
-            if (insertError) {
-              console.error("Error creating delivery note items:", insertError);
-            } else {
-              console.log(`Created ${deliveryItems.length} delivery note items`);
-            }
-          }
-        }
-        
-        // Mark the order as having a delivery note - using a separate update to ensure it's set correctly
-        const { error: markError } = await supabase
-          .from('purchase_orders')
-          .update({ delivery_note_created: true } as Partial<PurchaseOrder>)
-          .eq('id', id);
-        
-        if (markError) {
-          console.error("Error marking delivery note as created:", markError);
-        }
-        
-        // 4. Refresh affected queries
+        // 6. Refresh affected queries
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
         await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        // Create a properly typed object with delivery_note_created explicitly set
-        const updatedOrderWithDeliveryNote = {
-          ...updatedOrder,
-          delivery_note_created: true
-        };
-        
-        return constructPurchaseOrder(updatedOrderWithDeliveryNote);
+        return constructPurchaseOrder({ ...updatedOrder, delivery_note_created: true });
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;
       }
     }
   });
-
-  // Helper function to construct a properly typed PurchaseOrder object
-  function constructPurchaseOrder(data: any): PurchaseOrder {
-    // Ensure supplier is properly structured
-    const supplier = data.supplier && typeof data.supplier === 'object' 
-      ? data.supplier 
-      : {
-          id: data.supplier_id || '',
-          name: "Fournisseur inconnu",
-          phone: "",
-          email: ""
-        };
-    
-    // Use type casting for status to ensure it matches the enum type
-    const status = data.status || 'approved';
-    const validStatus = ['approved', 'draft', 'pending', 'delivered'].includes(status) 
-      ? status as PurchaseOrder['status']
-      : 'pending' as PurchaseOrder['status'];
-      
-    // Use type casting for payment_status
-    const paymentStatus = data.payment_status || 'pending';
-    const validPaymentStatus = ['pending', 'partial', 'paid'].includes(paymentStatus)
-      ? paymentStatus as PurchaseOrder['payment_status']
-      : 'pending' as PurchaseOrder['payment_status'];
-    
-    // Create a properly typed PurchaseOrder object
-    const purchaseOrder: PurchaseOrder = {
-      id: data.id || '',
-      order_number: data.order_number || '',
-      created_at: data.created_at || new Date().toISOString(),
-      updated_at: data.updated_at || data.created_at || new Date().toISOString(),
-      status: validStatus,
-      supplier_id: data.supplier_id || '',
-      discount: data.discount || 0,
-      expected_delivery_date: data.expected_delivery_date || '',
-      notes: data.notes || '',
-      logistics_cost: data.logistics_cost || 0,
-      transit_cost: data.transit_cost || 0,
-      tax_rate: data.tax_rate || 0,
-      shipping_cost: data.shipping_cost || 0,
-      subtotal: data.subtotal || 0,
-      tax_amount: data.tax_amount || 0,
-      total_ttc: data.total_ttc || 0,
-      total_amount: data.total_amount || 0,
-      paid_amount: data.paid_amount || 0,
-      payment_status: validPaymentStatus,
-      warehouse_id: data.warehouse_id || undefined,
-      supplier: supplier,
-      items: data.items || [],
-      delivery_note_created: Boolean(data.delivery_note_created)
-    };
-    
-    return purchaseOrder;
-  }
 
   return mutation.mutateAsync;
 }
