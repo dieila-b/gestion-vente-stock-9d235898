@@ -119,12 +119,9 @@ export function useApprovePurchaseOrder() {
         }
         
         // Mark the order as having a delivery note
-        // We need to use a type assertion here to avoid TypeScript errors
-        const updateData: Partial<PurchaseOrder> = { delivery_note_created: true };
-        
         await supabase
           .from('purchase_orders')
-          .update(updateData)
+          .update({ delivery_note_created: true })
           .eq('id', id);
         
         // 4. Refresh affected queries
@@ -133,11 +130,13 @@ export function useApprovePurchaseOrder() {
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        // Return the updated purchase order
-        return constructPurchaseOrder({
+        // Return the updated purchase order with delivery_note_created property
+        const result = {
           ...updatedOrder,
           delivery_note_created: true
-        });
+        };
+        
+        return constructPurchaseOrder(result);
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;
@@ -180,7 +179,7 @@ export function useApprovePurchaseOrder() {
       warehouse_id: data.warehouse_id || undefined,
       supplier: supplier,
       items: data.items || [],
-      delivery_note_created: data.delivery_note_created || false
+      delivery_note_created: Boolean(data.delivery_note_created)
     };
   }
 
