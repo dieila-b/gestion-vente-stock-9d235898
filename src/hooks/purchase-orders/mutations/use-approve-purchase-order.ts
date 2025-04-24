@@ -5,11 +5,14 @@ import { toast } from "sonner";
 import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
 import { PurchaseOrder } from "@/types/purchase-order";
 
+// Define the return type for the approval function
+type ApprovalResult = PurchaseOrder | { id: string; alreadyApproved: boolean };
+
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: string): Promise<ApprovalResult> => {
       try {
         console.log("Starting approval process for order:", id);
         

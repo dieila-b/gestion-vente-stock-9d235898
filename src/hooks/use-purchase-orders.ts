@@ -58,7 +58,11 @@ export function usePurchaseOrders() {
       
       console.log("Approval completed for:", id, "Result:", result);
       
-      if (result && !result.alreadyApproved) {
+      // Check if the result has alreadyApproved property using type guard
+      if (result && 'alreadyApproved' in result && result.alreadyApproved) {
+        // Order was already approved, no need to refresh
+        console.log("Order was already approved, no refresh needed");
+      } else {
         // Refresh the orders list
         await refreshOrders();
         
