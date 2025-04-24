@@ -22,6 +22,7 @@ export function usePurchaseEdit(orderId?: string) {
   const { 
     purchase, 
     formData, 
+    setFormData,
     orderItems, 
     setOrderItems,
     updateFormField, 
@@ -99,16 +100,22 @@ export function usePurchaseEdit(orderId?: string) {
       };
       
       // First calculate order total
-      const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
+      let totalResult;
+      try {
+        totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
+        console.log("Total calculation result:", totalResult);
+      } catch (error) {
+        console.error("Error calculating order totals:", error);
+        throw new Error("Échec du calcul des totaux de commande");
+      }
       
       if (!totalResult) {
         throw new Error("Failed to calculate order totals");
       }
       
-      // Then save the rest of the form data
+      // Prepare data to update with calculated totals
       const dataToUpdate = {
         ...dataWithTimestamp,
-        // Include the calculated totals to ensure consistency
         subtotal: totalResult.subtotal,
         tax_amount: totalResult.taxAmount,
         total_ttc: totalResult.totalTTC,
@@ -122,12 +129,10 @@ export function usePurchaseEdit(orderId?: string) {
       
       if (!updatedOrder) {
         console.error("Failed to update purchase order");
-        toast.error("Erreur lors de la mise à jour du bon de commande");
-        setIsLoading(false);
-        return false;
+        throw new Error("Erreur lors de la mise à jour du bon de commande");
       }
       
-      console.log("Purchase order updated result:", updatedOrder);
+      console.log("Purchase order updated successfully:", updatedOrder);
       
       // Force invalidate and refetch to ensure we have latest data
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -136,12 +141,11 @@ export function usePurchaseEdit(orderId?: string) {
       // Refetch the updated data
       await refetch();
       
-      // Ensure we finished loading state before returning
       setIsLoading(false);
       return true;
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast.error("Erreur lors de l'enregistrement des modifications");
+      toast.error(`Erreur: ${error instanceof Error ? error.message : "Erreur inconnue"}`);
       setIsLoading(false);
       return false;
     }
@@ -151,7 +155,9 @@ export function usePurchaseEdit(orderId?: string) {
   useEffect(() => {
     if (orderId && orderItems && orderItems.length > 0) {
       console.log("Order items changed, recalculating totals...");
-      calculateTotals();
+      calculateTotals().catch(error => {
+        console.error("Failed to calculate totals after item change:", error);
+      });
     }
   }, [orderId, orderItems]);
 

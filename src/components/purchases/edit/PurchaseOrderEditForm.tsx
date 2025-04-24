@@ -51,14 +51,34 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     console.log("PurchaseOrderEditForm - orderId:", orderId);
     console.log("PurchaseOrderEditForm - orderItems:", orderItems?.length || 0);
     console.log("PurchaseOrderEditForm - calculated totals:", { subtotal, taxAmount, totalTTC, totalAmount });
-  }, [orderId, orderItems, formData, subtotal, taxAmount, totalTTC, totalAmount]);
+    
+    // Update form data with calculated totals
+    if (formData) {
+      updateFormField('subtotal', subtotal);
+      updateFormField('tax_amount', taxAmount);
+      updateFormField('total_ttc', totalTTC);
+      updateFormField('total_amount', totalAmount);
+    }
+  }, [orderId, orderItems, formData?.tax_rate, formData?.shipping_cost, formData?.transit_cost, formData?.logistics_cost, formData?.discount]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
     try {
-      console.log("Saving purchase order...");
+      console.log("Saving purchase order with calculated totals:", {
+        subtotal,
+        taxAmount,
+        totalTTC,
+        totalAmount
+      });
+      
+      // Make sure formData includes the latest calculated totals
+      updateFormField('subtotal', subtotal);
+      updateFormField('tax_amount', taxAmount);
+      updateFormField('total_ttc', totalTTC);
+      updateFormField('total_amount', totalAmount);
+      
       const success = await saveChanges();
       
       if (success) {
@@ -104,7 +124,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       <AdditionalCostsSection 
         formData={formData}
         updateFormField={updateFormField}
-        totalAmount={purchase?.total_amount || totalAmount}
+        totalAmount={totalAmount}
       />
 
       <StatusSection

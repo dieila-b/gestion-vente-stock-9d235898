@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const updateOrderTotal = async (orderId: string, updateData: any) => {
   try {
-    console.log("Calculating order total for ID:", orderId);
+    console.log("Calculating order total for ID:", orderId, "with data:", updateData);
     
     // Get current items
     const { data: items, error: itemsError } = await supabase
@@ -54,7 +54,7 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
     });
     
     // Update the purchase order with new totals
-    const { error: updateError } = await supabase
+    const { data: updateResult, error: updateError } = await supabase
       .from('purchase_orders')
       .update({
         subtotal,
@@ -63,12 +63,15 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
         total_amount: totalAmount,
         updated_at: new Date().toISOString()
       })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .select();
       
     if (updateError) {
       console.error("Error updating order totals:", updateError);
       throw updateError;
     }
+    
+    console.log("Successfully updated order totals:", updateResult);
     
     return {
       subtotal,
@@ -78,11 +81,6 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
     };
   } catch (error) {
     console.error('Error updating order total:', error);
-    return {
-      subtotal: 0,
-      taxAmount: 0,
-      totalTTC: 0,
-      totalAmount: 0
-    };
+    throw error; // Propagate the error instead of returning zeros
   }
-};
+}

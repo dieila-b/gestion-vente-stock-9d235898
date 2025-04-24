@@ -36,17 +36,23 @@ export function useUpdatePurchaseOrder() {
 
         // Ensure updated_at is set
         validatedData.updated_at = new Date().toISOString();
+        
+        // Log the final data being sent to the DB
+        console.log("Final data being sent to DB:", validatedData);
 
         // Execute the update
-        const { error } = await supabase
+        const { data: updateData, error } = await supabase
           .from('purchase_orders')
           .update(validatedData)
-          .eq('id', params.id);
+          .eq('id', params.id)
+          .select();
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
+        
+        console.log("Update DB response:", updateData);
 
         // Fetch the updated record to return the complete data
         const { data: fetchedData, error: fetchError } = await supabase
