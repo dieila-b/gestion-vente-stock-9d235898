@@ -19,7 +19,8 @@ export function useUpdatePurchaseOrder() {
   const mutation = useMutation({
     mutationFn: async (params: { id: string; data: Partial<PurchaseOrder> }) => {
       try {
-        console.log("Updating purchase order:", params.id, "with data:", params.data);
+        console.log("Updating purchase order:", params.id);
+        console.log("Update data:", JSON.stringify(params.data, null, 2));
         
         // Validate status and payment_status if present
         const validatedData = { ...params.data };
@@ -36,6 +37,18 @@ export function useUpdatePurchaseOrder() {
 
         // Ensure updated_at is set
         validatedData.updated_at = new Date().toISOString();
+        
+        // Convert numeric fields to numbers to ensure they're properly saved
+        const numericFields = ['subtotal', 'tax_amount', 'total_ttc', 'total_amount', 
+                              'discount', 'shipping_cost', 'transit_cost', 'logistics_cost', 'tax_rate'];
+        
+        numericFields.forEach(field => {
+          if (field in validatedData) {
+            validatedData[field] = Number(validatedData[field]);
+          }
+        });
+        
+        console.log("Final validated data to update:", validatedData);
 
         // Execute the update
         const { error } = await supabase
