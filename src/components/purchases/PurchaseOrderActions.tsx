@@ -28,8 +28,6 @@ export function PurchaseOrderActions({
   onPrint
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
-  
-  // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
   const handleApprove = async (e: React.MouseEvent) => {
@@ -37,6 +35,10 @@ export function PurchaseOrderActions({
     e.stopPropagation();
     
     if (isProcessing) return;
+    
+    if (!confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
+      return;
+    }
     
     console.log("Attempting to approve order:", order.id);
     try {
