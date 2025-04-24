@@ -31,24 +31,6 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
     // Ensure other required properties
     status: updatedOrder.status || 'approved',
     payment_status: updatedOrder.payment_status || 'pending',
-    delivery_note_created: false // Set default until we create a delivery note
+    delivery_note_created: false // Always initially false until deliveryNote is created
   } as PurchaseOrder;
-}
-
-export async function markDeliveryNoteCreated(id: string) {
-  try {
-    // We'll use a database function or logic to track this separately if the column doesn't exist
-    console.log("Marking delivery note as created for order ID:", id);
-    
-    // Since the column might not exist in the database, we'll just log it
-    // but not actually try to update the non-existent column
-    
-    // Instead of trying to update the database, we'll rely on the constructPurchaseOrder 
-    // function to set this property correctly in the object when needed
-    
-    console.log("Successfully marked delivery note as created for order:", id);
-  } catch (error) {
-    console.error("Exception in markDeliveryNoteCreated:", error);
-    throw error;
-  }
 }
