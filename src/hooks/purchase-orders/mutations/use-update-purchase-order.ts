@@ -83,6 +83,9 @@ export function useUpdatePurchaseOrder() {
       console.log("Update success! Invalidating queries for ID:", data.id);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
+      
+      // Add a success toast
+      toast.success("Bon de commande mis à jour avec succès");
     },
     onError: (error) => {
       console.error("Purchase order update error:", error);
