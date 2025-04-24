@@ -14,13 +14,13 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
         email: ""
       };
   
-  // Use type casting for status to ensure it matches the enum type
+  // Use explicit type casting for status to ensure it matches the enum type
   const status = data?.status || 'approved';
   const validStatus = ['approved', 'draft', 'pending', 'delivered'].includes(status) 
     ? status as PurchaseOrder['status']
     : 'pending' as PurchaseOrder['status'];
     
-  // Use type casting for payment_status
+  // Use explicit type casting for payment_status
   const paymentStatus = data?.payment_status || 'pending';
   const validPaymentStatus = ['pending', 'partial', 'paid'].includes(paymentStatus)
     ? paymentStatus as PurchaseOrder['payment_status']
