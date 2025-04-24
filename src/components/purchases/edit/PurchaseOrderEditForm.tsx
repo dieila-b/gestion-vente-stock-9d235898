@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
@@ -70,17 +69,17 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       const success = await saveChanges();
       
       if (success) {
-        console.log("Save successful, closing dialog via onClose()");
+        console.log("Save successful, closing dialog");
         toast.success("Modifications enregistrées avec succès");
-        onClose();
+        onClose(); // Call onClose to close the dialog
       } else {
         console.error("Save failed");
         toast.error("Échec de l'enregistrement des modifications");
-        setIsSaving(false);
       }
     } catch (error) {
       console.error("Error saving changes:", error);
       toast.error("Erreur lors de l'enregistrement des modifications");
+    } finally {
       setIsSaving(false);
     }
   };
