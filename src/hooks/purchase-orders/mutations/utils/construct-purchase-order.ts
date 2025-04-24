@@ -14,22 +14,24 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
         email: ""
       };
   
-  // Use explicit type casting for status to ensure it matches the enum type
-  const status = data?.status || 'approved';
-  const validStatus = ['approved', 'draft', 'pending', 'delivered'].includes(status) 
-    ? status as PurchaseOrder['status']
-    : 'pending' as PurchaseOrder['status'];
+  // Define the allowed status values as constants to enforce typing
+  const allowedStatuses: Array<PurchaseOrder['status']> = ['approved', 'draft', 'pending', 'delivered'];
+  const allowedPaymentStatuses: Array<PurchaseOrder['payment_status']> = ['pending', 'partial', 'paid'];
+  
+  // Use explicit type casting for status with validation
+  const statusValue = data?.status || 'approved';
+  const validStatus: PurchaseOrder['status'] = allowedStatuses.includes(statusValue as PurchaseOrder['status'])
+    ? statusValue as PurchaseOrder['status']
+    : 'pending';
     
-  // Use explicit type casting for payment_status
-  const paymentStatus = data?.payment_status || 'pending';
-  const validPaymentStatus = ['pending', 'partial', 'paid'].includes(paymentStatus)
-    ? paymentStatus as PurchaseOrder['payment_status']
-    : 'pending' as PurchaseOrder['payment_status'];
+  // Use explicit type casting for payment_status with validation
+  const paymentStatusValue = data?.payment_status || 'pending';
+  const validPaymentStatus: PurchaseOrder['payment_status'] = allowedPaymentStatuses.includes(paymentStatusValue as PurchaseOrder['payment_status'])
+    ? paymentStatusValue as PurchaseOrder['payment_status']
+    : 'pending';
   
   // Pour delivery_note_created, on s'assure que c'est bien un boolean
-  // Si on a explicitement delivery_note_created dans les données, on utilise cette valeur
-  // Sinon on utilise false par défaut
-  const deliveryNoteCreated = typeof data?.delivery_note_created === 'boolean' 
+  const deliveryNoteCreated: boolean = typeof data?.delivery_note_created === 'boolean' 
     ? data.delivery_note_created 
     : false;
   
