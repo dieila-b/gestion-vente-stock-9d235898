@@ -35,16 +35,18 @@ export function usePurchaseData(orderId?: string) {
           return null;
         }
 
-        // Cast data to an object to handle the JSON response properly
+        // Cast data to a PurchaseOrder object to handle the JSON response properly
         const purchaseData = data as unknown as PurchaseOrder;
+        console.log('Full response from get_purchase_order_by_id:', purchaseData);
         
-        // Set order items if they exist in the response
-        if (purchaseData.items && Array.isArray(purchaseData.items)) {
-          console.log('Setting order items from response:', purchaseData.items.length);
+        // Check if items array exists and is populated
+        if (purchaseData.items && Array.isArray(purchaseData.items) && purchaseData.items.length > 0) {
+          console.log('Items from RPC response:', purchaseData.items);
+          console.log('First item details:', purchaseData.items[0]);
           setOrderItems(purchaseData.items as PurchaseOrderItem[]);
         } else {
           // Fallback to fetch items separately if needed
-          console.log('No items in response, fetching separately');
+          console.log('No items in RPC response or empty array, fetching separately');
           const { data: items, error: itemsError } = await supabase
             .from('purchase_order_items')
             .select(`

@@ -39,6 +39,7 @@ export function useItemAddRemove(
       // Update the local state
       setOrderItems(orderItems.filter(item => item.id !== itemId));
       console.log('Item removed successfully');
+      toast.success("Article supprimé avec succès");
       return true;
     } catch (error) {
       console.error('Error in removeItem:', error);
@@ -89,6 +90,7 @@ export function useItemAddRemove(
       // Update the local state
       setOrderItems([...orderItems, newItem]);
       console.log('Item added successfully:', newItem);
+      toast.success("Article ajouté avec succès");
       return true;
     } catch (error) {
       console.error('Error in addItem:', error);
