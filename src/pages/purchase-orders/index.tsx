@@ -22,6 +22,7 @@ export default function PurchaseOrdersPage() {
     handleDelete,
     handleEdit,
     EditDialog,
+    isDialogOpen,
     refreshOrders
   } = usePurchaseOrders();
   
@@ -56,9 +57,12 @@ export default function PurchaseOrdersPage() {
       }
     };
     
-    // We call this on mount and when EditDialog changes
-    refreshAfterEdit();
-  }, [refreshOrders]);
+    // We call this on mount and when EditDialog or isDialogOpen changes
+    if (!isDialogOpen) {
+      console.log("Dialog is closed, refreshing orders");
+      refreshAfterEdit();
+    }
+  }, [refreshOrders, isDialogOpen]);
 
   // Filter purchase orders
   useEffect(() => {

@@ -73,12 +73,9 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         console.log("Save successful, closing dialog...");
         toast.success("Modifications enregistrées avec succès");
         
-        // Ensure we call onClose and explicitly set a timeout to make sure
-        // React has a chance to process state changes before closing
-        setTimeout(() => {
-          console.log("Executing delayed onClose callback");
-          onClose();
-        }, 50);
+        // Close the dialog immediately with no delay
+        console.log("Calling onClose directly");
+        onClose();
       } else {
         console.error("Save failed");
         toast.error("Échec de l'enregistrement des modifications");
