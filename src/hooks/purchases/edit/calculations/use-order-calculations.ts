@@ -61,6 +61,11 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
         tax_amount: taxAmount,
         total_ttc: totalTTC,
         total_amount: totalAmount,
+        shipping_cost: shippingCost,
+        transit_cost: transitCost,
+        logistics_cost: logisticsCost,
+        discount,
+        tax_rate: taxRate,
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId)
@@ -83,6 +88,7 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
       transitCost,
       logisticsCost,
       discount,
+      tax_rate: taxRate,
       ...updateData
     };
   } catch (error) {

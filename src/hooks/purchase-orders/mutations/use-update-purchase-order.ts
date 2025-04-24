@@ -37,6 +37,15 @@ export function useUpdatePurchaseOrder() {
         // Ensure updated_at is set
         validatedData.updated_at = new Date().toISOString();
         
+        // Make sure numeric fields are properly formatted
+        ['subtotal', 'tax_amount', 'total_ttc', 'total_amount', 
+         'shipping_cost', 'transit_cost', 'logistics_cost', 'discount', 
+         'tax_rate', 'paid_amount'].forEach(field => {
+          if (validatedData[field] !== undefined) {
+            validatedData[field] = Number(validatedData[field]);
+          }
+        });
+        
         // Log the final data being sent to the DB
         console.log("Final data being sent to DB:", validatedData);
 

@@ -34,12 +34,13 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     deliveryStatus,
     paymentStatus,
     updateStatus,
-    updatePaymentStatus
+    updatePaymentStatus,
+    setFormData
   } = usePurchaseEdit(orderId);
   
   // Calculate order totals from orderItems and formData
   const subtotal = orderItems?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
-  const taxAmount = (subtotal * (formData?.tax_rate || 0)) / 100;
+  const taxAmount = subtotal * ((formData?.tax_rate || 0) / 100);
   const totalTTC = subtotal + taxAmount;
   const totalAmount = totalTTC + 
     (formData?.shipping_cost || 0) + 
@@ -51,14 +52,17 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     console.log("PurchaseOrderEditForm - orderId:", orderId);
     console.log("PurchaseOrderEditForm - orderItems:", orderItems?.length || 0);
     console.log("PurchaseOrderEditForm - calculated totals:", { subtotal, taxAmount, totalTTC, totalAmount });
+    console.log("PurchaseOrderEditForm - formData:", formData);
     
     // Update form data with calculated totals
-    if (formData) {
-      // Explicitly updating all total fields to ensure they're included in the form data
-      updateFormField('subtotal', subtotal);
-      updateFormField('tax_amount', taxAmount);
-      updateFormField('total_ttc', totalTTC);
-      updateFormField('total_amount', totalAmount);
+    if (formData && setFormData) {
+      setFormData({
+        ...formData,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        total_ttc: totalTTC,
+        total_amount: totalAmount
+      });
     }
   }, [orderId, orderItems, formData?.tax_rate, formData?.shipping_cost, formData?.transit_cost, formData?.logistics_cost, formData?.discount]);
   
@@ -74,11 +78,17 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         totalAmount
       });
       
-      // Make sure formData includes the latest calculated totals
-      updateFormField('subtotal', subtotal);
-      updateFormField('tax_amount', taxAmount);
-      updateFormField('total_ttc', totalTTC);
-      updateFormField('total_amount', totalAmount);
+      // Make sure form data includes the latest calculated totals
+      if (formData && setFormData) {
+        setFormData({
+          ...formData,
+          subtotal: subtotal,
+          tax_amount: taxAmount,
+          total_ttc: totalTTC,
+          total_amount: totalAmount,
+          updated_at: new Date().toISOString()
+        });
+      }
       
       console.log("Form data before save:", formData);
       
