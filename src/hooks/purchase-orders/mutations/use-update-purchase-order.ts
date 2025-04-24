@@ -48,8 +48,7 @@ export function useUpdatePurchaseOrder() {
           throw error;
         }
 
-        // Rather than relying on the update returning data, always fetch the record directly
-        // This avoids the PGRST116 error when no rows are returned
+        // Fetch the updated record to return the complete data
         const { data: fetchedData, error: fetchError } = await supabase
           .from('purchase_orders')
           .select('*, supplier:supplier_id(*), warehouse:warehouse_id(*)')

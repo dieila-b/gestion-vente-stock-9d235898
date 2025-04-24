@@ -8,7 +8,6 @@ import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
 import { updateOrderTotal } from './edit/calculations/use-order-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
-import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdatePurchaseOrder } from '@/hooks/purchase-orders/mutations/use-update-purchase-order';
 
@@ -70,6 +69,17 @@ export function usePurchaseEdit(orderId?: string) {
     updatePurchaseOrder
   );
 
+  // Calculate current totals
+  const calculateTotals = async () => {
+    if (!orderId) return null;
+    try {
+      return await updateOrderTotal(orderId, formData || {});
+    } catch (error) {
+      console.error("Error calculating totals:", error);
+      return null;
+    }
+  };
+
   // Save all form data
   const saveChanges = async () => {
     if (!orderId) {
@@ -90,6 +100,10 @@ export function usePurchaseEdit(orderId?: string) {
       
       // First calculate order total
       const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
+      
+      if (!totalResult) {
+        throw new Error("Failed to calculate order totals");
+      }
       
       // Then save the rest of the form data
       const dataToUpdate = {
@@ -119,7 +133,8 @@ export function usePurchaseEdit(orderId?: string) {
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
       
-      toast.success("Bon de commande mis à jour avec succès");
+      // Refetch the updated data
+      await refetch();
       
       // Ensure we finished loading state before returning
       setIsLoading(false);
@@ -131,6 +146,14 @@ export function usePurchaseEdit(orderId?: string) {
       return false;
     }
   };
+
+  // Ensure totals are recalculated whenever orderItems change
+  useEffect(() => {
+    if (orderId && orderItems && orderItems.length > 0) {
+      console.log("Order items changed, recalculating totals...");
+      calculateTotals();
+    }
+  }, [orderId, orderItems]);
 
   return {
     purchase,

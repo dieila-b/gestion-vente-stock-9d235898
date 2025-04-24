@@ -1,16 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
-import { 
-  GeneralInfoSection,
-  StatusSection,
-  AdditionalCostsSection,
-  NotesSection,
-  ProductsSection,
-  FormActions
-} from "./FormSections";
-import { PurchaseOrder } from "@/types/purchase-order";
-import { Loader, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { FormSections } from "./FormSections";
+import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
+import { Loader } from "lucide-react";
+import { usePurchaseOrderStatus } from "@/hooks/purchases/use-purchase-order-status";
 import { toast } from "sonner";
 
 interface PurchaseOrderEditFormProps {
@@ -19,133 +13,116 @@ interface PurchaseOrderEditFormProps {
 }
 
 export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFormProps) {
-  console.log("Editing purchase order with ID:", orderId);
   const [isSaving, setIsSaving] = useState(false);
   
-  const { 
-    purchase, 
-    isLoading, 
+  const {
+    purchase,
     formData,
+    orderItems,
+    isLoading,
     updateFormField,
-    saveChanges,
     updateItemQuantity,
     updateItemPrice,
     removeItem,
     addItem,
-    deliveryStatus, 
-    paymentStatus, 
-    updateStatus, 
-    updatePaymentStatus,
-    orderItems
+    saveChanges,
+    deliveryStatus,
+    paymentStatus,
+    updateStatus,
+    updatePaymentStatus
   } = usePurchaseEdit(orderId);
   
-  useEffect(() => {
-    if (orderItems) {
-      console.log("Order items updated in form:", orderItems.length);
-    }
-  }, [orderItems]);
-
-  useEffect(() => {
-    if (purchase) {
-      console.log("Purchase data loaded:", purchase.id);
-    } else if (!isLoading) {
-      console.log("No purchase data available after loading");
-    }
-  }, [purchase, isLoading]);
-
-  console.log("Form render - Order items in form:", orderItems?.length || 0);
-  console.log("Form render - Purchase data available:", purchase ? "yes" : "no");
-  console.log("Form render - Form data:", formData);
+  // Calculate order totals from orderItems and formData
+  const subtotal = orderItems?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
+  const taxAmount = (subtotal * (formData?.tax_rate || 0)) / 100;
+  const totalTTC = subtotal + taxAmount;
+  const totalAmount = totalTTC + 
+    (formData?.shipping_cost || 0) + 
+    (formData?.transit_cost || 0) + 
+    (formData?.logistics_cost || 0) - 
+    (formData?.discount || 0);
   
-  const handleSave = async () => {
-    if (isSaving) {
-      console.log("Already saving, ignoring duplicate save request");
-      return;
-    }
-    
+  useEffect(() => {
+    console.log("PurchaseOrderEditForm - orderId:", orderId);
+    console.log("PurchaseOrderEditForm - orderItems:", orderItems?.length || 0);
+    console.log("PurchaseOrderEditForm - calculated totals:", { subtotal, taxAmount, totalTTC, totalAmount });
+  }, [orderId, orderItems, formData, subtotal, taxAmount, totalTTC, totalAmount]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSaving(true);
     
     try {
-      console.log("Saving changes with form data:", formData);
-      
+      console.log("Saving purchase order...");
       const success = await saveChanges();
       
-      console.log("Save result:", success ? "successful" : "failed");
-      
-      // Always close the dialog, regardless of success
-      onClose();
-      
+      if (success) {
+        toast.success("Modifications enregistrées avec succès");
+        setTimeout(() => {
+          onClose();
+        }, 500);
+      } else {
+        toast.error("Erreur lors de l'enregistrement des modifications");
+      }
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast.error("Erreur lors de l'enregistrement des modifications");
-      
-      // Close dialog even on error
-      onClose();
+      toast.error("Une erreur est survenue");
     } finally {
       setIsSaving(false);
     }
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <Loader className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    );
+  }
+  
   return (
-    <div className="p-4 space-y-6">
-      {isLoading ? (
-        <div className="p-6 text-center">
-          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Chargement...</p>
-        </div>
-      ) : !purchase ? (
-        <div className="p-6 text-center space-y-4">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-          <p className="text-lg">Bon de commande non trouvé</p>
-          <p className="text-sm text-gray-400">Le bon de commande que vous essayez de modifier n'existe pas ou n'est pas accessible.</p>
-        </div>
-      ) : (
-        <>
-          <h3 className="text-lg font-semibold">Informations générales</h3>
-          
-          <GeneralInfoSection 
-            purchase={purchase as PurchaseOrder}
-            formData={formData}
-            updateFormField={updateFormField}
-          />
-          
-          <StatusSection 
-            deliveryStatus={deliveryStatus}
-            paymentStatus={paymentStatus}
-            updateStatus={updateStatus}
-            updatePaymentStatus={updatePaymentStatus}
-          />
-
-          <h3 className="text-lg font-semibold mt-6">Coûts additionnels</h3>
-          
-          <AdditionalCostsSection 
-            formData={formData}
-            updateFormField={updateFormField}
-            totalAmount={purchase.total_amount}
-          />
-          
-          <NotesSection 
-            notes={formData.notes || ''}
-            updateFormField={updateFormField}
-          />
-            
-          <h3 className="text-lg font-semibold mt-6">Produits</h3>
-          
-          <ProductsSection 
-            items={orderItems || []}
-            updateItemQuantity={updateItemQuantity}
-            updateItemPrice={updateItemPrice}
-            removeItem={removeItem}
-            addItem={addItem}
-          />
-          
-          <FormActions 
-            onSave={handleSave}
-            onCancel={onClose}
-            isSaving={isSaving}
-          />
-        </>
-      )}
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-8 py-4">
+      <FormSections 
+        formData={formData}
+        updateFormField={updateFormField}
+        orderItems={orderItems || []}
+        updateItemQuantity={updateItemQuantity}
+        updateItemPrice={updateItemPrice}
+        removeItem={removeItem}
+        addItem={addItem}
+        deliveryStatus={deliveryStatus}
+        paymentStatus={paymentStatus}
+        updateStatus={updateStatus}
+        updatePaymentStatus={updatePaymentStatus}
+        subtotal={purchase?.subtotal || subtotal}
+        tax={purchase?.tax_amount || taxAmount}
+        total={purchase?.total_amount || totalAmount}
+      />
+      
+      <div className="flex justify-end gap-2 pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onClose}
+          disabled={isSaving}
+        >
+          Annuler
+        </Button>
+        <Button 
+          type="submit"
+          disabled={isSaving}
+          className="neo-gradient"
+        >
+          {isSaving ? (
+            <>
+              <Loader className="w-4 h-4 mr-2 animate-spin" />
+              Enregistrement...
+            </>
+          ) : (
+            'Enregistrer'
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }
