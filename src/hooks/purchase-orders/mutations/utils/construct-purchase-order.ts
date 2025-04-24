@@ -24,10 +24,8 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     ? paymentStatus as PurchaseOrder['payment_status']
     : 'pending' as PurchaseOrder['payment_status'];
   
-  // Handle delivery_note_created, forcing it to be a boolean value
-  const deliveryNoteCreated = data.delivery_note_created !== undefined 
-    ? Boolean(data.delivery_note_created) 
-    : false;
+  // Handle delivery_note_created explicitly as a boolean
+  const deliveryNoteCreated = Boolean(data.delivery_note_created);
   
   // Create a properly typed PurchaseOrder object
   const purchaseOrder: PurchaseOrder = {

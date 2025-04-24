@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { validatePurchaseOrder } from "./utils/validate-purchase-order";
-import { updatePurchaseOrderToApproved, markDeliveryNoteCreated } from "./utils/update-purchase-order-status";
+import { updatePurchaseOrderToApproved } from "./utils/update-purchase-order-status";
 import { createDeliveryNote } from "./utils/create-delivery-note";
 import { createDeliveryNoteItems } from "./utils/create-delivery-note-items";
 import { constructPurchaseOrder } from "./utils/construct-purchase-order";
@@ -23,13 +23,14 @@ export function useApprovePurchaseOrder() {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
           
-          // Since validatePurchaseOrder doesn't return delivery_note_created 
-          // we need to construct a basic object
-          return constructPurchaseOrder({ 
-            ...orderCheck,
-            id: id, 
+          // Since orderCheck only includes id and status, we construct a minimal object
+          const result = constructPurchaseOrder({ 
+            id: orderCheck.id,
+            status: orderCheck.status,
             delivery_note_created: false // Default to false as we don't know
           });
+          
+          return result;
         }
         
         // 2. Update purchase order status
@@ -40,15 +41,14 @@ export function useApprovePurchaseOrder() {
         const deliveryNote = await createDeliveryNote(updatedOrder);
         console.log("Delivery note created:", deliveryNote?.id);
         
+        let deliveryNoteCreated = false;
+        
         if (deliveryNote) {
           // 4. Create delivery note items
           await createDeliveryNoteItems(deliveryNote.id, id);
           console.log("Delivery note items created");
+          deliveryNoteCreated = true;
         }
-        
-        // 5. Mark delivery note as created
-        await markDeliveryNoteCreated(id);
-        console.log("Order marked as having delivery note created");
         
         // 6. Refresh affected queries
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -56,10 +56,10 @@ export function useApprovePurchaseOrder() {
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        // Make sure we're returning with delivery_note_created set to true
+        // Make sure we're returning with delivery_note_created properly set
         const result = constructPurchaseOrder({ 
           ...updatedOrder, 
-          delivery_note_created: true // We know we just created it
+          delivery_note_created: deliveryNoteCreated
         });
         
         console.log("Final return object:", result);
