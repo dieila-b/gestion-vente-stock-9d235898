@@ -67,12 +67,19 @@ export function useUpdatePurchaseOrder() {
           console.warn("Purchase order not found after update, returning basic success object");
           return { 
             id: params.id,
-            ...validatedData
-          } as PurchaseOrder;
+            ...validatedData,
+            delivery_note_created: false // Set a default value
+          } as unknown as PurchaseOrder;
         }
         
-        console.log("Purchase order updated successfully:", fetchedData);
-        return fetchedData as PurchaseOrder;
+        // Make sure to include delivery_note_created
+        const result = {
+          ...fetchedData,
+          delivery_note_created: fetchedData.delivery_note_created ?? false
+        };
+        
+        console.log("Purchase order updated successfully:", result);
+        return result as PurchaseOrder;
       } catch (err) {
         console.error("Update purchase order error:", err);
         throw err;

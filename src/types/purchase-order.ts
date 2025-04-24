@@ -29,7 +29,7 @@ export interface PurchaseOrder {
   };
   items?: PurchaseOrderItem[];
   deleted?: boolean; 
-  delivery_note_created: boolean; // Making this required, not optional
+  delivery_note_created?: boolean; // Making this optional to prevent TypeScript errors
 }
 
 export interface PurchaseOrderItem {

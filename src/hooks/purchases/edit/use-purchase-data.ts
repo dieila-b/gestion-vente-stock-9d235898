@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,7 +155,8 @@ export function usePurchaseData(orderId?: string) {
             id: hasProperty(data.warehouse, 'id') ? String(data.warehouse.id || '') : '',
             name: hasProperty(data.warehouse, 'name') ? String(data.warehouse.name || '') : ''
           } : undefined,
-          items: processedItems
+          items: processedItems,
+          delivery_note_created: hasProperty(data, 'delivery_note_created') ? Boolean(data.delivery_note_created) : false
         };
         
         // Set the order items immediately when data is received

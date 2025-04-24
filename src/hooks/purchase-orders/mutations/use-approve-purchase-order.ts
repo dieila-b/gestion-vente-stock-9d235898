@@ -130,13 +130,13 @@ export function useApprovePurchaseOrder() {
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        // Create a fully-typed object with the correct properties
-        const finalOrder: Partial<PurchaseOrder> = {
+        // Create a properly typed object with delivery_note_created explicitly set
+        const updatedOrderWithDeliveryNote = {
           ...updatedOrder,
           delivery_note_created: true
         };
         
-        return constructPurchaseOrder(finalOrder);
+        return constructPurchaseOrder(updatedOrderWithDeliveryNote);
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;
@@ -156,12 +156,24 @@ export function useApprovePurchaseOrder() {
           email: ""
         };
     
+    // Use type casting for status to ensure it matches the enum type
+    const status = data.status || 'approved';
+    const validStatus = ['approved', 'draft', 'pending', 'delivered'].includes(status) 
+      ? status as PurchaseOrder['status']
+      : 'pending' as PurchaseOrder['status'];
+      
+    // Use type casting for payment_status
+    const paymentStatus = data.payment_status || 'pending';
+    const validPaymentStatus = ['pending', 'partial', 'paid'].includes(paymentStatus)
+      ? paymentStatus as PurchaseOrder['payment_status']
+      : 'pending' as PurchaseOrder['payment_status'];
+    
     return {
       id: data.id || '',
       order_number: data.order_number || '',
       created_at: data.created_at || new Date().toISOString(),
       updated_at: data.updated_at || data.created_at || new Date().toISOString(),
-      status: (data.status as "approved" | "draft" | "pending" | "delivered") || "approved",
+      status: validStatus,
       supplier_id: data.supplier_id || '',
       discount: data.discount || 0,
       expected_delivery_date: data.expected_delivery_date || '',
@@ -175,7 +187,7 @@ export function useApprovePurchaseOrder() {
       total_ttc: data.total_ttc || 0,
       total_amount: data.total_amount || 0,
       paid_amount: data.paid_amount || 0,
-      payment_status: (data.payment_status as "pending" | "partial" | "paid") || "pending",
+      payment_status: validPaymentStatus,
       warehouse_id: data.warehouse_id || undefined,
       supplier: supplier,
       items: data.items || [],
