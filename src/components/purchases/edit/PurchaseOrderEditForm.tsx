@@ -59,6 +59,13 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     
     try {
       console.log("Saving purchase order...");
+      // Update formData with calculated totals to ensure they are saved
+      updateFormField('subtotal', subtotal);
+      updateFormField('tax_amount', taxAmount);
+      updateFormField('total_ttc', totalTTC);
+      updateFormField('total_amount', totalAmount);
+      
+      // Then save changes with updated formData
       const success = await saveChanges();
       
       if (success) {

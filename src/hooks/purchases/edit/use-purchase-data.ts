@@ -222,7 +222,12 @@ export function usePurchaseData(orderId?: string) {
         logistics_cost: purchase.logistics_cost,
         transit_cost: purchase.transit_cost,
         tax_rate: purchase.tax_rate,
-        paid_amount: purchase.paid_amount
+        paid_amount: purchase.paid_amount,
+        // Ensure we also include the calculated totals from the server
+        subtotal: purchase.subtotal,
+        tax_amount: purchase.tax_amount,
+        total_ttc: purchase.total_ttc,
+        total_amount: purchase.total_amount
       });
       
       // Also ensure the orderItems are updated from purchase data if available
@@ -235,12 +240,14 @@ export function usePurchaseData(orderId?: string) {
 
   // Update a field in the form data
   const updateFormField = (field: keyof PurchaseOrder, value: any) => {
+    console.log(`Updating form field ${String(field)}:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return {
     purchase,
     formData,
+    setFormData, // Export the setFormData function
     orderItems,
     setOrderItems,
     updateFormField,

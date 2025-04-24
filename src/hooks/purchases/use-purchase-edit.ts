@@ -22,6 +22,7 @@ export function usePurchaseEdit(orderId?: string) {
   const { 
     purchase, 
     formData, 
+    setFormData,
     orderItems, 
     setOrderItems,
     updateFormField, 
@@ -98,8 +99,9 @@ export function usePurchaseEdit(orderId?: string) {
         updated_at: new Date().toISOString()
       };
       
-      // First calculate order total
+      // First calculate order total based on current items
       const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
+      console.log("Total calculation result:", totalResult);
       
       if (!totalResult) {
         throw new Error("Failed to calculate order totals");
