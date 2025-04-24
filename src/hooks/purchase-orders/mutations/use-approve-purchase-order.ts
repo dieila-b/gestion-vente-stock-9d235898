@@ -81,7 +81,7 @@ export function useApprovePurchaseOrder() {
         // 7. Build the return object with the correct value for delivery_note_created
         const finalResult = constructPurchaseOrder({
           ...updatedOrder,
-          delivery_note_created: deliveryNoteCreated
+          delivery_note_created: Boolean(deliveryNoteCreated) // Explicit conversion to boolean
         });
         
         console.log("Final approval result:", {

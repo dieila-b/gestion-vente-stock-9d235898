@@ -29,17 +29,17 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   // Ensure supplier is properly structured
   const supplier = updatedOrder.supplier || { id: '', name: '', email: '', phone: '' };
   
-  // Explicitly validate status to ensure it's one of the allowed values
-  const status: PurchaseOrder['status'] = 
-    ['approved', 'draft', 'pending', 'delivered'].includes(updatedOrder.status) 
-      ? updatedOrder.status as PurchaseOrder['status']
-      : 'approved';
-      
-  // Explicitly validate payment_status to ensure it's one of the allowed values
-  const payment_status: PurchaseOrder['payment_status'] = 
-    ['pending', 'partial', 'paid'].includes(updatedOrder.payment_status) 
-      ? updatedOrder.payment_status as PurchaseOrder['payment_status']
-      : 'pending';
+  // Explicitly validate status as a valid PurchaseOrder status
+  const validStatuses: PurchaseOrder['status'][] = ['approved', 'draft', 'pending', 'delivered'];
+  const status: PurchaseOrder['status'] = validStatuses.includes(updatedOrder.status as any) 
+    ? updatedOrder.status as PurchaseOrder['status']
+    : 'approved';
+  
+  // Explicitly validate payment_status as a valid PurchaseOrder payment status
+  const validPaymentStatuses: PurchaseOrder['payment_status'][] = ['pending', 'partial', 'paid'];
+  const payment_status: PurchaseOrder['payment_status'] = validPaymentStatuses.includes(updatedOrder.payment_status as any)
+    ? updatedOrder.payment_status as PurchaseOrder['payment_status']
+    : 'pending';
 
   // Return a properly typed PurchaseOrder object
   const result: PurchaseOrder = {
@@ -47,7 +47,7 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
     supplier,
     status,
     payment_status,
-    // This property is managed in memory, not in the database
+    // Explicitly set as boolean
     delivery_note_created: false
   };
   
