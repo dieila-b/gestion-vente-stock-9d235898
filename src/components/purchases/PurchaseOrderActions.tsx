@@ -29,7 +29,7 @@ export function PurchaseOrderActions({
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
   
-  // Ne pas montrer le bouton d'approbation pour les commandes déjà approuvées
+  // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
   const handleApprove = async (e: React.MouseEvent) => {
@@ -38,11 +38,11 @@ export function PurchaseOrderActions({
     
     if (isProcessing) return;
     
-    console.log("Tentative d'approbation de la commande:", order.id);
+    console.log("Attempting to approve order:", order.id);
     try {
       await onApprove(order.id);
     } catch (error) {
-      console.error("Erreur dans le gestionnaire d'approbation:", error);
+      console.error("Error in approve handler:", error);
     }
   };
 
@@ -51,7 +51,7 @@ export function PurchaseOrderActions({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Ouvrir le menu</span>
+            <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
