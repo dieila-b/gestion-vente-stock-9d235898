@@ -1,16 +1,20 @@
 
 import { db } from "@/utils/db-adapter";
-import { toast } from "sonner";
 
 export async function deletePurchaseOrder(id: string): Promise<boolean> {
   console.log("Attempting to delete purchase order:", id);
 
   try {
     // Check if the purchase order exists and is not approved
-    const { data: order } = await db.table('purchase_orders')
+    const { data: order, error: orderError } = await db.table('purchase_orders')
       .select('status')
       .eq('id', id)
       .single();
+    
+    if (orderError) {
+      console.error("Error fetching purchase order:", orderError);
+      throw new Error("Impossible de trouver le bon de commande");
+    }
 
     if (!order) {
       throw new Error("Bon de commande introuvable");
@@ -21,17 +25,27 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     }
 
     // Delete associated items first
-    await db.table('purchase_order_items')
+    console.log("Deleting purchase order items for order:", id);
+    const { error: itemsError } = await db.table('purchase_order_items')
       .delete()
       .eq('purchase_order_id', id);
-
-    // Then delete the purchase order
-    const result = await db.delete('purchase_orders', 'id', id);
     
-    if (!result) {
-      throw new Error("Échec de la suppression");
+    if (itemsError) {
+      console.error("Error deleting purchase order items:", itemsError);
+      throw new Error("Échec de la suppression des articles de commande");
     }
 
+    // Then delete the purchase order
+    console.log("Deleting purchase order:", id);
+    const { error: orderDeleteError } = await db.table('purchase_orders')
+      .delete()
+      .eq('id', id);
+    
+    if (orderDeleteError) {
+      console.error("Error deleting purchase order:", orderDeleteError);
+      throw new Error("Échec de la suppression du bon de commande");
+    }
+    
     console.log("Successfully deleted purchase order:", id);
     return true;
   } catch (error: any) {

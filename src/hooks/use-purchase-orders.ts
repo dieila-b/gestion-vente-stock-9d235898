@@ -1,3 +1,4 @@
+
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -80,13 +81,28 @@ export function usePurchaseOrders() {
   };
 
   const handleDeleteWrapper = async (id: string): Promise<void> => {
+    if (!id) {
+      toast.error("ID du bon de commande invalide");
+      return;
+    }
+
+    // Demander confirmation avant de supprimer
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
+      return;
+    }
+    
     try {
+      console.log("Starting delete process for order:", id);
       setProcessingOrderId(id);
+      
       await handleDelete(id);
+      console.log("Delete completed for order:", id);
+      
       await refreshOrders();
-    } catch (error) {
+      toast.success("Bon de commande supprimé avec succès");
+    } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
-      toast.error("Erreur lors de la suppression");
+      toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);
     } finally {
       setProcessingOrderId(null);
     }

@@ -8,9 +8,7 @@ export function useDeletePurchaseOrder() {
 
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-        return false;
-      }
+      // Nous ne faisons pas la confirmation ici, elle sera gérée au niveau supérieur
       return deletePurchaseOrder(id);
     },
     onSuccess: () => {
@@ -23,5 +21,6 @@ export function useDeletePurchaseOrder() {
     }
   });
 
-  return mutation.mutate;
+  // Retournons la fonction mutateAsync au lieu de mutate pour pouvoir attendre la réponse
+  return mutation.mutateAsync;
 }
