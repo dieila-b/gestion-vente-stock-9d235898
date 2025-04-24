@@ -8,7 +8,7 @@ import {
   NotesSection,
   ProductsSection,
   FormActions
-} from "@/components/purchases/edit/FormSections";
+} from "./FormSections";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { Loader, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
