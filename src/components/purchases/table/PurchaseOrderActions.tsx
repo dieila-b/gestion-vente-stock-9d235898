@@ -38,6 +38,10 @@ export function PurchaseOrderActions({
     
     if (isProcessing) return;
     
+    if (!confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
+      return;
+    }
+    
     console.log("Attempting to approve order:", order.id);
     try {
       await onApprove(order.id);
