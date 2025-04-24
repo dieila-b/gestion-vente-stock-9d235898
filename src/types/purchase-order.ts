@@ -29,7 +29,7 @@ export interface PurchaseOrder {
   };
   items?: PurchaseOrderItem[];
   deleted?: boolean; 
-  delivery_note_created: boolean;
+  delivery_note_created: boolean; // Added this line
 }
 
 export interface PurchaseOrderItem {
