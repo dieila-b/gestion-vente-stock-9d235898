@@ -20,57 +20,44 @@ export function usePurchaseData(orderId?: string) {
 
       try {
         console.log('Fetching purchase order data for ID:', orderId);
-        
-        // Use the get_purchase_order_by_id database function
         const { data, error } = await supabase
-          .rpc('get_purchase_order_by_id', { order_id: orderId });
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:supplier_id(*),
+            warehouse:warehouse_id(*)
+          `)
+          .eq('id', orderId)
+          .single();
 
         if (error) {
           console.error('Error fetching purchase order:', error);
           throw error;
         }
 
-        if (!data) {
-          console.log('No purchase order found with ID:', orderId);
-          return null;
+        // Also fetch the order items
+        const { data: items, error: itemsError } = await supabase
+          .from('purchase_order_items')
+          .select(`
+            *,
+            product:product_id(id, name, reference)
+          `)
+          .eq('purchase_order_id', orderId);
+
+        if (itemsError) {
+          console.error('Error fetching purchase order items:', itemsError);
+          throw itemsError;
         }
 
-        // Cast data to a PurchaseOrder object to handle the JSON response properly
-        const purchaseData = data as unknown as PurchaseOrder;
-        console.log('Full response from get_purchase_order_by_id:', purchaseData);
+        // Set order items
+        setOrderItems(items as PurchaseOrderItem[]);
         
-        // Check if items array exists and is populated
-        if (purchaseData.items && Array.isArray(purchaseData.items) && purchaseData.items.length > 0) {
-          console.log('Items from RPC response:', purchaseData.items);
-          console.log('First item details:', purchaseData.items[0]);
-          setOrderItems(purchaseData.items as PurchaseOrderItem[]);
-        } else {
-          // Fallback to fetch items separately if needed
-          console.log('No items in RPC response or empty array, fetching separately');
-          const { data: items, error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .select(`
-              *,
-              product:product_id(id, name, reference)
-            `)
-            .eq('purchase_order_id', orderId);
-
-          if (itemsError) {
-            console.error('Error fetching purchase order items:', itemsError);
-          } else if (items && Array.isArray(items)) {
-            console.log('Fetched items separately:', items.length);
-            setOrderItems(items as PurchaseOrderItem[]);
-          } else {
-            console.log('No items found or items is not an array');
-            setOrderItems([]);
-          }
-        }
-        
-        console.log('Fetched purchase order:', purchaseData);
-        return purchaseData;
+        console.log('Fetched purchase order:', data);
+        console.log('Fetched items:', items);
+        return data as PurchaseOrder;
       } catch (err) {
         console.error('Error in purchase order query:', err);
-        return null; // Return null instead of throwing to prevent query from failing
+        throw err;
       }
     },
     enabled: !!orderId,

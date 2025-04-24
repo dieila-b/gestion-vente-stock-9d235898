@@ -90,7 +90,6 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         // Force refresh purchase orders list
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
         await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
-        toast.success("Bon de commande mis à jour avec succès");
       }
       
       // Always close the dialog, regardless of success
