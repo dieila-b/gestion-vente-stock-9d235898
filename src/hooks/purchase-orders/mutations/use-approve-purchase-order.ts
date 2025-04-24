@@ -12,7 +12,37 @@ export function useApprovePurchaseOrder() {
       try {
         console.log("Starting approval process for order:", id);
         
-        // 1. Update purchase order status
+        // 1. Check if the order is already approved
+        const { data: existingOrder, error: checkError } = await supabase
+          .from('purchase_orders')
+          .select('status')
+          .eq('id', id)
+          .single();
+          
+        if (checkError) {
+          console.error("Error checking order status:", checkError);
+          throw new Error(`Erreur de vérification: ${checkError.message}`);
+        }
+        
+        if (existingOrder?.status === 'approved') {
+          console.log("Order was already approved, no action needed");
+          toast.info("Ce bon de commande est déjà approuvé");
+          
+          // Fetch the complete order to return
+          const { data: fullOrder, error: fetchError } = await supabase
+            .from('purchase_orders')
+            .select('*, supplier:supplier_id(*)')
+            .eq('id', id)
+            .single();
+            
+          if (fetchError || !fullOrder) {
+            throw new Error("Impossible de récupérer les détails du bon de commande");
+          }
+          
+          return constructPurchaseOrder(fullOrder);
+        }
+        
+        // 2. Update purchase order status
         const { data: updatedOrder, error: updateError } = await supabase
           .from('purchase_orders')
           .update({ 
@@ -34,47 +64,12 @@ export function useApprovePurchaseOrder() {
 
         console.log("Purchase order approved:", updatedOrder);
         
-        // The delivery note will be created automatically by the database trigger
-        
-        // 2. Refresh affected queries
+        // 3. Refresh affected queries
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
         await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
-        // Make sure we have a valid supplier object
-        const supplier = updatedOrder.supplier && typeof updatedOrder.supplier === 'object' && !('error' in updatedOrder.supplier) 
-          ? updatedOrder.supplier 
-          : {
-              id: updatedOrder.supplier_id,
-              name: "Fournisseur inconnu",
-              phone: "",
-              email: ""
-            };
-
-        // Create a well-formed PurchaseOrder object with explicit typing
-        const purchaseOrder: PurchaseOrder = {
-          id: updatedOrder.id,
-          order_number: updatedOrder.order_number || '',
-          created_at: updatedOrder.created_at || new Date().toISOString(),
-          updated_at: updatedOrder.updated_at || updatedOrder.created_at || new Date().toISOString(),
-          status: (updatedOrder.status as "approved" | "draft" | "pending" | "delivered") || "approved",
-          supplier_id: updatedOrder.supplier_id,
-          discount: updatedOrder.discount || 0,
-          expected_delivery_date: updatedOrder.expected_delivery_date || '',
-          notes: updatedOrder.notes || '',
-          logistics_cost: updatedOrder.logistics_cost || 0,
-          transit_cost: updatedOrder.transit_cost || 0,
-          tax_rate: updatedOrder.tax_rate || 0,
-          shipping_cost: updatedOrder.shipping_cost || 0,
-          subtotal: updatedOrder.subtotal || 0,
-          tax_amount: updatedOrder.tax_amount || 0,
-          total_ttc: updatedOrder.total_ttc || 0,
-          total_amount: updatedOrder.total_amount || 0,
-          paid_amount: updatedOrder.paid_amount || 0,
-          payment_status: (updatedOrder.payment_status as "pending" | "partial" | "paid") || "pending",
-          warehouse_id: updatedOrder.warehouse_id || undefined,
-          supplier: supplier,
-          items: [] // Initialize with empty array, items will be loaded separately if needed
-        };
+        // 4. Construct a properly typed PurchaseOrder
+        const purchaseOrder = constructPurchaseOrder(updatedOrder);
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         return purchaseOrder;
@@ -84,6 +79,48 @@ export function useApprovePurchaseOrder() {
       }
     }
   });
+
+  // Helper function to construct a properly typed PurchaseOrder object
+  function constructPurchaseOrder(data: any): PurchaseOrder {
+    // Ensure supplier is properly structured
+    const supplier = data.supplier && typeof data.supplier === 'object' && !('error' in data.supplier) 
+      ? data.supplier 
+      : {
+          id: data.supplier_id,
+          name: "Fournisseur inconnu",
+          phone: "",
+          email: ""
+        };
+    
+    // Cast status and payment_status to the correct types
+    const status = data.status as "approved" | "draft" | "pending" | "delivered";
+    const paymentStatus = data.payment_status as "pending" | "partial" | "paid";
+    
+    return {
+      id: data.id,
+      order_number: data.order_number || '',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || data.created_at || new Date().toISOString(),
+      status: status || "approved",
+      supplier_id: data.supplier_id,
+      discount: data.discount || 0,
+      expected_delivery_date: data.expected_delivery_date || '',
+      notes: data.notes || '',
+      logistics_cost: data.logistics_cost || 0,
+      transit_cost: data.transit_cost || 0,
+      tax_rate: data.tax_rate || 0,
+      shipping_cost: data.shipping_cost || 0,
+      subtotal: data.subtotal || 0,
+      tax_amount: data.tax_amount || 0,
+      total_ttc: data.total_ttc || 0,
+      total_amount: data.total_amount || 0,
+      paid_amount: data.paid_amount || 0,
+      payment_status: paymentStatus || "pending",
+      warehouse_id: data.warehouse_id || undefined,
+      supplier: supplier,
+      items: data.items || []
+    };
+  }
 
   return mutation.mutateAsync;
 }

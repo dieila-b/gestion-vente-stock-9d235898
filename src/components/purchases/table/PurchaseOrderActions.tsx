@@ -28,8 +28,6 @@ export function PurchaseOrderActions({
   onPrint
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
-  
-  // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
   const handleApprove = async (e: React.MouseEvent) => {
@@ -80,7 +78,11 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={() => onEdit(order.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit(order.id);
+            }}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -88,7 +90,11 @@ export function PurchaseOrderActions({
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => onPrint(order)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPrint(order);
+            }}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -97,7 +103,13 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={() => onDelete(order.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
+                  onDelete(order.id);
+                }
+              }}
               disabled={isProcessing}
               className="text-red-600 cursor-pointer"
             >

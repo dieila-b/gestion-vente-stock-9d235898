@@ -54,24 +54,18 @@ export function usePurchaseOrders() {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      const result = await approveOrderFn(id);
+      await approveOrderFn(id);
       
-      console.log("Approval completed for:", id, "Result:", result);
+      console.log("Approval completed for:", id);
       
-      // Check if the result has alreadyApproved property using type guard
-      if (result && 'alreadyApproved' in result && result.alreadyApproved) {
-        // Order was already approved, no need to refresh
-        console.log("Order was already approved, no refresh needed");
-      } else {
-        // Refresh the orders list
-        await refreshOrders();
-        
-        // Also refresh delivery notes to show newly created ones
-        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      }
-    } catch (error) {
+      // Refresh the orders list
+      await refreshOrders();
+      
+      // Also refresh delivery notes to show newly created ones
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    } catch (error: any) {
       console.error("Error in handleApprove:", error);
-      toast.error("Erreur lors de l'approbation de la commande");
+      toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
     } finally {
       setProcessingOrderId(null);
     }
