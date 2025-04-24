@@ -41,8 +41,11 @@ export function useApprovePurchaseOrder() {
         await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
         // Construire un objet PurchaseOrder complet conforme au type attendu
+        // Explicitly cast the status to the expected union type
         const purchaseOrder: PurchaseOrder = {
           ...updatedOrder,
+          // Ensure status is one of the expected values in the union type
+          status: updatedOrder.status as "approved" | "draft" | "pending" | "delivered",
           supplier: updatedOrder.supplier || {
             id: updatedOrder.supplier_id,
             name: "Fournisseur inconnu",
