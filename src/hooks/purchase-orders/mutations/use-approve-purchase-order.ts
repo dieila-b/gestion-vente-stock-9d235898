@@ -20,7 +20,7 @@ export function useApprovePurchaseOrder() {
             updated_at: new Date().toISOString() 
           })
           .eq('id', id)
-          .select()
+          .select('*, supplier:supplier_id(*)')
           .single();
           
         if (updateError) {
@@ -40,8 +40,20 @@ export function useApprovePurchaseOrder() {
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
         await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
+        // Construire un objet PurchaseOrder complet conforme au type attendu
+        const purchaseOrder: PurchaseOrder = {
+          ...updatedOrder,
+          supplier: updatedOrder.supplier || {
+            id: updatedOrder.supplier_id,
+            name: "Fournisseur inconnu",
+            phone: "",
+            email: ""
+          },
+          items: [] // Ajouter un tableau d'items vide si nécessaire
+        };
+        
         toast.success("Bon de commande approuvé et bon de livraison créé");
-        return updatedOrder;
+        return purchaseOrder;
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         throw error;
