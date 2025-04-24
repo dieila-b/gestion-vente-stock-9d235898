@@ -38,13 +38,20 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
 }
 
 export async function markDeliveryNoteCreated(id: string) {
-  const { error: markError } = await supabase
-    .from('purchase_orders')
-    .update({ delivery_note_created: true } as Partial<PurchaseOrder>)
-    .eq('id', id);
+  try {
+    const { error: markError } = await supabase
+      .from('purchase_orders')
+      .update({ delivery_note_created: true } as Partial<PurchaseOrder>)
+      .eq('id', id);
 
-  if (markError) {
-    console.error("Error marking delivery note as created:", markError);
-    throw new Error(`Erreur lors de la mise à jour: ${markError.message}`);
+    if (markError) {
+      console.error("Error marking delivery note as created:", markError);
+      throw new Error(`Erreur lors de la mise à jour: ${markError.message}`);
+    }
+    
+    console.log("Successfully marked delivery note as created for order:", id);
+  } catch (error) {
+    console.error("Exception in markDeliveryNoteCreated:", error);
+    throw error;
   }
 }

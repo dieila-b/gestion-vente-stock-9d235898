@@ -24,6 +24,11 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     ? paymentStatus as PurchaseOrder['payment_status']
     : 'pending' as PurchaseOrder['payment_status'];
   
+  // Handle delivery_note_created, forcing it to be a boolean value
+  const deliveryNoteCreated = data.delivery_note_created !== undefined 
+    ? Boolean(data.delivery_note_created) 
+    : false;
+  
   // Create a properly typed PurchaseOrder object
   const purchaseOrder: PurchaseOrder = {
     id: data.id || '',
@@ -48,7 +53,7 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     warehouse_id: data.warehouse_id || undefined,
     supplier: supplier,
     items: data.items || [],
-    delivery_note_created: Boolean(data.delivery_note_created) // Ensure this is a boolean
+    delivery_note_created: deliveryNoteCreated
   };
   
   console.log("Constructed purchase order with delivery_note_created:", purchaseOrder.delivery_note_created);

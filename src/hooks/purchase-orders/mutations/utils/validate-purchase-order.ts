@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function validatePurchaseOrder(id: string) {
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
-    .select('status, delivery_note_created')
+    .select('status')
     .eq('id', id)
     .single();
     

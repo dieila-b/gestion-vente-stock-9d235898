@@ -23,10 +23,11 @@ export function useApprovePurchaseOrder() {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
           
-          // Make sure to include delivery_note_created in the constructed purchase order
+          // Since validatePurchaseOrder doesn't return delivery_note_created 
+          // we need to work with the data we have
           return constructPurchaseOrder({ 
             ...orderCheck, 
-            delivery_note_created: Boolean(orderCheck.delivery_note_created) 
+            delivery_note_created: false // Default to false if not known
           });
         }
         
@@ -57,7 +58,7 @@ export function useApprovePurchaseOrder() {
         // Make sure we're returning with delivery_note_created set to true
         const result = constructPurchaseOrder({ 
           ...updatedOrder, 
-          delivery_note_created: true 
+          delivery_note_created: true // We know we just created it
         });
         
         console.log("Final return object:", result);
