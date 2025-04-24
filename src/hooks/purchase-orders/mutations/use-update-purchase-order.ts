@@ -77,10 +77,10 @@ export function useUpdatePurchaseOrder() {
         const result = {
           ...fetchedData,
           delivery_note_created: fetchedData.delivery_note_created ?? false
-        };
+        } as PurchaseOrder;
         
         console.log("Purchase order updated successfully:", result);
-        return result as PurchaseOrder;
+        return result;
       } catch (err) {
         console.error("Update purchase order error:", err);
         throw err;
