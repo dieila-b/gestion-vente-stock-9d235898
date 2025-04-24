@@ -6,6 +6,7 @@ import { ProductSelectionModal } from "./ProductSelectionModal";
 import { ProductsHeader } from "./products/ProductsHeader";
 import { EmptyState } from "./products/EmptyState";
 import { ProductItem } from "./products/ProductItem";
+import { useProducts } from "@/hooks/use-products";
 
 interface ProductsSectionProps {
   items: PurchaseOrderItem[];
@@ -25,6 +26,8 @@ export function ProductsSection({
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [actionItemId, setActionItemId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(""); // Add search query state
+  const { products } = useProducts(); // Get products from the hook
   
   // Handle product addition
   const handleAddProduct = async (product: CatalogProduct) => {
@@ -115,6 +118,9 @@ export function ProductsSection({
         onClose={() => setIsProductModalOpen(false)}
         onSelectProduct={handleAddProduct}
         isLoading={isLoading}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        products={products || []}
       />
     </div>
   );
