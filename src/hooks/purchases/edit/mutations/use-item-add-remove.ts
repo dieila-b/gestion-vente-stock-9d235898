@@ -39,13 +39,7 @@ export function useItemAddRemove(
       );
       
       setOrderItems(updatedItems);
-      
-      // Update order totals
-      try {
-        await updateOrderTotal(orderId, {});
-      } catch (totalError) {
-        console.error("Error updating order totals after quantity change:", totalError);
-      }
+      await updateOrderTotal(orderId, {});
       
       toast.success('Quantité mise à jour avec succès');
       return true;
@@ -69,12 +63,7 @@ export function useItemAddRemove(
       const updatedItems = orderItems.filter(item => item.id !== itemId);
       setOrderItems(updatedItems);
       
-      // Update order totals after removing an item
-      try {
-        await updateOrderTotal(orderId, {});
-      } catch (totalError) {
-        console.error("Error updating order totals after item removal:", totalError);
-      }
+      await updateOrderTotal(orderId, {});
       
       toast.success('Article supprimé avec succès');
       return true;
@@ -124,7 +113,9 @@ export function useItemAddRemove(
       
       const { error: insertError } = await supabase
         .from('purchase_order_items')
-        .insert(newItem);
+        .insert(newItem)
+        .select('*')
+        .single();
       
       if (insertError) {
         throw new Error(`Impossible d'ajouter l'article. ${insertError.message}`);
@@ -146,13 +137,7 @@ export function useItemAddRemove(
       };
       
       setOrderItems([...orderItems, newItemForState]);
-      
-      // Update order totals after adding a new item
-      try {
-        await updateOrderTotal(orderId, {});
-      } catch (totalError) {
-        console.error("Error updating order totals after adding item:", totalError);
-      }
+      await updateOrderTotal(orderId, {});
       
       toast.success(`Produit "${product.name}" ajouté avec succès`);
       return true;
