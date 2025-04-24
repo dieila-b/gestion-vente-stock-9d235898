@@ -1,7 +1,7 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Synchronizes approved purchase orders by creating delivery notes for them
