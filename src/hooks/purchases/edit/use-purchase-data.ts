@@ -21,7 +21,7 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log('Fetching purchase order data for ID:', orderId);
         
-        // Use the get_purchase_order_by_id database function instead of directly querying
+        // Use the get_purchase_order_by_id database function
         const { data, error } = await supabase
           .rpc('get_purchase_order_by_id', { order_id: orderId });
 
@@ -35,10 +35,13 @@ export function usePurchaseData(orderId?: string) {
           return null;
         }
 
+        // Cast data to an object to handle the JSON response properly
+        const purchaseData = data as unknown as PurchaseOrder;
+        
         // Set order items if they exist in the response
-        if (data.items && Array.isArray(data.items)) {
-          console.log('Setting order items from response:', data.items.length);
-          setOrderItems(data.items as PurchaseOrderItem[]);
+        if (purchaseData.items && Array.isArray(purchaseData.items)) {
+          console.log('Setting order items from response:', purchaseData.items.length);
+          setOrderItems(purchaseData.items as PurchaseOrderItem[]);
         } else {
           // Fallback to fetch items separately if needed
           const { data: items, error: itemsError } = await supabase
@@ -57,8 +60,8 @@ export function usePurchaseData(orderId?: string) {
           }
         }
         
-        console.log('Fetched purchase order:', data);
-        return data as PurchaseOrder;
+        console.log('Fetched purchase order:', purchaseData);
+        return purchaseData;
       } catch (err) {
         console.error('Error in purchase order query:', err);
         return null; // Return null instead of throwing to prevent query from failing
