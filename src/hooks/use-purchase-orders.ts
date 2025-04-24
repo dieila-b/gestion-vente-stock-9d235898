@@ -1,4 +1,3 @@
-
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -15,20 +14,16 @@ export function usePurchaseOrders() {
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
-  // Log if errors occur
   if (error) {
     console.error("Error in usePurchaseOrders:", error);
   }
 
-  // Force refresh the data with minimal stale time
   const refreshOrders = async () => {
     console.log("Refreshing purchase orders...");
     
     try {
-      // First invalidate the query
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       
-      // Then trigger a refetch
       const result = await refetch();
       
       console.log("Refresh result:", result);
@@ -48,7 +43,6 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle the approve function with improved error handling
   const handleApprove = async (id: string): Promise<void> => {
     if (!id) {
       console.error("Invalid order ID received for approval");
@@ -60,15 +54,10 @@ export function usePurchaseOrders() {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      // Call the approve mutation
       await approveOrderFn(id);
       
       console.log("Approval completed successfully for:", id);
-      
-      // Refresh data after successful approval
       await refreshOrders();
-      
-      // Also refresh delivery notes to show newly created ones
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
     } catch (error: any) {
       console.error("Error in handleApprove:", error);
@@ -78,11 +67,9 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Create wrapper functions with correct signature for Promise<void>
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
-      console.log("Wrapping edit for order ID:", id);
       await handleEdit(id);
     } catch (error) {
       console.error("Error in handleEditWrapper:", error);
