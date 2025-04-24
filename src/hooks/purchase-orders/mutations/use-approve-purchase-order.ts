@@ -24,10 +24,11 @@ export function useApprovePurchaseOrder() {
           toast.info("Ce bon de commande est déjà approuvé");
           
           // Since validatePurchaseOrder doesn't return delivery_note_created 
-          // we need to work with the data we have
+          // we need to construct a basic object
           return constructPurchaseOrder({ 
-            ...orderCheck, 
-            delivery_note_created: false // Default to false if not known
+            ...orderCheck,
+            id: id, 
+            delivery_note_created: false // Default to false as we don't know
           });
         }
         
