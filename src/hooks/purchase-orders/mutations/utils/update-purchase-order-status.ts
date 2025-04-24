@@ -25,7 +25,16 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
     throw new Error("Échec de mise à jour du bon de commande");
   }
 
-  return updatedOrder as PurchaseOrder;
+  // Ensure the returned object has all required properties for PurchaseOrder type
+  // including the delivery_note_created property
+  return {
+    ...updatedOrder,
+    delivery_note_created: false, // Initially set to false until we create a delivery note
+    supplier: updatedOrder.supplier || { id: '', name: '', email: '', phone: '' },
+    // Ensure other required properties
+    status: updatedOrder.status || 'approved',
+    payment_status: updatedOrder.payment_status || 'pending',
+  } as PurchaseOrder;
 }
 
 export async function markDeliveryNoteCreated(id: string) {
