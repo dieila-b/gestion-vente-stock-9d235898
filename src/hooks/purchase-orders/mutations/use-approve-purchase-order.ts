@@ -48,12 +48,16 @@ export function useApprovePurchaseOrder() {
         
         // 2. Update purchase order status to approved
         console.log("Updating purchase order status to approved");
+        const updateData = { 
+          status: 'approved' as const, 
+          updated_at: new Date().toISOString(),
+          // Add delivery_note_created field to the update data so we can track this
+          delivery_note_created: false
+        };
+        
         const { data: updatedOrder, error: updateError } = await supabase
           .from('purchase_orders')
-          .update({ 
-            status: 'approved', 
-            updated_at: new Date().toISOString() 
-          })
+          .update(updateData)
           .eq('id', id)
           .select('*, supplier:supplier_id(*)')
           .single();
@@ -118,11 +122,15 @@ export function useApprovePurchaseOrder() {
           }
         }
         
-        // Mark the order as having a delivery note
-        await supabase
+        // Mark the order as having a delivery note - using a separate update to ensure it's set correctly
+        const { error: markError } = await supabase
           .from('purchase_orders')
           .update({ delivery_note_created: true })
           .eq('id', id);
+        
+        if (markError) {
+          console.error("Error marking delivery note as created:", markError);
+        }
         
         // 4. Refresh affected queries
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
