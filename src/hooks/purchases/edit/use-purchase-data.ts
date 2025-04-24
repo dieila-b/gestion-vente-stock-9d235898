@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -246,7 +245,7 @@ export function usePurchaseData(orderId?: string) {
   return {
     purchase,
     formData,
-    setFormData,
+    setFormData, // Make setFormData available to parent components
     orderItems,
     setOrderItems,
     updateFormField,

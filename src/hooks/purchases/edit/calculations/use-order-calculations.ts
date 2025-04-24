@@ -73,11 +73,17 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
     
     console.log("Successfully updated order totals:", updateResult);
     
+    // Return the calculated totals AND update data to ensure both are included
     return {
       subtotal,
       taxAmount,
       totalTTC,
-      totalAmount
+      totalAmount,
+      shippingCost,
+      transitCost,
+      logisticsCost,
+      discount,
+      ...updateData
     };
   } catch (error) {
     console.error('Error updating order total:', error);

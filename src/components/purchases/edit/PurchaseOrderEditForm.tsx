@@ -54,6 +54,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     
     // Update form data with calculated totals
     if (formData) {
+      // Explicitly updating all total fields to ensure they're included in the form data
       updateFormField('subtotal', subtotal);
       updateFormField('tax_amount', taxAmount);
       updateFormField('total_ttc', totalTTC);
@@ -78,6 +79,8 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       updateFormField('tax_amount', taxAmount);
       updateFormField('total_ttc', totalTTC);
       updateFormField('total_amount', totalAmount);
+      
+      console.log("Form data before save:", formData);
       
       const success = await saveChanges();
       

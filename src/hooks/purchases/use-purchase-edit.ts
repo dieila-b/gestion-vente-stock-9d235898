@@ -93,11 +93,17 @@ export function usePurchaseEdit(orderId?: string) {
     setIsLoading(true);
     
     try {
+      if (!formData) {
+        throw new Error("No form data available to save");
+      }
+      
       // Ensure formData has updated_at set to current timestamp
       const dataWithTimestamp = {
         ...formData,
         updated_at: new Date().toISOString()
       };
+      
+      console.log("Saving changes with prepared data:", dataWithTimestamp);
       
       // First calculate order total
       let totalResult;
@@ -114,12 +120,21 @@ export function usePurchaseEdit(orderId?: string) {
       }
       
       // Prepare data to update with calculated totals
-      const dataToUpdate = {
+      const dataToUpdate: Partial<PurchaseOrder> = {
         ...dataWithTimestamp,
         subtotal: totalResult.subtotal,
         tax_amount: totalResult.taxAmount,
         total_ttc: totalResult.totalTTC,
-        total_amount: totalResult.totalAmount
+        total_amount: totalResult.totalAmount,
+        logistics_cost: dataWithTimestamp.logistics_cost,
+        transit_cost: dataWithTimestamp.transit_cost,
+        shipping_cost: dataWithTimestamp.shipping_cost,
+        discount: dataWithTimestamp.discount,
+        tax_rate: dataWithTimestamp.tax_rate,
+        status: dataWithTimestamp.status,
+        payment_status: dataWithTimestamp.payment_status,
+        notes: dataWithTimestamp.notes,
+        expected_delivery_date: dataWithTimestamp.expected_delivery_date,
       };
       
       console.log("Data being sent to update:", dataToUpdate);
@@ -175,6 +190,7 @@ export function usePurchaseEdit(orderId?: string) {
     deliveryStatus,
     paymentStatus,
     updateStatus,
-    updatePaymentStatus
+    updatePaymentStatus,
+    setFormData, // Export setFormData to allow direct updates
   };
 }
