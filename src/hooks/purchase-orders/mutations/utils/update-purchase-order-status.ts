@@ -6,7 +6,7 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   console.log("Updating purchase order status to approved:", id);
   
   const updateData = {
-    status: 'approved' as const,
+    status: 'approved' as PurchaseOrder['status'],
     updated_at: new Date().toISOString()
   };
 
@@ -33,8 +33,8 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   const result: PurchaseOrder = {
     ...updatedOrder,
     supplier,
-    status: updatedOrder.status || 'approved',
-    payment_status: updatedOrder.payment_status || 'pending',
+    status: updatedOrder.status as PurchaseOrder['status'] || 'approved',
+    payment_status: updatedOrder.payment_status as PurchaseOrder['payment_status'] || 'pending',
     delivery_note_created: false // Cette propriété est gérée en mémoire, pas en base de données
   };
   
