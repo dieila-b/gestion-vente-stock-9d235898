@@ -1,10 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FormSections } from "./FormSections";
+import { 
+  GeneralInfoSection, 
+  AdditionalCostsSection, 
+  NotesSection, 
+  ProductsSection,
+  StatusSection
+} from "./FormSections";
 import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
 import { Loader } from "lucide-react";
-import { usePurchaseOrderStatus } from "@/hooks/purchases/use-purchase-order-status";
 import { toast } from "sonner";
 
 interface PurchaseOrderEditFormProps {
@@ -82,21 +87,36 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   
   return (
     <form onSubmit={handleSubmit} className="space-y-8 py-4">
-      <FormSections 
+      <GeneralInfoSection 
+        purchase={purchase}
         formData={formData}
         updateFormField={updateFormField}
+      />
+
+      <ProductsSection
         orderItems={orderItems || []}
         updateItemQuantity={updateItemQuantity}
         updateItemPrice={updateItemPrice}
         removeItem={removeItem}
         addItem={addItem}
+      />
+
+      <AdditionalCostsSection 
+        formData={formData}
+        updateFormField={updateFormField}
+        totalAmount={purchase?.total_amount || totalAmount}
+      />
+
+      <StatusSection
         deliveryStatus={deliveryStatus}
         paymentStatus={paymentStatus}
         updateStatus={updateStatus}
         updatePaymentStatus={updatePaymentStatus}
-        subtotal={purchase?.subtotal || subtotal}
-        tax={purchase?.tax_amount || taxAmount}
-        total={purchase?.total_amount || totalAmount}
+      />
+
+      <NotesSection
+        notes={formData?.notes || ''}
+        updateFormField={updateFormField}
       />
       
       <div className="flex justify-end gap-2 pt-4">
