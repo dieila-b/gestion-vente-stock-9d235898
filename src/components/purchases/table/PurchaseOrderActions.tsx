@@ -36,18 +36,40 @@ export function PurchaseOrderActions({
     
     if (isProcessing) return;
     
-    if (!confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-      return;
-    }
-    
-    console.log("Attempting to approve order:", order.id);
     try {
-      await onApprove(order.id);
+      if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
+        console.log("Confirming approval for order:", order.id);
+        await onApprove(order.id);
+      }
     } catch (error) {
-      console.error("Error in approve handler:", error);
+      console.error("Error in PurchaseOrderActions handleApprove:", error);
     }
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing) {
+      onEdit(order.id);
+    }
+  };
+  
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing && confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
+      onDelete(order.id);
+    }
+  };
+  
+  const handlePrint = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing) {
+      onPrint(order);
+    }
+  };
+  
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -78,11 +100,7 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onEdit(order.id);
-            }}
+            onClick={handleEdit}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -90,11 +108,7 @@ export function PurchaseOrderActions({
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onPrint(order);
-            }}
+            onClick={handlePrint}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -103,13 +117,7 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-                  onDelete(order.id);
-                }
-              }}
+              onClick={handleDelete}
               disabled={isProcessing}
               className="text-red-600 cursor-pointer"
             >
