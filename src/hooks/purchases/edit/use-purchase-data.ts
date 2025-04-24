@@ -69,6 +69,38 @@ export function usePurchaseData(orderId?: string) {
         if (!isObject(data)) {
           throw new Error("Invalid data format received: data is not an object");
         }
+
+        // If we successfully get purchase data but no items, fetch them separately
+        if ((!hasProperty(data, 'items') || !Array.isArray(data.items) || data.items.length === 0)) {
+          console.log("No items in purchase order data, fetching items separately...");
+          try {
+            const { data: itemsData, error: itemsError } = await supabase
+              .from('purchase_order_items')
+              .select(`
+                id, 
+                product_id, 
+                quantity, 
+                unit_price, 
+                selling_price, 
+                total_price,
+                product:product_id (
+                  id,
+                  name,
+                  reference
+                )
+              `)
+              .eq('purchase_order_id', orderId);
+
+            if (itemsError) {
+              console.error("Error fetching items separately:", itemsError);
+            } else if (itemsData) {
+              console.log(`Fetched ${itemsData.length} items separately:`, itemsData);
+              data.items = itemsData;
+            }
+          } catch (itemsError) {
+            console.error("Exception fetching items separately:", itemsError);
+          }
+        }
         
         // Process the items with proper type checking
         let processedItems: PurchaseOrderItem[] = [];

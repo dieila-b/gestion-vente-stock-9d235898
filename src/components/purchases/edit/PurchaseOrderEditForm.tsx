@@ -94,7 +94,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       />
 
       <ProductsSection
-        orderItems={orderItems || []}
+        items={orderItems || []}
         updateItemQuantity={updateItemQuantity}
         updateItemPrice={updateItemPrice}
         removeItem={removeItem}
