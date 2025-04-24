@@ -68,11 +68,12 @@ export function useUpdatePurchaseOrder() {
           return { 
             id: params.id,
             ...validatedData,
-            delivery_note_created: false // Set a default value
+            delivery_note_created: validatedData.delivery_note_created ?? false
           } as unknown as PurchaseOrder;
         }
         
         // Make sure to include delivery_note_created
+        // Use the nullish coalescing operator to handle if it's undefined
         const result = {
           ...fetchedData,
           delivery_note_created: fetchedData.delivery_note_created ?? false

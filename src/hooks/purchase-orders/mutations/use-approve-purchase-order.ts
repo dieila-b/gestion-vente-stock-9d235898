@@ -43,7 +43,7 @@ export function useApprovePurchaseOrder() {
             throw new Error("Impossible de récupérer les détails du bon de commande");
           }
           
-          return constructPurchaseOrder(fullOrder);
+          return constructPurchaseOrder({...fullOrder, delivery_note_created: true});
         }
         
         // 2. Update purchase order status to approved
