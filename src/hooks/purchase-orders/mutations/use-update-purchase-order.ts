@@ -69,15 +69,14 @@ export function useUpdatePurchaseOrder() {
             id: params.id,
             ...validatedData,
             delivery_note_created: validatedData.delivery_note_created ?? false
-          } as unknown as PurchaseOrder;
+          } as PurchaseOrder;
         }
         
-        // Make sure to include delivery_note_created
-        // Use the nullish coalescing operator to handle if it's undefined
-        const result = {
+        // Make sure to include delivery_note_created property
+        const result: PurchaseOrder = {
           ...fetchedData,
           delivery_note_created: fetchedData.delivery_note_created ?? false
-        } as PurchaseOrder;
+        };
         
         console.log("Purchase order updated successfully:", result);
         return result;
