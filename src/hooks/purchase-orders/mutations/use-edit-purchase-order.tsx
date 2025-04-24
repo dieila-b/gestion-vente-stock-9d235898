@@ -36,7 +36,7 @@ export function useEditPurchaseOrder() {
   const EditDialog = () => {
     if (!selectedOrderId) return null;
     
-    console.log("Rendering EditDialog with orderId:", selectedOrderId);
+    console.log("Rendering EditDialog with orderId:", selectedOrderId, "isDialogOpen:", isDialogOpen);
     
     return (
       <Dialog 

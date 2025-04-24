@@ -43,6 +43,23 @@ export default function PurchaseOrdersPage() {
     }
   }, [initialLoadDone, refreshOrders]);
 
+  // After dialog close, refresh orders
+  useEffect(() => {
+    // This will trigger a refresh when the dialog is closed
+    // to ensure we get the latest data
+    const refreshAfterEdit = async () => {
+      try {
+        console.log("Refreshing orders after dialog interaction");
+        await refreshOrders();
+      } catch (error) {
+        console.error("Error refreshing orders after edit:", error);
+      }
+    };
+    
+    // We call this on mount and when EditDialog changes
+    refreshAfterEdit();
+  }, [refreshOrders]);
+
   // Filter purchase orders
   useEffect(() => {
     console.log("Raw orders available for processing:", rawOrders?.length || 0);
