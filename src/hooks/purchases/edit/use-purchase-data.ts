@@ -20,44 +20,48 @@ export function usePurchaseData(orderId?: string) {
 
       try {
         console.log('Fetching purchase order data for ID:', orderId);
+        
+        // Use the get_purchase_order_by_id database function instead of directly querying
         const { data, error } = await supabase
-          .from('purchase_orders')
-          .select(`
-            *,
-            supplier:supplier_id(*),
-            warehouse:warehouse_id(*)
-          `)
-          .eq('id', orderId)
-          .single();
+          .rpc('get_purchase_order_by_id', { order_id: orderId });
 
         if (error) {
           console.error('Error fetching purchase order:', error);
           throw error;
         }
 
-        // Also fetch the order items
-        const { data: items, error: itemsError } = await supabase
-          .from('purchase_order_items')
-          .select(`
-            *,
-            product:product_id(id, name, reference)
-          `)
-          .eq('purchase_order_id', orderId);
-
-        if (itemsError) {
-          console.error('Error fetching purchase order items:', itemsError);
-          throw itemsError;
+        if (!data) {
+          console.log('No purchase order found with ID:', orderId);
+          return null;
         }
 
-        // Set order items
-        setOrderItems(items as PurchaseOrderItem[]);
+        // Set order items if they exist in the response
+        if (data.items && Array.isArray(data.items)) {
+          console.log('Setting order items from response:', data.items.length);
+          setOrderItems(data.items as PurchaseOrderItem[]);
+        } else {
+          // Fallback to fetch items separately if needed
+          const { data: items, error: itemsError } = await supabase
+            .from('purchase_order_items')
+            .select(`
+              *,
+              product:product_id(id, name, reference)
+            `)
+            .eq('purchase_order_id', orderId);
+
+          if (itemsError) {
+            console.error('Error fetching purchase order items:', itemsError);
+          } else if (items) {
+            console.log('Fetched items separately:', items.length);
+            setOrderItems(items as PurchaseOrderItem[]);
+          }
+        }
         
         console.log('Fetched purchase order:', data);
-        console.log('Fetched items:', items);
         return data as PurchaseOrder;
       } catch (err) {
         console.error('Error in purchase order query:', err);
-        throw err;
+        return null; // Return null instead of throwing to prevent query from failing
       }
     },
     enabled: !!orderId,
