@@ -1,10 +1,13 @@
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 export function useApprovePurchaseOrder() {
+  const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: async (id: string) => {
       try {
@@ -38,19 +41,16 @@ export function useApprovePurchaseOrder() {
         // 2. Mettre à jour le statut du bon de commande
         const { data: updatedData, error: updateError } = await supabase
           .from('purchase_orders')
-          .update({ status: 'approved' })
+          .update({ status: 'approved', updated_at: new Date().toISOString() })
           .eq('id', id)
-          .select('id, status');
+          .select()
+          .single();
 
         if (updateError) {
           console.error("Error updating purchase order status:", updateError);
           throw new Error(`Erreur lors de la mise à jour: ${updateError.message}`);
         }
         
-        if (!updatedData || updatedData.length === 0) {
-          throw new Error("La mise à jour a échoué, aucune donnée retournée");
-        }
-
         console.log("Purchase order approved successfully:", updatedData);
         
         // 3. Synchroniser avec les bons de livraison
@@ -64,19 +64,18 @@ export function useApprovePurchaseOrder() {
           // On continue car l'approbation elle-même a réussi
         }
         
+        // 4. Rafraîchir les données
+        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        
         toast.success("Commande approuvée avec succès");
-        return { id, success: true };
+        return updatedData as PurchaseOrder;
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
-        toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
         throw error;
       }
-    },
+    }
   });
 
-  // Retourner une fonction qui appelle directement mutateAsync
-  return async (id: string) => {
-    console.log("useApprovePurchaseOrder called with id:", id);
-    return mutation.mutateAsync(id);
-  };
+  return mutation.mutateAsync;
 }

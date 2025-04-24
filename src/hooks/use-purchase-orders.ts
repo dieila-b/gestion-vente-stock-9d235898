@@ -58,7 +58,7 @@ export function usePurchaseOrders() {
       
       console.log("Approval completed for:", id, "Result:", result);
       
-      if (result && result.success) {
+      if (result && !result.alreadyApproved) {
         // Refresh the orders list
         await refreshOrders();
         

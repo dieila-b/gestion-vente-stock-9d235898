@@ -11,7 +11,7 @@ export async function syncApprovedPurchaseOrders() {
   try {
     console.log("Synchronizing approved purchase orders to delivery notes");
     
-    // Get all approved purchase orders - implémentation plus robuste
+    // Get all approved purchase orders
     const { data: approvedOrders, error: fetchError } = await supabase
       .from('purchase_orders')
       .select(`
@@ -96,7 +96,7 @@ export async function syncApprovedPurchaseOrders() {
           // Create delivery note items based on purchase order items
           if (order.items && order.items.length > 0 && createdDeliveryNote) {
             const itemsData = order.items.map((item: any) => ({
-              id: uuidv4(), // Générer un ID unique pour chaque item
+              id: uuidv4(),
               delivery_note_id: createdDeliveryNote.id,
               product_id: item.product_id,
               quantity_ordered: item.quantity,
