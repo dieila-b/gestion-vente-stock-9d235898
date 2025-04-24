@@ -15,24 +15,18 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
       };
   
   // Validate status with strict type checking
-  let status: PurchaseOrder['status'] = "pending";
-  if (data?.status) {
-    if (data.status === "approved") status = "approved";
-    else if (data.status === "draft") status = "draft";
-    else if (data.status === "pending") status = "pending";
-    else if (data.status === "delivered") status = "delivered";
-  }
+  const validStatuses = ["approved", "draft", "pending", "delivered"];
+  const status: PurchaseOrder['status'] = 
+    validStatuses.includes(data?.status) ? data.status : "pending";
   
   // Validate payment_status with strict type checking
-  let paymentStatus: PurchaseOrder['payment_status'] = "pending";
-  if (data?.payment_status) {
-    if (data.payment_status === "pending") paymentStatus = "pending";
-    else if (data.payment_status === "partial") paymentStatus = "partial";
-    else if (data.payment_status === "paid") paymentStatus = "paid";
-  }
+  const validPaymentStatuses = ["pending", "partial", "paid"];
+  const paymentStatus: PurchaseOrder['payment_status'] = 
+    validPaymentStatuses.includes(data?.payment_status) ? data.payment_status : "pending";
   
-  // Pour delivery_note_created, on s'assure que c'est bien un boolean
-  const deliveryNoteCreated: boolean = data?.delivery_note_created === true;
+  // Explicitly convert delivery_note_created to boolean
+  // Important: Use Boolean() for explicit conversion to avoid any type issues
+  const deliveryNoteCreated = Boolean(data?.delivery_note_created);
   
   // Create a properly typed PurchaseOrder object
   const purchaseOrder: PurchaseOrder = {

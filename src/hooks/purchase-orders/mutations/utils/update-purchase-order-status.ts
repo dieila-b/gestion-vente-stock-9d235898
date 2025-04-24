@@ -26,35 +26,36 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
     throw new Error("Échec de mise à jour du bon de commande");
   }
 
-  // Ajouter un objet supplier par défaut si nécessaire
+  // Ensure supplier is properly structured
   const supplier = updatedOrder.supplier || { id: '', name: '', email: '', phone: '' };
   
-  // S'assurer que status est l'une des valeurs valides
+  // Explicitly validate status to ensure it's one of the allowed values
   const status: PurchaseOrder['status'] = 
-    (updatedOrder.status === "approved" || 
-     updatedOrder.status === "draft" || 
-     updatedOrder.status === "pending" || 
-     updatedOrder.status === "delivered") 
-      ? updatedOrder.status 
-      : "approved";
+    ['approved', 'draft', 'pending', 'delivered'].includes(updatedOrder.status) 
+      ? updatedOrder.status as PurchaseOrder['status']
+      : 'approved';
       
-  // S'assurer que payment_status est l'une des valeurs valides
+  // Explicitly validate payment_status to ensure it's one of the allowed values
   const payment_status: PurchaseOrder['payment_status'] = 
-    (updatedOrder.payment_status === "pending" || 
-     updatedOrder.payment_status === "partial" || 
-     updatedOrder.payment_status === "paid")
-      ? updatedOrder.payment_status
-      : "pending";
+    ['pending', 'partial', 'paid'].includes(updatedOrder.payment_status) 
+      ? updatedOrder.payment_status as PurchaseOrder['payment_status']
+      : 'pending';
 
-  // Retourner l'objet PurchaseOrder complet, avec delivery_note_created comme propriété en mémoire
+  // Return a properly typed PurchaseOrder object
   const result: PurchaseOrder = {
     ...updatedOrder,
     supplier,
     status,
     payment_status,
-    delivery_note_created: false // Cette propriété est gérée en mémoire, pas en base de données
+    // This property is managed in memory, not in the database
+    delivery_note_created: false
   };
   
-  console.log("Processed updated order result:", result);
+  console.log("Processed updated order result:", {
+    id: result.id,
+    status: result.status,
+    delivery_note_created: result.delivery_note_created
+  });
+  
   return result;
 }
