@@ -65,17 +65,48 @@ export function useUpdatePurchaseOrder() {
         // Just return a basic object with the ID for consistency
         if (!fetchedData) {
           console.warn("Purchase order not found after update, returning basic success object");
-          return { 
+          
+          // Create a properly typed PurchaseOrder object
+          const basicOrder: PurchaseOrder = { 
             id: params.id,
-            ...validatedData,
+            order_number: validatedData.order_number || '',
+            created_at: validatedData.created_at || new Date().toISOString(),
+            status: validatedData.status || 'draft',
+            supplier_id: validatedData.supplier_id || '',
+            discount: validatedData.discount || 0,
+            expected_delivery_date: validatedData.expected_delivery_date || '',
+            notes: validatedData.notes || '',
+            logistics_cost: validatedData.logistics_cost || 0,
+            transit_cost: validatedData.transit_cost || 0,
+            tax_rate: validatedData.tax_rate || 0,
+            shipping_cost: validatedData.shipping_cost || 0,
+            subtotal: validatedData.subtotal || 0,
+            tax_amount: validatedData.tax_amount || 0,
+            total_ttc: validatedData.total_ttc || 0,
+            total_amount: validatedData.total_amount || 0,
+            paid_amount: validatedData.paid_amount || 0,
+            payment_status: validatedData.payment_status || 'pending',
+            supplier: { id: '', name: '', email: '', phone: '' },
             delivery_note_created: validatedData.delivery_note_created ?? false
-          } as PurchaseOrder;
+          };
+          
+          return basicOrder;
         }
         
-        // Make sure to include delivery_note_created property
+        // Make sure to include the delivery_note_created property in the result
+        // First check if it's in fetchedData, otherwise default to false
+        const hasDeliveryNoteCreated = 'delivery_note_created' in fetchedData;
+        
         const result: PurchaseOrder = {
           ...fetchedData,
-          delivery_note_created: fetchedData.delivery_note_created ?? false
+          // Ensure status is a valid union type
+          status: isValidOrderStatus(fetchedData.status) ? fetchedData.status : 'draft',
+          // Ensure payment_status is a valid union type
+          payment_status: isValidPaymentStatus(fetchedData.payment_status) ? fetchedData.payment_status : 'pending',
+          // Set delivery_note_created from data or default to false
+          delivery_note_created: hasDeliveryNoteCreated ? !!fetchedData.delivery_note_created : false,
+          // Ensure supplier is present
+          supplier: fetchedData.supplier || { id: '', name: '', email: '', phone: '' }
         };
         
         console.log("Purchase order updated successfully:", result);

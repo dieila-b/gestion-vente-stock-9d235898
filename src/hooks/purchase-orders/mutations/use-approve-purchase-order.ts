@@ -168,7 +168,8 @@ export function useApprovePurchaseOrder() {
       ? paymentStatus as PurchaseOrder['payment_status']
       : 'pending' as PurchaseOrder['payment_status'];
     
-    return {
+    // Create a properly typed PurchaseOrder object
+    const purchaseOrder: PurchaseOrder = {
       id: data.id || '',
       order_number: data.order_number || '',
       created_at: data.created_at || new Date().toISOString(),
@@ -193,6 +194,8 @@ export function useApprovePurchaseOrder() {
       items: data.items || [],
       delivery_note_created: Boolean(data.delivery_note_created)
     };
+    
+    return purchaseOrder;
   }
 
   return mutation.mutateAsync;
