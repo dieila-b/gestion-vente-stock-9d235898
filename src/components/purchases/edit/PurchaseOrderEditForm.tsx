@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
   GeneralInfoSection,
@@ -39,9 +39,23 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     orderItems
   } = usePurchaseEdit(orderId);
   
-  console.log("Order items in form:", orderItems?.length || 0);
-  console.log("Purchase data available:", purchase ? "yes" : "no");
-  console.log("Form data:", formData);
+  useEffect(() => {
+    if (orderItems) {
+      console.log("Order items updated in form:", orderItems.length);
+    }
+  }, [orderItems]);
+
+  useEffect(() => {
+    if (purchase) {
+      console.log("Purchase data loaded:", purchase.id);
+    } else if (!isLoading) {
+      console.log("No purchase data available after loading");
+    }
+  }, [purchase, isLoading]);
+
+  console.log("Form render - Order items in form:", orderItems?.length || 0);
+  console.log("Form render - Purchase data available:", purchase ? "yes" : "no");
+  console.log("Form render - Form data:", formData);
   
   const handleSave = async () => {
     if (isSaving) {

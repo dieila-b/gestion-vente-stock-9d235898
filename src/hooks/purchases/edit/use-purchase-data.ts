@@ -170,12 +170,14 @@ export function usePurchaseData(orderId?: string) {
       }
     },
     enabled: !!orderId,
-    retry: 1
+    retry: 3, // Increase retries for better reliability
+    staleTime: 5 * 60 * 1000 // 5 minutes - data won't be considered stale for 5 minutes
   });
 
   // Update form data when purchase data is loaded
   useEffect(() => {
     if (purchase) {
+      console.log("Setting form data from purchase:", purchase.id);
       setFormData({
         supplier_id: purchase.supplier_id,
         order_number: purchase.order_number,

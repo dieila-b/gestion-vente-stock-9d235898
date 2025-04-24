@@ -42,15 +42,15 @@ export function useUpdatePurchaseOrder() {
           .from('purchase_orders')
           .update(validatedData)
           .eq('id', params.id)
-          .select('*');
+          .select();
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
 
-        // Check if data exists and has content
-        if (!data || (Array.isArray(data) && data.length === 0)) {
+        // Check if data is defined and has proper content
+        if (!data || data.length === 0) {
           console.warn("Update succeeded but no data returned, fetching record manually");
           
           const { data: fetchedData, error: fetchError } = await supabase
