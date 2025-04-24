@@ -14,26 +14,25 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
         email: ""
       };
   
-  // Define the allowed status values as constants to enforce typing
-  const allowedStatuses: Array<PurchaseOrder['status']> = ['approved', 'draft', 'pending', 'delivered'];
-  const allowedPaymentStatuses: Array<PurchaseOrder['payment_status']> = ['pending', 'partial', 'paid'];
+  // Validate status with strict type checking
+  let status: PurchaseOrder['status'] = "pending";
+  if (data?.status) {
+    if (data.status === "approved") status = "approved";
+    else if (data.status === "draft") status = "draft";
+    else if (data.status === "pending") status = "pending";
+    else if (data.status === "delivered") status = "delivered";
+  }
   
-  // Use explicit type casting for status with validation
-  const statusValue = data?.status || 'approved';
-  const validStatus: PurchaseOrder['status'] = allowedStatuses.includes(statusValue as PurchaseOrder['status'])
-    ? statusValue as PurchaseOrder['status']
-    : 'pending';
-    
-  // Use explicit type casting for payment_status with validation
-  const paymentStatusValue = data?.payment_status || 'pending';
-  const validPaymentStatus: PurchaseOrder['payment_status'] = allowedPaymentStatuses.includes(paymentStatusValue as PurchaseOrder['payment_status'])
-    ? paymentStatusValue as PurchaseOrder['payment_status']
-    : 'pending';
+  // Validate payment_status with strict type checking
+  let paymentStatus: PurchaseOrder['payment_status'] = "pending";
+  if (data?.payment_status) {
+    if (data.payment_status === "pending") paymentStatus = "pending";
+    else if (data.payment_status === "partial") paymentStatus = "partial";
+    else if (data.payment_status === "paid") paymentStatus = "paid";
+  }
   
   // Pour delivery_note_created, on s'assure que c'est bien un boolean
-  const deliveryNoteCreated: boolean = typeof data?.delivery_note_created === 'boolean' 
-    ? data.delivery_note_created 
-    : false;
+  const deliveryNoteCreated: boolean = data?.delivery_note_created === true;
   
   // Create a properly typed PurchaseOrder object
   const purchaseOrder: PurchaseOrder = {
@@ -41,7 +40,7 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     order_number: data?.order_number || '',
     created_at: data?.created_at || new Date().toISOString(),
     updated_at: data?.updated_at || data?.created_at || new Date().toISOString(),
-    status: validStatus,
+    status: status,
     supplier_id: data?.supplier_id || '',
     discount: data?.discount || 0,
     expected_delivery_date: data?.expected_delivery_date || '',
@@ -55,7 +54,7 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     total_ttc: data?.total_ttc || 0,
     total_amount: data?.total_amount || 0,
     paid_amount: data?.paid_amount || 0,
-    payment_status: validPaymentStatus,
+    payment_status: paymentStatus,
     warehouse_id: data?.warehouse_id || undefined,
     supplier: supplier,
     items: data?.items || [],
