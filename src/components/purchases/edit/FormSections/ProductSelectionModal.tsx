@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,11 +9,11 @@ import { v4 as uuidv4 } from "uuid";
 interface ProductSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectProduct: (product: CatalogProduct) => void;
-  isLoading: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   products: CatalogProduct[];
+  onSelectProduct: (product: CatalogProduct) => void;
+  isLoading: boolean;
 }
 
 export function ProductSelectionModal({

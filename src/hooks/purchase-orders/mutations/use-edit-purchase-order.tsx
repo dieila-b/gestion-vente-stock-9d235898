@@ -4,13 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PurchaseOrderEditForm } from "@/components/purchases/edit/PurchaseOrderEditForm";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 export function useEditPurchaseOrder() {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   
   const handleEdit = async (id: string) => {
     if (!id) {
@@ -27,10 +25,7 @@ export function useEditPurchaseOrder() {
   const handleCloseDialog = useCallback(() => {
     console.log("Closing edit dialog - setting isDialogOpen to false");
     setIsDialogOpen(false);
-    
-    // Force a refresh of the purchase orders list to reflect any changes
-    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-  }, [queryClient]);
+  }, []);
   
   // Effect to clear order ID after dialog is closed
   useEffect(() => {
@@ -39,14 +34,11 @@ export function useEditPurchaseOrder() {
       const timer = setTimeout(() => {
         console.log("Dialog is closed, clearing selectedOrderId");
         setSelectedOrderId(null);
-        
-        // Force refresh of purchase orders list
-        queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       }, 200);
       
       return () => clearTimeout(timer);
     }
-  }, [isDialogOpen, selectedOrderId, queryClient]);
+  }, [isDialogOpen, selectedOrderId]);
   
   const EditDialog = () => {
     if (!selectedOrderId) return null;

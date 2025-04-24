@@ -1,15 +1,16 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { usePurchaseEdit } from '@/hooks/purchases/use-purchase-edit';
 import { 
-  GeneralInfoSection, 
-  AdditionalCostsSection, 
-  NotesSection, 
+  GeneralInfoSection,
+  StatusSection,
+  AdditionalCostsSection,
+  NotesSection,
   ProductsSection,
-  StatusSection
+  FormActions
 } from "./FormSections";
-import { usePurchaseEdit } from "@/hooks/purchases/use-purchase-edit";
-import { Loader } from "lucide-react";
+import { PurchaseOrder } from "@/types/purchase-order";
+import { Loader, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface PurchaseOrderEditFormProps {
@@ -18,164 +19,150 @@ interface PurchaseOrderEditFormProps {
 }
 
 export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFormProps) {
+  console.log("Editing purchase order with ID:", orderId);
   const [isSaving, setIsSaving] = useState(false);
   
-  const {
-    purchase,
+  const { 
+    purchase, 
+    isLoading, 
     formData,
-    orderItems,
-    isLoading,
     updateFormField,
+    saveChanges,
     updateItemQuantity,
     updateItemPrice,
     removeItem,
     addItem,
-    saveChanges,
-    deliveryStatus,
-    paymentStatus,
-    updateStatus,
+    deliveryStatus, 
+    paymentStatus, 
+    updateStatus, 
     updatePaymentStatus,
-    setFormData
+    orderItems
   } = usePurchaseEdit(orderId);
   
-  // Calculate order totals from orderItems and formData
-  const subtotal = orderItems?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
-  const taxAmount = subtotal * ((formData?.tax_rate || 0) / 100);
-  const totalTTC = subtotal + taxAmount;
-  const totalAmount = totalTTC + 
-    (formData?.shipping_cost || 0) + 
-    (formData?.transit_cost || 0) + 
-    (formData?.logistics_cost || 0) - 
-    (formData?.discount || 0);
-  
   useEffect(() => {
-    console.log("PurchaseOrderEditForm - orderId:", orderId);
-    console.log("PurchaseOrderEditForm - orderItems:", orderItems?.length || 0);
-    console.log("PurchaseOrderEditForm - calculated totals:", { subtotal, taxAmount, totalTTC, totalAmount });
-    console.log("PurchaseOrderEditForm - formData:", formData);
-    
-    // Update form data with calculated totals
-    if (formData && setFormData) {
-      setFormData({
-        ...formData,
-        subtotal: subtotal,
-        tax_amount: taxAmount,
-        total_ttc: totalTTC,
-        total_amount: totalAmount
-      });
+    if (orderItems) {
+      console.log("Order items updated in form:", orderItems.length);
     }
-  }, [orderId, orderItems, formData?.tax_rate, formData?.shipping_cost, formData?.transit_cost, formData?.logistics_cost, formData?.discount]);
+  }, [orderItems]);
+
+  useEffect(() => {
+    if (purchase) {
+      console.log("Purchase data loaded:", purchase.id);
+    } else if (!isLoading) {
+      console.log("No purchase data available after loading");
+    }
+  }, [purchase, isLoading]);
+
+  console.log("Form render - Order items in form:", orderItems?.length || 0);
+  console.log("Form render - Purchase data available:", purchase ? "yes" : "no");
+  console.log("Form render - Form data:", formData);
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
+    if (isSaving) {
+      console.log("Already saving, ignoring duplicate save request");
+      return;
+    }
+    
     setIsSaving(true);
     
     try {
-      console.log("Saving purchase order with calculated totals:", {
-        subtotal,
-        taxAmount,
-        totalTTC,
-        totalAmount
+      console.log("Saving changes with form data:", formData);
+      
+      // Toujours appeler onClose après une tentative de sauvegarde, qu'elle réussisse ou échoue
+      const savePromise = saveChanges();
+      
+      // Définissons un délai maximum pour éviter de bloquer l'interface
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => resolve(false), 3000);
       });
       
-      // Make sure form data includes the latest calculated totals
-      if (formData && setFormData) {
-        setFormData({
-          ...formData,
-          subtotal: subtotal,
-          tax_amount: taxAmount,
-          total_ttc: totalTTC,
-          total_amount: totalAmount,
-          updated_at: new Date().toISOString()
-        });
-      }
-      
-      console.log("Form data before save:", formData);
-      
-      const success = await saveChanges();
+      // Utilisons Promise.race pour éviter de bloquer l'interface trop longtemps
+      const success = await Promise.race([savePromise, timeoutPromise]);
       
       if (success) {
+        console.log("Save successful, closing dialog...");
         toast.success("Modifications enregistrées avec succès");
-        setTimeout(() => {
-          onClose();
-        }, 500);
       } else {
-        toast.error("Erreur lors de l'enregistrement des modifications");
+        console.error("Save failed or timed out");
+        toast.error("Échec de l'enregistrement des modifications");
       }
+      
+      // Appeler onClose de toute façon pour fermer le dialogue
+      console.log("Forcing dialog close regardless of save result");
+      onClose();
+      
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast.error("Une erreur est survenue");
+      toast.error("Erreur lors de l'enregistrement des modifications");
+      
+      // Même en cas d'erreur, fermer le dialogue
+      console.log("Closing dialog due to error");
+      onClose();
     } finally {
       setIsSaving(false);
     }
   };
   
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <Loader className="animate-spin h-8 w-8 text-primary" />
-      </div>
-    );
-  }
-  
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 py-4">
-      <GeneralInfoSection 
-        purchase={purchase}
-        formData={formData}
-        updateFormField={updateFormField}
-      />
+    <div className="p-4 space-y-6">
+      {isLoading ? (
+        <div className="p-6 text-center">
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Chargement...</p>
+        </div>
+      ) : !purchase ? (
+        <div className="p-6 text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <p className="text-lg">Bon de commande non trouvé</p>
+          <p className="text-sm text-gray-400">Le bon de commande que vous essayez de modifier n'existe pas ou n'est pas accessible.</p>
+        </div>
+      ) : (
+        <>
+          <h3 className="text-lg font-semibold">Informations générales</h3>
+          
+          <GeneralInfoSection 
+            purchase={purchase as PurchaseOrder}
+            formData={formData}
+            updateFormField={updateFormField}
+          />
+          
+          <StatusSection 
+            deliveryStatus={deliveryStatus}
+            paymentStatus={paymentStatus}
+            updateStatus={updateStatus}
+            updatePaymentStatus={updatePaymentStatus}
+          />
 
-      <ProductsSection
-        items={orderItems || []}
-        updateItemQuantity={updateItemQuantity}
-        updateItemPrice={updateItemPrice}
-        removeItem={removeItem}
-        addItem={addItem}
-      />
-
-      <AdditionalCostsSection 
-        formData={formData}
-        updateFormField={updateFormField}
-        totalAmount={totalAmount}
-      />
-
-      <StatusSection
-        deliveryStatus={deliveryStatus}
-        paymentStatus={paymentStatus}
-        updateStatus={updateStatus}
-        updatePaymentStatus={updatePaymentStatus}
-      />
-
-      <NotesSection
-        notes={formData?.notes || ''}
-        updateFormField={updateFormField}
-      />
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onClose}
-          disabled={isSaving}
-        >
-          Annuler
-        </Button>
-        <Button 
-          type="submit"
-          disabled={isSaving}
-          className="neo-gradient"
-        >
-          {isSaving ? (
-            <>
-              <Loader className="w-4 h-4 mr-2 animate-spin" />
-              Enregistrement...
-            </>
-          ) : (
-            'Enregistrer'
-          )}
-        </Button>
-      </div>
-    </form>
+          <h3 className="text-lg font-semibold mt-6">Coûts additionnels</h3>
+          
+          <AdditionalCostsSection 
+            formData={formData}
+            updateFormField={updateFormField}
+            totalAmount={purchase.total_amount}
+          />
+          
+          <NotesSection 
+            notes={formData.notes || ''}
+            updateFormField={updateFormField}
+          />
+            
+          <h3 className="text-lg font-semibold mt-6">Produits</h3>
+          
+          <ProductsSection 
+            items={orderItems || []}
+            updateItemQuantity={updateItemQuantity}
+            updateItemPrice={updateItemPrice}
+            removeItem={removeItem}
+            addItem={addItem}
+          />
+          
+          <FormActions 
+            onSave={handleSave}
+            onCancel={onClose}
+            isSaving={isSaving}
+          />
+        </>
+      )}
+    </div>
   );
 }

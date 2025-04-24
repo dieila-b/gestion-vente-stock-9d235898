@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,38 +68,6 @@ export function usePurchaseData(orderId?: string) {
         // Ensure data is an object before trying to process it
         if (!isObject(data)) {
           throw new Error("Invalid data format received: data is not an object");
-        }
-
-        // If we successfully get purchase data but no items, fetch them separately
-        if ((!hasProperty(data, 'items') || !Array.isArray(data.items) || data.items.length === 0)) {
-          console.log("No items in purchase order data, fetching items separately...");
-          try {
-            const { data: itemsData, error: itemsError } = await supabase
-              .from('purchase_order_items')
-              .select(`
-                id, 
-                product_id, 
-                quantity, 
-                unit_price, 
-                selling_price, 
-                total_price,
-                product:product_id (
-                  id,
-                  name,
-                  reference
-                )
-              `)
-              .eq('purchase_order_id', orderId);
-
-            if (itemsError) {
-              console.error("Error fetching items separately:", itemsError);
-            } else if (itemsData) {
-              console.log(`Fetched ${itemsData.length} items separately:`, itemsData);
-              data.items = itemsData;
-            }
-          } catch (itemsError) {
-            console.error("Exception fetching items separately:", itemsError);
-          }
         }
         
         // Process the items with proper type checking
@@ -221,11 +190,7 @@ export function usePurchaseData(orderId?: string) {
         logistics_cost: purchase.logistics_cost,
         transit_cost: purchase.transit_cost,
         tax_rate: purchase.tax_rate,
-        paid_amount: purchase.paid_amount,
-        subtotal: purchase.subtotal, 
-        tax_amount: purchase.tax_amount,
-        total_ttc: purchase.total_ttc,
-        total_amount: purchase.total_amount
+        paid_amount: purchase.paid_amount
       });
       
       // Also ensure the orderItems are updated from purchase data if available
@@ -238,14 +203,12 @@ export function usePurchaseData(orderId?: string) {
 
   // Update a field in the form data
   const updateFormField = (field: keyof PurchaseOrder, value: any) => {
-    console.log(`Updating form field ${field} to:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return {
     purchase,
     formData,
-    setFormData, // Make setFormData available to parent components
     orderItems,
     setOrderItems,
     updateFormField,

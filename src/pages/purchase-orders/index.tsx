@@ -46,6 +46,8 @@ export default function PurchaseOrdersPage() {
 
   // After dialog close, refresh orders
   useEffect(() => {
+    // This will trigger a refresh when the dialog is closed
+    // to ensure we get the latest data
     const refreshAfterEdit = async () => {
       try {
         console.log("Refreshing orders after dialog interaction");
@@ -55,12 +57,12 @@ export default function PurchaseOrdersPage() {
       }
     };
     
-    // We need to refresh when the dialog closes (isDialogOpen changes from true to false)
+    // We call this on mount and when EditDialog or isDialogOpen changes
     if (!isDialogOpen) {
       console.log("Dialog is closed, refreshing orders");
       refreshAfterEdit();
     }
-  }, [isDialogOpen, refreshOrders]);
+  }, [refreshOrders, isDialogOpen]);
 
   // Filter purchase orders
   useEffect(() => {

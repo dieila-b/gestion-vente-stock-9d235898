@@ -36,34 +36,20 @@ export function useUpdatePurchaseOrder() {
 
         // Ensure updated_at is set
         validatedData.updated_at = new Date().toISOString();
-        
-        // Make sure numeric fields are properly formatted
-        ['subtotal', 'tax_amount', 'total_ttc', 'total_amount', 
-         'shipping_cost', 'transit_cost', 'logistics_cost', 'discount', 
-         'tax_rate', 'paid_amount'].forEach(field => {
-          if (validatedData[field] !== undefined) {
-            validatedData[field] = Number(validatedData[field]);
-          }
-        });
-        
-        // Log the final data being sent to the DB
-        console.log("Final data being sent to DB:", validatedData);
 
         // Execute the update
-        const { data: updateData, error } = await supabase
+        const { error } = await supabase
           .from('purchase_orders')
           .update(validatedData)
-          .eq('id', params.id)
-          .select();
+          .eq('id', params.id);
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
-        
-        console.log("Update DB response:", updateData);
 
-        // Fetch the updated record to return the complete data
+        // Rather than relying on the update returning data, always fetch the record directly
+        // This avoids the PGRST116 error when no rows are returned
         const { data: fetchedData, error: fetchError } = await supabase
           .from('purchase_orders')
           .select('*, supplier:supplier_id(*), warehouse:warehouse_id(*)')
@@ -97,9 +83,6 @@ export function useUpdatePurchaseOrder() {
       console.log("Update success! Invalidating queries for ID:", data.id);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
-      
-      // Add a success toast
-      toast.success("Bon de commande mis à jour avec succès");
     },
     onError: (error) => {
       console.error("Purchase order update error:", error);
