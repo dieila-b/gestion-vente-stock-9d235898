@@ -22,22 +22,31 @@ export function useApprovePurchaseOrder() {
         if (orderCheck.status === 'approved') {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
-          return constructPurchaseOrder({ ...orderCheck, delivery_note_created: true });
+          
+          // Make sure to include delivery_note_created in the constructed purchase order
+          return constructPurchaseOrder({ 
+            ...orderCheck, 
+            delivery_note_created: Boolean(orderCheck.delivery_note_created) 
+          });
         }
         
         // 2. Update purchase order status
         const updatedOrder = await updatePurchaseOrderToApproved(id);
+        console.log("Order updated to approved:", updatedOrder);
         
         // 3. Create delivery note
         const deliveryNote = await createDeliveryNote(updatedOrder);
+        console.log("Delivery note created:", deliveryNote?.id);
         
         if (deliveryNote) {
           // 4. Create delivery note items
           await createDeliveryNoteItems(deliveryNote.id, id);
+          console.log("Delivery note items created");
         }
         
         // 5. Mark delivery note as created
         await markDeliveryNoteCreated(id);
+        console.log("Order marked as having delivery note created");
         
         // 6. Refresh affected queries
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
@@ -45,9 +54,17 @@ export function useApprovePurchaseOrder() {
         
         toast.success("Bon de commande approuvé et bon de livraison créé");
         
-        return constructPurchaseOrder({ ...updatedOrder, delivery_note_created: true });
+        // Make sure we're returning with delivery_note_created set to true
+        const result = constructPurchaseOrder({ 
+          ...updatedOrder, 
+          delivery_note_created: true 
+        });
+        
+        console.log("Final return object:", result);
+        return result;
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
+        toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
         throw error;
       }
     }

@@ -48,8 +48,9 @@ export function constructPurchaseOrder(data: any): PurchaseOrder {
     warehouse_id: data.warehouse_id || undefined,
     supplier: supplier,
     items: data.items || [],
-    delivery_note_created: Boolean(data.delivery_note_created)
+    delivery_note_created: Boolean(data.delivery_note_created) // Ensure this is a boolean
   };
   
+  console.log("Constructed purchase order with delivery_note_created:", purchaseOrder.delivery_note_created);
   return purchaseOrder;
 }
