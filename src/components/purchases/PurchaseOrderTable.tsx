@@ -1,6 +1,6 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
@@ -10,7 +10,6 @@ import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDial
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
 import { LoadingState } from "./table/LoadingState";
 import { EmptyState } from "./table/EmptyState";
-import { PurchaseOrderActions } from "./PurchaseOrderActions";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -34,7 +33,18 @@ export function PurchaseOrderTable({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [localProcessing, setLocalProcessing] = useState(false);
+  
+  const isAnyOperationInProgress = Boolean(processingOrderId) || localProcessing || showDeleteDialog || showApproveDialog;
+
+  // Use a callback to handle operation completion
+  const completeOperation = useCallback(() => {
+    console.log("Operation completed, cleaning up state");
+    setLocalProcessing(false);
+    setSelectedOrderId(null);
+    setShowDeleteDialog(false);
+    setShowApproveDialog(false);
+  }, []);
 
   if (isLoading) {
     return <LoadingState />;
@@ -45,14 +55,20 @@ export function PurchaseOrderTable({
   }
 
   const handleApproveClick = (id: string) => {
-    if (isProcessing || processingOrderId) return;
+    if (isAnyOperationInProgress) {
+      console.log("Operation already in progress, ignoring click");
+      return;
+    }
     console.log("Showing approve dialog for order:", id);
     setSelectedOrderId(id);
     setShowApproveDialog(true);
   };
 
   const handleDeleteClick = (id: string) => {
-    if (isProcessing || processingOrderId) return;
+    if (isAnyOperationInProgress) {
+      console.log("Operation already in progress, ignoring click");
+      return;
+    }
     console.log("Showing delete dialog for order:", id);
     setSelectedOrderId(id);
     setShowDeleteDialog(true);
@@ -60,47 +76,33 @@ export function PurchaseOrderTable({
 
   const confirmApprove = async () => {
     console.log("Confirming approval for order:", selectedOrderId);
-    if (selectedOrderId && !isProcessing) {
-      try {
-        setIsProcessing(true);
-        console.log("Starting approval process");
-        await onApprove(selectedOrderId);
-        console.log("Approval completed");
-      } catch (error) {
-        console.error("Error in confirmApprove:", error);
-      } finally {
-        console.log("Cleaning up after approval");
-        setIsProcessing(false);
-        setSelectedOrderId(null);
-        setShowApproveDialog(false);
-      }
+    if (!selectedOrderId || localProcessing) return;
+    
+    try {
+      setLocalProcessing(true);
+      console.log("Starting approval process");
+      await onApprove(selectedOrderId);
+      console.log("Approval completed");
+    } catch (error) {
+      console.error("Error in confirmApprove:", error);
+    } finally {
+      completeOperation();
     }
   };
 
   const confirmDelete = async () => {
     console.log("Confirming deletion for order:", selectedOrderId);
-    if (selectedOrderId && !isProcessing) {
-      try {
-        setIsProcessing(true);
-        console.log("Starting deletion process");
-        await onDelete(selectedOrderId);
-        console.log("Deletion completed");
-      } catch (error) {
-        console.error("Error in confirmDelete:", error);
-      } finally {
-        console.log("Cleaning up after deletion");
-        setIsProcessing(false);
-        setSelectedOrderId(null);
-        setShowDeleteDialog(false);
-      }
-    }
-  };
-
-  const handleDialogClose = (setDialogState: React.Dispatch<React.SetStateAction<boolean>>) => {
-    if (!isProcessing) {
-      console.log("Closing dialog");
-      setDialogState(false);
-      setTimeout(() => setSelectedOrderId(null), 100);
+    if (!selectedOrderId || localProcessing) return;
+    
+    try {
+      setLocalProcessing(true);
+      console.log("Starting deletion process");
+      await onDelete(selectedOrderId);
+      console.log("Deletion completed");
+    } catch (error) {
+      console.error("Error in confirmDelete:", error);
+    } finally {
+      completeOperation();
     }
   };
 
@@ -147,7 +149,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleApproveClick(order.id)}
-                      disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
+                      disabled={isAnyOperationInProgress}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Approuver</span>
@@ -157,8 +159,12 @@ export function PurchaseOrderTable({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => onEdit(order.id)}
-                    disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
+                    onClick={() => {
+                      if (!isAnyOperationInProgress) {
+                        onEdit(order.id);
+                      }
+                    }}
+                    disabled={isAnyOperationInProgress}
                   >
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Modifier</span>
@@ -167,8 +173,12 @@ export function PurchaseOrderTable({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => onPrint(order)}
-                    disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
+                    onClick={() => {
+                      if (!isAnyOperationInProgress) {
+                        onPrint(order);
+                      }
+                    }}
+                    disabled={isAnyOperationInProgress}
                   >
                     <Printer className="h-4 w-4" />
                     <span className="sr-only">Imprimer</span>
@@ -179,7 +189,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       onClick={() => handleDeleteClick(order.id)}
-                      disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
+                      disabled={isAnyOperationInProgress}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Supprimer</span>
@@ -194,18 +204,28 @@ export function PurchaseOrderTable({
 
       <DeleteConfirmationDialog
         isOpen={showDeleteDialog}
-        isProcessing={isProcessing}
+        isProcessing={localProcessing || Boolean(processingOrderId)}
         onOpenChange={(open) => {
-          if (!open && !isProcessing) handleDialogClose(setShowDeleteDialog);
+          if (!localProcessing && !processingOrderId) {
+            setShowDeleteDialog(open);
+            if (!open) {
+              setTimeout(() => setSelectedOrderId(null), 100);
+            }
+          }
         }}
         onConfirm={confirmDelete}
       />
 
       <ApproveConfirmationDialog
         isOpen={showApproveDialog}
-        isProcessing={isProcessing}
+        isProcessing={localProcessing || Boolean(processingOrderId)}
         onOpenChange={(open) => {
-          if (!open && !isProcessing) handleDialogClose(setShowApproveDialog);
+          if (!localProcessing && !processingOrderId) {
+            setShowApproveDialog(open);
+            if (!open) {
+              setTimeout(() => setSelectedOrderId(null), 100);
+            }
+          }
         }}
         onConfirm={confirmApprove}
       />
