@@ -1,12 +1,14 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Pencil, Printer, Check, Trash2, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useState } from "react";
 import type { PurchaseOrder } from "@/types/purchase-order";
+import { PurchaseOrderActions } from "./PurchaseOrderActions";
+import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDialog";
+import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
+import { LoadingState } from "./table/LoadingState";
+import { EmptyState } from "./table/EmptyState";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -33,47 +35,36 @@ export function PurchaseOrderTable({
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="text-center py-4">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-        <p>Chargement des bons de commande...</p>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!orders || orders.length === 0) {
-    return (
-      <div className="text-center py-4">
-        Aucun bon de commande trouvé
-      </div>
-    );
+    return <EmptyState />;
   }
 
   const handleApproveClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (processingOrderId || isProcessing) return;
-    
-    setSelectedOrderId(id);
-    setShowApproveDialog(true);
+    if (!isProcessing) {
+      setSelectedOrderId(id);
+      setShowApproveDialog(true);
+    }
   };
 
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (processingOrderId || isProcessing) return;
-    
-    setSelectedOrderId(id);
-    setShowDeleteDialog(true);
+    if (!isProcessing) {
+      setSelectedOrderId(id);
+      setShowDeleteDialog(true);
+    }
   };
 
   const confirmApprove = async () => {
-    if (selectedOrderId && !processingOrderId && !isProcessing) {
+    if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
         await onApprove(selectedOrderId);
-      } catch (error) {
-        console.error("Error in confirmApprove:", error);
       } finally {
         setShowApproveDialog(false);
         setSelectedOrderId(null);
@@ -83,25 +74,16 @@ export function PurchaseOrderTable({
   };
 
   const confirmDelete = async () => {
-    if (selectedOrderId && !processingOrderId && !isProcessing) {
+    if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
         await onDelete(selectedOrderId);
-      } catch (error) {
-        console.error("Error in confirmDelete:", error);
       } finally {
         setShowDeleteDialog(false);
         setSelectedOrderId(null);
         setIsProcessing(false);
       }
     }
-  };
-
-  const handleEdit = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (processingOrderId || isProcessing) return;
-    onEdit(id);
   };
 
   return (
@@ -140,53 +122,15 @@ export function PurchaseOrderTable({
               </TableCell>
               <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
               <TableCell>
-                <div className="flex justify-end gap-2">
-                  {order.status !== 'approved' && (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={(e) => handleEdit(order.id, e)}
-                        disabled={processingOrderId === order.id || isProcessing}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={(e) => handleApproveClick(order.id, e)}
-                        disabled={processingOrderId === order.id || isProcessing}
-                        className="text-green-600"
-                      >
-                        {processingOrderId === order.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={(e) => handleDeleteClick(order.id, e)}
-                        disabled={processingOrderId === order.id || isProcessing}
-                        className="text-red-600"
-                      >
-                        {processingOrderId === order.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => onPrint(order)}
-                    disabled={processingOrderId === order.id || isProcessing}
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
+                <div className="flex justify-end">
+                  <PurchaseOrderActions
+                    order={order}
+                    processingId={processingOrderId}
+                    onApprove={handleApproveClick}
+                    onEdit={onEdit}
+                    onDelete={handleDeleteClick}
+                    onPrint={onPrint}
+                  />
                 </div>
               </TableCell>
             </TableRow>
@@ -194,63 +138,19 @@ export function PurchaseOrderTable({
         </TableBody>
       </Table>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce bon de commande ? Cette action ne peut pas être annulée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Suppression...
-                </>
-              ) : (
-                "Supprimer"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        isProcessing={isProcessing}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+      />
 
-      {/* Approve Confirmation Dialog */}
-      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer l'approbation</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmApprove} 
-              className="bg-green-600 hover:bg-green-700"
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Approbation...
-                </>
-              ) : (
-                "Approuver"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ApproveConfirmationDialog
+        isOpen={showApproveDialog}
+        isProcessing={isProcessing}
+        onOpenChange={setShowApproveDialog}
+        onConfirm={confirmApprove}
+      />
     </>
   );
 }
