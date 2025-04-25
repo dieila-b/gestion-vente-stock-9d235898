@@ -14,7 +14,7 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     const { data: order, error: orderError } = await db.table('purchase_orders')
       .select('status')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     
     if (orderError) {
       console.error("Error fetching purchase order:", orderError);
@@ -57,6 +57,6 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error("Error deleting purchase order:", error);
-    throw error; 
+    throw error;
   }
 }

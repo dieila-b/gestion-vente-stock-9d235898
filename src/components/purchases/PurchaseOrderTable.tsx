@@ -44,45 +44,41 @@ export function PurchaseOrderTable({
   }
 
   const handleApproveClick = (id: string) => {
-    if (!isProcessing) {
-      setSelectedOrderId(id);
-      setShowApproveDialog(true);
-    }
+    setSelectedOrderId(id);
+    setShowApproveDialog(true);
   };
 
   const handleDeleteClick = (id: string) => {
-    if (!isProcessing) {
-      setSelectedOrderId(id);
-      setShowDeleteDialog(true);
-    }
+    setSelectedOrderId(id);
+    setShowDeleteDialog(true);
   };
 
   const confirmApprove = async () => {
-    if (selectedOrderId && !isProcessing) {
+    if (selectedOrderId) {
       try {
         setIsProcessing(true);
         await onApprove(selectedOrderId);
       } catch (error) {
         console.error("Error in confirmApprove:", error);
       } finally {
-        setShowApproveDialog(false);
-        setSelectedOrderId(null);
         setIsProcessing(false);
+        setSelectedOrderId(null);
+        setShowApproveDialog(false);
       }
     }
   };
 
   const confirmDelete = async () => {
-    if (selectedOrderId && !isProcessing) {
+    if (selectedOrderId) {
       try {
         setIsProcessing(true);
         await onDelete(selectedOrderId);
       } catch (error) {
         console.error("Error in confirmDelete:", error);
       } finally {
-        setShowDeleteDialog(false);
-        setSelectedOrderId(null);
         setIsProcessing(false);
+        setSelectedOrderId(null);
+        setShowDeleteDialog(false);
       }
     }
   };
@@ -178,14 +174,18 @@ export function PurchaseOrderTable({
       <DeleteConfirmationDialog
         isOpen={showDeleteDialog}
         isProcessing={isProcessing}
-        onOpenChange={setShowDeleteDialog}
+        onOpenChange={(open) => {
+          if (!isProcessing) setShowDeleteDialog(open);
+        }}
         onConfirm={confirmDelete}
       />
 
       <ApproveConfirmationDialog
         isOpen={showApproveDialog}
         isProcessing={isProcessing}
-        onOpenChange={setShowApproveDialog}
+        onOpenChange={(open) => {
+          if (!isProcessing) setShowApproveDialog(open);
+        }}
         onConfirm={confirmApprove}
       />
     </>

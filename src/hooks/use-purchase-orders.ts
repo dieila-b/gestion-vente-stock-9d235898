@@ -58,14 +58,15 @@ export function usePurchaseOrders() {
       await approveOrderFn(id);
       
       console.log("Approval completed successfully for:", id);
-      await refreshOrders();
-      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      
       toast.success("Bon de commande approuvé avec succès");
+      
+      // Refresh data after successful operation
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      await refreshOrders();
     } catch (error: any) {
       console.error("Error in handleApprove:", error);
       toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
-      throw error; 
     } finally {
       setProcessingOrderId(null);
     }
@@ -78,7 +79,6 @@ export function usePurchaseOrders() {
     } catch (error) {
       console.error("Error in handleEditWrapper:", error);
       toast.error("Erreur lors de l'ouverture du formulaire d'édition");
-      throw error;
     } finally {
       setProcessingOrderId(null);
     }
@@ -105,7 +105,6 @@ export function usePurchaseOrders() {
     } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
       toast.error(`Erreur lors de la suppression: ${error?.message || "Erreur inconnue"}`);
-      throw error;
     } finally {
       setProcessingOrderId(null);
     }
