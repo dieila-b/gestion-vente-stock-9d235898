@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -54,11 +53,18 @@ export function PurchaseOrderActions({
     }
   };
   
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isProcessing && confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-      onDelete(order.id);
+    if (isProcessing) return;
+    
+    try {
+      if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
+        console.log("Confirming delete for order:", order.id);
+        await onDelete(order.id);
+      }
+    } catch (error) {
+      console.error("Error in PurchaseOrderActions handleDelete:", error);
     }
   };
   

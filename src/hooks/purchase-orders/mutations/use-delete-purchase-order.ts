@@ -8,7 +8,6 @@ export function useDeletePurchaseOrder() {
 
   const mutation = useMutation({
     mutationFn: async (id: string) => {
-      // Nous ne faisons pas la confirmation ici, elle sera gérée au niveau supérieur
       return deletePurchaseOrder(id);
     },
     onSuccess: () => {
@@ -21,6 +20,5 @@ export function useDeletePurchaseOrder() {
     }
   });
 
-  // Retournons la fonction mutateAsync au lieu de mutate pour pouvoir attendre la réponse
   return mutation.mutateAsync;
 }

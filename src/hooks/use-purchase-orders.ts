@@ -1,4 +1,3 @@
-
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -83,11 +82,6 @@ export function usePurchaseOrders() {
   const handleDeleteWrapper = async (id: string): Promise<void> => {
     if (!id) {
       toast.error("ID du bon de commande invalide");
-      return;
-    }
-
-    // Demander confirmation avant de supprimer
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande?")) {
       return;
     }
     

@@ -5,6 +5,10 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
   console.log("Attempting to delete purchase order:", id);
 
   try {
+    if (!id) {
+      throw new Error("ID du bon de commande invalide");
+    }
+
     // Check if the purchase order exists and is not approved
     const { data: order, error: orderError } = await db.table('purchase_orders')
       .select('status')
