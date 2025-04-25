@@ -43,14 +43,14 @@ export function PurchaseOrderTable({
     return <EmptyState />;
   }
 
-  const handleApproveClick = async (id: string) => {
+  const handleApproveClick = (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowApproveDialog(true);
     }
   };
 
-  const handleDeleteClick = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowDeleteDialog(true);
@@ -61,6 +61,7 @@ export function PurchaseOrderTable({
     if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
+        // Appel direct à la fonction d'approbation passée en prop
         await onApprove(selectedOrderId);
       } finally {
         setShowApproveDialog(false);
@@ -74,6 +75,7 @@ export function PurchaseOrderTable({
     if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
+        // Appel direct à la fonction de suppression passée en prop
         await onDelete(selectedOrderId);
       } finally {
         setShowDeleteDialog(false);
