@@ -30,6 +30,7 @@ export function PurchaseOrderTable({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (isLoading) {
     return (
@@ -51,7 +52,7 @@ export function PurchaseOrderTable({
   const handleApproveClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
+    if (processingOrderId || isProcessing) return;
     
     setSelectedOrderId(id);
     setShowApproveDialog(true);
@@ -60,34 +61,38 @@ export function PurchaseOrderTable({
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
+    if (processingOrderId || isProcessing) return;
     
     setSelectedOrderId(id);
     setShowDeleteDialog(true);
   };
 
   const confirmApprove = async () => {
-    if (selectedOrderId && !processingOrderId) {
+    if (selectedOrderId && !processingOrderId && !isProcessing) {
       try {
+        setIsProcessing(true);
         await onApprove(selectedOrderId);
       } catch (error) {
         console.error("Error in confirmApprove:", error);
       } finally {
         setShowApproveDialog(false);
         setSelectedOrderId(null);
+        setIsProcessing(false);
       }
     }
   };
 
   const confirmDelete = async () => {
-    if (selectedOrderId && !processingOrderId) {
+    if (selectedOrderId && !processingOrderId && !isProcessing) {
       try {
+        setIsProcessing(true);
         await onDelete(selectedOrderId);
       } catch (error) {
         console.error("Error in confirmDelete:", error);
       } finally {
         setShowDeleteDialog(false);
         setSelectedOrderId(null);
+        setIsProcessing(false);
       }
     }
   };
@@ -95,7 +100,7 @@ export function PurchaseOrderTable({
   const handleEdit = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
+    if (processingOrderId || isProcessing) return;
     onEdit(id);
   };
 
@@ -142,7 +147,7 @@ export function PurchaseOrderTable({
                         variant="outline" 
                         size="icon"
                         onClick={(e) => handleEdit(order.id, e)}
-                        disabled={processingOrderId === order.id}
+                        disabled={processingOrderId === order.id || isProcessing}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -150,7 +155,7 @@ export function PurchaseOrderTable({
                         variant="outline" 
                         size="icon"
                         onClick={(e) => handleApproveClick(order.id, e)}
-                        disabled={processingOrderId === order.id}
+                        disabled={processingOrderId === order.id || isProcessing}
                         className="text-green-600"
                       >
                         {processingOrderId === order.id ? (
@@ -163,7 +168,7 @@ export function PurchaseOrderTable({
                         variant="outline" 
                         size="icon"
                         onClick={(e) => handleDeleteClick(order.id, e)}
-                        disabled={processingOrderId === order.id}
+                        disabled={processingOrderId === order.id || isProcessing}
                         className="text-red-600"
                       >
                         {processingOrderId === order.id ? (
@@ -178,7 +183,7 @@ export function PurchaseOrderTable({
                     variant="outline" 
                     size="icon"
                     onClick={() => onPrint(order)}
-                    disabled={processingOrderId === order.id}
+                    disabled={processingOrderId === order.id || isProcessing}
                   >
                     <Printer className="h-4 w-4" />
                   </Button>
@@ -199,9 +204,13 @@ export function PurchaseOrderTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              {processingOrderId ? (
+            <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Suppression...
@@ -224,9 +233,13 @@ export function PurchaseOrderTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmApprove} className="bg-green-600 hover:bg-green-700">
-              {processingOrderId ? (
+            <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmApprove} 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Approbation...

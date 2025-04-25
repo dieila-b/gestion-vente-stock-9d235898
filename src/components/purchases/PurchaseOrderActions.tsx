@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -30,19 +29,38 @@ export function PurchaseOrderActions({
   const isProcessing = processingId === order.id;
   const canApprove = order.status !== 'approved';
 
-  const handleApprove = async (e: React.MouseEvent) => {
+  const handleApprove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (isProcessing) return;
-    
-    try {
-      await onApprove(order.id);
-    } catch (error) {
-      console.error("Error in approve handler:", error);
+    if (!isProcessing) {
+      onApprove(order.id);
     }
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing) {
+      onEdit(order.id);
+    }
+  };
+  
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing) {
+      onDelete(order.id);
+    }
+  };
+  
+  const handlePrint = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isProcessing) {
+      onPrint(order);
+    }
+  };
+  
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -73,7 +91,7 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={() => onEdit(order.id)}
+            onClick={handleEdit}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -81,7 +99,7 @@ export function PurchaseOrderActions({
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => onPrint(order)}
+            onClick={handlePrint}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -90,7 +108,7 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={() => onDelete(order.id)}
+              onClick={handleDelete}
               disabled={isProcessing}
               className="text-red-600 cursor-pointer"
             >

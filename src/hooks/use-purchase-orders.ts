@@ -62,7 +62,8 @@ export function usePurchaseOrders() {
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
     } catch (error: any) {
       console.error("Error in handleApprove:", error);
-      toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
+      toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
+      throw error; // Rethrow to be handled by the component
     } finally {
       setProcessingOrderId(null);
     }
@@ -75,6 +76,7 @@ export function usePurchaseOrders() {
     } catch (error) {
       console.error("Error in handleEditWrapper:", error);
       toast.error("Erreur lors de l'ouverture du formulaire d'édition");
+      throw error; // Rethrow to be handled by the component
     } finally {
       setProcessingOrderId(null);
     }
@@ -90,18 +92,16 @@ export function usePurchaseOrders() {
       console.log("Starting delete process for order:", id);
       setProcessingOrderId(id);
       
-      const success = await handleDelete(id);
+      await handleDelete(id);
+      console.log("Delete completed successfully for:", id);
       
-      if (success) {
-        console.log("Delete completed for order:", id);
-        await refreshOrders();
-      } else {
-        console.error("Delete failed for order:", id);
-        toast.error("Échec de la suppression");
-      }
+      // Refresh the order list after successful deletion
+      await refreshOrders();
+      
     } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
-      toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);
+      toast.error(`Erreur lors de la suppression: ${error?.message || "Erreur inconnue"}`);
+      throw error; // Rethrow to be handled by the component
     } finally {
       setProcessingOrderId(null);
     }

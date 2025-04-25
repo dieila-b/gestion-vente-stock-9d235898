@@ -18,15 +18,5 @@ export function useDeletePurchaseOrder() {
     }
   });
 
-  const handleDelete = async (id: string): Promise<boolean> => {
-    try {
-      await mutation.mutateAsync(id);
-      return true;
-    } catch (error) {
-      console.error("Error in handleDelete:", error);
-      return false;
-    }
-  };
-
-  return handleDelete;
+  return mutation.mutateAsync;
 }
