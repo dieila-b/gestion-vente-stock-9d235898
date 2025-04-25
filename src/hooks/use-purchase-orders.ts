@@ -1,3 +1,4 @@
+
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -90,10 +91,9 @@ export function usePurchaseOrders() {
       setProcessingOrderId(id);
       
       await handleDelete(id);
-      console.log("Delete completed for order:", id);
       
+      console.log("Delete completed for order:", id);
       await refreshOrders();
-      toast.success("Bon de commande supprimé avec succès");
     } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
       toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);

@@ -7,9 +7,7 @@ export function useDeletePurchaseOrder() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (id: string) => {
-      return deletePurchaseOrder(id);
-    },
+    mutationFn: deletePurchaseOrder,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       toast.success("Bon de commande supprimé avec succès");
@@ -20,5 +18,5 @@ export function useDeletePurchaseOrder() {
     }
   });
 
-  return mutation.mutateAsync;
+  return mutation.mutate;
 }
