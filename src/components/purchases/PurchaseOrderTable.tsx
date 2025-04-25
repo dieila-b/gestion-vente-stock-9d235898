@@ -61,8 +61,9 @@ export function PurchaseOrderTable({
     if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
-        // Appel direct à la fonction d'approbation passée en prop
         await onApprove(selectedOrderId);
+      } catch (error) {
+        console.error("Error in confirmApprove:", error);
       } finally {
         setShowApproveDialog(false);
         setSelectedOrderId(null);
@@ -75,8 +76,9 @@ export function PurchaseOrderTable({
     if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
-        // Appel direct à la fonction de suppression passée en prop
         await onDelete(selectedOrderId);
+      } catch (error) {
+        console.error("Error in confirmDelete:", error);
       } finally {
         setShowDeleteDialog(false);
         setSelectedOrderId(null);

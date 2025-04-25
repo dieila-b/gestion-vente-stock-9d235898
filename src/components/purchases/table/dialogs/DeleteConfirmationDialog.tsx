@@ -27,7 +27,10 @@ export function DeleteConfirmationDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm} 
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
             className="bg-red-600 hover:bg-red-700"
             disabled={isProcessing}
           >

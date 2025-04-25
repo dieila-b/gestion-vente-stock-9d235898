@@ -57,6 +57,6 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error("Error deleting purchase order:", error);
-    throw error; // Propager l'erreur pour qu'elle soit gérée par le gestionnaire d'erreur de la mutation
+    throw error; 
   }
 }

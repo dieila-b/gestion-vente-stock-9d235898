@@ -27,7 +27,10 @@ export function ApproveConfirmationDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm} 
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
             className="bg-green-600 hover:bg-green-700"
             disabled={isProcessing}
           >
