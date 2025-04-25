@@ -18,12 +18,12 @@ export function DeleteConfirmationDialog({
 }: DeleteConfirmationDialogProps) {
   const [internalProcessing, setInternalProcessing] = useState(false);
   
-  const handleConfirm = async (e: React.MouseEvent) => {
+  const handleConfirm = async () => {
     try {
-      e.preventDefault();
-      e.stopPropagation();
+      // Prevent multiple clicks
+      if (internalProcessing || isProcessing) return;
       
-      // Set local processing state to prevent multiple clicks
+      // Set local processing state
       setInternalProcessing(true);
       
       // Call the provided confirmation handler

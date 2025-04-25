@@ -1,6 +1,6 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
@@ -35,7 +35,25 @@ export function PurchaseOrderTable({
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [localProcessing, setLocalProcessing] = useState(false);
   
-  const isAnyOperationInProgress = Boolean(processingOrderId) || localProcessing || showDeleteDialog || showApproveDialog;
+  useEffect(() => {
+    console.log("PurchaseOrderTable state:", {
+      showDeleteDialog,
+      showApproveDialog,
+      selectedOrderId,
+      localProcessing,
+      processingOrderId
+    });
+  }, [showDeleteDialog, showApproveDialog, selectedOrderId, localProcessing, processingOrderId]);
+  
+  // Reset internal state when external processing completes
+  useEffect(() => {
+    if (!processingOrderId && localProcessing) {
+      console.log("External processing completed, resetting local state");
+      setLocalProcessing(false);
+    }
+  }, [processingOrderId, localProcessing]);
+  
+  const isAnyOperationInProgress = Boolean(processingOrderId) || localProcessing;
 
   // Use a callback to handle operation completion
   const completeOperation = useCallback(() => {
@@ -76,12 +94,22 @@ export function PurchaseOrderTable({
 
   const confirmApprove = async () => {
     console.log("Confirming approval for order:", selectedOrderId);
-    if (!selectedOrderId || localProcessing) return;
+    if (!selectedOrderId || isAnyOperationInProgress) {
+      console.log("Cannot confirm approval - invalid state:", { 
+        selectedOrderId, 
+        isAnyOperationInProgress 
+      });
+      return;
+    }
     
     try {
       setLocalProcessing(true);
       console.log("Starting approval process");
-      await onApprove(selectedOrderId);
+      const targetId = selectedOrderId;
+      // Close the dialog first
+      setShowApproveDialog(false);
+      // Then perform the operation
+      await onApprove(targetId);
       console.log("Approval completed");
     } catch (error) {
       console.error("Error in confirmApprove:", error);
@@ -92,12 +120,22 @@ export function PurchaseOrderTable({
 
   const confirmDelete = async () => {
     console.log("Confirming deletion for order:", selectedOrderId);
-    if (!selectedOrderId || localProcessing) return;
+    if (!selectedOrderId || isAnyOperationInProgress) {
+      console.log("Cannot confirm deletion - invalid state:", { 
+        selectedOrderId, 
+        isAnyOperationInProgress 
+      });
+      return;
+    }
     
     try {
       setLocalProcessing(true);
       console.log("Starting deletion process");
-      await onDelete(selectedOrderId);
+      const targetId = selectedOrderId;
+      // Close the dialog first
+      setShowDeleteDialog(false);
+      // Then perform the operation
+      await onDelete(targetId);
       console.log("Deletion completed");
     } catch (error) {
       console.error("Error in confirmDelete:", error);
@@ -149,7 +187,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleApproveClick(order.id)}
-                      disabled={isAnyOperationInProgress}
+                      disabled={isAnyOperationInProgress || processingOrderId === order.id}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Approuver</span>
@@ -164,7 +202,7 @@ export function PurchaseOrderTable({
                         onEdit(order.id);
                       }
                     }}
-                    disabled={isAnyOperationInProgress}
+                    disabled={isAnyOperationInProgress || processingOrderId === order.id}
                   >
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Modifier</span>
@@ -178,7 +216,7 @@ export function PurchaseOrderTable({
                         onPrint(order);
                       }
                     }}
-                    disabled={isAnyOperationInProgress}
+                    disabled={isAnyOperationInProgress || processingOrderId === order.id}
                   >
                     <Printer className="h-4 w-4" />
                     <span className="sr-only">Imprimer</span>
@@ -189,7 +227,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       onClick={() => handleDeleteClick(order.id)}
-                      disabled={isAnyOperationInProgress}
+                      disabled={isAnyOperationInProgress || processingOrderId === order.id}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Supprimer</span>
