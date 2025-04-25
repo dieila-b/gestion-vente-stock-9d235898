@@ -6,6 +6,7 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
 
   try {
     if (!id) {
+      console.error("Invalid purchase order ID:", id);
       throw new Error("ID du bon de commande invalide");
     }
 
@@ -21,10 +22,12 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     }
 
     if (!order) {
+      console.error("Purchase order not found:", id);
       throw new Error("Bon de commande introuvable");
     }
 
     if (order.status === 'approved') {
+      console.error("Cannot delete approved purchase order:", id);
       throw new Error("Impossible de supprimer un bon de commande approuvé");
     }
 
@@ -54,6 +57,6 @@ export async function deletePurchaseOrder(id: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error("Error deleting purchase order:", error);
-    throw new Error(`Erreur lors de la suppression: ${error.message}`);
+    throw new Error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);
   }
 }

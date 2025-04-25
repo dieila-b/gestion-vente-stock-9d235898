@@ -91,9 +91,9 @@ export function usePurchaseOrders() {
       setProcessingOrderId(id);
       
       await handleDelete(id);
-      await refreshOrders();
       
       console.log("Delete completed for order:", id);
+      await refreshOrders();
     } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
       toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);

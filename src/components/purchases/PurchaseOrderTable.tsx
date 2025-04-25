@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Printer, Check, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useState } from "react";
 import type { PurchaseOrder } from "@/types/purchase-order";
 
 interface PurchaseOrderTableProps {
@@ -25,6 +27,10 @@ export function PurchaseOrderTable({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
   if (isLoading) {
     return (
       <div className="text-center py-4">
@@ -41,21 +47,31 @@ export function PurchaseOrderTable({
     );
   }
 
-  const handleApprove = async (id: string, e: React.MouseEvent) => {
+  const handleApproveClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-      await onApprove(id);
+    setSelectedOrderId(id);
+    setShowApproveDialog(true);
+  };
+
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedOrderId(id);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmApprove = async () => {
+    if (selectedOrderId) {
+      await onApprove(selectedOrderId);
+      setShowApproveDialog(false);
     }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-      await onDelete(id);
+  const confirmDelete = async () => {
+    if (selectedOrderId) {
+      await onDelete(selectedOrderId);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -66,92 +82,130 @@ export function PurchaseOrderTable({
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>N° Commande</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Fournisseur</TableHead>
-          <TableHead>Articles</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Montant</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {orders.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell>{order.order_number}</TableCell>
-            <TableCell>
-              {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
-            </TableCell>
-            <TableCell>{order.supplier?.name}</TableCell>
-            <TableCell>{order.items?.length || 0}</TableCell>
-            <TableCell>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                order.status === 'approved' ? 'bg-green-100 text-green-800' :
-                order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                'bg-yellow-100 text-yellow-800'
-              }`}>
-                {order.status === 'approved' ? 'Approuvé' :
-                 order.status === 'draft' ? 'Brouillon' :
-                 'En attente'}
-              </span>
-            </TableCell>
-            <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
-            <TableCell>
-              <div className="flex justify-end gap-2">
-                {order.status !== 'approved' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={(e) => handleEdit(order.id, e)}
-                      disabled={processingOrderId === order.id}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={(e) => handleApprove(order.id, e)}
-                      disabled={processingOrderId === order.id}
-                      className="text-green-600"
-                    >
-                      {processingOrderId === order.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={(e) => handleDelete(order.id, e)}
-                      disabled={processingOrderId === order.id}
-                      className="text-red-600"
-                    >
-                      {processingOrderId === order.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => onPrint(order)}
-                  disabled={processingOrderId === order.id}
-                >
-                  <Printer className="h-4 w-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>N° Commande</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead>Articles</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead>Montant</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell>{order.order_number}</TableCell>
+              <TableCell>
+                {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+              </TableCell>
+              <TableCell>{order.supplier?.name}</TableCell>
+              <TableCell>{order.items?.length || 0}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  order.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {order.status === 'approved' ? 'Approuvé' :
+                   order.status === 'draft' ? 'Brouillon' :
+                   'En attente'}
+                </span>
+              </TableCell>
+              <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-2">
+                  {order.status !== 'approved' && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={(e) => handleEdit(order.id, e)}
+                        disabled={processingOrderId === order.id}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={(e) => handleApproveClick(order.id, e)}
+                        disabled={processingOrderId === order.id}
+                        className="text-green-600"
+                      >
+                        {processingOrderId === order.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={(e) => handleDeleteClick(order.id, e)}
+                        disabled={processingOrderId === order.id}
+                        className="text-red-600"
+                      >
+                        {processingOrderId === order.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => onPrint(order)}
+                    disabled={processingOrderId === order.id}
+                  >
+                    <Printer className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce bon de commande ? Cette action ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer l'approbation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmApprove} className="bg-green-600 hover:bg-green-700">
+              Approuver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
