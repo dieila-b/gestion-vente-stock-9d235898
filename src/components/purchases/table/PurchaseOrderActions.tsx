@@ -37,7 +37,6 @@ export function PurchaseOrderActions({
     
     try {
       if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-        console.log("Confirming approval for order:", order.id);
         await onApprove(order.id);
       }
     } catch (error) {
@@ -60,7 +59,6 @@ export function PurchaseOrderActions({
     
     try {
       if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-        console.log("Confirming delete for order:", order.id);
         await onDelete(order.id);
       }
     } catch (error) {

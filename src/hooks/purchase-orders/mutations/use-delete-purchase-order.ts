@@ -18,8 +18,5 @@ export function useDeletePurchaseOrder() {
     }
   });
 
-  // Return a function that returns a promise
-  return (id: string) => {
-    return mutation.mutateAsync(id);
-  };
+  return mutation.mutateAsync;
 }

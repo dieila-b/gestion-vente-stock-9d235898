@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Printer, Check, Trash2 } from "lucide-react";
+import { Pencil, Printer, Check, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
@@ -41,10 +41,28 @@ export function PurchaseOrderTable({
     );
   }
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
       await onApprove(id);
     }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
+      await onDelete(id);
+    }
+  };
+
+  const handleEdit = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(id);
   };
 
   return (
@@ -88,7 +106,7 @@ export function PurchaseOrderTable({
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => onEdit(order.id)}
+                      onClick={(e) => handleEdit(order.id, e)}
                       disabled={processingOrderId === order.id}
                     >
                       <Pencil className="h-4 w-4" />
@@ -96,20 +114,28 @@ export function PurchaseOrderTable({
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => handleApprove(order.id)}
+                      onClick={(e) => handleApprove(order.id, e)}
                       disabled={processingOrderId === order.id}
                       className="text-green-600"
                     >
-                      <Check className="h-4 w-4" />
+                      {processingOrderId === order.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => onDelete(order.id)}
+                      onClick={(e) => handleDelete(order.id, e)}
                       disabled={processingOrderId === order.id}
                       className="text-red-600"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {processingOrderId === order.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </>
                 )}
