@@ -34,7 +34,8 @@ export function PurchaseOrderTable({
   if (isLoading) {
     return (
       <div className="text-center py-4">
-        Chargement des bons de commande...
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+        <p>Chargement des bons de commande...</p>
       </div>
     );
   }
@@ -50,6 +51,8 @@ export function PurchaseOrderTable({
   const handleApproveClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
+    
     setSelectedOrderId(id);
     setShowApproveDialog(true);
   };
@@ -57,27 +60,42 @@ export function PurchaseOrderTable({
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
+    
     setSelectedOrderId(id);
     setShowDeleteDialog(true);
   };
 
   const confirmApprove = async () => {
-    if (selectedOrderId) {
-      await onApprove(selectedOrderId);
-      setShowApproveDialog(false);
+    if (selectedOrderId && !processingOrderId) {
+      try {
+        await onApprove(selectedOrderId);
+      } catch (error) {
+        console.error("Error in confirmApprove:", error);
+      } finally {
+        setShowApproveDialog(false);
+        setSelectedOrderId(null);
+      }
     }
   };
 
   const confirmDelete = async () => {
-    if (selectedOrderId) {
-      await onDelete(selectedOrderId);
-      setShowDeleteDialog(false);
+    if (selectedOrderId && !processingOrderId) {
+      try {
+        await onDelete(selectedOrderId);
+      } catch (error) {
+        console.error("Error in confirmDelete:", error);
+      } finally {
+        setShowDeleteDialog(false);
+        setSelectedOrderId(null);
+      }
     }
   };
 
   const handleEdit = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (processingOrderId) return; // Ne rien faire si on est déjà en cours de traitement
     onEdit(id);
   };
 
@@ -183,7 +201,14 @@ export function PurchaseOrderTable({
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Supprimer
+              {processingOrderId ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                "Supprimer"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -201,7 +226,14 @@ export function PurchaseOrderTable({
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={confirmApprove} className="bg-green-600 hover:bg-green-700">
-              Approuver
+              {processingOrderId ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Approbation...
+                </>
+              ) : (
+                "Approuver"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

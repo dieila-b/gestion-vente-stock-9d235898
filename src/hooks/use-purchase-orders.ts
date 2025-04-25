@@ -10,7 +10,7 @@ import { useState } from "react";
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleDelete, handleCreate } = usePurchaseOrderMutations();
+  const { handleDelete, handleCreate, refreshPurchaseOrders } = usePurchaseOrderMutations();
   const approveOrderFn = useApprovePurchaseOrder();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
@@ -90,10 +90,15 @@ export function usePurchaseOrders() {
       console.log("Starting delete process for order:", id);
       setProcessingOrderId(id);
       
-      await handleDelete(id);
+      const success = await handleDelete(id);
       
-      console.log("Delete completed for order:", id);
-      await refreshOrders();
+      if (success) {
+        console.log("Delete completed for order:", id);
+        await refreshOrders();
+      } else {
+        console.error("Delete failed for order:", id);
+        toast.error("Échec de la suppression");
+      }
     } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
       toast.error(`Erreur lors de la suppression: ${error.message || "Erreur inconnue"}`);

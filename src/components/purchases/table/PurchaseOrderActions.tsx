@@ -29,18 +29,11 @@ export function PurchaseOrderActions({
   const isProcessing = processingId === order.id;
   const canApprove = order.status !== 'approved';
 
-  const handleApprove = async (e: React.MouseEvent) => {
+  const handleApprove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (isProcessing) return;
-    
-    try {
-      if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-        await onApprove(order.id);
-      }
-    } catch (error) {
-      console.error("Error in PurchaseOrderActions handleApprove:", error);
+    if (!isProcessing) {
+      onApprove(order.id);
     }
   };
 
@@ -52,17 +45,11 @@ export function PurchaseOrderActions({
     }
   };
   
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isProcessing) return;
-    
-    try {
-      if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-        await onDelete(order.id);
-      }
-    } catch (error) {
-      console.error("Error in PurchaseOrderActions handleDelete:", error);
+    if (!isProcessing) {
+      onDelete(order.id);
     }
   };
   

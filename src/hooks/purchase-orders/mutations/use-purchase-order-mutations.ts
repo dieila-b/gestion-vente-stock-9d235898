@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export const usePurchaseOrderMutations = () => {
   const queryClient = useQueryClient();
-  const { handleDelete, isDeleting } = useDeletePurchaseOrder();
+  const handleDelete = useDeletePurchaseOrder();
   const handleEdit = useEditPurchaseOrder();
   const handleUpdate = useUpdatePurchaseOrder();
   const handleApprove = useApprovePurchaseOrder();
@@ -23,7 +23,6 @@ export const usePurchaseOrderMutations = () => {
   return {
     handleApprove,
     handleDelete,
-    isDeleting,
     handleEdit,
     handleUpdate,
     handleCreate,
