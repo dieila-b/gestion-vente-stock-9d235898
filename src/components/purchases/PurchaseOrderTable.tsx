@@ -10,6 +10,7 @@ import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDial
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
 import { LoadingState } from "./table/LoadingState";
 import { EmptyState } from "./table/EmptyState";
+import { PurchaseOrderActions } from "./PurchaseOrderActions";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -44,21 +45,31 @@ export function PurchaseOrderTable({
   }
 
   const handleApproveClick = (id: string) => {
+    if (isProcessing || processingOrderId) return;
+    console.log("Showing approve dialog for order:", id);
     setSelectedOrderId(id);
     setShowApproveDialog(true);
   };
 
   const handleDeleteClick = (id: string) => {
+    if (isProcessing || processingOrderId) return;
+    console.log("Showing delete dialog for order:", id);
     setSelectedOrderId(id);
     setShowDeleteDialog(true);
   };
 
   const confirmApprove = async () => {
-    if (selectedOrderId) {
+    console.log("Confirming approval for order:", selectedOrderId);
+    if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
+        console.log("Starting approval process");
         await onApprove(selectedOrderId);
+        console.log("Approval completed");
+      } catch (error) {
+        console.error("Error in confirmApprove:", error);
       } finally {
+        console.log("Cleaning up after approval");
         setIsProcessing(false);
         setSelectedOrderId(null);
         setShowApproveDialog(false);
@@ -67,15 +78,29 @@ export function PurchaseOrderTable({
   };
 
   const confirmDelete = async () => {
-    if (selectedOrderId) {
+    console.log("Confirming deletion for order:", selectedOrderId);
+    if (selectedOrderId && !isProcessing) {
       try {
         setIsProcessing(true);
+        console.log("Starting deletion process");
         await onDelete(selectedOrderId);
+        console.log("Deletion completed");
+      } catch (error) {
+        console.error("Error in confirmDelete:", error);
       } finally {
+        console.log("Cleaning up after deletion");
         setIsProcessing(false);
         setSelectedOrderId(null);
         setShowDeleteDialog(false);
       }
+    }
+  };
+
+  const handleDialogClose = (setDialogState: React.Dispatch<React.SetStateAction<boolean>>) => {
+    if (!isProcessing) {
+      console.log("Closing dialog");
+      setDialogState(false);
+      setTimeout(() => setSelectedOrderId(null), 100);
     }
   };
 
@@ -122,7 +147,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleApproveClick(order.id)}
-                      disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
+                      disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Approuver</span>
@@ -133,7 +158,7 @@ export function PurchaseOrderTable({
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={() => onEdit(order.id)}
-                    disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
+                    disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
                   >
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Modifier</span>
@@ -143,7 +168,7 @@ export function PurchaseOrderTable({
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={() => onPrint(order)}
-                    disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
+                    disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
                   >
                     <Printer className="h-4 w-4" />
                     <span className="sr-only">Imprimer</span>
@@ -154,7 +179,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       onClick={() => handleDeleteClick(order.id)}
-                      disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
+                      disabled={Boolean(processingOrderId) || isProcessing || showApproveDialog || showDeleteDialog}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Supprimer</span>
@@ -171,7 +196,7 @@ export function PurchaseOrderTable({
         isOpen={showDeleteDialog}
         isProcessing={isProcessing}
         onOpenChange={(open) => {
-          if (!isProcessing) setShowDeleteDialog(open);
+          if (!open && !isProcessing) handleDialogClose(setShowDeleteDialog);
         }}
         onConfirm={confirmDelete}
       />
@@ -180,7 +205,7 @@ export function PurchaseOrderTable({
         isOpen={showApproveDialog}
         isProcessing={isProcessing}
         onOpenChange={(open) => {
-          if (!isProcessing) setShowApproveDialog(open);
+          if (!open && !isProcessing) handleDialogClose(setShowApproveDialog);
         }}
         onConfirm={confirmApprove}
       />

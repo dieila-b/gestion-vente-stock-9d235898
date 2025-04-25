@@ -16,7 +16,10 @@ export function ApproveConfirmationDialog({
   onConfirm
 }: ApproveConfirmationDialogProps) {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    <AlertDialog 
+      open={isOpen} 
+      onOpenChange={onOpenChange}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmer l'approbation</AlertDialogTitle>
@@ -29,6 +32,7 @@ export function ApproveConfirmationDialog({
           <AlertDialogAction 
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onConfirm();
             }}
             className="bg-green-600 hover:bg-green-700"

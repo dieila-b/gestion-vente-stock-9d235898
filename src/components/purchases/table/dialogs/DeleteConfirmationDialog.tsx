@@ -16,7 +16,10 @@ export function DeleteConfirmationDialog({
   onConfirm
 }: DeleteConfirmationDialogProps) {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    <AlertDialog 
+      open={isOpen} 
+      onOpenChange={onOpenChange}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
@@ -29,6 +32,7 @@ export function DeleteConfirmationDialog({
           <AlertDialogAction 
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onConfirm();
             }}
             className="bg-red-600 hover:bg-red-700"

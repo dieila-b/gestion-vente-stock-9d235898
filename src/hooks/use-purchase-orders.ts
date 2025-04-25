@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
 import { useState } from "react";
+import { PurchaseOrder } from "@/types/purchase-order";
 
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export function usePurchaseOrders() {
       console.log("Refresh result:", result);
       
       if (result.isSuccess) {
-        toast.success("Liste des bons de commande rafraîchie");
+        console.log("Orders refreshed successfully");
       } else if (result.isError) {
         console.error("Error refreshing orders:", result.error);
         toast.error("Erreur lors du rafraîchissement");
@@ -42,6 +43,12 @@ export function usePurchaseOrders() {
       toast.error("Erreur pendant le rafraîchissement des données");
       return { isSuccess: false, isError: true, error: refreshError };
     }
+  };
+
+  const handlePrint = (order: PurchaseOrder) => {
+    console.log("Printing order:", order.id);
+    // Print functionality here
+    toast.info("Impression en cours...");
   };
 
   const handleApprove = async (id: string): Promise<void> => {
@@ -122,6 +129,7 @@ export function usePurchaseOrders() {
     isDialogOpen,
     handleCreate,
     refreshOrders,
+    handlePrint,
     refetch
   };
 }
