@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export const usePurchaseOrderMutations = () => {
   const queryClient = useQueryClient();
-  const deleteOrder = useDeletePurchaseOrder();
+  const deleteOrderFn = useDeletePurchaseOrder();
   const handleEdit = useEditPurchaseOrder();
   const handleUpdate = useUpdatePurchaseOrder();
   const handleApprove = useApprovePurchaseOrder();
@@ -20,18 +20,10 @@ export const usePurchaseOrderMutations = () => {
     return queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
   };
 
-  // Wrap the delete function to make it return a promise
-  const handleDelete = async (id: string) => {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        deleteOrder(id, {
-          onSuccess: () => resolve(),
-          onError: (error) => reject(error)
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
+  // No need to wrap in another promise, just pass through
+  const handleDelete = (id: string) => {
+    console.log("Delegating delete to mutation for order:", id);
+    return deleteOrderFn(id);
   };
 
   return {
