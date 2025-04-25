@@ -42,22 +42,22 @@ export function PurchaseOrderTable({
     return <EmptyState />;
   }
 
-  const handleApproveClick = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Modified to match expected signature
+  const handleApproveClick = (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowApproveDialog(true);
     }
+    return Promise.resolve();
   };
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Modified to match expected signature
+  const handleDeleteClick = (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowDeleteDialog(true);
     }
+    return Promise.resolve();
   };
 
   const confirmApprove = async () => {
