@@ -58,8 +58,6 @@ export function PurchaseOrderTable({
       try {
         setIsProcessing(true);
         await onApprove(selectedOrderId);
-      } catch (error) {
-        console.error("Error in confirmApprove:", error);
       } finally {
         setIsProcessing(false);
         setSelectedOrderId(null);
@@ -73,8 +71,6 @@ export function PurchaseOrderTable({
       try {
         setIsProcessing(true);
         await onDelete(selectedOrderId);
-      } catch (error) {
-        console.error("Error in confirmDelete:", error);
       } finally {
         setIsProcessing(false);
         setSelectedOrderId(null);
@@ -126,7 +122,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleApproveClick(order.id)}
-                      disabled={processingOrderId === order.id || isProcessing}
+                      disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Approuver</span>
@@ -137,7 +133,7 @@ export function PurchaseOrderTable({
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={() => onEdit(order.id)}
-                    disabled={processingOrderId === order.id || isProcessing}
+                    disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
                   >
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Modifier</span>
@@ -147,7 +143,7 @@ export function PurchaseOrderTable({
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={() => onPrint(order)}
-                    disabled={processingOrderId === order.id || isProcessing}
+                    disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
                   >
                     <Printer className="h-4 w-4" />
                     <span className="sr-only">Imprimer</span>
@@ -158,7 +154,7 @@ export function PurchaseOrderTable({
                       size="sm"
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       onClick={() => handleDeleteClick(order.id)}
-                      disabled={processingOrderId === order.id || isProcessing}
+                      disabled={processingOrderId === order.id || isProcessing || showApproveDialog || showDeleteDialog}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Supprimer</span>
