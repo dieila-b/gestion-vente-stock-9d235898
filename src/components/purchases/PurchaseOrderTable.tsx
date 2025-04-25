@@ -4,7 +4,8 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
-import { PurchaseOrderActions } from "./PurchaseOrderActions";
+import { Button } from "@/components/ui/button";
+import { Check, Trash2, Pencil, Printer } from "lucide-react";
 import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDialog";
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
 import { LoadingState } from "./table/LoadingState";
@@ -42,22 +43,18 @@ export function PurchaseOrderTable({
     return <EmptyState />;
   }
 
-  // Modified to match expected signature
-  const handleApproveClick = (id: string) => {
+  const handleApproveClick = async (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowApproveDialog(true);
     }
-    return Promise.resolve();
   };
 
-  // Modified to match expected signature
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteClick = async (id: string) => {
     if (!isProcessing) {
       setSelectedOrderId(id);
       setShowDeleteDialog(true);
     }
-    return Promise.resolve();
   };
 
   const confirmApprove = async () => {
@@ -122,15 +119,51 @@ export function PurchaseOrderTable({
               </TableCell>
               <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
               <TableCell>
-                <div className="flex justify-end">
-                  <PurchaseOrderActions
-                    order={order}
-                    processingId={processingOrderId}
-                    onApprove={handleApproveClick}
-                    onEdit={onEdit}
-                    onDelete={handleDeleteClick}
-                    onPrint={onPrint}
-                  />
+                <div className="flex justify-end gap-2">
+                  {order.status !== 'approved' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleApproveClick(order.id)}
+                      disabled={processingOrderId === order.id || isProcessing}
+                    >
+                      <Check className="h-4 w-4" />
+                      <span className="sr-only">Approuver</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onEdit(order.id)}
+                    disabled={processingOrderId === order.id || isProcessing}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Modifier</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onPrint(order)}
+                    disabled={processingOrderId === order.id || isProcessing}
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only">Imprimer</span>
+                  </Button>
+                  {order.status !== 'approved' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteClick(order.id)}
+                      disabled={processingOrderId === order.id || isProcessing}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Supprimer</span>
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
