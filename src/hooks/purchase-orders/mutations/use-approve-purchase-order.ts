@@ -61,10 +61,7 @@ export function useApprovePurchaseOrder() {
             
             // Return a properly typed PurchaseOrder with delivery_note_created set to true
             if (!error && updatedWithDelivery) {
-              return constructPurchaseOrder({
-                ...updatedWithDelivery,
-                delivery_note_created: true
-              });
+              return constructPurchaseOrder(updatedWithDelivery);
             }
           } else {
             console.error("Failed to create delivery note");
@@ -76,10 +73,11 @@ export function useApprovePurchaseOrder() {
         }
         
         // If we reach this point, ensure we return a valid PurchaseOrder
-        return constructPurchaseOrder({
+        const orderWithDeliveryNote = {
           ...updatedOrder,
           delivery_note_created: true
-        });
+        };
+        return constructPurchaseOrder(orderWithDeliveryNote);
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
