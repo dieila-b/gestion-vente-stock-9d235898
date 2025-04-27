@@ -6,7 +6,7 @@ import { validatePurchaseOrder } from "./utils/validate-purchase-order";
 import { updatePurchaseOrderToApproved } from "./utils/update-purchase-order-status";
 import { createDeliveryNote } from "./utils/create-delivery-note";
 import { createDeliveryNoteItems } from "./utils/create-delivery-note-items";
-import { constructPurchaseOrder } from "./utils/construct-purchase-order";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
