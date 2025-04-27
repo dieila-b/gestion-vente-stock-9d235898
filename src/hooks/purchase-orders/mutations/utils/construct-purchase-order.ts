@@ -1,68 +1,37 @@
 
 import { PurchaseOrder } from "@/types/purchase-order";
 
-export function constructPurchaseOrder(data: any): PurchaseOrder {
-  console.log("Constructing purchase order from data:", data?.id);
+// Utility function to construct a PurchaseOrder object with proper typing
+export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOrder {
+  // Ensure delivery_note_created is explicitly a boolean
+  const delivery_note_created = data.delivery_note_created === true;
   
-  // Ensure supplier is properly structured
-  const supplier = data?.supplier && typeof data.supplier === 'object' 
-    ? data.supplier 
-    : {
-        id: data?.supplier_id || '',
-        name: "Fournisseur inconnu",
-        phone: "",
-        email: ""
-      };
-  
-  // Validate status with strict type checking
-  const validStatuses: PurchaseOrder['status'][] = ['approved', 'draft', 'pending', 'delivered'];
-  const status: PurchaseOrder['status'] = 
-    validStatuses.includes(data?.status) ? data.status : 'pending';
-  
-  // Validate payment_status with strict type checking
-  const validPaymentStatuses: PurchaseOrder['payment_status'][] = ['pending', 'partial', 'paid'];
-  const paymentStatus: PurchaseOrder['payment_status'] = 
-    validPaymentStatuses.includes(data?.payment_status) ? data.payment_status : 'pending';
-  
-  // Always ensure delivery_note_created is a boolean
-  let deliveryNoteCreated = false;
-  if (data && 'delivery_note_created' in data) {
-    // Explicit conversion to boolean
-    deliveryNoteCreated = Boolean(data.delivery_note_created);
-  }
-  
-  // Create a properly typed PurchaseOrder object
-  const purchaseOrder: PurchaseOrder = {
-    id: data?.id || '',
-    order_number: data?.order_number || '',
-    created_at: data?.created_at || new Date().toISOString(),
-    updated_at: data?.updated_at || data?.created_at || new Date().toISOString(),
-    status: status,
-    supplier_id: data?.supplier_id || '',
-    discount: data?.discount || 0,
-    expected_delivery_date: data?.expected_delivery_date || '',
-    notes: data?.notes || '',
-    logistics_cost: data?.logistics_cost || 0,
-    transit_cost: data?.transit_cost || 0,
-    tax_rate: data?.tax_rate || 0,
-    shipping_cost: data?.shipping_cost || 0,
-    subtotal: data?.subtotal || 0,
-    tax_amount: data?.tax_amount || 0,
-    total_ttc: data?.total_ttc || 0,
-    total_amount: data?.total_amount || 0,
-    paid_amount: data?.paid_amount || 0,
-    payment_status: paymentStatus,
-    warehouse_id: data?.warehouse_id || undefined,
-    supplier: supplier,
-    items: data?.items || [],
-    delivery_note_created: deliveryNoteCreated
+  // Return a properly typed PurchaseOrder object
+  return {
+    id: data.id || '',
+    order_number: data.order_number || '',
+    created_at: data.created_at || new Date().toISOString(),
+    updated_at: data.updated_at,
+    status: data.status || 'pending',
+    supplier_id: data.supplier_id || '',
+    discount: data.discount || 0,
+    expected_delivery_date: data.expected_delivery_date || '',
+    notes: data.notes || '',
+    logistics_cost: data.logistics_cost || 0,
+    transit_cost: data.transit_cost || 0,
+    tax_rate: data.tax_rate || 0,
+    shipping_cost: data.shipping_cost || 0,
+    subtotal: data.subtotal || 0,
+    tax_amount: data.tax_amount || 0,
+    total_ttc: data.total_ttc || 0,
+    total_amount: data.total_amount || 0,
+    paid_amount: data.paid_amount || 0,
+    payment_status: data.payment_status || 'pending',
+    warehouse_id: data.warehouse_id,
+    supplier: data.supplier || { id: '', name: '' },
+    warehouse: data.warehouse,
+    items: data.items || [],
+    deleted: data.deleted || false,
+    delivery_note_created: delivery_note_created
   };
-  
-  console.log("Constructed purchase order:", {
-    id: purchaseOrder.id,
-    status: purchaseOrder.status,
-    delivery_note_created: purchaseOrder.delivery_note_created
-  });
-  
-  return purchaseOrder;
 }

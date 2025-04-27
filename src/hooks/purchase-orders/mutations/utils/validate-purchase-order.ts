@@ -1,12 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { constructPurchaseOrder } from "./construct-purchase-order";
 
 export async function validatePurchaseOrder(id: string) {
   console.log("Validating purchase order:", id);
   
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
-    .select('id, status')
+    .select('id, status, delivery_note_created')
     .eq('id', id)
     .single();
     
@@ -20,5 +21,9 @@ export async function validatePurchaseOrder(id: string) {
   }
 
   console.log("Validation successful, order status:", orderCheck.status);
-  return orderCheck;
+  return constructPurchaseOrder({
+    id: orderCheck.id,
+    status: orderCheck.status,
+    delivery_note_created: orderCheck.delivery_note_created
+  });
 }
