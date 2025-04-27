@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Check, Trash2, Pencil, Printer } from "lucide-react";
+import { Check, Trash2, Pencil, Printer, Loader2 } from "lucide-react";
 import type { PurchaseOrder } from "@/types/purchase-order";
 
 interface TableActionsProps {
@@ -22,19 +22,25 @@ export function TableActions({
   onEdit,
   onPrint
 }: TableActionsProps) {
-  const isDisabled = isAnyOperationInProgress || processingOrderId === order.id;
+  const isProcessing = processingOrderId === order.id;
+  const isDisabled = isAnyOperationInProgress || isProcessing;
+  const canApprove = order.status !== 'approved';
 
   return (
     <div className="flex justify-end gap-2">
-      {order.status !== 'approved' && (
+      {canApprove && (
         <Button
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
-          onClick={() => !isDisabled && onApprove(order.id)}
+          onClick={() => onApprove(order.id)}
           disabled={isDisabled}
         >
-          <Check className="h-4 w-4" />
+          {isProcessing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           <span className="sr-only">Approuver</span>
         </Button>
       )}
@@ -42,7 +48,7 @@ export function TableActions({
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0"
-        onClick={() => !isDisabled && onEdit(order.id)}
+        onClick={() => onEdit(order.id)}
         disabled={isDisabled}
       >
         <Pencil className="h-4 w-4" />
@@ -52,18 +58,18 @@ export function TableActions({
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0"
-        onClick={() => !isDisabled && onPrint(order)}
+        onClick={() => onPrint(order)}
         disabled={isDisabled}
       >
         <Printer className="h-4 w-4" />
         <span className="sr-only">Imprimer</span>
       </Button>
-      {order.status !== 'approved' && (
+      {canApprove && (
         <Button
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-          onClick={() => !isDisabled && onDelete(order.id)}
+          onClick={() => onDelete(order.id)}
           disabled={isDisabled}
         >
           <Trash2 className="h-4 w-4" />

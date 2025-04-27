@@ -25,6 +25,7 @@ export function usePurchaseOrders() {
     
     try {
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       
       const result = await refetch();
       
@@ -47,7 +48,6 @@ export function usePurchaseOrders() {
 
   const handlePrint = (order: PurchaseOrder) => {
     console.log("Printing order:", order.id);
-    // Print functionality here
     toast.info("Impression en cours...");
   };
 
@@ -62,15 +62,16 @@ export function usePurchaseOrders() {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
+      // Approve the order
       await approveOrderFn(id);
       
       console.log("Approval completed successfully for:", id);
-      toast.success("Bon de commande approuvé avec succès");
       
       // Refresh data after successful operation
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       await refreshOrders();
+      
     } catch (error: any) {
       console.error("Error in handleApprove:", error);
       toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
