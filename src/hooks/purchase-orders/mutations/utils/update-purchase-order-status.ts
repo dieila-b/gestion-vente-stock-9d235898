@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { constructPurchaseOrder } from "./construct-purchase-order";
 
 export async function updatePurchaseOrderToApproved(id: string): Promise<PurchaseOrder> {
   console.log("Updating purchase order status to approved:", id);
@@ -23,17 +24,6 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   
   console.log("Successfully updated purchase order status to approved");
   
-  // Return a proper PurchaseOrder object
-  const result: PurchaseOrder = {
-    ...updated,
-    supplier: updated.supplier || {
-      id: '',
-      name: 'Fournisseur inconnu',
-      phone: '',
-      email: ''
-    },
-    delivery_note_created: updated.delivery_note_created === true
-  };
-  
-  return result;
+  // Use the common constructor to create a properly typed PurchaseOrder object
+  return constructPurchaseOrder(updated);
 }
