@@ -75,7 +75,7 @@ export function useApprovePurchaseOrder() {
           toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError.message}`);
         }
         
-        // If we reach this point, just ensure we return a valid PurchaseOrder
+        // If we reach this point, ensure we return a valid PurchaseOrder
         return {
           ...updatedOrder,
           delivery_note_created: true
