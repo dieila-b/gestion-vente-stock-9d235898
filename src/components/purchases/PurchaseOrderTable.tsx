@@ -10,7 +10,6 @@ import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDial
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
 import { LoadingState } from "./table/LoadingState";
 import { EmptyState } from "./table/EmptyState";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -76,7 +75,9 @@ export function PurchaseOrderTable({
     
     try {
       setLocalProcessing(true);
-      await onApprove(selectedOrderId);
+      const targetId = selectedOrderId;
+      setShowApproveDialog(false);
+      await onApprove(targetId);
     } finally {
       completeOperation();
     }
@@ -87,7 +88,9 @@ export function PurchaseOrderTable({
     
     try {
       setLocalProcessing(true);
-      await onDelete(selectedOrderId);
+      const targetId = selectedOrderId;
+      setShowDeleteDialog(false);
+      await onDelete(targetId);
     } finally {
       completeOperation();
     }

@@ -1,6 +1,7 @@
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface ApproveConfirmationDialogProps {
   isOpen: boolean;
@@ -15,18 +16,35 @@ export function ApproveConfirmationDialog({
   onOpenChange,
   onConfirm
 }: ApproveConfirmationDialogProps) {
-  const handleConfirm = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!isProcessing) {
+  const [internalProcessing, setInternalProcessing] = useState(false);
+  
+  const handleConfirm = async () => {
+    try {
+      // Prevent multiple clicks
+      if (internalProcessing || isProcessing) return;
+      
+      // Set local processing state
+      setInternalProcessing(true);
+      
+      // Call the provided confirmation handler
       await onConfirm();
+    } catch (error) {
+      console.error("Error in approve confirmation:", error);
+    } finally {
+      // Reset local processing state after completion
+      setInternalProcessing(false);
     }
   };
   
+  // Combine both processing states to disable buttons
+  const isButtonDisabled = isProcessing || internalProcessing;
+
   return (
     <AlertDialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!isProcessing) {
+        // Only allow closing if not processing
+        if (!isButtonDisabled) {
           onOpenChange(open);
         }
       }}
@@ -39,13 +57,13 @@ export function ApproveConfirmationDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
+          <AlertDialogCancel disabled={isButtonDisabled}>Annuler</AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirm}
             className="bg-green-600 hover:bg-green-700"
-            disabled={isProcessing}
+            disabled={isButtonDisabled}
           >
-            {isProcessing ? (
+            {isButtonDisabled ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Approbation...

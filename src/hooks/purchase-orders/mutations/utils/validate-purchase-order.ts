@@ -1,14 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PurchaseOrder } from "@/types/purchase-order";
-import { constructPurchaseOrder } from "./construct-purchase-order";
 
-export async function validatePurchaseOrder(id: string): Promise<PurchaseOrder> {
+export async function validatePurchaseOrder(id: string) {
   console.log("Validating purchase order:", id);
   
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
-    .select('*, supplier:supplier_id(*)')
+    .select('id, status')
     .eq('id', id)
     .single();
     
@@ -22,7 +20,5 @@ export async function validatePurchaseOrder(id: string): Promise<PurchaseOrder> 
   }
 
   console.log("Validation successful, order status:", orderCheck.status);
-  
-  // Use the common constructor to create a properly typed PurchaseOrder object
-  return constructPurchaseOrder(orderCheck);
+  return orderCheck;
 }

@@ -6,7 +6,6 @@ import { validatePurchaseOrder } from "./utils/validate-purchase-order";
 import { updatePurchaseOrderToApproved } from "./utils/update-purchase-order-status";
 import { createDeliveryNote } from "./utils/create-delivery-note";
 import { createDeliveryNoteItems } from "./utils/create-delivery-note-items";
-import { supabase } from "@/integrations/supabase/client";
 import { constructPurchaseOrder } from "./utils/construct-purchase-order";
 
 export function useApprovePurchaseOrder() {
@@ -25,62 +24,76 @@ export function useApprovePurchaseOrder() {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
           
-          // We return the validated order which is already a complete PurchaseOrder
-          return orderCheck;
+          // Construct a minimal object for already approved orders
+          return constructPurchaseOrder({ 
+            id: orderCheck.id,
+            status: orderCheck.status,
+            delivery_note_created: false
+          });
         }
         
         // 2. Update the purchase order status
         const updatedOrder = await updatePurchaseOrderToApproved(id);
         console.log("Order updated to approved:", updatedOrder.id);
         
+        // Variable to track if a delivery note was successfully created
+        let deliveryNoteCreated = false;
+        let deliveryNoteId = null;
+        
         try {
           // 3. Create the delivery note
           const deliveryNote = await createDeliveryNote(updatedOrder);
-          console.log("Delivery note created:", deliveryNote);
+          console.log("Delivery note creation result:", deliveryNote);
           
           if (deliveryNote && deliveryNote.id) {
+            deliveryNoteId = deliveryNote.id;
+            
             // 4. Create the delivery note items
             const deliveryItems = await createDeliveryNoteItems(deliveryNote.id, id);
             console.log("Delivery note items created:", deliveryItems?.length || 0);
             
-            // 5. Update the purchase order to mark delivery note as created
-            const { data: updatedWithDelivery, error } = await supabase
-              .from("purchase_orders")
-              .update({ delivery_note_created: true })
-              .eq("id", id)
-              .select()
-              .single();
-              
-            console.log("Purchase order updated with delivery_note_created flag");
-            
-            // 6. Invalidate affected queries
-            await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-            await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-            
-            toast.success("Bon de commande approuvé et bon de livraison créé");
-            
-            // Return a properly typed PurchaseOrder with delivery_note_created set to true
-            if (!error && updatedWithDelivery) {
-              return constructPurchaseOrder(updatedWithDelivery);
-            }
+            // Only mark as created if the items were successfully created
+            deliveryNoteCreated = true;
           } else {
-            console.error("Failed to create delivery note");
-            toast.error("Erreur lors de la création du bon de livraison");
+            console.warn("No delivery note ID returned or creation failed");
           }
         } catch (deliveryError: any) {
-          console.error("Error creating delivery note:", deliveryError);
-          toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError.message}`);
+          // If there's an error creating the delivery note, continue
+          // but mark delivery_note_created as false
+          console.error("Error creating delivery note:", deliveryError?.message || deliveryError);
+          toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError?.message || "Erreur inconnue"}`);
         }
         
-        // If we reach this point, ensure we return a valid PurchaseOrder
-        const orderWithDeliveryNote = {
+        // 5. Invalidate affected queries
+        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        if (deliveryNoteCreated) {
+          await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        }
+        
+        // 6. Show appropriate notification
+        if (deliveryNoteCreated) {
+          toast.success("Bon de commande approuvé et bon de livraison créé");
+        } else {
+          toast.success("Bon de commande approuvé");
+          toast.warning("Création du bon de livraison échouée");
+        }
+        
+        // 7. Build the return object with the correct value for delivery_note_created
+        const finalResult = constructPurchaseOrder({
           ...updatedOrder,
-          delivery_note_created: true
-        };
-        return constructPurchaseOrder(orderWithDeliveryNote);
+          delivery_note_created: Boolean(deliveryNoteCreated) // Explicit conversion to boolean
+        });
+        
+        console.log("Final approval result:", {
+          id: finalResult.id,
+          status: finalResult.status,
+          delivery_note_created: finalResult.delivery_note_created
+        });
+        
+        return finalResult;
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
-        toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
+        toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
         throw error;
       }
     }

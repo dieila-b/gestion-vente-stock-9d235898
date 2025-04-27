@@ -42,23 +42,23 @@ export default function PurchaseOrdersPage() {
     }
   }, [initialLoadDone, refreshOrders]);
 
-  // After dialog close or operations, refresh orders
+  // After dialog close, refresh orders
   useEffect(() => {
-    const refreshAfterInteraction = async () => {
+    const refreshAfterEdit = async () => {
       try {
-        console.log("Refreshing orders after interaction");
+        console.log("Refreshing orders after dialog interaction");
         await refreshOrders();
       } catch (error) {
-        console.error("Error refreshing orders:", error);
+        console.error("Error refreshing orders after edit:", error);
       }
     };
     
-    // Refresh when dialog closes or processingOrderId changes from non-null to null
-    if (!isDialogOpen || (!processingOrderId && processingOrderId !== null)) {
-      console.log("Dialog closed or process completed, refreshing orders");
-      refreshAfterInteraction();
+    // We need to refresh when the dialog closes (isDialogOpen changes from true to false)
+    if (!isDialogOpen) {
+      console.log("Dialog is closed, refreshing orders");
+      refreshAfterEdit();
     }
-  }, [isDialogOpen, processingOrderId, refreshOrders]);
+  }, [isDialogOpen, refreshOrders]);
 
   // Filter purchase orders
   useEffect(() => {
