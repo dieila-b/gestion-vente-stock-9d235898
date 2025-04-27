@@ -5,57 +5,33 @@ import { PurchaseOrder } from "@/types/purchase-order";
 export async function updatePurchaseOrderToApproved(id: string): Promise<PurchaseOrder> {
   console.log("Updating purchase order status to approved:", id);
   
-  const updateData = {
-    status: "approved" as const,
-    updated_at: new Date().toISOString()
-  };
-
-  const { data: updatedOrder, error: updateError } = await supabase
-    .from('purchase_orders')
-    .update(updateData)
-    .eq('id', id)
+  const { data: updated, error: updateError } = await supabase
+    .from("purchase_orders")
+    .update({ status: "approved" })
+    .eq("id", id)
     .select('*, supplier:supplier_id(*)')
     .single();
-
+  
   if (updateError) {
-    console.error("Error updating purchase order:", updateError);
-    throw new Error(`Erreur lors de l'approbation: ${updateError.message}`);
+    console.error("Error updating purchase order status:", updateError);
+    throw new Error(`Erreur de mise à jour du statut: ${updateError.message}`);
   }
-
-  if (!updatedOrder) {
-    throw new Error("Échec de mise à jour du bon de commande");
+  
+  if (!updated) {
+    throw new Error("Impossible de mettre à jour le bon de commande");
   }
-
-  // Ensure supplier is properly structured
-  const supplier = updatedOrder.supplier || { id: '', name: '', email: '', phone: '' };
   
-  // Explicitly validate status as a valid PurchaseOrder status
-  const validStatuses: PurchaseOrder['status'][] = ['approved', 'draft', 'pending', 'delivered'];
-  const status: PurchaseOrder['status'] = validStatuses.includes(updatedOrder.status as any) 
-    ? updatedOrder.status as PurchaseOrder['status']
-    : 'approved';
+  console.log("Successfully updated purchase order status to approved");
   
-  // Explicitly validate payment_status as a valid PurchaseOrder payment status
-  const validPaymentStatuses: PurchaseOrder['payment_status'][] = ['pending', 'partial', 'paid'];
-  const payment_status: PurchaseOrder['payment_status'] = validPaymentStatuses.includes(updatedOrder.payment_status as any)
-    ? updatedOrder.payment_status as PurchaseOrder['payment_status']
-    : 'pending';
-
-  // Return a properly typed PurchaseOrder object
-  const result: PurchaseOrder = {
-    ...updatedOrder,
-    supplier,
-    status,
-    payment_status,
-    // Explicitly set as boolean
-    delivery_note_created: false
-  };
-  
-  console.log("Processed updated order result:", {
-    id: result.id,
-    status: result.status,
-    delivery_note_created: result.delivery_note_created
-  });
-  
-  return result;
+  // Return a proper PurchaseOrder object
+  return {
+    ...updated,
+    supplier: updated.supplier || {
+      id: '',
+      name: 'Fournisseur inconnu',
+      phone: '',
+      email: ''
+    },
+    delivery_note_created: !!updated.delivery_note_created
+  } as PurchaseOrder;
 }
