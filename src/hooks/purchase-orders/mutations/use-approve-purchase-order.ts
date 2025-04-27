@@ -76,10 +76,10 @@ export function useApprovePurchaseOrder() {
         }
         
         // If we reach this point, ensure we return a valid PurchaseOrder
-        return {
+        return constructPurchaseOrder({
           ...updatedOrder,
           delivery_note_created: true
-        };
+        });
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
