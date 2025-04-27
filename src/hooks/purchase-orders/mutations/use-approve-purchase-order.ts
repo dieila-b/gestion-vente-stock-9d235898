@@ -93,6 +93,7 @@ export function useApprovePurchaseOrder() {
         // 8. Build the return object with the correct value for delivery_note_created
         return constructPurchaseOrder({
           ...updatedOrder,
+          status: updatedOrder.status as "draft" | "pending" | "delivered" | "approved",
           delivery_note_created: deliveryNoteCreated
         });
       } catch (error: any) {

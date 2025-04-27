@@ -6,13 +6,20 @@ export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOr
   // Ensure delivery_note_created is explicitly a boolean
   const delivery_note_created = data.delivery_note_created === true;
   
+  // Ensure status is a valid enum value
+  const status = data.status || 'pending';
+  const validStatuses = ['draft', 'pending', 'delivered', 'approved'];
+  const safeStatus = validStatuses.includes(status) ? 
+    status as 'draft' | 'pending' | 'delivered' | 'approved' : 
+    'pending';
+  
   // Return a properly typed PurchaseOrder object
   return {
     id: data.id || '',
     order_number: data.order_number || '',
     created_at: data.created_at || new Date().toISOString(),
     updated_at: data.updated_at,
-    status: data.status || 'pending',
+    status: safeStatus,
     supplier_id: data.supplier_id || '',
     discount: data.discount || 0,
     expected_delivery_date: data.expected_delivery_date || '',
