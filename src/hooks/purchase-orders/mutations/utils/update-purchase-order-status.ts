@@ -31,6 +31,7 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   return constructPurchaseOrder({
     ...updatedOrder,
     status: updatedOrder.status as "draft" | "pending" | "delivered" | "approved",
+    payment_status: updatedOrder.payment_status as "pending" | "partial" | "paid",
     delivery_note_created: false // Initially set to false until the delivery note is created
   });
 }

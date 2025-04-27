@@ -13,6 +13,13 @@ export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOr
     status as 'draft' | 'pending' | 'delivered' | 'approved' : 
     'pending';
   
+  // Ensure payment_status is a valid enum value
+  const paymentStatus = data.payment_status || 'pending';
+  const validPaymentStatuses = ['pending', 'partial', 'paid'];
+  const safePaymentStatus = validPaymentStatuses.includes(paymentStatus) ?
+    paymentStatus as 'pending' | 'partial' | 'paid' :
+    'pending';
+  
   // Return a properly typed PurchaseOrder object
   return {
     id: data.id || '',
@@ -33,7 +40,7 @@ export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOr
     total_ttc: data.total_ttc || 0,
     total_amount: data.total_amount || 0,
     paid_amount: data.paid_amount || 0,
-    payment_status: data.payment_status || 'pending',
+    payment_status: safePaymentStatus,
     warehouse_id: data.warehouse_id,
     supplier: data.supplier || { id: '', name: '' },
     warehouse: data.warehouse,
