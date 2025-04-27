@@ -67,12 +67,13 @@ export function useApprovePurchaseOrder() {
           toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError.message}`);
         }
         
-        // Return the updated order - make sure it contains all PurchaseOrder properties
-        // Add the delivery_note_created flag to the existing updatedOrder object
-        return {
+        // Create a proper updated order object with delivery_note_created property
+        const finalResult: PurchaseOrder = {
           ...updatedOrder,
           delivery_note_created: true
         };
+        
+        return finalResult;
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
         toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);

@@ -24,7 +24,7 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
   console.log("Successfully updated purchase order status to approved");
   
   // Return a proper PurchaseOrder object
-  return {
+  const result: PurchaseOrder = {
     ...updated,
     supplier: updated.supplier || {
       id: '',
@@ -32,6 +32,8 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
       phone: '',
       email: ''
     },
-    delivery_note_created: !!updated.delivery_note_created
-  } as PurchaseOrder;
+    delivery_note_created: updated.delivery_note_created === true
+  };
+  
+  return result;
 }

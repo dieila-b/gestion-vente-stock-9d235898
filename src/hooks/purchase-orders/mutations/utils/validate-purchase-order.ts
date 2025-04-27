@@ -31,6 +31,7 @@ export async function validatePurchaseOrder(id: string): Promise<PurchaseOrder> 
       phone: '',
       email: ''
     },
-    delivery_note_created: !!orderCheck.delivery_note_created
+    // Ensure delivery_note_created is a boolean
+    delivery_note_created: orderCheck.delivery_note_created === true
   } as PurchaseOrder;
 }
