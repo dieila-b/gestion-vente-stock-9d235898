@@ -24,8 +24,9 @@ export function useApprovePurchaseOrder() {
           console.log("Order was already approved");
           toast.info("Ce bon de commande est déjà approuvé");
           
-          // Return the existing order
-          return orderCheck;
+          // We need to return a complete PurchaseOrder object, not just {id, status}
+          // Get the complete order details from validatePurchaseOrder
+          return orderCheck as PurchaseOrder;
         }
         
         // 2. Update the purchase order status
@@ -66,7 +67,8 @@ export function useApprovePurchaseOrder() {
           toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError.message}`);
         }
         
-        // Return the updated order with delivery_note_created flag
+        // Return the updated order - make sure it contains all PurchaseOrder properties
+        // Add the delivery_note_created flag to the existing updatedOrder object
         return {
           ...updatedOrder,
           delivery_note_created: true
