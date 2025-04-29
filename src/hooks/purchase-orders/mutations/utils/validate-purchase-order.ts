@@ -7,7 +7,7 @@ export async function validatePurchaseOrder(id: string) {
   
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
-    .select('id, status, payment_status')
+    .select('id, status, payment_status, delivery_note_created')
     .eq('id', id)
     .single();
     
@@ -25,6 +25,6 @@ export async function validatePurchaseOrder(id: string) {
     id: orderCheck.id,
     status: orderCheck.status as "draft" | "pending" | "delivered" | "approved",
     payment_status: orderCheck.payment_status as "pending" | "partial" | "paid",
-    delivery_note_created: false // Default value since column might not exist
+    delivery_note_created: Boolean(orderCheck.delivery_note_created)
   });
 }
