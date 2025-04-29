@@ -50,7 +50,7 @@ export function useApprovePurchaseOrder() {
             console.log("Delivery note items created:", deliveryItems?.length || 0);
             
             // Only mark as created if the items were successfully created
-            deliveryNoteCreated = true;
+            deliveryNoteCreated = deliveryItems && deliveryItems.length > 0;
           } else {
             console.warn("No delivery note ID returned or creation failed");
           }
@@ -59,10 +59,11 @@ export function useApprovePurchaseOrder() {
           // but mark delivery_note_created as false
           console.error("Error creating delivery note:", deliveryError?.message || deliveryError);
           toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError?.message || "Erreur inconnue"}`);
+          deliveryNoteCreated = false;
         }
         
         // 5. Update the purchase order to indicate delivery note status
-        if (deliveryNoteCreated) {
+        if (deliveryNoteId) {
           const { error: updateDeliveryStatusError } = await supabase
             .from('purchase_orders')
             .update({ 
@@ -73,10 +74,12 @@ export function useApprovePurchaseOrder() {
             
           if (updateDeliveryStatusError) {
             console.warn("Error updating delivery note status:", updateDeliveryStatusError);
+          } else {
+            deliveryNoteCreated = true;
           }
         }
         
-        // 6. Invalidate affected queries
+        // 6. Invalidate affected queries to refresh the data
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
         if (deliveryNoteCreated) {
           await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });

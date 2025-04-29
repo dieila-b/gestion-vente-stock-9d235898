@@ -8,6 +8,8 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { useState } from "react";
+import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -28,12 +30,23 @@ export function PurchaseOrderActions({
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
   const canApprove = order.status !== 'approved';
-
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  
   const handleApprove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!isProcessing) {
-      onApprove(order.id);
+      setShowApproveDialog(true);
+    }
+  };
+
+  const confirmApprove = async () => {
+    try {
+      await onApprove(order.id);
+    } catch (error) {
+      console.error("Error during approval:", error);
+    } finally {
+      setShowApproveDialog(false);
     }
   };
 
@@ -118,6 +131,13 @@ export function PurchaseOrderActions({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      <ApproveConfirmationDialog 
+        isOpen={showApproveDialog}
+        isProcessing={isProcessing}
+        onOpenChange={setShowApproveDialog}
+        onConfirm={confirmApprove}
+      />
     </div>
   );
 }
