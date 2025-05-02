@@ -5,11 +5,16 @@ import { constructPurchaseOrder } from "./construct-purchase-order";
 export async function validatePurchaseOrder(id: string) {
   console.log("Validating purchase order:", id);
   
+  if (!id) {
+    console.error("Invalid purchase order ID");
+    throw new Error("ID de bon de commande invalide");
+  }
+  
   const { data: orderCheck, error: checkError } = await supabase
     .from('purchase_orders')
     .select('id, status, payment_status, delivery_note_created')
     .eq('id', id)
-    .single();
+    .maybeSingle();
     
   if (checkError) {
     console.error("Failed to check purchase order:", checkError);
@@ -17,6 +22,7 @@ export async function validatePurchaseOrder(id: string) {
   }
   
   if (!orderCheck) {
+    console.error("Purchase order not found:", id);
     throw new Error("Bon de commande introuvable");
   }
 

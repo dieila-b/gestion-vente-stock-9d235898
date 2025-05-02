@@ -65,7 +65,6 @@ export function usePurchaseOrders() {
       await approveOrderFn(id);
       
       console.log("Approval completed successfully for:", id);
-      toast.success("Bon de commande approuvé avec succès");
       
       // Refresh data after successful operation
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
