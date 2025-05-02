@@ -1,15 +1,9 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState, useCallback, useEffect } from "react";
+import { PurchaseOrderActions } from "./PurchaseOrderActions";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
-import { TableActions } from "./table/TableActions";
-import { OrderStatus } from "./table/OrderStatus";
-import { DeleteConfirmationDialog } from "./table/dialogs/DeleteConfirmationDialog";
-import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
-import { LoadingState } from "./table/LoadingState";
-import { EmptyState } from "./table/EmptyState";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -30,142 +24,58 @@ export function PurchaseOrderTable({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [localProcessing, setLocalProcessing] = useState(false);
-  
-  useEffect(() => {
-    if (!processingOrderId && localProcessing) {
-      setLocalProcessing(false);
-    }
-  }, [processingOrderId, localProcessing]);
-  
-  const isAnyOperationInProgress = Boolean(processingOrderId) || localProcessing;
-
-  const completeOperation = useCallback(() => {
-    setLocalProcessing(false);
-    setSelectedOrderId(null);
-    setShowDeleteDialog(false);
-    setShowApproveDialog(false);
-  }, []);
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!orders || orders.length === 0) {
-    return <EmptyState />;
-  }
-
-  const handleApproveClick = (id: string) => {
-    if (isAnyOperationInProgress) return;
-    setSelectedOrderId(id);
-    setShowApproveDialog(true);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    if (isAnyOperationInProgress) return;
-    setSelectedOrderId(id);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmApprove = async () => {
-    if (!selectedOrderId || isAnyOperationInProgress) return;
-    
-    try {
-      setLocalProcessing(true);
-      const targetId = selectedOrderId;
-      setShowApproveDialog(false);
-      await onApprove(targetId);
-    } finally {
-      completeOperation();
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedOrderId || isAnyOperationInProgress) return;
-    
-    try {
-      setLocalProcessing(true);
-      const targetId = selectedOrderId;
-      setShowDeleteDialog(false);
-      await onDelete(targetId);
-    } finally {
-      completeOperation();
-    }
-  };
-
   return (
-    <>
+    <div className="w-full overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>N° Commande</TableHead>
+            <TableHead>N° BC</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
-            <TableHead>Articles</TableHead>
             <TableHead>Statut</TableHead>
-            <TableHead>Montant</TableHead>
+            <TableHead className="text-right">Montant</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((order) => (
+          {orders.map(order => (
             <TableRow key={order.id}>
-              <TableCell>{order.order_number}</TableCell>
+              <TableCell className="font-medium">{order.order_number || order.id.substring(0, 8)}</TableCell>
+              <TableCell>{format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}</TableCell>
+              <TableCell>{order.supplier?.name || 'N/A'}</TableCell>
               <TableCell>
-                {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  order.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                  order.status === 'draft' ? 'bg-gray-100 text-gray-800' : 
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {order.status === 'approved' ? 'Approuvé' : 
+                   order.status === 'draft' ? 'Brouillon' : 
+                   'En attente'}
+                </span>
               </TableCell>
-              <TableCell>{order.supplier?.name}</TableCell>
-              <TableCell>{order.items?.length || 0}</TableCell>
-              <TableCell>
-                <OrderStatus status={order.status} />
-              </TableCell>
-              <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
-              <TableCell>
-                <TableActions
+              <TableCell className="text-right">{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
+              <TableCell className="text-right">
+                <PurchaseOrderActions
                   order={order}
-                  isAnyOperationInProgress={isAnyOperationInProgress}
-                  processingOrderId={processingOrderId}
-                  onApprove={handleApproveClick}
-                  onDelete={handleDeleteClick}
+                  processingId={processingOrderId}
+                  onApprove={onApprove}
                   onEdit={onEdit}
+                  onDelete={onDelete}
                   onPrint={onPrint}
                 />
               </TableCell>
             </TableRow>
           ))}
+          {orders.length === 0 && !isLoading && (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-10 text-gray-500">
+                Aucun bon de commande trouvé
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
-
-      <DeleteConfirmationDialog
-        isOpen={showDeleteDialog}
-        isProcessing={localProcessing || Boolean(processingOrderId)}
-        onOpenChange={(open) => {
-          if (!localProcessing && !processingOrderId) {
-            setShowDeleteDialog(open);
-            if (!open) {
-              setTimeout(() => setSelectedOrderId(null), 100);
-            }
-          }
-        }}
-        onConfirm={confirmDelete}
-      />
-
-      <ApproveConfirmationDialog
-        isOpen={showApproveDialog}
-        isProcessing={localProcessing || Boolean(processingOrderId)}
-        onOpenChange={(open) => {
-          if (!localProcessing && !processingOrderId) {
-            setShowApproveDialog(open);
-            if (!open) {
-              setTimeout(() => setSelectedOrderId(null), 100);
-            }
-          }
-        }}
-        onConfirm={confirmApprove}
-      />
-    </>
+    </div>
   );
 }
