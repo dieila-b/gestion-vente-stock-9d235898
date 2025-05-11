@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Printer, Check, Trash2, Pencil, Loader2 } from "lucide-react";
+import { MoreHorizontal, Printer, Check, Trash2, Pencil, Loader2, FileText } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -30,6 +30,7 @@ export function PurchaseOrderActions({
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
   const canApprove = order.status !== 'approved';
+  const isApproved = order.status === 'approved';
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   
   const handleApprove = (e: React.MouseEvent) => {
@@ -127,6 +128,19 @@ export function PurchaseOrderActions({
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
+            </DropdownMenuItem>
+          )}
+          {isApproved && order.delivery_note_created && (
+            <DropdownMenuItem 
+              className="text-blue-600 cursor-pointer"
+              disabled={isProcessing}
+              onClick={() => {
+                // We'll navigate to delivery notes page in the future
+                console.log("View delivery note for order", order.id);
+              }}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Voir BL
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

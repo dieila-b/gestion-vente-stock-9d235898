@@ -4,6 +4,8 @@ import { PurchaseOrderActions } from "./PurchaseOrderActions";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
+import { FileText, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -13,6 +15,7 @@ interface PurchaseOrderTableProps {
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
+  onCreateDeliveryNote?: (order: PurchaseOrder) => Promise<void>;
 }
 
 export function PurchaseOrderTable({
@@ -22,7 +25,8 @@ export function PurchaseOrderTable({
   onApprove,
   onDelete,
   onEdit,
-  onPrint
+  onPrint,
+  onCreateDeliveryNote
 }: PurchaseOrderTableProps) {
   return (
     <div className="w-full overflow-auto">
@@ -56,14 +60,29 @@ export function PurchaseOrderTable({
               </TableCell>
               <TableCell className="text-right">{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
               <TableCell className="text-right">
-                <PurchaseOrderActions
-                  order={order}
-                  processingId={processingOrderId}
-                  onApprove={onApprove}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onPrint={onPrint}
-                />
+                {order.status === 'approved' && !order.delivery_note_created && onCreateDeliveryNote ? (
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center space-x-1 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      disabled={processingOrderId === order.id}
+                      onClick={() => onCreateDeliveryNote(order)}
+                    >
+                      <Truck className="h-4 w-4 mr-1" />
+                      <span>Bon de livraison</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <PurchaseOrderActions
+                    order={order}
+                    processingId={processingOrderId}
+                    onApprove={onApprove}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onPrint={onPrint}
+                  />
+                )}
               </TableCell>
             </TableRow>
           ))}

@@ -21,6 +21,7 @@ export default function PurchaseOrdersPage() {
     handleDelete,
     handleEdit,
     handlePrint,
+    handleCreateDeliveryNote,
     EditDialog,
     isDialogOpen,
     refreshOrders
@@ -106,6 +107,7 @@ export default function PurchaseOrdersPage() {
               onDelete={handleDelete}
               onEdit={handleEdit}
               onPrint={handlePrint}
+              onCreateDeliveryNote={handleCreateDeliveryNote}
               processingOrderId={processingOrderId}
             />
           </CardContent>

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
 import { useState } from "react";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { useDeliveryNotes } from "./use-delivery-notes";
 
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
@@ -14,6 +15,7 @@ export function usePurchaseOrders() {
   const { handleDelete, handleCreate, refreshPurchaseOrders } = usePurchaseOrderMutations();
   const approveOrderFn = useApprovePurchaseOrder();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
+  const { createDeliveryNoteFromPO } = useDeliveryNotes();
   const queryClient = useQueryClient();
 
   if (error) {
@@ -78,6 +80,34 @@ export function usePurchaseOrders() {
     }
   };
 
+  const handleCreateDeliveryNote = async (order: PurchaseOrder): Promise<void> => {
+    if (!order || !order.id) {
+      toast.error("Bon de commande invalide");
+      return;
+    }
+    
+    try {
+      console.log("Creating delivery note for order:", order.id);
+      setProcessingOrderId(order.id);
+      
+      const success = await createDeliveryNoteFromPO(order.id);
+      
+      if (success) {
+        toast.success("Bon de livraison créé avec succès");
+        
+        // Update the order to reflect delivery note creation
+        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        await refreshOrders();
+      }
+    } catch (error: any) {
+      console.error("Error creating delivery note:", error);
+      toast.error(`Erreur lors de la création du bon de livraison: ${error?.message || "Erreur inconnue"}`);
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
@@ -129,6 +159,7 @@ export function usePurchaseOrders() {
     handleCreate,
     refreshOrders,
     handlePrint,
+    handleCreateDeliveryNote,
     refetch
   };
 }
