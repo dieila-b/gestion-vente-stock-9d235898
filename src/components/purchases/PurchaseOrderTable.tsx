@@ -61,11 +61,11 @@ export function PurchaseOrderTable({
               <TableCell className="text-right">{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
               <TableCell className="text-right">
                 {order.status === 'approved' && !order.delivery_note_created && onCreateDeliveryNote ? (
-                  <div className="flex justify-end space-x-2">
+                  <div className="flex justify-end">
                     <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center space-x-1 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      variant="ghost"
+                      size="sm"
+                      className="bg-[#1A1F2C] text-white hover:bg-[#222] hover:text-white px-3 py-1.5 rounded-md flex items-center"
                       disabled={processingOrderId === order.id}
                       onClick={() => onCreateDeliveryNote(order)}
                     >
@@ -74,14 +74,16 @@ export function PurchaseOrderTable({
                     </Button>
                   </div>
                 ) : (
-                  <PurchaseOrderActions
-                    order={order}
-                    processingId={processingOrderId}
-                    onApprove={onApprove}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onPrint={onPrint}
-                  />
+                  <div className="flex justify-end">
+                    <PurchaseOrderActions
+                      order={order}
+                      processingId={processingOrderId}
+                      onApprove={onApprove}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      onPrint={onPrint}
+                    />
+                  </div>
                 )}
               </TableCell>
             </TableRow>

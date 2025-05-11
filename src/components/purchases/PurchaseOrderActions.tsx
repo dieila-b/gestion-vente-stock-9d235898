@@ -1,12 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Printer, Check, Trash2, Pencil, Loader2, FileText } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { Check, Printer, Trash2, Pencil, FileText } from "lucide-react";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { useState } from "react";
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
@@ -76,75 +70,51 @@ export function PurchaseOrderActions({
   };
   
   return (
-    <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {canApprove && (
-            <DropdownMenuItem 
-              onClick={handleApprove}
-              disabled={isProcessing}
-              className="cursor-pointer"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Traitement...
-                </>
-              ) : (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Approuver
-                </>
-              )}
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem 
-            onClick={handleEdit}
-            disabled={isProcessing}
-            className="cursor-pointer"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Modifier
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={handlePrint}
-            disabled={isProcessing}
-            className="cursor-pointer"
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimer
-          </DropdownMenuItem>
-          {canApprove && (
-            <DropdownMenuItem 
-              onClick={handleDelete}
-              disabled={isProcessing}
-              className="text-red-600 cursor-pointer"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </DropdownMenuItem>
-          )}
-          {isApproved && order.delivery_note_created && (
-            <DropdownMenuItem 
-              className="text-blue-600 cursor-pointer"
-              disabled={isProcessing}
-              onClick={() => {
-                // We'll navigate to delivery notes page in the future
-                console.log("View delivery note for order", order.id);
-              }}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Voir BL
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className="flex items-center gap-2 bg-[#1A1F2C] rounded-md p-1.5">
+      {canApprove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 text-white hover:bg-[#222] hover:text-white"
+          onClick={handleApprove}
+          disabled={isProcessing}
+        >
+          <Check className="h-4 w-4" />
+          <span className="sr-only">Approuver</span>
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 p-0 text-white hover:bg-[#222] hover:text-white"
+        onClick={handleEdit}
+        disabled={isProcessing}
+      >
+        <Pencil className="h-4 w-4" />
+        <span className="sr-only">Modifier</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 p-0 text-white hover:bg-[#222] hover:text-white"
+        onClick={handlePrint}
+        disabled={isProcessing}
+      >
+        <Printer className="h-4 w-4" />
+        <span className="sr-only">Imprimer</span>
+      </Button>
+      {canApprove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 text-red-600 hover:bg-[#222] hover:text-red-500"
+          onClick={handleDelete}
+          disabled={isProcessing}
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Supprimer</span>
+        </Button>
+      )}
       
       <ApproveConfirmationDialog 
         isOpen={showApproveDialog}
