@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Check, Printer, Trash2, Pencil, FileText } from "lucide-react";
+import { Check, Printer, Trash2, Pencil } from "lucide-react";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { useState } from "react";
 import { ApproveConfirmationDialog } from "./table/dialogs/ApproveConfirmationDialog";
@@ -69,6 +69,25 @@ export function PurchaseOrderActions({
     }
   };
   
+  // For approved orders, only show the Print button
+  if (isApproved) {
+    return (
+      <div className="flex items-center gap-2 bg-[#1A1F2C] rounded-md p-1.5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 text-white hover:bg-[#222] hover:text-white"
+          onClick={handlePrint}
+          disabled={isProcessing}
+        >
+          <Printer className="h-4 w-4" />
+          <span className="sr-only">Imprimer</span>
+        </Button>
+      </div>
+    );
+  }
+  
+  // For non-approved orders, show all buttons
   return (
     <div className="flex items-center gap-2 bg-[#1A1F2C] rounded-md p-1.5">
       {canApprove && (
