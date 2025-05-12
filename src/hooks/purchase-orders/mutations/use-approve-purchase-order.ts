@@ -29,7 +29,7 @@ export function useApprovePurchaseOrder() {
           return orderCheck;
         }
         
-        // 2. Update the purchase order status
+        // 2. Update the purchase order status to approved
         const updatedOrder = await updatePurchaseOrderToApproved(id);
         console.log("Order updated to approved:", updatedOrder.id);
         
