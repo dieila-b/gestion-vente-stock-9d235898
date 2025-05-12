@@ -31,7 +31,7 @@ export function useApprovePurchaseOrder() {
         
         // 2. Update the purchase order status to approved
         const updatedOrder = await updatePurchaseOrderToApproved(id);
-        console.log("Order updated to approved:", updatedOrder.id);
+        console.log("Order updated to approved status:", updatedOrder.id);
         
         // Variable to track if a delivery note was successfully created
         let deliveryNoteCreated = false;
