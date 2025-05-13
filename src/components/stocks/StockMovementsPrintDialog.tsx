@@ -22,19 +22,11 @@ export const StockMovementsPrintDialog: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    documentTitle: "Bon de commande",
-    onAfterPrint: () => console.log("Impression terminée"),
-    // Use the correct property name according to react-to-print v3.0.5
     documentTitle: "Stock Movement",
+    onAfterPrint: () => console.log("Impression terminée"),
     pageStyle: "@page { size: auto; margin: 10mm; }",
-    // For react-to-print v3.0.0+ this is the correct property name
-    print: ({ printWindow }) => {
-      if (componentRef.current && printWindow) {
-        printWindow.document.write(componentRef.current.outerHTML);
-        printWindow.document.close();
-        printWindow.print();
-      }
-    },
+    // For react-to-print v3.0.0+
+    content: () => componentRef.current,
   });
 
   // 🔧 À remplacer par des valeurs dynamiques si besoin
