@@ -21,7 +21,7 @@ export function StockMovementsPrintDialog() {
 
   const handlePrint = useReactToPrint({
     documentTitle: "Mouvements de stock",
-    onBeforePrint: () => {
+    onBeforeGetContent: () => {
       setIsPrinting(true);
       return Promise.resolve();
     },
@@ -29,7 +29,8 @@ export function StockMovementsPrintDialog() {
       setIsPrinting(false);
     },
     pageStyle: "@page { size: auto; margin: 10mm; }",
-    content: () => printRef.current,
+    // Using printRef as the reference to the content to print
+    documentRef: printRef,
   });
 
   return (
@@ -46,7 +47,10 @@ export function StockMovementsPrintDialog() {
         </DialogHeader>
         
         <div className="mt-4">
-          <Button onClick={handlePrint} disabled={isPrinting}>
+          <Button 
+            onClick={() => handlePrint()}
+            disabled={isPrinting}
+          >
             {isPrinting ? "Impression en cours..." : "Imprimer maintenant"}
           </Button>
           
