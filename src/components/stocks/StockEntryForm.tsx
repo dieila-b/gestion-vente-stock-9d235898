@@ -1,69 +1,106 @@
 
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { ArrowUpCircle, Plus } from "lucide-react";
 import { StockEntryForm as StockEntryFormType, stockEntrySchema } from "@/hooks/stocks/useStockMovementTypes";
 
 interface StockEntryFormProps {
-  warehouses: any[];
-  products: any[];
+  warehouses: { id: string; name: string; }[];
+  products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
 }
 
 export function StockEntryForm({ warehouses, products, onSubmit }: StockEntryFormProps) {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<StockEntryFormType>({
     resolver: zodResolver(stockEntrySchema),
     defaultValues: {
+      warehouseId: "",
+      productId: "",
       quantity: 1,
       unitPrice: 0,
       reason: ""
     }
   });
-
-  const handleSubmit = async (data: StockEntryFormType) => {
-    const success = await onSubmit(data);
-    if (success) {
-      form.reset();
-      setDialogOpen(false);
+  
+  const handleSubmit = async (values: StockEntryFormType) => {
+    setIsSubmitting(true);
+    try {
+      const success = await onSubmit(values);
+      if (success) {
+        setIsOpen(false);
+        form.reset();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const selectedProductId = form.watch('productId');
+  const selectedProduct = selectedProductId 
+    ? products.find(p => p.id === selectedProductId)
+    : null;
+  
+  // Préremplit le prix unitaire avec le prix du produit sélectionné
+  if (selectedProduct && !form.getValues('unitPrice')) {
+    form.setValue('unitPrice', selectedProduct.price || 0);
+  }
+  
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="enhanced-glass">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle Entrée
+        <Button className="gap-2">
+          <ArrowUpCircle className="h-4 w-4" />
+          <span>Nouvelle entrée</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Nouvelle Entrée de Stock</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <ArrowUpCircle className="h-5 w-5 text-green-500" />
+            Nouvelle entrée de stock
+          </DialogTitle>
         </DialogHeader>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
               name="warehouseId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dépôt</FormLabel>
-                  <Select
+                  <FormLabel>Entrepôt</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
                     value={field.value}
-                    onValueChange={field.onChange}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un dépôt" />
+                        <SelectValue placeholder="Sélectionner un entrepôt" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -74,19 +111,21 @@ export function StockEntryForm({ warehouses, products, onSubmit }: StockEntryFor
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="productId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Produit</FormLabel>
-                  <Select
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
                     value={field.value}
-                    onValueChange={field.onChange}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -96,51 +135,57 @@ export function StockEntryForm({ warehouses, products, onSubmit }: StockEntryFor
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name} ({product.reference})
+                          {product.name} {product.reference ? `(${product.reference})` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantité</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="1"
-                      {...field}
-                      onChange={e => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="unitPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Prix unitaire (GNF)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      {...field}
-                      onChange={e => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantité</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        {...field}
+                        onChange={e => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="unitPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prix unitaire</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01"
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <FormField
               control={form.control}
               name="reason"
@@ -148,15 +193,24 @@ export function StockEntryForm({ warehouses, products, onSubmit }: StockEntryFor
                 <FormItem>
                   <FormLabel>Motif</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea 
+                      placeholder="Veuillez indiquer le motif de l'entrée"
+                      {...field}
+                    />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
-            <Button type="submit" className="w-full">
-              Enregistrer l'entrée
-            </Button>
+            
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button">Annuler</Button>
+              </DialogClose>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Traitement...' : 'Enregistrer'}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

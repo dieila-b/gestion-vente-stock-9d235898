@@ -1,53 +1,68 @@
 
-// src/components/stocks/StockMovementsPrintDialog.tsx
-
-import React, { useRef } from "react";
+import { useState } from "react";
 import { useReactToPrint } from "react-to-print";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
+import { formatGNF } from "@/lib/currency";
 
-// ✅ Composant à imprimer
-const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dateLivraison: string }>(
-  ({ numero, dateLivraison }, ref) => (
-    <div ref={ref} style={{ padding: 24 }}>
-      <h2>Bon de commande</h2>
-      <p><strong>Numéro :</strong> {numero}</p>
-      <p><strong>Date de livraison prévue :</strong> {dateLivraison}</p>
-    </div>
-  )
-);
-
-PrintableCommande.displayName = "PrintableCommande"; // Pour éviter un warning React
-
-// ✅ Composant principal avec bouton imprimer
-export const StockMovementsPrintDialog: React.FC = () => {
-  const componentRef = useRef<HTMLDivElement>(null);
+export function StockMovementsPrintDialog() {
+  const [isPrinting, setIsPrinting] = useState(false);
+  const printRef = React.useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    documentTitle: "Stock Movement",
-    onAfterPrint: () => console.log("Impression terminée"),
-    pageStyle: "@page { size: auto; margin: 10mm; }",
-    // For react-to-print v3.0.0+ - this is the proper property
-    contentRef: componentRef,
+    content: () => printRef.current,
+    onBeforeGetContent: () => {
+      setIsPrinting(true);
+      return new Promise<void>((resolve) => {
+        setTimeout(resolve, 200);
+      });
+    },
+    onAfterPrint: () => {
+      setIsPrinting(false);
+    },
   });
 
-  // 🔧 À remplacer par des valeurs dynamiques si besoin
-  const numeroCommande = "BC-2025-04-14-366";
-  const dateLivraison = "2025-04-14 12:13";
-
   return (
-    <div>
-      {/* ✅ Zone à imprimer (peut être visible ou cachée selon ton besoin) */}
-      <div style={{ display: "none" }}>
-        <div ref={componentRef}>
-          <PrintableCommande
-            numero={numeroCommande}
-            dateLivraison={dateLivraison}
-          />
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Printer className="h-4 w-4" />
+          <span>Imprimer</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[900px]">
+        <DialogHeader>
+          <DialogTitle>Imprimer les mouvements de stock</DialogTitle>
+        </DialogHeader>
+        
+        <div className="mt-4">
+          <Button onClick={handlePrint} disabled={isPrinting}>
+            {isPrinting ? "Impression en cours..." : "Imprimer maintenant"}
+          </Button>
+          
+          <div className="hidden">
+            <div ref={printRef} className="p-8">
+              <h1 className="text-2xl font-bold mb-6">Mouvements de stock</h1>
+              <p className="mb-4">Date d'impression: {format(new Date(), 'PPP', { locale: fr })}</p>
+              
+              {/* Le contenu réel sera injecté ici dynamiquement lors de l'impression */}
+              <div className="print-content">
+                <p>Ce rapport affiche les mouvements de stock enregistrés dans le système.</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* ✅ Bouton imprimable */}
-      <button onClick={() => handlePrint()}>🖨️ Imprimer ce bon</button>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-};
-
+}

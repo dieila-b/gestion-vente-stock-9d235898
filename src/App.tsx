@@ -37,6 +37,8 @@ import UnpaidReport from "./pages/reports/UnpaidReport";
 // Stock pages imports
 import MainStock from "@/pages/stocks/MainStock";
 import POSStock from "@/pages/stocks/POSStock";
+import StockIn from "@/pages/stocks/StockIn";
+import StockOut from "@/pages/stocks/StockOut";
 
 // Purchase pages imports
 import PurchaseOrdersPage from "@/pages/purchase-orders";
@@ -82,6 +84,8 @@ function App() {
                 <Route path="stock-status" element={<StockStatus />} />
                 <Route path="stocks/main" element={<MainStock />} />
                 <Route path="stocks/pos" element={<POSStock />} />
+                <Route path="stocks/in" element={<StockIn />} />
+                <Route path="stocks/out" element={<StockOut />} />
                 <Route path="warehouses" element={<Warehouses />} />
                 <Route path="pos-locations" element={<POSLocations />} />
                 <Route path="transfers" element={<Transfers />} />
