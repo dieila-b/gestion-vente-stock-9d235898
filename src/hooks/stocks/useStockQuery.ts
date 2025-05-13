@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockMovement } from "./useStockMovementTypes";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 export function useStockQuery(type: 'in' | 'out') {
   const { data: movements = [], isLoading } = useQuery({
