@@ -1,8 +1,8 @@
 
 import { Card } from "@/components/ui/card";
-import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
-import { StockEntryForm } from "@/components/stocks/StockEntryForm";
 import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
+import { StockEntryForm } from "@/components/stocks/StockEntryForm";
+import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 
 export default function StockIn() {
