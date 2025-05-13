@@ -39,6 +39,28 @@ export function usePurchaseData(orderId?: string) {
         const purchaseData = data as unknown as PurchaseOrder;
         console.log('Full response from get_purchase_order_by_id:', purchaseData);
         
+        // Initialize form data from purchase data
+        setFormData({
+          id: purchaseData.id,
+          order_number: purchaseData.order_number,
+          supplier_id: purchaseData.supplier_id,
+          expected_delivery_date: purchaseData.expected_delivery_date,
+          notes: purchaseData.notes,
+          logistics_cost: purchaseData.logistics_cost || 0,
+          transit_cost: purchaseData.transit_cost || 0,
+          tax_rate: purchaseData.tax_rate || 0,
+          shipping_cost: purchaseData.shipping_cost || 0,
+          discount: purchaseData.discount || 0,
+          subtotal: purchaseData.subtotal || 0,
+          tax_amount: purchaseData.tax_amount || 0,
+          total_ttc: purchaseData.total_ttc || 0,
+          total_amount: purchaseData.total_amount || 0,
+          paid_amount: purchaseData.paid_amount || 0,
+          status: purchaseData.status,
+          payment_status: purchaseData.payment_status,
+          warehouse_id: purchaseData.warehouse_id,
+        });
+        
         // Check if items array exists and is populated
         if (purchaseData.items && Array.isArray(purchaseData.items) && purchaseData.items.length > 0) {
           console.log('Items from RPC response:', purchaseData.items);
@@ -51,73 +73,45 @@ export function usePurchaseData(orderId?: string) {
             .from('purchase_order_items')
             .select(`
               *,
-              product:product_id(id, name, reference)
+              product:catalog(id, name, reference)
             `)
             .eq('purchase_order_id', orderId);
 
           if (itemsError) {
             console.error('Error fetching purchase order items:', itemsError);
-          } else if (items && Array.isArray(items)) {
-            console.log('Fetched items separately:', items.length);
-            setOrderItems(items as PurchaseOrderItem[]);
-          } else {
-            console.log('No items found or items is not an array');
-            setOrderItems([]);
+            throw itemsError;
+          }
+
+          console.log('Items fetched separately:', items);
+          if (items && items.length > 0) {
+            setOrderItems(items);
           }
         }
-        
-        console.log('Fetched purchase order:', purchaseData);
+
         return purchaseData;
-      } catch (err) {
-        console.error('Error in purchase order query:', err);
-        return null; // Return null instead of throwing to prevent query from failing
+      } catch (error) {
+        console.error('Error in purchase order fetch:', error);
+        throw error;
       }
     },
     enabled: !!orderId,
     staleTime: 30000, // 30 seconds
-    refetchOnWindowFocus: false
   });
 
-  // Set form data based on purchase
-  useEffect(() => {
-    if (purchase) {
-      console.log('Setting form data from purchase:', purchase);
-      setFormData({
-        order_number: purchase.order_number,
-        supplier_id: purchase.supplier_id,
-        warehouse_id: purchase.warehouse_id,
-        expected_delivery_date: purchase.expected_delivery_date,
-        status: purchase.status,
-        payment_status: purchase.payment_status,
-        notes: purchase.notes,
-        discount: purchase.discount,
-        shipping_cost: purchase.shipping_cost,
-        transit_cost: purchase.transit_cost,
-        logistics_cost: purchase.logistics_cost,
-        tax_rate: purchase.tax_rate,
-        subtotal: purchase.subtotal,
-        tax_amount: purchase.tax_amount,
-        total_ttc: purchase.total_ttc,
-        total_amount: purchase.total_amount,
-        paid_amount: purchase.paid_amount
-      });
-    }
-  }, [purchase]);
-
-  // Handle form field updates
+  // Function to update form data field
   const updateFormField = (field: keyof PurchaseOrder, value: any) => {
-    console.log(`Updating field ${field}:`, value);
+    console.log(`Updating ${String(field)} to:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return {
     purchase,
     formData,
-    setFormData,
     orderItems,
     setOrderItems,
     updateFormField,
     isPurchaseLoading,
-    refetch
+    refetch,
+    setFormData
   };
 }

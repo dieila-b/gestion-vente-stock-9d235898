@@ -31,7 +31,7 @@ export function ProductsSection({
   const [actionItemId, setActionItemId] = useState<string | null>(null);
   
   useEffect(() => {
-    console.log("ProductsSection rendered with items:", items);
+    console.log("ProductsSection rendered with items:", items?.length || 0);
     if (items && items.length > 0) {
       items.forEach((item, index) => {
         if (index < 3) { // Only log a few items to avoid console spam
@@ -44,6 +44,8 @@ export function ProductsSection({
           });
         }
       });
+    } else {
+      console.log("No items available to render");
     }
   }, [items]);
   

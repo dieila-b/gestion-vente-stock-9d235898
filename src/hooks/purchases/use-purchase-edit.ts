@@ -37,6 +37,9 @@ export function usePurchaseEdit(orderId?: string) {
   // Update delivery and payment status based on purchase data
   React.useEffect(() => {
     if (purchase) {
+      console.log("Setting status from purchase data:", purchase.status);
+      console.log("Setting payment status from purchase data:", purchase.payment_status);
+      
       if (purchase.status && (purchase.status === 'pending' || purchase.status === 'delivered')) {
         setDeliveryStatus(purchase.status);
       }
