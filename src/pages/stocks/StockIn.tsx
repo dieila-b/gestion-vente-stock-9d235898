@@ -4,6 +4,7 @@ import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
 import { StockEntryForm } from "@/components/stocks/StockEntryForm";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
+import type { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 
 export default function StockIn() {
   const {
@@ -24,7 +25,7 @@ export default function StockIn() {
           </p>
         </div>
         <div className="flex gap-4">
-          <StockMovementsPrintDialog movements={movements} type="in" />
+          <StockMovementsPrintDialog movements={movements as StockMovement[]} type="in" />
           <StockEntryForm 
             warehouses={warehouses} 
             products={products} 
@@ -40,7 +41,7 @@ export default function StockIn() {
           </div>
 
           <StockMovementsTable 
-            movements={movements}
+            movements={movements as StockMovement[]}
             isLoading={isLoading}
             type="in"
           />

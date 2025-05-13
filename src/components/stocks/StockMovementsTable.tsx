@@ -63,7 +63,7 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {type === 'in' ? (
+                    {movement.type === 'in' ? (
                       <>
                         <ArrowUp className="w-4 h-4 text-green-500" />
                         <span>Entrée</span>
