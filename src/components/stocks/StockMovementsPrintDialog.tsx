@@ -25,8 +25,8 @@ export const StockMovementsPrintDialog: React.FC = () => {
     documentTitle: "Stock Movement",
     onAfterPrint: () => console.log("Impression terminée"),
     pageStyle: "@page { size: auto; margin: 10mm; }",
-    // For react-to-print v3.0.0+
-    content: () => componentRef.current,
+    // For react-to-print v3.0.0+ - this is the proper property
+    contentRef: componentRef,
   });
 
   // 🔧 À remplacer par des valeurs dynamiques si besoin
@@ -50,3 +50,4 @@ export const StockMovementsPrintDialog: React.FC = () => {
     </div>
   );
 };
+
