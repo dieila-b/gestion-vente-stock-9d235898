@@ -3,7 +3,7 @@ import { useStockQuery } from './useStockQuery';
 import { useStockEntries } from './useStockEntries';
 import { useStockExits } from './useStockExits';
 import type { StockEntryForm } from './useStockMovementTypes';
-export type { StockMovement } from './useStockMovementTypes';
+export type { StockMovement, StockEntryForm } from './useStockMovementTypes';
 export { stockEntrySchema } from './useStockMovementTypes';
 
 export function useStockMovements(type: 'in' | 'out') {

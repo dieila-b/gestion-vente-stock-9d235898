@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Minus } from "lucide-react";
-import { StockEntryForm as StockEntryFormType, stockEntrySchema } from "@/hooks/stocks/useStockMovements";
+import { StockEntryForm as StockEntryFormType, stockEntrySchema } from "@/hooks/stocks/useStockMovementTypes";
 
 interface StockOutFormProps {
   warehouses: any[];
