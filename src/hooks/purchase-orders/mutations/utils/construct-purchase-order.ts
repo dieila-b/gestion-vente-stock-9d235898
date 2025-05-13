@@ -1,32 +1,36 @@
 
 import { PurchaseOrder } from "@/types/purchase-order";
 
-// Utility function to construct a PurchaseOrder object with proper typing
-export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOrder {
-  // Ensure delivery_note_created is explicitly a boolean
-  const delivery_note_created = data.delivery_note_created === true;
+export function constructPurchaseOrder(data: any): PurchaseOrder {
+  // Ensure supplier is properly structured
+  const supplier = data.supplier && typeof data.supplier === 'object' 
+    ? data.supplier 
+    : {
+        id: data.supplier_id || '',
+        name: "Fournisseur inconnu",
+        phone: "",
+        email: ""
+      };
   
-  // Ensure status is a valid enum value
-  const status = data.status || 'pending';
-  const validStatuses = ['draft', 'pending', 'delivered', 'approved'];
-  const safeStatus = validStatuses.includes(status) ? 
-    status as 'draft' | 'pending' | 'delivered' | 'approved' : 
-    'pending';
-  
-  // Ensure payment_status is a valid enum value
+  // Use type casting for status to ensure it matches the enum type
+  const status = data.status || 'approved';
+  const validStatus = ['approved', 'draft', 'pending', 'delivered'].includes(status) 
+    ? status as PurchaseOrder['status']
+    : 'pending' as PurchaseOrder['status'];
+    
+  // Use type casting for payment_status
   const paymentStatus = data.payment_status || 'pending';
-  const validPaymentStatuses = ['pending', 'partial', 'paid'];
-  const safePaymentStatus = validPaymentStatuses.includes(paymentStatus) ?
-    paymentStatus as 'pending' | 'partial' | 'paid' :
-    'pending';
+  const validPaymentStatus = ['pending', 'partial', 'paid'].includes(paymentStatus)
+    ? paymentStatus as PurchaseOrder['payment_status']
+    : 'pending' as PurchaseOrder['payment_status'];
   
-  // Return a properly typed PurchaseOrder object
-  return {
+  // Create a properly typed PurchaseOrder object
+  const purchaseOrder: PurchaseOrder = {
     id: data.id || '',
     order_number: data.order_number || '',
     created_at: data.created_at || new Date().toISOString(),
-    updated_at: data.updated_at,
-    status: safeStatus,
+    updated_at: data.updated_at || data.created_at || new Date().toISOString(),
+    status: validStatus,
     supplier_id: data.supplier_id || '',
     discount: data.discount || 0,
     expected_delivery_date: data.expected_delivery_date || '',
@@ -40,12 +44,12 @@ export function constructPurchaseOrder(data: Partial<PurchaseOrder>): PurchaseOr
     total_ttc: data.total_ttc || 0,
     total_amount: data.total_amount || 0,
     paid_amount: data.paid_amount || 0,
-    payment_status: safePaymentStatus,
-    warehouse_id: data.warehouse_id,
-    supplier: data.supplier || { id: '', name: '' },
-    warehouse: data.warehouse,
+    payment_status: validPaymentStatus,
+    warehouse_id: data.warehouse_id || undefined,
+    supplier: supplier,
     items: data.items || [],
-    deleted: data.deleted || false,
-    delivery_note_created: delivery_note_created
+    delivery_note_created: Boolean(data.delivery_note_created)
   };
+  
+  return purchaseOrder;
 }

@@ -5,8 +5,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PurchaseOrderHeader } from "@/components/purchases/PurchaseOrderHeader";
 import { PurchaseOrderList } from "@/components/purchases/PurchaseOrderList";
 import { usePurchaseOrders } from "@/hooks/use-purchase-orders";
+import { usePurchasePrint } from "@/hooks/purchases/use-purchase-print";
+import { PurchaseOrder } from "@/types/purchase-order";
 import { toast } from "sonner";
-import { type PurchaseOrder } from "@/types/purchase-order";
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,12 +21,12 @@ export default function PurchaseOrdersPage() {
     handleApprove,
     handleDelete,
     handleEdit,
-    handlePrint,
-    handleCreateDeliveryNote,
     EditDialog,
     isDialogOpen,
     refreshOrders
   } = usePurchaseOrders();
+  
+  const { printPurchaseOrder } = usePurchasePrint();
 
   // Initial data loading
   useEffect(() => {
@@ -90,6 +91,17 @@ export default function PurchaseOrdersPage() {
     }
   }, [rawOrders, searchQuery]);
 
+  // Handle purchase order printing
+  const handlePrint = (order: PurchaseOrder) => {
+    console.log("Printing order:", order.id, order.order_number);
+    try {
+      printPurchaseOrder(order);
+    } catch (error) {
+      console.error("Error printing purchase order:", error);
+      toast.error("Erreur lors de l'impression");
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto p-6">
@@ -107,7 +119,6 @@ export default function PurchaseOrdersPage() {
               onDelete={handleDelete}
               onEdit={handleEdit}
               onPrint={handlePrint}
-              onCreateDeliveryNote={handleCreateDeliveryNote}
               processingOrderId={processingOrderId}
             />
           </CardContent>

@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
+import { useState } from "react";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -29,11 +30,19 @@ export function PurchaseOrderActions({
   const isProcessing = processingId === order.id;
   const canApprove = order.status !== 'approved';
 
-  const handleApprove = (e: React.MouseEvent) => {
+  const handleApprove = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isProcessing) {
-      onApprove(order.id);
+    
+    if (isProcessing) return;
+    
+    try {
+      if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
+        console.log("Confirming approval for order:", order.id);
+        await onApprove(order.id);
+      }
+    } catch (error) {
+      console.error("Error in PurchaseOrderActions handleApprove:", error);
     }
   };
 
@@ -48,7 +57,7 @@ export function PurchaseOrderActions({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isProcessing) {
+    if (!isProcessing && confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
       onDelete(order.id);
     }
   };

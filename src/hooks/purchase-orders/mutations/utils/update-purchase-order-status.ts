@@ -1,14 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { PurchaseOrder } from "@/types/purchase-order";
-import { constructPurchaseOrder } from "./construct-purchase-order";
 
 export async function updatePurchaseOrderToApproved(id: string): Promise<PurchaseOrder> {
-  console.log("Updating purchase order status to approved:", id);
-  
-  const updateData = {
-    status: "approved" as const,
-    updated_at: new Date().toISOString()
+  const updateData: Partial<PurchaseOrder> = {
+    status: 'approved' as const,
+    updated_at: new Date().toISOString(),
+    delivery_note_created: false
   };
 
   const { data: updatedOrder, error: updateError } = await supabase
@@ -27,11 +25,26 @@ export async function updatePurchaseOrderToApproved(id: string): Promise<Purchas
     throw new Error("Échec de mise à jour du bon de commande");
   }
 
-  // Process and return the updated order
-  return constructPurchaseOrder({
+  // Ensure the returned object has all required properties for PurchaseOrder type
+  // including the delivery_note_created property
+  return {
     ...updatedOrder,
-    status: updatedOrder.status as "draft" | "pending" | "delivered" | "approved",
-    payment_status: updatedOrder.payment_status as "pending" | "partial" | "paid",
-    delivery_note_created: Boolean(updatedOrder.delivery_note_created)
-  });
+    delivery_note_created: false, // Initially set to false until we create a delivery note
+    supplier: updatedOrder.supplier || { id: '', name: '', email: '', phone: '' },
+    // Ensure other required properties
+    status: updatedOrder.status || 'approved',
+    payment_status: updatedOrder.payment_status || 'pending',
+  } as PurchaseOrder;
+}
+
+export async function markDeliveryNoteCreated(id: string) {
+  const { error: markError } = await supabase
+    .from('purchase_orders')
+    .update({ delivery_note_created: true } as Partial<PurchaseOrder>)
+    .eq('id', id);
+
+  if (markError) {
+    console.error("Error marking delivery note as created:", markError);
+    throw new Error(`Erreur lors de la mise à jour: ${markError.message}`);
+  }
 }

@@ -11,7 +11,6 @@ interface PurchaseOrderListProps {
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
-  onCreateDeliveryNote?: (order: PurchaseOrder) => Promise<void>;
 }
 
 export function PurchaseOrderList({
@@ -21,8 +20,7 @@ export function PurchaseOrderList({
   onApprove,
   onDelete,
   onEdit,
-  onPrint,
-  onCreateDeliveryNote
+  onPrint
 }: PurchaseOrderListProps) {
   console.log("PurchaseOrderList renders with orders:", orders?.length || 0, "processingId:", processingOrderId);
   
@@ -52,7 +50,6 @@ export function PurchaseOrderList({
       onDelete={onDelete}
       onEdit={onEdit}
       onPrint={onPrint}
-      onCreateDeliveryNote={onCreateDeliveryNote}
     />
   );
 }
