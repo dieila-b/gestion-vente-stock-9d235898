@@ -1,12 +1,21 @@
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
-import { formatDateTime } from "@/lib/formatters";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { formatGNF } from "@/lib/currency";
+import { formatDateTime } from "@/lib/formatters";
 import { Printer } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
+import { toast } from "sonner";
+import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 import { isSelectQueryError } from "@/utils/type-utils";
 
 interface StockMovementsPrintDialogProps {
@@ -21,7 +30,7 @@ export function StockMovementsPrintDialog({ movements, type }: StockMovementsPri
   const handlePrint = useReactToPrint({
     documentTitle: `${type === 'in' ? 'Entrées' : 'Sorties'} de Stock`,
     onAfterPrint: () => setOpen(false),
-    content: () => printRef.current,
+    contentRef: printRef,
   });
 
   // Helper function to safely get POS location name
