@@ -1,3 +1,4 @@
+
 // src/components/stocks/StockMovementsPrintDialog.tsx
 
 import React, { useRef } from "react";
@@ -17,11 +18,12 @@ const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dat
 PrintableCommande.displayName = "PrintableCommande"; // Pour éviter un warning React
 
 // ✅ Composant principal avec bouton imprimer
-export default function StockMovementsPrintDialog() {
+export const StockMovementsPrintDialog: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current, // ✅ seule propriété nécessaire
+    content: () => componentRef.current,
+    onAfterPrint: () => console.log("Impression terminée"),
   });
 
   // 🔧 À remplacer par des valeurs dynamiques si besoin
@@ -41,7 +43,7 @@ export default function StockMovementsPrintDialog() {
       </div>
 
       {/* ✅ Bouton imprimable */}
-      <button onClick={handlePrint}>🖨️ Imprimer ce bon</button>
+      <button onClick={() => handlePrint()}>🖨️ Imprimer ce bon</button>
     </div>
   );
-}
+};
