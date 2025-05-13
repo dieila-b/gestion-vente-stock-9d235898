@@ -88,7 +88,7 @@ export function useStockEntries() {
           }
         }
 
-        // Return true to indicate success instead of the movement data
+        // Return true to indicate success
         return true;
       } catch (error: any) {
         console.error("Error creating stock entry:", error);
