@@ -30,7 +30,7 @@ export function StockMovementsPrintDialog({ movements, type }: StockMovementsPri
   const handlePrint = useReactToPrint({
     documentTitle: `${type === 'in' ? 'Entrées' : 'Sorties'} de Stock`,
     onAfterPrint: () => setOpen(false),
-    content: () => printRef.current,
+    documentRef: printRef,
     pageStyle: `
       @media print {
         @page {
