@@ -2,7 +2,7 @@
 import { useStockQuery } from './useStockQuery';
 import { useStockEntries } from './useStockEntries';
 import { useStockExits } from './useStockExits';
-import type { StockEntryForm } from './useStockMovementTypes';
+import type { StockEntryForm, StockMovement } from './useStockMovementTypes';
 export type { StockMovement, StockEntryForm } from './useStockMovementTypes';
 export { stockEntrySchema } from './useStockMovementTypes';
 

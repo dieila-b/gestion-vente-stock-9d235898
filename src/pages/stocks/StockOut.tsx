@@ -25,7 +25,7 @@ export default function StockOut() {
           </p>
         </div>
         <div className="flex gap-4">
-          <StockMovementsPrintDialog movements={movements as unknown as StockMovement[]} type="out" />
+          <StockMovementsPrintDialog movements={movements} type="out" />
           <StockOutForm 
             warehouses={warehouses} 
             products={products} 
@@ -41,7 +41,7 @@ export default function StockOut() {
           </div>
 
           <StockMovementsTable 
-            movements={movements as unknown as StockMovement[]}
+            movements={movements}
             isLoading={isLoading}
             type="out"
           />
