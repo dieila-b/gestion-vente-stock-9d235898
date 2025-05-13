@@ -1,5 +1,6 @@
 
 import * as z from "zod";
+import { SelectQueryError } from "@/utils/type-utils";
 
 export const stockEntrySchema = z.object({
   warehouseId: z.string().min(1, "Le dépôt est requis"),
@@ -25,7 +26,7 @@ export interface StockMovement {
   pos_location: {
     id: string;
     name: string;
-  } | null | undefined;
+  } | null | undefined | SelectQueryError;
   quantity: number;
   unit_price: number;
   total_value: number;

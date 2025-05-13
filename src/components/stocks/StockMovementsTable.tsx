@@ -5,6 +5,7 @@ import { ArrowUp, ArrowDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatGNF } from "@/lib/currency";
 import { StockMovement } from "@/hooks/stocks/useStockMovements";
+import { isSelectQueryError } from "@/utils/type-utils";
 
 interface StockMovementsTableProps {
   movements: StockMovement[];
@@ -13,6 +14,13 @@ interface StockMovementsTableProps {
 }
 
 export function StockMovementsTable({ movements, isLoading, type }: StockMovementsTableProps) {
+  // Helper function to safely get POS location name
+  const getPosLocationName = (posLocation: StockMovement['pos_location']) => {
+    if (!posLocation) return "-";
+    if (isSelectQueryError(posLocation)) return "Erreur de chargement";
+    return posLocation.name;
+  };
+
   return (
     <div className="rounded-md border">
       <Table>

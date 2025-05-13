@@ -3,7 +3,8 @@ import { useStockQuery } from './useStockQuery';
 import { useStockEntries } from './useStockEntries';
 import { useStockExits } from './useStockExits';
 import { StockEntryForm, stockEntrySchema } from './useStockMovementTypes';
-export { StockMovement, StockEntryForm, stockEntrySchema } from './useStockMovementTypes';
+export type { StockMovement, StockEntryForm } from './useStockMovementTypes';
+export { stockEntrySchema } from './useStockMovementTypes';
 
 export function useStockMovements(type: 'in' | 'out') {
   const { movements, isLoading, warehouses, products } = useStockQuery(type);

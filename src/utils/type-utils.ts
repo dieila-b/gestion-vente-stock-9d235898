@@ -1,6 +1,16 @@
 
-import { SelectQueryError } from "@/types/db-adapter";
 import { Supplier } from "@/types/supplier";
+
+/**
+ * Type for SelectQueryError to match what Supabase returns when queries fail
+ */
+export interface SelectQueryError<T = string> {
+  error: true;
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
 
 /**
  * Type guard to check if an object is a Supabase SelectQueryError
