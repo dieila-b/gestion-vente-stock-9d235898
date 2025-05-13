@@ -1,19 +1,10 @@
+// src/components/stocks/StockMovementsPrintDialog.tsx
 
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
-import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 
-interface PrintableCommandeProps {
-  numero: string;
-  dateLivraison: string;
-}
-
-interface StockMovementsPrintDialogProps {
-  movements?: StockMovement[];
-  type?: 'in' | 'out';
-}
-
-const PrintableCommande = React.forwardRef<HTMLDivElement, PrintableCommandeProps>(
+// ✅ Composant à imprimer
+const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dateLivraison: string }>(
   ({ numero, dateLivraison }, ref) => (
     <div ref={ref} style={{ padding: 24 }}>
       <h2>Bon de commande</h2>
@@ -23,21 +14,23 @@ const PrintableCommande = React.forwardRef<HTMLDivElement, PrintableCommandeProp
   )
 );
 
-export const StockMovementsPrintDialog: React.FC<StockMovementsPrintDialogProps> = ({ movements = [], type = 'in' }) => {
+PrintableCommande.displayName = "PrintableCommande"; // Pour éviter un warning React
+
+// ✅ Composant principal avec bouton imprimer
+export default function StockMovementsPrintDialog() {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    documentTitle: "Bon_de_Commande",
-    onAfterPrint: () => console.log("Printing completed"),
-    // The content property is a function that returns the ref containing the content to print
-    content: () => componentRef.current,
+    content: () => componentRef.current, // ✅ seule propriété nécessaire
   });
 
+  // 🔧 À remplacer par des valeurs dynamiques si besoin
   const numeroCommande = "BC-2025-04-14-366";
   const dateLivraison = "2025-04-14 12:13";
 
   return (
     <div>
+      {/* ✅ Zone à imprimer (peut être visible ou cachée selon ton besoin) */}
       <div style={{ display: "none" }}>
         <div ref={componentRef}>
           <PrintableCommande
@@ -47,10 +40,8 @@ export const StockMovementsPrintDialog: React.FC<StockMovementsPrintDialogProps>
         </div>
       </div>
 
-      <button onClick={() => handlePrint()}>🖨️ Imprimer ce bon</button>
+      {/* ✅ Bouton imprimable */}
+      <button onClick={handlePrint}>🖨️ Imprimer ce bon</button>
     </div>
   );
-};
-
-// Export it as the default as well to maintain backward compatibility
-export default StockMovementsPrintDialog;
+}
