@@ -86,7 +86,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
   });
 
   // Fonction pour créer un mouvement de stock (entrée ou sortie)
-  const createStockMovement = async (data: StockEntryForm) => {
+  const createStockMovement = async (data: StockEntryForm): Promise<boolean> => {
     return type === 'in' 
       ? await createStockEntry(data)
       : await createStockExit(data);

@@ -84,7 +84,8 @@ export function useStockExits() {
           }
         }
 
-        return movementData;
+        // Return true to indicate success
+        return true;
       } catch (error: any) {
         console.error("Error creating stock exit:", error);
         throw error;
@@ -109,8 +110,13 @@ export function useStockExits() {
     },
   });
 
-  const createStockExit = async (data: StockEntryForm) => {
-    return createStockExitMutation.mutateAsync(data);
+  const createStockExit = async (data: StockEntryForm): Promise<boolean> => {
+    try {
+      await createStockExitMutation.mutateAsync(data);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   return {

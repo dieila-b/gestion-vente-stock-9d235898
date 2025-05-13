@@ -88,7 +88,8 @@ export function useStockEntries() {
           }
         }
 
-        return movementData;
+        // Return true to indicate success instead of the movement data
+        return true;
       } catch (error: any) {
         console.error("Error creating stock entry:", error);
         throw error;
@@ -113,8 +114,13 @@ export function useStockEntries() {
     },
   });
 
-  const createStockEntry = async (data: StockEntryForm) => {
-    return createStockEntryMutation.mutateAsync(data);
+  const createStockEntry = async (data: StockEntryForm): Promise<boolean> => {
+    try {
+      await createStockEntryMutation.mutateAsync(data);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   return {
