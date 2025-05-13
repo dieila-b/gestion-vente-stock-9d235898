@@ -50,17 +50,19 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     }
   }, [orderItems, refreshTotals, orderId]);
 
+  // Log orderItems for debugging
   useEffect(() => {
-    if (orderItems) {
-      console.log("Order items updated in form:", orderItems.length);
+    console.log("Effect: orderItems updated in form:", orderItems?.length || 0);
+    if (orderItems && orderItems.length > 0) {
+      console.log("First item:", orderItems[0]);
     }
   }, [orderItems]);
 
   useEffect(() => {
     if (purchase) {
-      console.log("Purchase data loaded:", purchase.id);
+      console.log("Effect: Purchase data loaded:", purchase.id);
     } else if (!isLoading) {
-      console.log("No purchase data available after loading");
+      console.log("Effect: No purchase data available after loading");
     }
   }, [purchase, isLoading]);
 
@@ -150,15 +152,21 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             updateFormField={updateFormField}
           />
             
-          <h3 className="text-lg font-semibold mt-6">Produits</h3>
+          <h3 className="text-lg font-semibold mt-6">Produits ({orderItems?.length || 0})</h3>
           
-          <ProductsSection 
-            items={orderItems || []}
-            updateItemQuantity={updateItemQuantity}
-            updateItemPrice={updateItemPrice}
-            removeItem={removeItem}
-            addItem={addItem}
-          />
+          {orderItems && orderItems.length > 0 ? (
+            <ProductsSection 
+              items={orderItems}
+              updateItemQuantity={updateItemQuantity}
+              updateItemPrice={updateItemPrice}
+              removeItem={removeItem}
+              addItem={addItem}
+            />
+          ) : (
+            <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
+              <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
+            </div>
+          )}
           
           <FormActions 
             onSave={handleSave}

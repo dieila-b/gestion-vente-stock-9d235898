@@ -13,16 +13,85 @@ export function useItemAddRemove(
 ) {
   const [isLoading, setIsLoading] = useState(false);
 
-  // Remove an item from the purchase order
-  const removeItem = async (itemId: string): Promise<boolean> => {
+  // Add a new item to the purchase order
+  const addItem = async (product: CatalogProduct): Promise<boolean> => {
     if (!orderId) {
-      console.error('Cannot remove item - no order id');
+      console.error("Missing orderId for item addition");
       return false;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      console.log(`Removing item ${itemId} from order ${orderId}`);
+      console.log(`Adding product ${product.id} to purchase order ${orderId}`);
+      
+      // Set default values for the new item
+      const newItemId = uuidv4();
+      const defaultQuantity = 1;
+      const defaultPrice = product.purchase_price || product.price || 0;
+      const totalPrice = defaultQuantity * defaultPrice;
+
+      // Create the new item in the database
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .insert({
+          id: newItemId,
+          purchase_order_id: orderId,
+          product_id: product.id,
+          quantity: defaultQuantity,
+          unit_price: defaultPrice,
+          selling_price: product.price || 0,
+          total_price: totalPrice,
+          created_at: new Date().toISOString()
+        })
+        .select();
+
+      if (error) {
+        console.error("Error adding item to purchase order:", error);
+        toast.error("Erreur lors de l'ajout du produit");
+        return false;
+      }
+
+      console.log("Item added successfully:", data);
+
+      // Update the local state with the new item
+      const newItem: PurchaseOrderItem = {
+        id: newItemId,
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: defaultQuantity,
+        unit_price: defaultPrice,
+        selling_price: product.price || 0,
+        total_price: totalPrice,
+        product: {
+          id: product.id,
+          name: product.name,
+          reference: product.reference
+        }
+      };
+
+      // Add the new item to the list
+      setOrderItems([...orderItems, newItem]);
+      toast.success("Produit ajouté avec succès");
+      return true;
+    } catch (error) {
+      console.error("Error in addItem:", error);
+      toast.error("Une erreur s'est produite lors de l'ajout du produit");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Remove an item from the purchase order
+  const removeItem = async (itemId: string): Promise<boolean> => {
+    if (!orderId || !itemId) {
+      console.error("Missing orderId or itemId for item removal");
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`Removing item ${itemId} from purchase order ${orderId}`);
 
       // Delete the item from the database
       const { error } = await supabase
@@ -31,69 +100,21 @@ export function useItemAddRemove(
         .eq('id', itemId);
 
       if (error) {
-        console.error('Error removing purchase order item:', error);
-        toast.error("Erreur lors de la suppression de l'article");
+        console.error("Error removing item from purchase order:", error);
+        toast.error("Erreur lors de la suppression du produit");
         return false;
       }
 
-      // Update the local state
-      setOrderItems(orderItems.filter(item => item.id !== itemId));
-      console.log('Item removed successfully');
-      toast.success("Article supprimé avec succès");
+      console.log("Item removed successfully");
+
+      // Update the local state by filtering out the removed item
+      const updatedItems = orderItems.filter(item => item.id !== itemId);
+      setOrderItems(updatedItems);
+      toast.success("Produit supprimé avec succès");
       return true;
     } catch (error) {
-      console.error('Error in removeItem:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Add a new item to the purchase order
-  const addItem = async (product: CatalogProduct): Promise<boolean> => {
-    if (!orderId) {
-      console.error('Cannot add item - no order id');
-      return false;
-    }
-
-    try {
-      setIsLoading(true);
-      console.log(`Adding product ${product.id} to order ${orderId}`);
-
-      // Create a new item
-      const newItem: PurchaseOrderItem = {
-        id: uuidv4(),
-        purchase_order_id: orderId,
-        product_id: product.id,
-        quantity: 1,
-        unit_price: product.purchase_price || 0,
-        selling_price: product.price || 0,
-        total_price: product.purchase_price || 0,
-        product: {
-          id: product.id,
-          name: product.name,
-          reference: product.reference
-        }
-      };
-
-      // Insert the new item into the database
-      const { error } = await supabase
-        .from('purchase_order_items')
-        .insert(newItem);
-
-      if (error) {
-        console.error('Error adding purchase order item:', error);
-        toast.error("Erreur lors de l'ajout de l'article");
-        return false;
-      }
-
-      // Update the local state
-      setOrderItems([...orderItems, newItem]);
-      console.log('Item added successfully:', newItem);
-      toast.success("Article ajouté avec succès");
-      return true;
-    } catch (error) {
-      console.error('Error in addItem:', error);
+      console.error("Error in removeItem:", error);
+      toast.error("Une erreur s'est produite lors de la suppression du produit");
       return false;
     } finally {
       setIsLoading(false);
@@ -101,8 +122,8 @@ export function useItemAddRemove(
   };
 
   return {
-    removeItem,
     addItem,
+    removeItem,
     isLoading
   };
 }

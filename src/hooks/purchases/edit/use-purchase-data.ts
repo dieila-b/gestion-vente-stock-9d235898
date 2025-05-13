@@ -61,11 +61,19 @@ export function usePurchaseData(orderId?: string) {
           warehouse_id: purchaseData.warehouse_id,
         });
         
-        // Check if items array exists and is populated
+        // Process the items array
         if (purchaseData.items && Array.isArray(purchaseData.items) && purchaseData.items.length > 0) {
           console.log('Items from RPC response:', purchaseData.items);
-          console.log('First item details:', purchaseData.items[0]);
-          setOrderItems(purchaseData.items as PurchaseOrderItem[]);
+          const formattedItems = purchaseData.items.map(item => ({
+            ...item,
+            quantity: Number(item.quantity || 0),
+            unit_price: Number(item.unit_price || 0),
+            selling_price: Number(item.selling_price || 0),
+            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0)
+          }));
+          
+          console.log('Formatted items:', formattedItems);
+          setOrderItems(formattedItems);
         } else {
           // Fallback to fetch items separately if needed
           console.log('No items in RPC response or empty array, fetching separately');
@@ -73,7 +81,7 @@ export function usePurchaseData(orderId?: string) {
             .from('purchase_order_items')
             .select(`
               *,
-              product:catalog(id, name, reference)
+              product:product_id(id, name, reference)
             `)
             .eq('purchase_order_id', orderId);
 
@@ -84,7 +92,21 @@ export function usePurchaseData(orderId?: string) {
 
           console.log('Items fetched separately:', items);
           if (items && items.length > 0) {
-            setOrderItems(items);
+            const formattedItems = items.map(item => ({
+              id: item.id,
+              purchase_order_id: item.purchase_order_id,
+              product_id: item.product_id,
+              quantity: Number(item.quantity || 0),
+              unit_price: Number(item.unit_price || 0),
+              selling_price: Number(item.selling_price || 0),
+              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+              product: item.product
+            }));
+            
+            console.log('Formatted items from separate fetch:', formattedItems);
+            setOrderItems(formattedItems);
+          } else {
+            setOrderItems([]);
           }
         }
 
