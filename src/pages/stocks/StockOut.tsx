@@ -1,189 +1,18 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { ArrowDown, Minus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { formatGNF } from "@/lib/currency";
+import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
+import { StockOutForm } from "@/components/stocks/StockOutForm";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
-
-const stockMovementSchema = z.object({
-  warehouseId: z.string().min(1, "Le dépôt est requis"),
-  productId: z.string().min(1, "Le produit est requis"),
-  quantity: z.number().min(1, "La quantité doit être supérieure à 0"),
-  unitPrice: z.number().min(0, "Le prix unitaire doit être positif"),
-  reason: z.string().min(1, "Le motif est requis")
-});
-
-type StockMovementForm = z.infer<typeof stockMovementSchema>;
-
-interface StockMovement {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    reference: string;
-  };
-  warehouse: {
-    id: string;
-    name: string;
-  };
-  pos_location: {
-    id: string;
-    name: string;
-  } | null | undefined;
-  quantity: number;
-  unit_price: number;
-  total_value: number;
-  reason: string;
-  type: "in" | "out";
-  created_at: string;
-}
+import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 
 export default function StockOut() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  const form = useForm<StockMovementForm>({
-    resolver: zodResolver(stockMovementSchema),
-    defaultValues: {
-      quantity: 1,
-      unitPrice: 0,
-      reason: ""
-    }
-  });
-
-  const { data: movements = [], isLoading } = useQuery({
-    queryKey: ['stock-movements', 'out'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouse_stock_movements')
-        .select(`
-          id,
-          quantity,
-          unit_price,
-          total_value,
-          reason,
-          type,
-          created_at,
-          product:product_id (
-            id,
-            name,
-            reference
-          ),
-          warehouse:warehouse_id (
-            id,
-            name
-          )
-        `)
-        .eq('type', 'out')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erreur lors du chargement des mouvements:', error);
-        throw error;
-      }
-
-      console.log('Mouvements chargés:', data);
-      return (data || []) as unknown as StockMovement[];
-    }
-  });
-
-  const { data: warehouses = [] } = useQuery({
-    queryKey: ['warehouses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('*')
-        .eq('status', 'Actif');
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: products = [] } = useQuery({
-    queryKey: ['catalog-products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('id, name, reference')
-        .order('name');
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const onSubmit = async (data: StockMovementForm) => {
-    try {
-      const { data: existingStock, error: stockQueryError } = await supabase
-        .from('warehouse_stock')
-        .select('id, quantity, unit_price')
-        .eq('warehouse_id', data.warehouseId)
-        .eq('product_id', data.productId)
-        .maybeSingle();
-
-      if (stockQueryError) throw stockQueryError;
-
-      if (!existingStock) {
-        toast.error("Aucun stock disponible pour ce produit dans cet entrepôt");
-        return;
-      }
-
-      if (existingStock.quantity < data.quantity) {
-        toast.error("Stock insuffisant pour effectuer cette sortie");
-        return;
-      }
-
-      const { error: movementError } = await supabase.from('warehouse_stock_movements').insert({
-        warehouse_id: data.warehouseId,
-        product_id: data.productId,
-        quantity: data.quantity,
-        unit_price: data.unitPrice,
-        total_value: data.quantity * data.unitPrice,
-        reason: data.reason,
-        type: 'out'
-      });
-
-      if (movementError) throw movementError;
-
-      const newQuantity = existingStock.quantity - data.quantity;
-      const { error: updateError } = await supabase
-        .from('warehouse_stock')
-        .update({
-          quantity: newQuantity,
-          total_value: newQuantity * existingStock.unit_price,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingStock.id);
-
-      if (updateError) throw updateError;
-
-      toast.success("Sortie de stock enregistrée avec succès");
-      queryClient.invalidateQueries({ queryKey: ['stock-movements', 'out'] });
-      queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
-      
-      form.reset();
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Erreur lors de l\'enregistrement:', error);
-      toast.error("Erreur lors de l'enregistrement de la sortie");
-    }
-  };
+  const {
+    movements,
+    isLoading,
+    warehouses,
+    products,
+    createStockExit
+  } = useStockMovements('out');
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -196,129 +25,11 @@ export default function StockOut() {
         </div>
         <div className="flex gap-4">
           <StockMovementsPrintDialog movements={movements} type="out" />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="enhanced-glass">
-                <Minus className="w-4 h-4 mr-2" />
-                Nouvelle Sortie
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Nouvelle Sortie de Stock</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="warehouseId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dépôt</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un dépôt" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {warehouses.map((warehouse) => (
-                              <SelectItem key={warehouse.id} value={warehouse.id}>
-                                {warehouse.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="productId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Produit</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un produit" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {products.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name} ({product.reference})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantité</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            {...field}
-                            onChange={e => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="unitPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prix unitaire (GNF)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            {...field}
-                            onChange={e => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="reason"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Motif</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" className="w-full">
-                    Enregistrer la sortie
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <StockOutForm 
+            warehouses={warehouses} 
+            products={products} 
+            onSubmit={createStockExit} 
+          />
         </div>
       </div>
 
@@ -328,63 +39,11 @@ export default function StockOut() {
             <h2 className="text-lg font-semibold text-gradient">Liste des Sorties</h2>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Article</TableHead>
-                  <TableHead>Référence</TableHead>
-                  <TableHead>Emplacement</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Quantité</TableHead>
-                  <TableHead className="text-right">Prix unitaire</TableHead>
-                  <TableHead className="text-right">Valeur totale</TableHead>
-                  <TableHead>Motif</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10">
-                      Chargement des données...
-                    </TableCell>
-                  </TableRow>
-                ) : movements.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10">
-                      Aucune sortie trouvée
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  movements.map((movement) => (
-                    <TableRow key={movement.id}>
-                      <TableCell>
-                        {format(new Date(movement.created_at), 'Pp', { locale: fr })}
-                      </TableCell>
-                      <TableCell>{movement.product.name}</TableCell>
-                      <TableCell>{movement.product.reference}</TableCell>
-                      <TableCell>{movement.warehouse.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <ArrowDown className="w-4 h-4 text-red-500" />
-                          <span>Sortie</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{movement.quantity}</TableCell>
-                      <TableCell className="text-right">
-                        {formatGNF(movement.unit_price)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatGNF(movement.total_value)}
-                      </TableCell>
-                      <TableCell>{movement.reason}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <StockMovementsTable 
+            movements={movements}
+            isLoading={isLoading}
+            type="out"
+          />
         </div>
       </Card>
     </div>
