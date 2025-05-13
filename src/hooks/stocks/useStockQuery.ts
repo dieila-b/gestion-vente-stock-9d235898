@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockMovement } from "./useStockMovementTypes";
@@ -44,7 +45,7 @@ export function useStockQuery(type: 'in' | 'out') {
           ...item,
           // Ensure type is strictly "in" or "out"
           type: item.type === 'in' ? 'in' : 'out' as const
-        })) as StockMovement[];
+        }));
       } catch (error) {
         console.error(`Exception non gérée lors du chargement des mouvements de type ${type}:`, error);
         return [];

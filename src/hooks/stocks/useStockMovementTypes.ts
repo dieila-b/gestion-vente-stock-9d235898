@@ -26,7 +26,7 @@ export interface StockMovement {
   pos_location: {
     id: string;
     name: string;
-  } | null | undefined | SelectQueryError;
+  } | null | undefined | SelectQueryError<string>;
   quantity: number;
   unit_price: number;
   total_value: number;
