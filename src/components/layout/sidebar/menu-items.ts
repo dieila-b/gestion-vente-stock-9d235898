@@ -1,4 +1,3 @@
-
 import { 
   Home, Package, Store, Warehouse, Users, FileText,
   Box, BarChart3, FileEdit, CreditCard, Receipt, PiggyBank, 
@@ -35,16 +34,6 @@ export const menuItems = [
             label: "Stock PDV",
             icon: Store,
             path: "/stocks/pos"
-          },
-          {
-            label: "Entrées",
-            icon: ArrowUpCircle,
-            path: "/stocks/in"
-          },
-          {
-            label: "Sorties",
-            icon: ArrowDownCircle,
-            path: "/stocks/out"
           }
         ]
       },
