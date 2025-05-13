@@ -31,6 +31,6 @@ export interface StockMovement {
   unit_price: number;
   total_value: number;
   reason: string;
-  type: "in" | "out";
+  type: "in" | "out";  // Type strictement défini comme union littérale
   created_at: string;
 }

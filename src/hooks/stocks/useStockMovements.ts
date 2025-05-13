@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStockEntries } from "./useStockEntries";
 import { useStockExits } from "./useStockExits";
-import { StockEntryForm } from "./useStockMovementTypes";
+import { StockEntryForm, StockMovement } from "./useStockMovementTypes";
 
 export function useStockMovements(type: 'in' | 'out' = 'in') {
   const { createStockEntry } = useStockEntries();
   const { createStockExit } = useStockExits();
 
   // Récupération des mouvements de stock
-  const { data: movements = [], isLoading } = useQuery({
+  const { data: movementsData = [], isLoading } = useQuery({
     queryKey: ['stock-movements', type],
     queryFn: async () => {
       console.log(`Fetching ${type} stock movements`);
@@ -26,8 +26,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
           reason,
           created_at,
           product:product_id(id, name, reference),
-          warehouse:warehouse_id(id, name),
-          pos_location:pos_location_id(id, name)
+          warehouse:warehouse_id(id, name)
         `)
         .eq('type', type)
         .order('created_at', { ascending: false });
@@ -38,7 +37,15 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
       }
 
       console.log(`Found ${data.length} ${type} movements`);
-      return data;
+      
+      // Conversion explicite du type string vers le type littéral 'in' | 'out'
+      const typedMovements: StockMovement[] = data.map(item => ({
+        ...item,
+        type: item.type === 'in' ? 'in' : 'out' as 'in' | 'out',
+        pos_location: undefined
+      }));
+      
+      return typedMovements;
     },
     staleTime: 1000 * 60 // 1 minute
   });
@@ -86,7 +93,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
   };
 
   return {
-    movements,
+    movements: movementsData,
     isLoading,
     warehouses,
     products,

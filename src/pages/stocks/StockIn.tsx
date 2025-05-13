@@ -4,7 +4,6 @@ import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
 import { StockEntryForm } from "@/components/stocks/StockEntryForm";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
-import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 
 export default function StockIn() {
   const {
