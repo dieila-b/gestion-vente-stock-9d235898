@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -17,10 +17,10 @@ import { formatGNF } from "@/lib/currency";
 
 export function StockMovementsPrintDialog() {
   const [isPrinting, setIsPrinting] = useState(false);
-  const printRef = React.useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    documentTitle: "Mouvements de stock",
     onBeforeGetContent: () => {
       setIsPrinting(true);
       return new Promise<void>((resolve) => {
@@ -30,6 +30,7 @@ export function StockMovementsPrintDialog() {
     onAfterPrint: () => {
       setIsPrinting(false);
     },
+    content: () => printRef.current,
   });
 
   return (
@@ -46,7 +47,7 @@ export function StockMovementsPrintDialog() {
         </DialogHeader>
         
         <div className="mt-4">
-          <Button onClick={handlePrint} disabled={isPrinting}>
+          <Button onClick={() => handlePrint()} disabled={isPrinting}>
             {isPrinting ? "Impression en cours..." : "Imprimer maintenant"}
           </Button>
           
