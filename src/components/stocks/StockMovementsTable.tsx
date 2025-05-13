@@ -4,7 +4,7 @@ import { fr } from "date-fns/locale";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatGNF } from "@/lib/currency";
-import { StockMovement } from "@/hooks/stocks/useStockMovements";
+import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 import { isSelectQueryError } from "@/utils/type-utils";
 
 interface StockMovementsTableProps {
