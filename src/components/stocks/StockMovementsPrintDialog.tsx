@@ -21,7 +21,7 @@ export function StockMovementsPrintDialog({ movements, type }: StockMovementsPri
   const handlePrint = useReactToPrint({
     documentTitle: `${type === 'in' ? 'Entrées' : 'Sorties'} de Stock`,
     onAfterPrint: () => setOpen(false),
-    content: () => printRef.current,
+    printableElement: printRef.current,
   });
 
   // Helper function to safely get POS location name
@@ -93,7 +93,7 @@ export function StockMovementsPrintDialog({ movements, type }: StockMovementsPri
         </div>
 
         <div className="flex justify-end mt-4">
-          <Button onClick={() => handlePrint()}>
+          <Button onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" />
             Imprimer
           </Button>
