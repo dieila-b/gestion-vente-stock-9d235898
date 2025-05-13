@@ -29,8 +29,7 @@ export const StockMovementsPrintDialog: React.FC<StockMovementsPrintDialogProps>
   const handlePrint = useReactToPrint({
     documentTitle: "Bon_de_Commande",
     onAfterPrint: () => console.log("Printing completed"),
-    // The correct syntax for useReactToPrint is to provide a function that returns the ref
-    content: () => componentRef.current,
+    printable: componentRef.current,
   });
 
   const numeroCommande = "BC-2025-04-14-366";
