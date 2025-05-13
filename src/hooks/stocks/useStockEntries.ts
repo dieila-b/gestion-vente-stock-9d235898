@@ -52,7 +52,8 @@ export function useStockEntries() {
       if (existingStock) {
         // Update existing stock
         const newQuantity = existingStock.quantity + data.quantity;
-        const newTotalValue = newQuantity * existingStock.unit_price;
+        // Calculer une nouvelle valeur totale basée sur la somme
+        const newTotalValue = newQuantity * data.unitPrice;
         
         console.log("Updating existing stock:", {
           id: existingStock.id,
