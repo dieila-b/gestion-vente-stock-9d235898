@@ -1,11 +1,11 @@
 
-import { Loader2 } from "lucide-react";
+import { Loader } from "lucide-react";
 
 export function LoadingState() {
   return (
-    <div className="w-full flex justify-center items-center py-12">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      <span className="ml-2 text-gray-500">Chargement des bons de commande...</span>
+    <div className="py-8 text-center">
+      <Loader className="h-6 w-6 animate-spin mx-auto mb-2" />
+      <p>Chargement des bons de commande...</p>
     </div>
   );
 }

@@ -1,128 +1,139 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Synchronizes approved purchase orders by creating delivery notes for them
+ * if they don't already exist
+ */
 export async function syncApprovedPurchaseOrders() {
   try {
-    console.log("Starting syncApprovedPurchaseOrders...");
+    console.log("Synchronizing approved purchase orders to delivery notes");
     
-    // Fetch approved purchase orders that don't have delivery notes
-    const { data: purchaseOrders, error: fetchError } = await supabase
-      .from("purchase_orders")
-      .select("*")
-      .eq("status", "approved")
-      .is("delivery_note_created", null);
-      
+    // Get all approved purchase orders - implémentation plus robuste
+    const { data: approvedOrders, error: fetchError } = await supabase
+      .from('purchase_orders')
+      .select(`
+        id,
+        supplier_id,
+        order_number,
+        status,
+        items:purchase_order_items(*)
+      `)
+      .eq('status', 'approved');
+    
     if (fetchError) {
       console.error("Error fetching approved purchase orders:", fetchError);
-      throw new Error(`Erreur lors de la récupération des commandes approuvées: ${fetchError.message}`);
+      toast.error("Erreur lors de la synchronisation des commandes approuvées");
+      return false;
     }
     
-    console.log(`Found ${purchaseOrders?.length || 0} purchase orders to sync`);
-    
-    if (!purchaseOrders || purchaseOrders.length === 0) {
-      console.log("No purchase orders to sync");
-      return { synced: 0, message: "Aucune commande à synchroniser" };
+    if (!approvedOrders || approvedOrders.length === 0) {
+      console.log("No approved orders found");
+      return false;
     }
     
-    // Create delivery notes for each purchase order
-    let syncedCount = 0;
+    console.log(`Found ${approvedOrders?.length || 0} approved orders total`);
     
-    for (const order of purchaseOrders) {
-      try {
-        console.log(`Processing purchase order: ${order.id}`);
-        
-        // Create delivery note
-        const { data: deliveryNote, error: createError } = await supabase
-          .from("delivery_notes")
-          .insert({
-            order_id: order.id,
-            supplier_id: order.supplier_id,
-            reference: `DL-${order.order_number || order.id.substring(0, 8)}`,
-            status: "pending",
-            expected_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-            notes: `Généré automatiquement à partir du bon de commande #${order.order_number || order.id.substring(0, 8)}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+    // Récupérer tous les bons de livraison existants
+    const { data: existingNotes, error: notesError } = await supabase
+      .from('delivery_notes')
+      .select('purchase_order_id');
+      
+    if (notesError) {
+      console.error("Error fetching existing delivery notes:", notesError);
+      toast.error("Erreur lors de la vérification des bons de livraison existants");
+      return false;
+    }
+    
+    // Filtrer pour ne garder que les commandes sans bon de livraison
+    const ordersWithoutNotes = approvedOrders.filter(order => 
+      !existingNotes?.some(note => note.purchase_order_id === order.id)
+    );
+    
+    console.log(`Found ${ordersWithoutNotes?.length || 0} approved orders without delivery notes:`, ordersWithoutNotes);
+    
+    // Create delivery notes for each approved order
+    if (ordersWithoutNotes && ordersWithoutNotes.length > 0) {
+      let createdCount = 0;
+      
+      for (const order of ordersWithoutNotes) {
+        try {
+          // Generate a unique delivery note number with date and random component
+          const date = new Date();
+          const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+          const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+          const deliveryNumber = `BL-${dateStr}-${randomId}`;
           
-        if (createError) {
-          console.error(`Error creating delivery note for order ${order.id}:`, createError);
-          continue;
-        }
-        
-        console.log(`Created delivery note: ${deliveryNote.id}`);
-        
-        // Get purchase order items
-        const { data: orderItems, error: itemsError } = await supabase
-          .from("purchase_order_items")
-          .select("*")
-          .eq("purchase_order_id", order.id);
+          console.log(`Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
           
-        if (itemsError) {
-          console.error(`Error fetching items for order ${order.id}:`, itemsError);
-          continue;
-        }
-        
-        console.log(`Found ${orderItems?.length || 0} items for purchase order ${order.id}`);
-        
-        // Create delivery note items
-        if (orderItems && orderItems.length > 0) {
-          const deliveryItems = orderItems.map(item => ({
-            delivery_note_id: deliveryNote.id,
-            product_id: item.product_id,
-            ordered_quantity: item.quantity,
-            expected_quantity: item.quantity,
-            received_quantity: 0,
-            notes: ""
-          }));
-          
-          const { error: itemsCreateError } = await supabase
-            .from("delivery_note_items")
-            .insert(deliveryItems);
+          const { data: newNote, error: createError } = await supabase
+            .from('delivery_notes')
+            .insert({
+              purchase_order_id: order.id,
+              supplier_id: order.supplier_id,
+              delivery_number: deliveryNumber,
+              status: 'pending',
+              deleted: false,
+              notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
+            })
+            .select();
             
-          if (itemsCreateError) {
-            console.error(`Error creating delivery note items for order ${order.id}:`, itemsCreateError);
+          if (createError) {
+            console.error(`Error creating delivery note for order ${order.id}:`, createError);
             continue;
           }
           
-          console.log(`Created ${deliveryItems.length} delivery note items`);
-        }
-        
-        // Update purchase order to mark delivery note as created
-        const { error: updateError } = await supabase
-          .from("purchase_orders")
-          .update({ 
-            delivery_note_created: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", order.id);
+          if (!newNote || newNote.length === 0) {
+            console.error(`Failed to create delivery note for order ${order.id}: No data returned`);
+            continue;
+          }
           
-        if (updateError) {
-          console.error(`Error updating purchase order ${order.id}:`, updateError);
-          continue;
+          const createdDeliveryNote = newNote[0];
+          console.log(`Created delivery note for order ${order.id}:`, createdDeliveryNote);
+          
+          // Create delivery note items based on purchase order items
+          if (order.items && order.items.length > 0 && createdDeliveryNote) {
+            const itemsData = order.items.map((item: any) => ({
+              id: uuidv4(), // Générer un ID unique pour chaque item
+              delivery_note_id: createdDeliveryNote.id,
+              product_id: item.product_id,
+              quantity_ordered: item.quantity,
+              quantity_received: 0,
+              unit_price: item.unit_price
+            }));
+            
+            const { error: itemsError } = await supabase
+              .from('delivery_note_items')
+              .insert(itemsData);
+              
+            if (itemsError) {
+              console.error(`Error creating delivery note items for note ${createdDeliveryNote.id}:`, itemsError);
+            } else {
+              console.log(`Created ${itemsData.length} items for delivery note ${createdDeliveryNote.id}`);
+              createdCount++;
+            }
+          } else {
+            console.warn(`No items found for order ${order.id} or delivery note not created`);
+          }
+        } catch (innerError) {
+          console.error(`Error processing order ${order.id}:`, innerError);
         }
-        
-        console.log(`Updated purchase order ${order.id}`);
-        
-        syncedCount++;
-      } catch (orderError: any) {
-        console.error(`Error processing order ${order.id}:`, orderError);
       }
+      
+      if (createdCount > 0) {
+        toast.success(`${createdCount} bon(s) de livraison créé(s) avec succès`);
+      }
+      return createdCount > 0;
+    } else {
+      console.log("No approved orders without delivery notes found");
     }
     
-    console.log(`Sync completed. Synced: ${syncedCount} orders`);
-    
-    if (syncedCount > 0) {
-      toast.success(`${syncedCount} bon(s) de livraison créé(s) avec succès`);
-    }
-    
-    return { synced: syncedCount, message: `${syncedCount} bon(s) de livraison créé(s)` };
+    return false;
   } catch (error: any) {
     console.error("Error in syncApprovedPurchaseOrders:", error);
-    toast.error(`Erreur lors de la synchronisation: ${error.message || "Erreur inconnue"}`);
-    return { synced: 0, error: error.message, message: "Erreur de synchronisation" };
+    toast.error(`Erreur: ${error.message}`);
+    return false;
   }
 }

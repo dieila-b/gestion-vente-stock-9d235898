@@ -1,132 +1,65 @@
 
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { PurchaseOrderItem } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { v4 as uuidv4 } from 'uuid';
-import { updateOrderTotal } from '../calculations/use-order-calculations';
+import { toast } from 'sonner';
 
 export function useItemAddRemove(
   orderId: string | undefined,
   orderItems: PurchaseOrderItem[],
   setOrderItems: (items: PurchaseOrderItem[]) => void
 ) {
-  const updateItemQuantity = async (itemId: string, newQuantity: number) => {
-    if (!orderId || !itemId) return false;
-    
-    try {
-      const itemToUpdate = orderItems.find(item => item.id === itemId);
-      if (!itemToUpdate) {
-        throw new Error("Article non trouvé");
-      }
-      
-      const newTotalPrice = newQuantity * itemToUpdate.unit_price;
-      
-      const { error } = await supabase
-        .from('purchase_order_items')
-        .update({ 
-          quantity: newQuantity,
-          total_price: newTotalPrice 
-        })
-        .eq('id', itemId);
+  const [isLoading, setIsLoading] = useState(false);
 
-      if (error) throw error;
-      
-      const updatedItems = orderItems.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity: newQuantity, total_price: newTotalPrice } 
-          : item
-      );
-      
-      setOrderItems(updatedItems);
-      await updateOrderTotal(orderId, {});
-      
-      toast.success('Quantité mise à jour avec succès');
-      return true;
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-      return false;
-    }
-  };
-
-  const removeItem = async (itemId: string) => {
-    if (!orderId || !itemId) return false;
-    
-    try {
-      const { error } = await supabase
-        .from('purchase_order_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-      
-      const updatedItems = orderItems.filter(item => item.id !== itemId);
-      setOrderItems(updatedItems);
-      
-      await updateOrderTotal(orderId, {});
-      
-      toast.success('Article supprimé avec succès');
-      return true;
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-      return false;
-    }
-  };
-
-  const addItem = async (product: CatalogProduct) => {
+  // Add a new item to the purchase order
+  const addItem = async (product: CatalogProduct): Promise<boolean> => {
     if (!orderId) {
-      console.error("Missing orderId in addItem");
-      toast.error("Erreur: ID de commande manquant");
-      return false;
-    }
-    
-    if (!product || !product.id) {
-      console.error("Invalid product in addItem:", product);
-      toast.error("Erreur: Produit invalide");
+      console.error("Missing orderId for item addition");
       return false;
     }
 
-    const existingItem = orderItems.find(item => item.product_id === product.id);
-    
-    if (existingItem) {
-      console.log("Product already exists in order, incrementing quantity");
-      const newQuantity = existingItem.quantity + 1;
-      return await updateItemQuantity(existingItem.id, newQuantity);
-    }
-    
+    setIsLoading(true);
     try {
+      console.log(`Adding product ${product.id} to purchase order ${orderId}`);
+      
+      // Set default values for the new item
       const newItemId = uuidv4();
-      const quantity = 1;
-      const unitPrice = product.purchase_price || 0;
-      const totalPrice = quantity * unitPrice;
-      
-      const newItem = {
-        id: newItemId,
-        purchase_order_id: orderId,
-        product_id: product.id,
-        quantity: quantity,
-        unit_price: unitPrice,
-        selling_price: product.price || 0,
-        total_price: totalPrice,
-        created_at: new Date().toISOString()
-      };
-      
-      const { error: insertError } = await supabase
+      const defaultQuantity = 1;
+      const defaultPrice = product.purchase_price || product.price || 0;
+      const totalPrice = defaultQuantity * defaultPrice;
+
+      // Create the new item in the database
+      const { data, error } = await supabase
         .from('purchase_order_items')
-        .insert(newItem)
-        .select('*')
-        .single();
-      
-      if (insertError) {
-        throw new Error(`Impossible d'ajouter l'article. ${insertError.message}`);
+        .insert({
+          id: newItemId,
+          purchase_order_id: orderId,
+          product_id: product.id,
+          quantity: defaultQuantity,
+          unit_price: defaultPrice,
+          selling_price: product.price || 0,
+          total_price: totalPrice,
+          created_at: new Date().toISOString()
+        })
+        .select();
+
+      if (error) {
+        console.error("Error adding item to purchase order:", error);
+        toast.error("Erreur lors de l'ajout du produit");
+        return false;
       }
-      
-      const newItemForState: PurchaseOrderItem = {
+
+      console.log("Item added successfully:", data);
+
+      // Update the local state with the new item
+      const newItem: PurchaseOrderItem = {
         id: newItemId,
         purchase_order_id: orderId,
         product_id: product.id,
-        quantity: quantity,
-        unit_price: unitPrice,
+        quantity: defaultQuantity,
+        unit_price: defaultPrice,
         selling_price: product.price || 0,
         total_price: totalPrice,
         product: {
@@ -135,22 +68,62 @@ export function useItemAddRemove(
           reference: product.reference
         }
       };
-      
-      setOrderItems([...orderItems, newItemForState]);
-      await updateOrderTotal(orderId, {});
-      
-      toast.success(`Produit "${product.name}" ajouté avec succès`);
+
+      // Add the new item to the list
+      setOrderItems([...orderItems, newItem]);
+      toast.success("Produit ajouté avec succès");
       return true;
-    } catch (error: any) {
-      console.error("Failed to add product:", error);
-      toast.error(`Erreur: ${error.message}`);
+    } catch (error) {
+      console.error("Error in addItem:", error);
+      toast.error("Une erreur s'est produite lors de l'ajout du produit");
       return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Remove an item from the purchase order
+  const removeItem = async (itemId: string): Promise<boolean> => {
+    if (!orderId || !itemId) {
+      console.error("Missing orderId or itemId for item removal");
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`Removing item ${itemId} from purchase order ${orderId}`);
+
+      // Delete the item from the database
+      const { error } = await supabase
+        .from('purchase_order_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) {
+        console.error("Error removing item from purchase order:", error);
+        toast.error("Erreur lors de la suppression du produit");
+        return false;
+      }
+
+      console.log("Item removed successfully");
+
+      // Update the local state by filtering out the removed item
+      const updatedItems = orderItems.filter(item => item.id !== itemId);
+      setOrderItems(updatedItems);
+      toast.success("Produit supprimé avec succès");
+      return true;
+    } catch (error) {
+      console.error("Error in removeItem:", error);
+      toast.error("Une erreur s'est produite lors de la suppression du produit");
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
-    removeItem,
     addItem,
-    updateItemQuantity
+    removeItem,
+    isLoading
   };
 }

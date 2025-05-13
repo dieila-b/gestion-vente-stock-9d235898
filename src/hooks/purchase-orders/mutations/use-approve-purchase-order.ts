@@ -1,112 +1,82 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PurchaseOrder } from "@/types/purchase-order";
-import { validatePurchaseOrder } from "./utils/validate-purchase-order";
-import { updatePurchaseOrderToApproved } from "./utils/update-purchase-order-status";
-import { createDeliveryNote } from "./utils/create-delivery-note";
-import { createDeliveryNoteItems } from "./utils/create-delivery-note-items";
-import { constructPurchaseOrder } from "./utils/construct-purchase-order";
+import { toast } from "sonner";
+import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
 
 export function useApprovePurchaseOrder() {
-  const queryClient = useQueryClient();
-
   const mutation = useMutation({
-    mutationFn: async (id: string): Promise<PurchaseOrder> => {
+    mutationFn: async (id: string) => {
       try {
         console.log("Starting approval process for order:", id);
         
-        // 1. Validate the purchase order
-        const orderCheck = await validatePurchaseOrder(id);
+        // 1. Vérifier que le bon de commande existe
+        const { data: orderData, error: checkError } = await supabase
+          .from('purchase_orders')
+          .select('id, status')
+          .eq('id', id)
+          .maybeSingle();
+          
+        if (checkError) {
+          console.error("Error checking purchase order:", checkError);
+          throw new Error(`Erreur lors de la vérification: ${checkError.message}`);
+        }
         
-        // Check if the order is already approved
-        if (orderCheck.status === 'approved') {
-          console.log("Order was already approved");
+        if (!orderData) {
+          console.error("Purchase order not found:", id);
+          throw new Error("Bon de commande introuvable");
+        }
+        
+        console.log("Found purchase order:", orderData);
+        
+        if (orderData.status === 'approved') {
+          console.log("Order already approved:", id);
           toast.info("Ce bon de commande est déjà approuvé");
-          
-          // Return the already approved order
-          return orderCheck;
+          return { id, alreadyApproved: true };
         }
         
-        // 2. Update the purchase order status
-        const updatedOrder = await updatePurchaseOrderToApproved(id);
-        console.log("Order updated to approved:", updatedOrder.id);
+        // 2. Mettre à jour le statut du bon de commande
+        const { data: updatedData, error: updateError } = await supabase
+          .from('purchase_orders')
+          .update({ status: 'approved' })
+          .eq('id', id)
+          .select('id, status');
+
+        if (updateError) {
+          console.error("Error updating purchase order status:", updateError);
+          throw new Error(`Erreur lors de la mise à jour: ${updateError.message}`);
+        }
         
-        // Variable to track if a delivery note was successfully created
-        let deliveryNoteCreated = false;
-        let deliveryNoteId = null;
+        if (!updatedData || updatedData.length === 0) {
+          throw new Error("La mise à jour a échoué, aucune donnée retournée");
+        }
+
+        console.log("Purchase order approved successfully:", updatedData);
         
+        // 3. Synchroniser avec les bons de livraison
         try {
-          // 3. Create the delivery note
-          const deliveryNote = await createDeliveryNote(updatedOrder);
-          console.log("Delivery note creation result:", deliveryNote);
-          
-          if (deliveryNote && deliveryNote.id) {
-            deliveryNoteId = deliveryNote.id;
-            
-            // 4. Create the delivery note items
-            const deliveryItems = await createDeliveryNoteItems(deliveryNote.id, id);
-            console.log("Delivery note items created:", deliveryItems?.length || 0);
-            
-            // Only mark as created if the items were successfully created
-            deliveryNoteCreated = deliveryItems && deliveryItems.length > 0;
-          } else {
-            console.warn("No delivery note ID returned or creation failed");
-          }
-        } catch (deliveryError: any) {
-          // If there's an error creating the delivery note, continue
-          // but mark delivery_note_created as false
-          console.error("Error creating delivery note:", deliveryError?.message || deliveryError);
-          toast.error(`Erreur lors de la création du bon de livraison: ${deliveryError?.message || "Erreur inconnue"}`);
-          deliveryNoteCreated = false;
+          console.log("Starting sync after approval");
+          const syncResult = await syncApprovedPurchaseOrders();
+          console.log("Sync result after approval:", syncResult);
+        } catch (syncError: any) {
+          console.error("Error in sync after approval:", syncError);
+          toast.error(`Erreur pendant la synchronisation: ${syncError.message || 'Erreur inconnue'}`);
+          // On continue car l'approbation elle-même a réussi
         }
         
-        // 5. Update the purchase order to indicate delivery note status
-        if (deliveryNoteId) {
-          const { error: updateDeliveryStatusError } = await supabase
-            .from('purchase_orders')
-            .update({ 
-              delivery_note_created: true,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', id);
-            
-          if (updateDeliveryStatusError) {
-            console.warn("Error updating delivery note status:", updateDeliveryStatusError);
-          } else {
-            deliveryNoteCreated = true;
-          }
-        }
-        
-        // 6. Invalidate affected queries to refresh the data
-        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        if (deliveryNoteCreated) {
-          await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-        }
-        
-        // 7. Show appropriate notification
-        if (deliveryNoteCreated) {
-          toast.success("Bon de commande approuvé et bon de livraison créé");
-        } else {
-          toast.success("Bon de commande approuvé");
-          toast.warning("Création du bon de livraison échouée");
-        }
-        
-        // 8. Build the return object with the correct value for delivery_note_created
-        return constructPurchaseOrder({
-          ...updatedOrder,
-          status: updatedOrder.status as "draft" | "pending" | "delivered" | "approved",
-          payment_status: updatedOrder.payment_status as "pending" | "partial" | "paid",
-          delivery_note_created: deliveryNoteCreated
-        });
+        toast.success("Commande approuvée avec succès");
+        return { id, success: true };
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
-        toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
+        toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
         throw error;
       }
-    }
+    },
   });
 
-  return mutation.mutateAsync;
+  // Retourner une fonction qui appelle directement mutateAsync
+  return async (id: string) => {
+    console.log("useApprovePurchaseOrder called with id:", id);
+    return mutation.mutateAsync(id);
+  };
 }

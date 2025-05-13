@@ -154,13 +154,19 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             
           <h3 className="text-lg font-semibold mt-6">Produits ({orderItems?.length || 0})</h3>
           
-          <ProductsSection 
-            items={orderItems || []}
-            updateItemQuantity={updateItemQuantity}
-            updateItemPrice={updateItemPrice}
-            removeItem={removeItem}
-            addItem={addItem}
-          />
+          {orderItems && orderItems.length > 0 ? (
+            <ProductsSection 
+              items={orderItems}
+              updateItemQuantity={updateItemQuantity}
+              updateItemPrice={updateItemPrice}
+              removeItem={removeItem}
+              addItem={addItem}
+            />
+          ) : (
+            <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
+              <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
+            </div>
+          )}
           
           <FormActions 
             onSave={handleSave}

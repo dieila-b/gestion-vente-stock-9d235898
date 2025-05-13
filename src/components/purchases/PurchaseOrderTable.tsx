@@ -1,11 +1,10 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PurchaseOrderActions } from "./PurchaseOrderActions";
+import { Button } from "@/components/ui/button";
+import { Pencil, Printer, Check, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { PurchaseOrder } from "@/types/purchase-order";
-import { FileText, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface PurchaseOrderTableProps {
   orders: PurchaseOrder[];
@@ -15,7 +14,6 @@ interface PurchaseOrderTableProps {
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string) => Promise<void>;
   onPrint: (order: PurchaseOrder) => void;
-  onCreateDeliveryNote?: (order: PurchaseOrder) => Promise<void>;
 }
 
 export function PurchaseOrderTable({
@@ -25,78 +23,103 @@ export function PurchaseOrderTable({
   onApprove,
   onDelete,
   onEdit,
-  onPrint,
-  onCreateDeliveryNote
+  onPrint
 }: PurchaseOrderTableProps) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-4">
+        Chargement des bons de commande...
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="text-center py-4">
+        Aucun bon de commande trouvé
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full overflow-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>N° BC</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Fournisseur</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Montant</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map(order => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">{order.order_number || order.id.substring(0, 8)}</TableCell>
-              <TableCell>{format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}</TableCell>
-              <TableCell>{order.supplier?.name || 'N/A'}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  order.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                  order.status === 'draft' ? 'bg-gray-100 text-gray-800' : 
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {order.status === 'approved' ? 'Approuvé' : 
-                   order.status === 'draft' ? 'Brouillon' : 
-                   'En attente'}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">{order.total_amount.toLocaleString('fr-FR')} GNF</TableCell>
-              <TableCell className="text-right">
-                {order.status === 'approved' && !order.delivery_note_created && onCreateDeliveryNote ? (
-                  <div className="flex justify-end">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>N° Commande</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Fournisseur</TableHead>
+          <TableHead>Articles</TableHead>
+          <TableHead>Statut</TableHead>
+          <TableHead>Montant</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {orders.map((order) => (
+          <TableRow key={order.id}>
+            <TableCell>{order.order_number}</TableCell>
+            <TableCell>
+              {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
+            </TableCell>
+            <TableCell>{order.supplier?.name}</TableCell>
+            <TableCell>{order.items?.length || 0}</TableCell>
+            <TableCell>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                order.status === 'approved' ? 'bg-green-100 text-green-800' :
+                order.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                'bg-yellow-100 text-yellow-800'
+              }`}>
+                {order.status === 'approved' ? 'Approuvé' :
+                 order.status === 'draft' ? 'Brouillon' :
+                 'En attente'}
+              </span>
+            </TableCell>
+            <TableCell>{order.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
+            <TableCell>
+              <div className="flex justify-end gap-2">
+                {order.status !== 'approved' && (
+                  <>
                     <Button 
-                      variant="ghost"
-                      size="sm"
-                      className="bg-[#1A1F2C] text-white hover:bg-[#222] hover:text-white px-3 py-1.5 rounded-md flex items-center"
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => onEdit(order.id)}
                       disabled={processingOrderId === order.id}
-                      onClick={() => onCreateDeliveryNote(order)}
                     >
-                      <Truck className="h-4 w-4 mr-1" />
-                      <span>Bon de livraison</span>
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-end">
-                    <PurchaseOrderActions
-                      order={order}
-                      processingId={processingOrderId}
-                      onApprove={onApprove}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onPrint={onPrint}
-                    />
-                  </div>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => onApprove(order.id)}
+                      disabled={processingOrderId === order.id}
+                      className="text-green-600"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => onDelete(order.id)}
+                      disabled={processingOrderId === order.id}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
-              </TableCell>
-            </TableRow>
-          ))}
-          {orders.length === 0 && !isLoading && (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-10 text-gray-500">
-                Aucun bon de commande trouvé
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => onPrint(order)}
+                  disabled={processingOrderId === order.id}
+                >
+                  <Printer className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
