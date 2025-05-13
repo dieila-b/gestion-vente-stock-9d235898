@@ -14,17 +14,20 @@ export function useStockEntries() {
       // Calculate total value
       const totalValue = data.quantity * data.unitPrice;
       
-      // Utiliser la fonction bypass pour créer l'entrée de stock
+      // Insérer directement dans la table au lieu d'utiliser la fonction bypass
       const { data: movementData, error: movementError } = await supabase
-        .rpc('bypass_insert_stock_movement', {
+        .from('warehouse_stock_movements')
+        .insert({
           warehouse_id: data.warehouseId,
           product_id: data.productId,
           quantity: data.quantity,
           unit_price: data.unitPrice,
           total_value: totalValue,
-          movement_type: 'in',
+          type: 'in',
           reason: data.reason
-        });
+        })
+        .select()
+        .single();
 
       if (movementError) {
         console.error("Error creating movement:", movementError);
