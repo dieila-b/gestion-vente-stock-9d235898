@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 
@@ -11,13 +12,14 @@ const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dat
   )
 );
 
-export default function StockMovementsPrintDialog() {
+export const StockMovementsPrintDialog = () => {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
     documentTitle: "Bon_de_Commande",
     removeAfterPrint: true,
+    // The correct syntax for useReactToPrint is to provide a function that returns the ref
+    content: () => componentRef.current,
   });
 
   const numeroCommande = "BC-2025-04-14-366";
@@ -37,4 +39,7 @@ export default function StockMovementsPrintDialog() {
       <button onClick={handlePrint}>🖨️ Imprimer ce bon</button>
     </div>
   );
-}
+};
+
+// Export it as the default as well to maintain backward compatibility
+export default StockMovementsPrintDialog;
