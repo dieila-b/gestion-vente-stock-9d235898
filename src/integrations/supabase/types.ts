@@ -1612,7 +1612,10 @@ export type Database = {
           id: string
           product_id: string | null
           quantity: number
+          reason: string | null
+          total_value: number | null
           type: string
+          unit_price: number | null
           warehouse_id: string | null
         }
         Insert: {
@@ -1620,7 +1623,10 @@ export type Database = {
           id?: string
           product_id?: string | null
           quantity: number
+          reason?: string | null
+          total_value?: number | null
           type: string
+          unit_price?: number | null
           warehouse_id?: string | null
         }
         Update: {
@@ -1628,7 +1634,10 @@ export type Database = {
           id?: string
           product_id?: string | null
           quantity?: number
+          reason?: string | null
+          total_value?: number | null
           type?: string
+          unit_price?: number | null
           warehouse_id?: string | null
         }
         Relationships: [
