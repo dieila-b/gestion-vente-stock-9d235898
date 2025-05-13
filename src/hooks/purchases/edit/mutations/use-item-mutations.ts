@@ -2,8 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PurchaseOrderItem } from '@/types/purchase-order';
-import { CatalogProduct } from '@/types/catalog';
-import { v4 as uuidv4 } from 'uuid';
 import { updateOrderTotal } from '../calculations/use-order-calculations';
 
 export function useItemMutations(
@@ -39,7 +37,13 @@ export function useItemMutations(
       );
       
       setOrderItems(updatedItems);
-      await updateOrderTotal(orderId, {});
+      
+      // Update the order totals in database and invalidate queries
+      try {
+        await updateOrderTotal(orderId, {});
+      } catch (totalError) {
+        console.error("Error updating order totals after quantity change:", totalError);
+      }
       
       toast.success('Quantité mise à jour avec succès');
       return true;
@@ -77,7 +81,13 @@ export function useItemMutations(
       );
       
       setOrderItems(updatedItems);
-      await updateOrderTotal(orderId, {});
+      
+      // Update the order totals in database and invalidate queries
+      try {
+        await updateOrderTotal(orderId, {});
+      } catch (totalError) {
+        console.error("Error updating order totals after price change:", totalError);
+      }
       
       toast.success('Prix mis à jour avec succès');
       return true;

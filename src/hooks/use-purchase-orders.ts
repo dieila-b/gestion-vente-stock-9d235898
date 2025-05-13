@@ -50,29 +50,24 @@ export function usePurchaseOrders() {
 
   // Handle the approve function with improved error handling
   const handleApprove = async (id: string): Promise<void> => {
-    if (!id) {
-      console.error("Invalid order ID received for approval");
-      toast.error("ID du bon de commande invalide");
-      return;
-    }
-    
     try {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      // Call the approve mutation
-      await approveOrderFn(id);
+      const result = await approveOrderFn(id);
       
-      console.log("Approval completed successfully for:", id);
+      console.log("Approval completed for:", id, "Result:", result);
       
-      // Refresh data after successful approval
-      await refreshOrders();
-      
-      // Also refresh delivery notes to show newly created ones
-      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-    } catch (error: any) {
+      if (result && result.success) {
+        // Refresh the orders list
+        await refreshOrders();
+        
+        // Also refresh delivery notes to show newly created ones
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      }
+    } catch (error) {
       console.error("Error in handleApprove:", error);
-      toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
+      toast.error("Erreur lors de l'approbation de la commande");
     } finally {
       setProcessingOrderId(null);
     }

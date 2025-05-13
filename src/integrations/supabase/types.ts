@@ -1189,7 +1189,6 @@ export type Database = {
       purchase_orders: {
         Row: {
           created_at: string | null
-          delivery_note_created: boolean | null
           discount: number | null
           expected_delivery_date: string | null
           id: string
@@ -1212,7 +1211,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          delivery_note_created?: boolean | null
           discount?: number | null
           expected_delivery_date?: string | null
           id?: string
@@ -1235,7 +1233,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          delivery_note_created?: boolean | null
           discount?: number | null
           expected_delivery_date?: string | null
           id?: string

@@ -41,12 +41,6 @@ export function PurchaseOrderTable({
     );
   }
 
-  const handleApprove = async (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-      await onApprove(id);
-    }
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -96,7 +90,7 @@ export function PurchaseOrderTable({
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => handleApprove(order.id)}
+                      onClick={() => onApprove(order.id)}
                       disabled={processingOrderId === order.id}
                       className="text-green-600"
                     >

@@ -28,22 +28,21 @@ export interface PurchaseOrder {
     name: string;
   };
   items?: PurchaseOrderItem[];
-  deleted?: boolean; 
-  delivery_note_created: boolean; // Added this line
+  deleted?: boolean; // Keep this optional as it doesn't exist in the database
 }
 
 export interface PurchaseOrderItem {
   id: string;
-  purchase_order_id?: string;
+  purchase_order_id?: string; // Made optional to accommodate different data structures
   product_id: string;
   quantity: number;
   unit_price: number;
   selling_price: number;
   total_price: number;
-  product_code?: string;
-  designation?: string;
+  product_code?: string; // Added this field
+  designation?: string;  // Added this field
   product?: {
-    id: string;
+    id: string; // Added the id property to fix the TypeScript error
     name: string;
     reference?: string;
   };

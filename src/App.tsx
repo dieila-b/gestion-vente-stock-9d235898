@@ -64,60 +64,62 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/*" element={
           <RequireAuth>
-            <Routes>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="catalog" element={<Catalog />} />
-              <Route path="pos" element={<POS />} />
-              <Route path="sales" element={<Sales />} />
-              <Route path="preorders" element={<Preorders />} />
-              <Route path="preorder-invoices" element={<PreorderInvoices />} />
-              <Route path="payments" element={<Payments />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="suppliers" element={<Suppliers />} />
-              <Route path="orders" element={<Orders />} />
-              <Route path="price-requests" element={<PriceRequests />} />
-              <Route path="products" element={<Products />} />
-              <Route path="settings" element={<Settings />} />
-              
-              {/* Stock Management Routes */}
-              <Route path="stock-status" element={<StockStatus />} />
-              <Route path="stocks/main" element={<MainStock />} />
-              <Route path="stocks/pos" element={<POSStock />} />
-              <Route path="stocks/in" element={<StockIn />} />
-              <Route path="stocks/out" element={<StockOut />} />
-              <Route path="warehouses" element={<Warehouses />} />
-              <Route path="pos-locations" element={<POSLocations />} />
-              <Route path="transfers" element={<Transfers />} />
-              
-              {/* Reports Routes */}
-              <Route path="reports/daily" element={<DailyReport />} />
-              <Route path="reports/monthly" element={<MonthlyReport />} />
-              <Route path="reports/yearly" element={<YearlyReport />} />
-              <Route path="reports/custom" element={<CustomReport />} />
-              <Route path="reports/clients" element={<ClientsReport />} />
-              <Route path="reports/unpaid" element={<UnpaidReport />} />
-              
-              {/* Purchase Routes */}
-              <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
-              <Route path="purchase-orders/new" element={<NewPurchaseOrder />} />
-              <Route path="delivery-note" element={<DeliveryNotesPage />} />
-              <Route path="purchase-invoice" element={<PurchaseInvoicesPage />} />
-              <Route path="supplier-returns" element={<SupplierReturns />} />
-              
-              {/* Sales & Billing Routes */}
-              <Route path="sales-invoices" element={<SalesInvoices />} />
-              <Route path="quotes" element={<Quotes />} />
-              <Route path="customer-returns" element={<CustomerReturns />} />
-              
-              {/* Accounting Routes */}
-              <Route path="cash-registers" element={<CashRegisters />} />
-              <Route path="bank-accounts" element={<BankAccounts />} />
-              <Route path="expenses" element={<Expenses />} />
-              
-              {/* Settings Routes */}
-              <Route path="stock-location" element={<StockLocation />} />
-              <Route path="internal-users" element={<InternalUsers />} />
-            </Routes>
+            <DashboardLayout>
+              <Routes>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="catalog" element={<Catalog />} />
+                <Route path="pos" element={<POS />} />
+                <Route path="sales" element={<Sales />} />
+                <Route path="preorders" element={<Preorders />} />
+                <Route path="preorder-invoices" element={<PreorderInvoices />} />
+                <Route path="payments" element={<Payments />} />
+                <Route path="clients" element={<Clients />} />
+                <Route path="suppliers" element={<Suppliers />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="price-requests" element={<PriceRequests />} />
+                <Route path="products" element={<Products />} />
+                <Route path="settings" element={<Settings />} />
+                
+                {/* Stock Management Routes */}
+                <Route path="stock-status" element={<StockStatus />} />
+                <Route path="stocks/main" element={<MainStock />} />
+                <Route path="stocks/pos" element={<POSStock />} />
+                <Route path="stocks/in" element={<StockIn />} />
+                <Route path="stocks/out" element={<StockOut />} />
+                <Route path="warehouses" element={<Warehouses />} />
+                <Route path="pos-locations" element={<POSLocations />} />
+                <Route path="transfers" element={<Transfers />} />
+                
+                {/* Reports Routes */}
+                <Route path="reports/daily" element={<DailyReport />} />
+                <Route path="reports/monthly" element={<MonthlyReport />} />
+                <Route path="reports/yearly" element={<YearlyReport />} />
+                <Route path="reports/custom" element={<CustomReport />} />
+                <Route path="reports/clients" element={<ClientsReport />} />
+                <Route path="reports/unpaid" element={<UnpaidReport />} />
+                
+                {/* Purchase Routes */}
+                <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+                <Route path="purchase-orders/new" element={<NewPurchaseOrder />} />
+                <Route path="delivery-note" element={<DeliveryNotesPage />} />
+                <Route path="purchase-invoice" element={<PurchaseInvoicesPage />} />
+                <Route path="supplier-returns" element={<SupplierReturns />} />
+                
+                {/* Sales & Billing Routes */}
+                <Route path="sales-invoices" element={<SalesInvoices />} />
+                <Route path="quotes" element={<Quotes />} />
+                <Route path="customer-returns" element={<CustomerReturns />} />
+                
+                {/* Accounting Routes */}
+                <Route path="cash-registers" element={<CashRegisters />} />
+                <Route path="bank-accounts" element={<BankAccounts />} />
+                <Route path="expenses" element={<Expenses />} />
+                
+                {/* Settings Routes */}
+                <Route path="stock-location" element={<StockLocation />} />
+                <Route path="internal-users" element={<InternalUsers />} />
+              </Routes>
+            </DashboardLayout>
           </RequireAuth>
         } />
       </Routes>

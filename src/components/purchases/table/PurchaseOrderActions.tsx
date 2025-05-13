@@ -28,6 +28,8 @@ export function PurchaseOrderActions({
   onPrint
 }: PurchaseOrderActionsProps) {
   const isProcessing = processingId === order.id;
+  
+  // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
 
   const handleApprove = async (e: React.MouseEvent) => {
@@ -36,40 +38,14 @@ export function PurchaseOrderActions({
     
     if (isProcessing) return;
     
+    console.log("Attempting to approve order:", order.id);
     try {
-      if (confirm("Êtes-vous sûr de vouloir approuver ce bon de commande ? Un bon de livraison sera automatiquement créé.")) {
-        console.log("Confirming approval for order:", order.id);
-        await onApprove(order.id);
-      }
+      await onApprove(order.id);
     } catch (error) {
-      console.error("Error in PurchaseOrderActions handleApprove:", error);
+      console.error("Error in approve handler:", error);
     }
   };
 
-  const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isProcessing) {
-      onEdit(order.id);
-    }
-  };
-  
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isProcessing && confirm("Êtes-vous sûr de vouloir supprimer ce bon de commande ?")) {
-      onDelete(order.id);
-    }
-  };
-  
-  const handlePrint = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isProcessing) {
-      onPrint(order);
-    }
-  };
-  
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -100,7 +76,7 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={handleEdit}
+            onClick={() => onEdit(order.id)}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -108,7 +84,7 @@ export function PurchaseOrderActions({
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={handlePrint}
+            onClick={() => onPrint(order)}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -117,7 +93,7 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={handleDelete}
+              onClick={() => onDelete(order.id)}
               disabled={isProcessing}
               className="text-red-600 cursor-pointer"
             >
