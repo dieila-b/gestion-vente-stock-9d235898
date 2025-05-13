@@ -1719,6 +1719,18 @@ export type Database = {
         Args: { items_data: Json }
         Returns: Json
       }
+      bypass_insert_stock_movement: {
+        Args: {
+          warehouse_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          total_value: number
+          movement_type: string
+          reason: string
+        }
+        Returns: Json
+      }
       bypass_select_purchase_orders: {
         Args: Record<PropertyKey, never>
         Returns: Json[]
