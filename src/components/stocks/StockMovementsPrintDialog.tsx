@@ -29,9 +29,7 @@ export function StockMovementsPrintDialog() {
       setIsPrinting(false);
     },
     pageStyle: "@page { size: auto; margin: 10mm; }",
-    // The react-to-print library expects a function that returns the component to print
-    // Using the contentRef property instead of content
-    contentRef: () => printRef.current,
+    content: () => printRef.current,
   });
 
   return (
