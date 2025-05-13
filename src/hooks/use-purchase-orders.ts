@@ -6,35 +6,34 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
 import { useState } from "react";
+import { PurchaseOrder } from "@/types/purchase-order";
+import { useDeliveryNotes } from "./use-delivery-notes";
 
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleDelete, handleCreate } = usePurchaseOrderMutations();
+  const { handleDelete, handleCreate, refreshPurchaseOrders } = usePurchaseOrderMutations();
   const approveOrderFn = useApprovePurchaseOrder();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
+  const { createDeliveryNoteFromPO } = useDeliveryNotes();
   const queryClient = useQueryClient();
 
-  // Log if errors occur
   if (error) {
     console.error("Error in usePurchaseOrders:", error);
   }
 
-  // Force refresh the data with minimal stale time
   const refreshOrders = async () => {
     console.log("Refreshing purchase orders...");
     
     try {
-      // First invalidate the query
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       
-      // Then trigger a refetch
       const result = await refetch();
       
       console.log("Refresh result:", result);
       
       if (result.isSuccess) {
-        toast.success("Liste des bons de commande rafraîchie");
+        console.log("Orders refreshed successfully");
       } else if (result.isError) {
         console.error("Error refreshing orders:", result.error);
         toast.error("Erreur lors du rafraîchissement");
@@ -48,36 +47,70 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle the approve function with improved error handling
+  const handlePrint = (order: PurchaseOrder) => {
+    console.log("Printing order:", order.id);
+    // Print functionality here
+    toast.info("Impression en cours...");
+  };
+
   const handleApprove = async (id: string): Promise<void> => {
+    if (!id) {
+      console.error("Invalid order ID received for approval");
+      toast.error("ID du bon de commande invalide");
+      return;
+    }
+    
     try {
       console.log("Starting approval process for:", id);
       setProcessingOrderId(id);
       
-      const result = await approveOrderFn(id);
+      await approveOrderFn(id);
       
-      console.log("Approval completed for:", id, "Result:", result);
+      console.log("Approval completed successfully for:", id);
       
-      if (result && result.success) {
-        // Refresh the orders list
-        await refreshOrders();
-        
-        // Also refresh delivery notes to show newly created ones
-        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      }
-    } catch (error) {
+      // Refresh data after successful operation
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      await refreshOrders();
+    } catch (error: any) {
       console.error("Error in handleApprove:", error);
-      toast.error("Erreur lors de l'approbation de la commande");
+      toast.error(`Erreur lors de l'approbation: ${error?.message || "Erreur inconnue"}`);
     } finally {
       setProcessingOrderId(null);
     }
   };
 
-  // Create wrapper functions with correct signature for Promise<void>
+  const handleCreateDeliveryNote = async (order: PurchaseOrder): Promise<void> => {
+    if (!order || !order.id) {
+      toast.error("Bon de commande invalide");
+      return;
+    }
+    
+    try {
+      console.log("Creating delivery note for order:", order.id);
+      setProcessingOrderId(order.id);
+      
+      const success = await createDeliveryNoteFromPO(order.id);
+      
+      if (success) {
+        toast.success("Bon de livraison créé avec succès");
+        
+        // Update the order to reflect delivery note creation
+        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        await refreshOrders();
+      }
+    } catch (error: any) {
+      console.error("Error creating delivery note:", error);
+      toast.error(`Erreur lors de la création du bon de livraison: ${error?.message || "Erreur inconnue"}`);
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
-      console.log("Wrapping edit for order ID:", id);
       await handleEdit(id);
     } catch (error) {
       console.error("Error in handleEditWrapper:", error);
@@ -88,13 +121,26 @@ export function usePurchaseOrders() {
   };
 
   const handleDeleteWrapper = async (id: string): Promise<void> => {
+    if (!id) {
+      toast.error("ID du bon de commande invalide");
+      return;
+    }
+    
     try {
+      console.log("Starting delete process for order:", id);
       setProcessingOrderId(id);
+      
       await handleDelete(id);
+      console.log("Delete completed successfully for:", id);
+      
+      toast.success("Bon de commande supprimé avec succès");
+      
+      // Refresh the order list after successful deletion
       await refreshOrders();
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error("Error in handleDeleteWrapper:", error);
-      toast.error("Erreur lors de la suppression");
+      toast.error(`Erreur lors de la suppression: ${error?.message || "Erreur inconnue"}`);
     } finally {
       setProcessingOrderId(null);
     }
@@ -112,6 +158,8 @@ export function usePurchaseOrders() {
     isDialogOpen,
     handleCreate,
     refreshOrders,
+    handlePrint,
+    handleCreateDeliveryNote,
     refetch
   };
 }

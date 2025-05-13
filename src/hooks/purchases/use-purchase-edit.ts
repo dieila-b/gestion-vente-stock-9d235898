@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePurchaseData } from './edit/use-purchase-data';
@@ -27,8 +27,7 @@ export function usePurchaseEdit(orderId?: string) {
     setOrderItems,
     updateFormField, 
     isPurchaseLoading, 
-    refetch,
-    setFormData
+    refetch 
   } = usePurchaseData(orderId);
 
   console.log("usePurchaseEdit initialized with orderItems:", orderItems?.length || 0);
@@ -37,9 +36,6 @@ export function usePurchaseEdit(orderId?: string) {
   // Update delivery and payment status based on purchase data
   React.useEffect(() => {
     if (purchase) {
-      console.log("Setting status from purchase data:", purchase.status);
-      console.log("Setting payment status from purchase data:", purchase.payment_status);
-      
       if (purchase.status && (purchase.status === 'pending' || purchase.status === 'delivered')) {
         setDeliveryStatus(purchase.status);
       }
@@ -73,30 +69,6 @@ export function usePurchaseEdit(orderId?: string) {
     updateFormField,
     updatePurchaseOrder
   );
-  
-  // Function to refresh totals
-  const refreshTotals = useCallback(async () => {
-    if (!orderId) return;
-    
-    try {
-      console.log("Refreshing totals for order:", orderId);
-      const updatedTotals = await updateOrderTotal(orderId, formData);
-      
-      // Update form data with new totals
-      setFormData(prevData => ({
-        ...prevData,
-        subtotal: updatedTotals.subtotal,
-        tax_amount: updatedTotals.taxAmount,
-        total_ttc: updatedTotals.totalTTC,
-        total_amount: updatedTotals.totalAmount,
-      }));
-      
-      console.log("Totals refreshed:", updatedTotals);
-      return updatedTotals;
-    } catch (error) {
-      console.error("Error refreshing totals:", error);
-    }
-  }, [orderId, formData, setFormData]);
 
   // Save all form data
   const saveChanges = async () => {
@@ -110,32 +82,29 @@ export function usePurchaseEdit(orderId?: string) {
     setIsLoading(true);
     
     try {
-      // First refresh totals to make sure we have the latest calculated values
-      let latestTotals;
-      try {
-        latestTotals = await refreshTotals();
-        console.log("Refreshed totals before save:", latestTotals);
-      } catch (totalError) {
-        console.error("Error refreshing totals before save:", totalError);
-      }
-      
       // Ensure formData has updated_at set to current timestamp
       const dataWithTimestamp = {
         ...formData,
-        updated_at: new Date().toISOString(),
-        // Make sure we include the latest totals
-        ...(latestTotals && {
-          subtotal: latestTotals.subtotal,
-          tax_amount: latestTotals.taxAmount,
-          total_ttc: latestTotals.totalTTC,
-          total_amount: latestTotals.totalAmount,
-        })
+        updated_at: new Date().toISOString()
       };
       
-      console.log("Data being sent to update:", dataWithTimestamp);
+      // First calculate order total
+      const totalResult = await updateOrderTotal(orderId, dataWithTimestamp);
+      
+      // Then save the rest of the form data
+      const dataToUpdate = {
+        ...dataWithTimestamp,
+        // Include the calculated totals to ensure consistency
+        subtotal: totalResult.subtotal,
+        tax_amount: totalResult.taxAmount,
+        total_ttc: totalResult.totalTTC,
+        total_amount: totalResult.totalAmount
+      };
+      
+      console.log("Data being sent to update:", dataToUpdate);
       
       // Important: Wait for the update to complete
-      const updatedOrder = await updatePurchaseOrder(orderId, dataWithTimestamp);
+      const updatedOrder = await updatePurchaseOrder(orderId, dataToUpdate);
       
       if (!updatedOrder) {
         console.error("Failed to update purchase order");
@@ -177,7 +146,6 @@ export function usePurchaseEdit(orderId?: string) {
     deliveryStatus,
     paymentStatus,
     updateStatus,
-    updatePaymentStatus,
-    refreshTotals
+    updatePaymentStatus
   };
 }

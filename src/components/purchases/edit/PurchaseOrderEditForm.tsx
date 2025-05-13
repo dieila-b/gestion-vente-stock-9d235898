@@ -8,11 +8,10 @@ import {
   NotesSection,
   ProductsSection,
   FormActions
-} from "@/components/purchases/edit/FormSections";
+} from "./FormSections";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { Loader, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface PurchaseOrderEditFormProps {
   orderId: string;
@@ -22,7 +21,6 @@ interface PurchaseOrderEditFormProps {
 export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFormProps) {
   console.log("Editing purchase order with ID:", orderId);
   const [isSaving, setIsSaving] = useState(false);
-  const queryClient = useQueryClient();
   
   const { 
     purchase, 
@@ -38,31 +36,20 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     paymentStatus, 
     updateStatus, 
     updatePaymentStatus,
-    orderItems,
-    refreshTotals
+    orderItems
   } = usePurchaseEdit(orderId);
   
-  // Fetch latest totals when items change
   useEffect(() => {
-    if (orderId && orderItems && orderItems.length > 0) {
-      console.log("Items changed, refreshing totals...");
-      refreshTotals();
-    }
-  }, [orderItems, refreshTotals, orderId]);
-
-  // Log orderItems for debugging
-  useEffect(() => {
-    console.log("Effect: orderItems updated in form:", orderItems?.length || 0);
-    if (orderItems && orderItems.length > 0) {
-      console.log("First item:", orderItems[0]);
+    if (orderItems) {
+      console.log("Order items updated in form:", orderItems.length);
     }
   }, [orderItems]);
 
   useEffect(() => {
     if (purchase) {
-      console.log("Effect: Purchase data loaded:", purchase.id);
+      console.log("Purchase data loaded:", purchase.id);
     } else if (!isLoading) {
-      console.log("Effect: No purchase data available after loading");
+      console.log("No purchase data available after loading");
     }
   }, [purchase, isLoading]);
 
@@ -79,21 +66,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     setIsSaving(true);
     
     try {
-      // Force refresh totals before saving
-      await refreshTotals();
-      
       console.log("Saving changes with form data:", formData);
       
       const success = await saveChanges();
       
       console.log("Save result:", success ? "successful" : "failed");
-      
-      if (success) {
-        // Force refresh purchase orders list
-        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
-        toast.success("Bon de commande mis à jour avec succès");
-      }
       
       // Always close the dialog, regardless of success
       onClose();
@@ -152,7 +129,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             updateFormField={updateFormField}
           />
             
-          <h3 className="text-lg font-semibold mt-6">Produits ({orderItems?.length || 0})</h3>
+          <h3 className="text-lg font-semibold mt-6">Produits</h3>
           
           <ProductsSection 
             items={orderItems || []}
