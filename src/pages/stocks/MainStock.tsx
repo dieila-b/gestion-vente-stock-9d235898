@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface Warehouse {
   id: string;
@@ -45,6 +47,9 @@ interface NewWarehouse {
   surface: number;
   capacity: number;
   manager: string;
+  status?: string;
+  is_active?: boolean;
+  occupied?: number;
 }
 
 export default function MainStock() {
@@ -58,7 +63,7 @@ export default function MainStock() {
     capacity: 0,
     manager: "",
   });
-  const { toast } = useToast();
+  const { toast: useToastFn } = useToast();
   const queryClient = useQueryClient();
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedWarehouse, false);
 
@@ -77,17 +82,34 @@ export default function MainStock() {
 
   const handleCreateWarehouse = async () => {
     try {
-      const { error } = await supabase
+      // Validation
+      if (!newWarehouse.name || !newWarehouse.location || !newWarehouse.manager) {
+        toast.error("Veuillez remplir tous les champs obligatoires");
+        return;
+      }
+      
+      const warehouseToInsert = {
+        ...newWarehouse,
+        status: 'Actif',
+        is_active: true,
+        occupied: 0
+      };
+
+      console.log("Création d'un entrepôt avec les données:", warehouseToInsert);
+      
+      const { data, error } = await supabase
         .from('warehouses')
-        .insert([newWarehouse]);
+        .insert([warehouseToInsert])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors de la création de l'entrepôt:", error);
+        throw error;
+      }
 
-      toast({
-        title: "Entrepôt créé",
-        description: "Le nouvel entrepôt a été ajouté avec succès.",
-      });
+      toast.success("Entrepôt créé avec succès");
 
+      // Reset form and close dialog
       setNewWarehouse({
         name: "",
         location: "",
@@ -96,13 +118,12 @@ export default function MainStock() {
         manager: "",
       });
       setIsWarehouseDialogOpen(false);
+      
+      // Refresh warehouses list
       queryClient.invalidateQueries({ queryKey: ['warehouses'] });
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création de l'entrepôt.",
-        variant: "destructive",
-      });
+      console.error("Erreur lors de la création de l'entrepôt:", error);
+      toast.error("Une erreur est survenue lors de la création de l'entrepôt");
     }
   };
 
@@ -163,7 +184,7 @@ export default function MainStock() {
                   <Input
                     id="surface"
                     type="number"
-                    value={newWarehouse.surface}
+                    value={newWarehouse.surface || 0}
                     onChange={(e) => setNewWarehouse({ ...newWarehouse, surface: Number(e.target.value) })}
                   />
                 </div>
@@ -172,7 +193,7 @@ export default function MainStock() {
                   <Input
                     id="capacity"
                     type="number"
-                    value={newWarehouse.capacity}
+                    value={newWarehouse.capacity || 0}
                     onChange={(e) => setNewWarehouse({ ...newWarehouse, capacity: Number(e.target.value) })}
                   />
                 </div>
