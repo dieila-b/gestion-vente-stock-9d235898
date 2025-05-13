@@ -21,16 +21,14 @@ export function StockMovementsPrintDialog() {
 
   const handlePrint = useReactToPrint({
     documentTitle: "Mouvements de stock",
-    onBeforeGetContent: () => {
+    content: () => printRef.current,
+    onBeforePrint: () => {
       setIsPrinting(true);
-      return new Promise<void>((resolve) => {
-        setTimeout(resolve, 200);
-      });
     },
     onAfterPrint: () => {
       setIsPrinting(false);
     },
-    content: () => printRef.current,
+    pageStyle: "@page { size: auto; margin: 10mm; }"
   });
 
   return (
