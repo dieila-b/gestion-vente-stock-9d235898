@@ -24,6 +24,7 @@ export function StockMovementsPrintDialog() {
     content: () => printRef.current,
     onBeforePrint: () => {
       setIsPrinting(true);
+      return Promise.resolve();
     },
     onAfterPrint: () => {
       setIsPrinting(false);
