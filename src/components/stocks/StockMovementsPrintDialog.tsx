@@ -30,7 +30,21 @@ export function StockMovementsPrintDialog({ movements, type }: StockMovementsPri
   const handlePrint = useReactToPrint({
     documentTitle: `${type === 'in' ? 'Entrées' : 'Sorties'} de Stock`,
     onAfterPrint: () => setOpen(false),
-    contentRef: printRef,
+    content: () => printRef.current,
+    pageStyle: `
+      @media print {
+        @page {
+          margin: 20mm;
+        }
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `,
+    onPrintError: () => {
+      toast.error("Erreur lors de l'impression");
+    },
   });
 
   // Helper function to safely get POS location name
