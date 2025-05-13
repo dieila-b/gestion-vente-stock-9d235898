@@ -25,7 +25,7 @@ export default function StockOut() {
           </p>
         </div>
         <div className="flex gap-4">
-          <StockMovementsPrintDialog movements={movements} type="out" />
+          <StockMovementsPrintDialog />
           <StockOutForm 
             warehouses={warehouses} 
             products={products} 

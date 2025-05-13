@@ -1,8 +1,19 @@
 
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import { StockMovement } from "@/hooks/stocks/useStockMovementTypes";
 
-const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dateLivraison: string }>(
+interface PrintableCommandeProps {
+  numero: string;
+  dateLivraison: string;
+}
+
+interface StockMovementsPrintDialogProps {
+  movements?: StockMovement[];
+  type?: 'in' | 'out';
+}
+
+const PrintableCommande = React.forwardRef<HTMLDivElement, PrintableCommandeProps>(
   ({ numero, dateLivraison }, ref) => (
     <div ref={ref} style={{ padding: 24 }}>
       <h2>Bon de commande</h2>
@@ -12,12 +23,12 @@ const PrintableCommande = React.forwardRef<HTMLDivElement, { numero: string; dat
   )
 );
 
-export const StockMovementsPrintDialog = () => {
+export const StockMovementsPrintDialog: React.FC<StockMovementsPrintDialogProps> = ({ movements = [], type = 'in' }) => {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
     documentTitle: "Bon_de_Commande",
-    removeAfterPrint: true,
+    onAfterPrint: () => console.log("Printing completed"),
     // The correct syntax for useReactToPrint is to provide a function that returns the ref
     content: () => componentRef.current,
   });
@@ -36,7 +47,7 @@ export const StockMovementsPrintDialog = () => {
         </div>
       </div>
 
-      <button onClick={handlePrint}>🖨️ Imprimer ce bon</button>
+      <button onClick={() => handlePrint()}>🖨️ Imprimer ce bon</button>
     </div>
   );
 };

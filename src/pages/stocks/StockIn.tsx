@@ -25,7 +25,7 @@ export default function StockIn() {
           </p>
         </div>
         <div className="flex gap-4">
-          <StockMovementsPrintDialog movements={movements} type="in" />
+          <StockMovementsPrintDialog />
           <StockEntryForm 
             warehouses={warehouses} 
             products={products} 
