@@ -29,7 +29,9 @@ export function StockMovementsPrintDialog() {
       setIsPrinting(false);
     },
     pageStyle: "@page { size: auto; margin: 10mm; }",
-    content: () => printRef.current,
+    // For the latest version of react-to-print, we use the contentRef property
+    // instead of content
+    contentRef: printRef,
   });
 
   return (
