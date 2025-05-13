@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockMovement } from "./useStockMovementTypes";
 import { isSelectQueryError } from "@/utils/type-utils";
+import { safePOSLocation } from "@/utils/data-safe/entities/pos-location";
 
 export function useStockQuery(type: 'in' | 'out') {
   const { data: movements = [], isLoading } = useQuery({
@@ -41,12 +42,23 @@ export function useStockQuery(type: 'in' | 'out') {
           throw error;
         }
 
-        // Cast the returned data to ensure it matches our StockMovement type
-        return (data || []).map(item => ({
-          ...item,
-          // Ensure type is strictly "in" or "out"
-          type: item.type === 'in' ? 'in' : 'out' as const
-        })) as StockMovement[];
+        // Process the data to ensure it matches our type expectations
+        return (data || []).map(item => {
+          // Handle possible SelectQueryError in pos_location
+          let processedItem = {
+            ...item,
+            // Ensure type is strictly "in" or "out"
+            type: item.type === 'in' ? 'in' : 'out' as const,
+            // Handle pos_location which might be a SelectQueryError
+            pos_location: item.pos_location ? 
+              (isSelectQueryError(item.pos_location) ? 
+                safePOSLocation(item.pos_location) : 
+                item.pos_location) : 
+              null
+          };
+
+          return processedItem as StockMovement;
+        });
       } catch (error) {
         console.error(`Exception non gérée lors du chargement des mouvements de type ${type}:`, error);
         return [] as StockMovement[];

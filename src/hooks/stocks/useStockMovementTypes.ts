@@ -1,5 +1,6 @@
 
 import { z } from "zod";
+import { SelectQueryError } from "@/utils/type-utils";
 
 // Schéma pour formulaire d'entrée de stock
 export const stockEntrySchema = z.object({
@@ -34,5 +35,5 @@ export interface StockMovement {
   pos_location?: {
     id: string;
     name: string;
-  };
+  } | SelectQueryError | null;
 }

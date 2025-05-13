@@ -18,7 +18,7 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
   const getPosLocationName = (posLocation: StockMovement['pos_location']) => {
     if (!posLocation) return "-";
     if (isSelectQueryError(posLocation)) return "Erreur de chargement";
-    return posLocation.name;
+    return posLocation.name || "Sans nom";
   };
 
   return (
@@ -56,10 +56,10 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
                 <TableCell>
                   {format(new Date(movement.created_at), 'Pp', { locale: fr })}
                 </TableCell>
-                <TableCell>{movement.product.name}</TableCell>
-                <TableCell>{movement.product.reference}</TableCell>
+                <TableCell>{movement.product?.name || "Produit inconnu"}</TableCell>
+                <TableCell>{movement.product?.reference || "-"}</TableCell>
                 <TableCell>
-                  {movement.warehouse.name}
+                  {movement.warehouse?.name || "Entrepôt inconnu"}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -83,7 +83,7 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
                 <TableCell className="text-right">
                   {formatGNF(movement.total_value)}
                 </TableCell>
-                <TableCell>{movement.reason}</TableCell>
+                <TableCell>{movement.reason || "-"}</TableCell>
               </TableRow>
             ))
           )}
