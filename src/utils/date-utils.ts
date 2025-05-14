@@ -1,10 +1,11 @@
 
-import { format, isValid, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { format, isValid, parseISO } from "date-fns";
 
 /**
- * Safely format a date string to a readable format
- * @param dateString Date string or ISO date to format
+ * Safely format a date string, handling invalid or undefined dates
+ * by returning a placeholder value instead of throwing errors.
+ * 
+ * @param dateString Date string, Date object, or null/undefined
  * @param formatString Optional format string, defaults to dd/MM/yyyy
  * @returns Formatted date string or placeholder if invalid
  */
@@ -12,17 +13,16 @@ export const safeFormatDate = (dateString?: string | Date | null, formatString =
   if (!dateString) return "-";
   
   try {
-    // Try to parse the date
-    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-    
-    // Check if the date is valid
-    if (!isValid(date)) {
-      return "-";
+    // Handle when dateString is already a Date object
+    if (dateString instanceof Date) {
+      return isValid(dateString) ? format(dateString, formatString) : "-";
     }
     
-    return format(date, formatString, { locale: fr });
+    // Parse the string to Date object
+    const date = parseISO(dateString);
+    return isValid(date) ? format(date, formatString) : "-";
   } catch (error) {
-    console.error("Error formatting date:", error, { dateString });
+    console.error("Error formatting date:", error);
     return "-";
   }
 };

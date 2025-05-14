@@ -26,6 +26,8 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
     onBeforePrint: () => setIsPrinting(true),
     onAfterPrint: () => setIsPrinting(false),
     content: () => printRef.current,
+    // Return Promise<void> to fix the type error
+    promise: Promise.resolve(),
   });
 
   // Helper function to get source name based on transfer type
@@ -80,7 +82,7 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
           </p>
           
           <Button
-            onClick={() => handlePrint()}
+            onClick={handlePrint}
             disabled={isPrinting}
             className="w-full"
           >
