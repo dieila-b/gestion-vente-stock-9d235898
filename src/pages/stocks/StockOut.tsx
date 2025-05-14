@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
-import { StockOutForm } from "@/components/stocks/StockOutForm";
+import { StockOutForm } from "@/components/stocks/stock-out/StockOutForm";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 
