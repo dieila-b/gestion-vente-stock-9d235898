@@ -102,12 +102,16 @@ export function useTransfersData() {
 
       if (!data) throw new Error("Transfer not found");
       
+      // Fix: Ensure we're handling data as an object, not an array
+      // Make sure data is treated as a single object, not an array
+      const transferData = data as Record<string, any>;
+      
       // Add default values for potentially missing fields
       const enhancedData = {
-        ...data,
-        reference: data.reference || (data.id ? `T-${data.id.substring(0, 8)}` : 'T-Unknown'),
-        transfer_type: data.transfer_type || "depot_to_depot",
-        status: data.status || "pending",
+        ...transferData,
+        reference: transferData.reference || (transferData.id ? `T-${transferData.id.substring(0, 8)}` : 'T-Unknown'),
+        transfer_type: transferData.transfer_type || "depot_to_depot",
+        status: transferData.status || "pending",
       };
       
       return enhancedData;

@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import {
@@ -26,8 +25,8 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
     onBeforePrint: () => setIsPrinting(true),
     onAfterPrint: () => setIsPrinting(false),
     content: () => printRef.current,
-    // Return a Promise to fix the type error
-    promise: Promise.resolve(),
+    // Fix the type error by providing a function that returns Promise<void>
+    promise: () => Promise.resolve(),
   });
 
   // Helper function to get source name based on transfer type
@@ -82,7 +81,6 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
           </p>
           
           <Button
-            // Using a callback to invoke handlePrint since it's not a direct event handler
             onClick={() => handlePrint()}
             disabled={isPrinting}
             className="w-full"
