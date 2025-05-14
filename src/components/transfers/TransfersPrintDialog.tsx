@@ -27,6 +27,7 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
     documentTitle: "Transferts de stock",
     onBeforePrint: () => {
       setIsPrinting(true);
+      return Promise.resolve(); // Return a Promise to satisfy the type constraint
     },
     onAfterPrint: () => {
       setIsPrinting(false);
