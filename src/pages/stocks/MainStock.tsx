@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -318,6 +317,15 @@ export default function MainStock() {
               </TableBody>
             </Table>
           </div>
+        </div>
+      </Card>
+
+      <Card className="enhanced-glass p-6">
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 className="text-lg font-semibold text-gradient">Liste des Articles</h2>
+          </div>
+          
         </div>
       </Card>
     </div>
