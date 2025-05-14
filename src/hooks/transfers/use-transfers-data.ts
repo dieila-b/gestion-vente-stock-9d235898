@@ -31,12 +31,24 @@ export function useTransfersData() {
         console.log("Transfers data fetched:", data);
         
         // Add default values for potentially missing fields
-        const enhancedData = Array.isArray(data) ? data.map(transfer => ({
-          ...transfer,
-          reference: transfer.reference || `T-${transfer.id.substring(0, 8)}`,
-          transfer_type: transfer.transfer_type || "depot_to_depot",
-          status: transfer.status || "pending",
-        })) : [];
+        const enhancedData = Array.isArray(data) ? data.map(transfer => {
+          // Ensure transfer is a valid object
+          if (!transfer || typeof transfer !== 'object') {
+            return {
+              id: '',
+              reference: '',
+              transfer_type: 'depot_to_depot',
+              status: 'pending',
+            };
+          }
+          
+          return {
+            ...transfer,
+            reference: transfer.reference || (transfer.id ? `T-${transfer.id.substring(0, 8)}` : 'T-Unknown'),
+            transfer_type: transfer.transfer_type || "depot_to_depot",
+            status: transfer.status || "pending",
+          };
+        }) : [];
         
         return enhancedData;
       } catch (error) {
@@ -93,7 +105,7 @@ export function useTransfersData() {
       // Add default values for potentially missing fields
       const enhancedData = {
         ...data,
-        reference: data.reference || `T-${data.id.substring(0, 8)}`,
+        reference: data.reference || (data.id ? `T-${data.id.substring(0, 8)}` : 'T-Unknown'),
         transfer_type: data.transfer_type || "depot_to_depot",
         status: data.status || "pending",
       };

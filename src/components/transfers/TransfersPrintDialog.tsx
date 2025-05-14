@@ -26,7 +26,7 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
     onBeforePrint: () => setIsPrinting(true),
     onAfterPrint: () => setIsPrinting(false),
     content: () => printRef.current,
-    // Return Promise<void> to fix the type error
+    // Return a Promise to fix the type error
     promise: Promise.resolve(),
   });
 
@@ -82,7 +82,8 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
           </p>
           
           <Button
-            onClick={handlePrint}
+            // Using a callback to invoke handlePrint since it's not a direct event handler
+            onClick={() => handlePrint()}
             disabled={isPrinting}
             className="w-full"
           >
