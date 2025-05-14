@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Plus } from "lucide-react";
+import { Search, Filter, Plus, RefreshCw } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,13 +23,20 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+import { formatGNF } from "@/lib/currency";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
-  const { data: stockItems = [], isLoading } = useWarehouseStock(selectedWarehouse, false);
+  
+  // This will get stock data from warehouse_stock table
+  const { 
+    data: stockItems = [], 
+    isLoading,
+    refetch 
+  } = useWarehouseStock(selectedWarehouse, false);
 
   const { data: warehouses = [] } = useQuery({
     queryKey: ['warehouses'],
@@ -43,6 +50,15 @@ export default function MainStock() {
       return data;
     }
   });
+
+  const handleRefresh = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+    toast({
+      title: "Actualisation en cours",
+      description: "Les données de stock sont en cours d'actualisation.",
+    });
+  };
 
   const filteredItems = stockItems.filter((item) => {
     const matchesWarehouse = selectedWarehouse === "_all" 
@@ -58,6 +74,8 @@ export default function MainStock() {
     return matchesWarehouse && matchesSearch;
   });
 
+  console.log("Filtered stock items:", filteredItems);
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div className="flex justify-between items-center">
@@ -68,6 +86,12 @@ export default function MainStock() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            className="glass-effect hover:neon-glow flex gap-2 items-center"
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="h-4 w-4" /> Actualiser
+          </Button>
           <Button className="glass-effect hover:neon-glow">
             Exporter les données
           </Button>
@@ -141,18 +165,18 @@ export default function MainStock() {
               ) : (
                 filteredItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.product?.reference}</TableCell>
-                    <TableCell>{item.product?.category}</TableCell>
+                    <TableCell>{item.product?.reference || "-"}</TableCell>
+                    <TableCell>{item.product?.category || "-"}</TableCell>
                     <TableCell className="font-medium">
-                      {item.product?.name}
+                      {item.product?.name || "Produit inconnu"}
                     </TableCell>
-                    <TableCell>{item.warehouse?.name}</TableCell>
+                    <TableCell>{item.warehouse?.name || "-"}</TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>
                     <TableCell className="text-right">
-                      {item.unit_price.toLocaleString('fr-FR')} GNF
+                      {formatGNF(item.unit_price)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {item.total_value.toLocaleString('fr-FR')} GNF
+                      {formatGNF(item.total_value)}
                     </TableCell>
                   </TableRow>
                 ))

@@ -4,8 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
 import { toast } from "@/components/ui/use-toast";
-import { v4 as uuidv4 } from "uuid";
-import { db } from "@/utils/db-core";
 
 export function useStockEntries() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +13,7 @@ export function useStockEntries() {
     mutationFn: async (data: StockEntryForm) => {
       setIsLoading(true);
       try {
-        console.log("Creating stock entry:", data);
+        console.log("Creating stock entry with data:", data);
         const totalValue = data.quantity * data.unitPrice;
         
         // 1. Insert the stock movement
@@ -31,19 +29,28 @@ export function useStockEntries() {
           });
 
         if (movementError) {
+          console.error("Error creating movement:", movementError);
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
         
+        console.log("Successfully created stock movement:", movementData);
+        
         // 2. Check if stock exists for this product in this warehouse
-        const { data: existingStock } = await supabase
+        const { data: existingStock, error: stockCheckError } = await supabase
           .from('warehouse_stock')
           .select('id, quantity, unit_price, total_value')
           .eq('warehouse_id', data.warehouseId)
           .eq('product_id', data.productId)
           .maybeSingle();
         
+        if (stockCheckError) {
+          console.error("Error checking existing stock:", stockCheckError);
+          throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
+        }
+        
+        // 3. Update or create stock entry
         if (existingStock) {
-          // Calculate new values for existing stock
+          // Calculate new values for existing stock (weighted average)
           const newQuantity = existingStock.quantity + data.quantity;
           const oldValue = existingStock.quantity * existingStock.unit_price;
           const newValue = data.quantity * data.unitPrice;
@@ -72,18 +79,21 @@ export function useStockEntries() {
             .eq('id', existingStock.id);
             
           if (updateError) {
+            console.error("Error updating stock:", updateError);
             throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
           }
+          
+          console.log("Stock successfully updated");
         } else {
+          // Create new stock entry
           console.log("Creating new warehouse stock entry:", {
             warehouseId: data.warehouseId,
             productId: data.productId,
             quantity: data.quantity,
             unitPrice: data.unitPrice,
-            totalValue: totalValue
+            totalValue
           });
           
-          // Create new stock entry
           const { error: insertError } = await supabase
             .from('warehouse_stock')
             .insert({
@@ -97,13 +107,16 @@ export function useStockEntries() {
             });
             
           if (insertError) {
+            console.error("Error creating stock:", insertError);
             throw new Error(`Erreur lors de la création du stock: ${insertError.message}`);
           }
+          
+          console.log("New stock entry successfully created");
         }
 
         return true;
       } catch (error: any) {
-        console.error("Error creating stock entry:", error);
+        console.error("Error in createStockEntry:", error);
         throw error;
       } finally {
         setIsLoading(false);
@@ -114,8 +127,10 @@ export function useStockEntries() {
         title: "Entrée de stock réussie",
         description: "L'entrée de stock a été enregistrée avec succès.",
       });
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      console.log("Stock entry successful - Queries invalidated");
     },
     onError: (error) => {
       toast({
@@ -123,6 +138,7 @@ export function useStockEntries() {
         description: `L'entrée de stock a échoué: ${error.message}`,
         variant: "destructive",
       });
+      console.error("Stock entry failed:", error);
     },
   });
 

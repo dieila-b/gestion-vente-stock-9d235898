@@ -9,7 +9,7 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
   return useQuery({
     queryKey: ['warehouse-stock', locationId, isPOS],
     queryFn: async () => {
-      console.log("Starting stock fetch:", { locationId, isPOS });
+      console.log("Starting warehouse stock fetch:", { locationId, isPOS });
 
       let query = supabase
         .from('warehouse_stock')
@@ -44,11 +44,11 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
           : query.not('warehouse_id', 'is', null);
       }
 
-      console.log("Executing query...");
+      console.log("Executing warehouse stock query...");
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching stock:", error);
+        console.error("Error fetching warehouse stock:", error);
         toast({
           title: "Erreur",
           description: "Impossible de charger les données de stock",
@@ -58,14 +58,15 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       }
 
       if (!data) {
-        console.log("No data returned");
+        console.log("No warehouse stock data returned");
         return [];
       }
 
-      console.log(`Found ${data.length} stock records`);
+      console.log(`Found ${data.length} warehouse stock records:`, data);
       return data;
     },
-    staleTime: 1000 * 60, // 1 minute
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 30, // 30 seconds
     refetchInterval: 1000 * 60 * 5 // 5 minutes
   });
 }

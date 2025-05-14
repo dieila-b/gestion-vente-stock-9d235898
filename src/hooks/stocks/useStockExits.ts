@@ -13,7 +13,7 @@ export function useStockExits() {
     mutationFn: async (data: StockEntryForm) => {
       setIsLoading(true);
       try {
-        console.log("Creating stock exit:", data);
+        console.log("Creating stock exit with data:", data);
         const totalValue = data.quantity * data.unitPrice;
         
         // 1. Check if there is enough stock in the warehouse
@@ -25,14 +25,20 @@ export function useStockExits() {
           .maybeSingle();
         
         if (stockCheckError) {
+          console.error("Error checking stock availability:", stockCheckError);
           throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
         }
         
         if (!existingStock) {
+          console.error("Product not found in warehouse");
           throw new Error('Ce produit n\'existe pas dans l\'entrepôt sélectionné.');
         }
         
         if (existingStock.quantity < data.quantity) {
+          console.error("Insufficient stock", {
+            available: existingStock.quantity,
+            requested: data.quantity
+          });
           throw new Error(`Stock insuffisant. Quantité disponible: ${existingStock.quantity}`);
         }
         
@@ -49,8 +55,11 @@ export function useStockExits() {
           });
 
         if (movementError) {
+          console.error("Error creating movement:", movementError);
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
+        
+        console.log("Successfully created stock exit movement:", movementData);
         
         // 3. Update the warehouse stock
         const newQuantity = existingStock.quantity - data.quantity;
@@ -73,12 +82,15 @@ export function useStockExits() {
           .eq('id', existingStock.id);
           
         if (updateError) {
+          console.error("Error updating stock after exit:", updateError);
           throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
         }
         
+        console.log("Stock successfully updated after exit");
+        
         return true;
       } catch (error: any) {
-        console.error("Error creating stock exit:", error);
+        console.error("Error in createStockExit:", error);
         throw error;
       } finally {
         setIsLoading(false);
@@ -89,8 +101,10 @@ export function useStockExits() {
         title: "Sortie de stock réussie",
         description: "La sortie de stock a été enregistrée avec succès.",
       });
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      console.log("Stock exit successful - Queries invalidated");
     },
     onError: (error) => {
       toast({
@@ -98,6 +112,7 @@ export function useStockExits() {
         description: `La sortie de stock a échoué: ${error.message}`,
         variant: "destructive",
       });
+      console.error("Stock exit failed:", error);
     },
   });
 
