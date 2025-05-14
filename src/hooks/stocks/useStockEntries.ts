@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
 import { toast } from "@/components/ui/use-toast";
 import { v4 as uuidv4 } from "uuid";
+import { db } from "@/utils/db-core";
 
 export function useStockEntries() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,27 +18,23 @@ export function useStockEntries() {
         console.log("Creating stock entry:", data);
         const totalValue = data.quantity * data.unitPrice;
         
-        // 1. Insérer le mouvement de stock entrée directement
+        // 1. Insert the stock movement directly using the bypass function
         const { data: movementData, error: movementError } = await supabase
-          .from('warehouse_stock_movements')
-          .insert({
+          .rpc('bypass_insert_stock_movement', {
             warehouse_id: data.warehouseId,
             product_id: data.productId,
             quantity: data.quantity,
             unit_price: data.unitPrice,
             total_value: totalValue,
-            type: 'in',
+            movement_type: 'in',
             reason: data.reason
-          })
-          .select()
-          .single();
+          });
 
         if (movementError) {
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
         
-        // 2. Mettre à jour le stock de l'entrepôt
-        // D'abord vérifier si le produit existe déjà dans l'entrepôt
+        // 2. Check if the product exists in the warehouse
         const { data: existingStock } = await supabase
           .from('warehouse_stock')
           .select('id, quantity, unit_price')
@@ -46,46 +43,39 @@ export function useStockEntries() {
           .maybeSingle();
         
         if (existingStock) {
-          // Le stock existe, mettre à jour la quantité
+          // The stock exists, update the quantity
           const newQuantity = existingStock.quantity + data.quantity;
           
-          // Calculer le nouveau prix unitaire moyen pondéré
+          // Calculate the new weighted average unit price
           const oldValue = existingStock.quantity * existingStock.unit_price;
           const newValue = data.quantity * data.unitPrice;
           const newTotalValue = oldValue + newValue;
           const newUnitPrice = newTotalValue / newQuantity;
           
-          const { error: updateError } = await supabase
-            .from('warehouse_stock')
-            .update({
+          // Update with the db utility function that handles RLS
+          await db.update(
+            'warehouse_stock',
+            {
               quantity: newQuantity,
               unit_price: newUnitPrice,
               total_value: newTotalValue,
               updated_at: new Date().toISOString()
-            })
-            .eq('id', existingStock.id);
-          
-          if (updateError) {
-            throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
-          }
+            },
+            'id',
+            existingStock.id
+          );
         } else {
-          // Le stock n'existe pas, créer une nouvelle entrée
-          const { error: insertError } = await supabase
-            .from('warehouse_stock')
-            .insert({
-              id: uuidv4(),
-              product_id: data.productId,
-              warehouse_id: data.warehouseId,
-              quantity: data.quantity,
-              unit_price: data.unitPrice,
-              total_value: totalValue,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-          
-          if (insertError) {
-            throw new Error(`Erreur lors de la création du stock: ${insertError.message}`);
-          }
+          // The stock doesn't exist, create a new entry
+          await db.insert('warehouse_stock', {
+            id: uuidv4(),
+            product_id: data.productId,
+            warehouse_id: data.warehouseId,
+            quantity: data.quantity,
+            unit_price: data.unitPrice,
+            total_value: totalValue,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
         }
 
         // Return true to indicate success
