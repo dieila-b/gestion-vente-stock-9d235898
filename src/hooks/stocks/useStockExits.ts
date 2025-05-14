@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
 import { toast } from "@/components/ui/use-toast";
-import { v4 as uuidv4 } from "uuid";
 
 export function useStockExits() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,40 +16,66 @@ export function useStockExits() {
         console.log("Creating stock exit:", data);
         const totalValue = data.quantity * data.unitPrice;
         
-        // 1. Insérer le mouvement de stock sortie directement
+        // 1. Check if there is enough stock in the warehouse
+        const { data: existingStock, error: stockCheckError } = await supabase
+          .from('warehouse_stock')
+          .select('id, quantity, unit_price, total_value')
+          .eq('warehouse_id', data.warehouseId)
+          .eq('product_id', data.productId)
+          .maybeSingle();
+        
+        if (stockCheckError) {
+          throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
+        }
+        
+        if (!existingStock) {
+          throw new Error('Ce produit n\'existe pas dans l\'entrepôt sélectionné.');
+        }
+        
+        if (existingStock.quantity < data.quantity) {
+          throw new Error(`Stock insuffisant. Quantité disponible: ${existingStock.quantity}`);
+        }
+        
+        // 2. Insert the stock movement
         const { data: movementData, error: movementError } = await supabase
-          .from('warehouse_stock_movements')
-          .insert({
+          .rpc('bypass_insert_stock_movement', {
             warehouse_id: data.warehouseId,
             product_id: data.productId,
             quantity: data.quantity,
             unit_price: data.unitPrice,
             total_value: totalValue,
-            type: 'out',
+            movement_type: 'out',
             reason: data.reason
-          })
-          .select()
-          .single();
+          });
 
         if (movementError) {
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
         
-        // 2. Mettre à jour le stock de l'entrepôt en utilisant la fonction bypass_update_warehouse_stock
-        // qui contourne les politiques RLS
-        const { data: stockUpdateData, error: stockUpdateError } = await supabase
-          .rpc('bypass_update_warehouse_stock', {
-            warehouse_id: data.warehouseId,
-            product_id: data.productId,
-            quantity: data.quantity,
-            unit_price: data.unitPrice
-          });
+        // 3. Update the warehouse stock
+        const newQuantity = existingStock.quantity - data.quantity;
+        const newTotalValue = newQuantity * existingStock.unit_price;
+        
+        console.log("Updating stock for exit:", {
+          id: existingStock.id,
+          oldQuantity: existingStock.quantity,
+          newQuantity,
+          totalValue: newTotalValue
+        });
+        
+        const { error: updateError } = await supabase
+          .from('warehouse_stock')
+          .update({
+            quantity: newQuantity,
+            total_value: newTotalValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingStock.id);
           
-        if (stockUpdateError) {
-          throw new Error(`Erreur lors de la mise à jour du stock: ${stockUpdateError.message}`);
+        if (updateError) {
+          throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
         }
-
-        // Return true to indicate success
+        
         return true;
       } catch (error: any) {
         console.error("Error creating stock exit:", error);

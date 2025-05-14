@@ -37,32 +37,54 @@ export function useStockEntries() {
         // 2. Check if stock exists for this product in this warehouse
         const { data: existingStock } = await supabase
           .from('warehouse_stock')
-          .select('id, quantity, unit_price')
+          .select('id, quantity, unit_price, total_value')
           .eq('warehouse_id', data.warehouseId)
           .eq('product_id', data.productId)
           .maybeSingle();
         
         if (existingStock) {
-          // Calculate new values
+          // Calculate new values for existing stock
           const newQuantity = existingStock.quantity + data.quantity;
           const oldValue = existingStock.quantity * existingStock.unit_price;
           const newValue = data.quantity * data.unitPrice;
-          const totalValue = oldValue + newValue;
-          const newUnitPrice = totalValue / newQuantity;
+          const newTotalValue = oldValue + newValue;
+          const newUnitPrice = newTotalValue / newQuantity;
+          
+          console.log("Updating existing warehouse stock:", {
+            id: existingStock.id,
+            oldQuantity: existingStock.quantity,
+            newQuantity,
+            oldUnitPrice: existingStock.unit_price,
+            newUnitPrice,
+            oldTotalValue: existingStock.total_value,
+            newTotalValue
+          });
           
           // Update existing stock
-          await supabase
+          const { error: updateError } = await supabase
             .from('warehouse_stock')
             .update({
               quantity: newQuantity,
               unit_price: newUnitPrice,
-              total_value: totalValue,
+              total_value: newTotalValue,
               updated_at: new Date().toISOString()
             })
             .eq('id', existingStock.id);
+            
+          if (updateError) {
+            throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
+          }
         } else {
+          console.log("Creating new warehouse stock entry:", {
+            warehouseId: data.warehouseId,
+            productId: data.productId,
+            quantity: data.quantity,
+            unitPrice: data.unitPrice,
+            totalValue: totalValue
+          });
+          
           // Create new stock entry
-          await supabase
+          const { error: insertError } = await supabase
             .from('warehouse_stock')
             .insert({
               warehouse_id: data.warehouseId,
@@ -73,6 +95,10 @@ export function useStockEntries() {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
+            
+          if (insertError) {
+            throw new Error(`Erreur lors de la création du stock: ${insertError.message}`);
+          }
         }
 
         return true;
