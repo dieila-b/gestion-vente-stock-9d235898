@@ -18,7 +18,7 @@ export function useStockEntries() {
         console.log("Creating stock entry:", data);
         const totalValue = data.quantity * data.unitPrice;
         
-        // 1. Insert the stock movement directly using the bypass function
+        // 1. Insert the stock movement
         const { data: movementData, error: movementError } = await supabase
           .rpc('bypass_insert_stock_movement', {
             warehouse_id: data.warehouseId,
@@ -34,51 +34,47 @@ export function useStockEntries() {
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
         
-        // 2. Check if the product exists in the warehouse
+        // 2. Check if stock exists for this product in this warehouse
         const { data: existingStock } = await supabase
           .from('warehouse_stock')
           .select('id, quantity, unit_price')
-          .eq('product_id', data.productId)
           .eq('warehouse_id', data.warehouseId)
+          .eq('product_id', data.productId)
           .maybeSingle();
         
         if (existingStock) {
-          // The stock exists, update the quantity
+          // Calculate new values
           const newQuantity = existingStock.quantity + data.quantity;
-          
-          // Calculate the new weighted average unit price
           const oldValue = existingStock.quantity * existingStock.unit_price;
           const newValue = data.quantity * data.unitPrice;
-          const newTotalValue = oldValue + newValue;
-          const newUnitPrice = newTotalValue / newQuantity;
+          const totalValue = oldValue + newValue;
+          const newUnitPrice = totalValue / newQuantity;
           
-          // Update with the db utility function that handles RLS
-          await db.update(
-            'warehouse_stock',
-            {
+          // Update existing stock
+          await supabase
+            .from('warehouse_stock')
+            .update({
               quantity: newQuantity,
               unit_price: newUnitPrice,
-              total_value: newTotalValue,
+              total_value: totalValue,
               updated_at: new Date().toISOString()
-            },
-            'id',
-            existingStock.id
-          );
+            })
+            .eq('id', existingStock.id);
         } else {
-          // The stock doesn't exist, create a new entry
-          await db.insert('warehouse_stock', {
-            id: uuidv4(),
-            product_id: data.productId,
-            warehouse_id: data.warehouseId,
-            quantity: data.quantity,
-            unit_price: data.unitPrice,
-            total_value: totalValue,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+          // Create new stock entry
+          await supabase
+            .from('warehouse_stock')
+            .insert({
+              warehouse_id: data.warehouseId,
+              product_id: data.productId,
+              quantity: data.quantity,
+              unit_price: data.unitPrice,
+              total_value: totalValue,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
         }
 
-        // Return true to indicate success
         return true;
       } catch (error: any) {
         console.error("Error creating stock entry:", error);
