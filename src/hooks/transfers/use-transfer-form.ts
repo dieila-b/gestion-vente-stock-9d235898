@@ -4,21 +4,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/utils/db-adapter";
 import { useToast } from "@/components/ui/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 export type TransferFormData = {
-  source_warehouse_id: string;
-  destination_warehouse_id: string;
-  source_pos_id: string;
-  destination_pos_id: string;
-  transfer_type: "depot_to_pos" | "pos_to_depot" | "depot_to_depot";
-  notes: string;
-  status: "pending" | "completed" | "cancelled";
-  transfer_date: string;
-  products: {
-    product_id: string;
-    quantity: number;
-    product_name?: string;
-  }[];
+  from_warehouse_id: string;
+  to_warehouse_id: string;
+  product_id: string;
+  quantity: number;
+  transfer_date?: string;
 };
 
 export function useTransferForm() {
@@ -28,51 +21,35 @@ export function useTransferForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const defaultFormState: TransferFormData = {
-    source_warehouse_id: "",
-    destination_warehouse_id: "",
-    source_pos_id: "",
-    destination_pos_id: "",
-    transfer_type: "depot_to_depot",
-    notes: "",
-    status: "pending",
+    from_warehouse_id: "",
+    to_warehouse_id: "",
+    product_id: "",
+    quantity: 1,
     transfer_date: new Date().toISOString().split("T")[0],
-    products: [],
   };
 
   const [formState, setFormState] = useState<TransferFormData>(defaultFormState);
 
   const createTransferMutation = useMutation({
     mutationFn: async (data: TransferFormData) => {
-      // First, create the transfer header
+      console.log("Creating transfer with data:", data);
+      
+      // Generate a reference
+      const transferRef = `TR-${new Date().toISOString().slice(0,10).replace(/-/g, '')}-${Math.floor(Math.random() * 1000)}`;
+      
+      // Create the transfer
       const transfer = await db.insert(
-        'transfers',
+        'stock_transfers',
         {
-          source_warehouse_id: data.source_warehouse_id,
-          destination_warehouse_id: data.destination_warehouse_id,
-          source_pos_id: data.source_pos_id,
-          destination_pos_id: data.destination_pos_id,
-          transfer_type: data.transfer_type,
-          notes: data.notes,
-          status: data.status,
-          transfer_date: data.transfer_date,
-          quantity: data.products.reduce((sum, product) => sum + product.quantity, 0), // Add quantity field
+          from_warehouse_id: data.from_warehouse_id,
+          to_warehouse_id: data.to_warehouse_id,
+          product_id: data.product_id,
+          quantity: data.quantity,
+          created_at: new Date().toISOString(),
         }
       );
 
       if (!transfer) throw new Error("Failed to create transfer");
-
-      // Then create transfer items
-      if (data.products.length > 0) {
-        const itemsToInsert = data.products.map((product) => ({
-          transfer_id: transfer.id,
-          product_id: product.product_id,
-          quantity: product.quantity,
-        }));
-
-        const items = await db.insert('transfer_items', itemsToInsert);
-        if (!items) throw new Error("Failed to create transfer items");
-      }
-
       return transfer;
     },
     onSuccess: () => {
@@ -95,41 +72,20 @@ export function useTransferForm() {
 
   const updateTransferMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: TransferFormData }) => {
-      // Update transfer header
+      // Update transfer
       const updated = await db.update(
-        'transfers',
+        'stock_transfers',
         {
-          source_warehouse_id: data.source_warehouse_id,
-          destination_warehouse_id: data.destination_warehouse_id,
-          source_pos_id: data.source_pos_id,
-          destination_pos_id: data.destination_pos_id,
-          transfer_type: data.transfer_type as "depot_to_pos" | "pos_to_depot" | "depot_to_depot",
-          notes: data.notes,
-          status: data.status as "pending" | "completed" | "cancelled",
-          transfer_date: data.transfer_date,
-          quantity: data.products.reduce((sum, product) => sum + product.quantity, 0), // Add quantity field
+          from_warehouse_id: data.from_warehouse_id,
+          to_warehouse_id: data.to_warehouse_id,
+          product_id: data.product_id,
+          quantity: data.quantity,
         },
         'id',
         id
       );
 
       if (!updated) throw new Error("Failed to update transfer");
-
-      // Delete existing items
-      await db.delete('transfer_items', 'transfer_id', id);
-
-      // Insert new items
-      if (data.products.length > 0) {
-        const itemsToInsert = data.products.map((product) => ({
-          transfer_id: id,
-          product_id: product.product_id,
-          quantity: product.quantity,
-        }));
-
-        const items = await db.insert('transfer_items', itemsToInsert);
-        if (!items) throw new Error("Failed to create transfer items");
-      }
-
       return { id };
     },
     onSuccess: () => {
@@ -153,130 +109,76 @@ export function useTransferForm() {
   const handleSourceWarehouseChange = (warehouseId: string) => {
     setFormState((prev) => ({
       ...prev,
-      source_warehouse_id: warehouseId,
+      from_warehouse_id: warehouseId,
     }));
   };
 
   const handleDestinationWarehouseChange = (warehouseId: string) => {
     setFormState((prev) => ({
       ...prev,
-      destination_warehouse_id: warehouseId,
+      to_warehouse_id: warehouseId,
     }));
   };
 
-  const handleSourcePosChange = (posId: string) => {
+  const handleProductChange = (productId: string) => {
     setFormState((prev) => ({
       ...prev,
-      source_pos_id: posId,
+      product_id: productId,
     }));
   };
 
-  const handleDestinationPosChange = (posId: string) => {
+  const handleQuantityChange = (quantity: number) => {
     setFormState((prev) => ({
       ...prev,
-      destination_pos_id: posId,
+      quantity: quantity,
     }));
-  };
-
-  const handleTransferTypeChange = (type: "depot_to_pos" | "pos_to_depot" | "depot_to_depot") => {
-    setFormState((prev) => ({
-      ...prev,
-      transfer_type: type,
-      // Reset IDs based on new type
-      ...(type === "depot_to_pos"
-        ? { destination_warehouse_id: "", source_pos_id: "" }
-        : type === "pos_to_depot"
-        ? { source_warehouse_id: "", destination_pos_id: "" }
-        : { source_pos_id: "", destination_pos_id: "" }),
-    }));
-  };
-
-  const handleNotesChange = (notes: string) => {
-    setFormState((prev) => ({ ...prev, notes }));
-  };
-
-  const handleStatusChange = (status: "pending" | "completed" | "cancelled") => {
-    setFormState((prev) => ({ ...prev, status }));
-  };
-
-  const handleTransferDateChange = (date: string) => {
-    setFormState((prev) => ({ ...prev, transfer_date: date }));
-  };
-
-  const handleAddProduct = (product: {
-    product_id: string;
-    quantity: number;
-    product_name?: string;
-  }) => {
-    setFormState((prev) => ({
-      ...prev,
-      products: [...prev.products, product],
-    }));
-  };
-
-  const handleRemoveProduct = (index: number) => {
-    setFormState((prev) => ({
-      ...prev,
-      products: prev.products.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleUpdateProductQuantity = (index: number, quantity: number) => {
-    setFormState((prev) => {
-      const updatedProducts = [...prev.products];
-      updatedProducts[index] = { ...updatedProducts[index], quantity };
-      return { ...prev, products: updatedProducts };
-    });
   };
 
   const handleSubmit = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
     
     // Validate form
-    if (!formState.transfer_date) {
+    if (!formState.from_warehouse_id) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Veuillez sélectionner une date de transfert",
+        description: "Veuillez sélectionner un entrepôt source",
       });
       return;
     }
 
-    if (formState.transfer_type === "depot_to_depot" && 
-        (!formState.source_warehouse_id || !formState.destination_warehouse_id)) {
+    if (!formState.to_warehouse_id) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Veuillez sélectionner les entrepôts source et destination",
+        description: "Veuillez sélectionner un entrepôt destination",
+      });
+      return;
+    }
+    
+    if (formState.from_warehouse_id === formState.to_warehouse_id) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Les entrepôts source et destination doivent être différents",
       });
       return;
     }
 
-    if (formState.transfer_type === "depot_to_pos" && 
-        (!formState.source_warehouse_id || !formState.destination_pos_id)) {
+    if (!formState.product_id) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Veuillez sélectionner l'entrepôt source et le point de vente destination",
+        description: "Veuillez sélectionner un produit",
       });
       return;
     }
 
-    if (formState.transfer_type === "pos_to_depot" && 
-        (!formState.source_pos_id || !formState.destination_warehouse_id)) {
+    if (formState.quantity <= 0) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Veuillez sélectionner le point de vente source et l'entrepôt destination",
-      });
-      return;
-    }
-
-    if (formState.products.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Veuillez ajouter au moins un produit au transfert",
+        description: "La quantité doit être supérieure à 0",
       });
       return;
     }
@@ -310,21 +212,13 @@ export function useTransferForm() {
 
   const setExistingFormData = (data: any) => {
     setFormState({
-      source_warehouse_id: data.source_warehouse_id || "",
-      destination_warehouse_id: data.destination_warehouse_id || "",
-      source_pos_id: data.source_pos_id || "",
-      destination_pos_id: data.destination_pos_id || "",
-      transfer_type: data.transfer_type as "depot_to_pos" | "pos_to_depot" | "depot_to_depot",
-      notes: data.notes || "",
-      status: data.status as "pending" | "completed" | "cancelled",
+      from_warehouse_id: data.from_warehouse_id || "",
+      to_warehouse_id: data.to_warehouse_id || "",
+      product_id: data.product_id || "",
+      quantity: data.quantity || 1,
       transfer_date: data.transfer_date ? 
         new Date(data.transfer_date).toISOString().split("T")[0] : 
         new Date().toISOString().split("T")[0],
-      products: data.items?.map((item: any) => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        product_name: item.product?.name
-      })) || [],
     });
   };
 
@@ -333,15 +227,8 @@ export function useTransferForm() {
     isSubmitting,
     handleSourceWarehouseChange,
     handleDestinationWarehouseChange,
-    handleSourcePosChange,
-    handleDestinationPosChange,
-    handleTransferTypeChange,
-    handleNotesChange,
-    handleStatusChange,
-    handleTransferDateChange,
-    handleAddProduct,
-    handleRemoveProduct,
-    handleUpdateProductQuantity,
+    handleProductChange,
+    handleQuantityChange,
     handleSubmit,
     handleUpdate,
     resetForm,

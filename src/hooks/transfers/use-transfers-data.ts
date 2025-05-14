@@ -18,20 +18,18 @@ export function useTransfersData() {
     queryFn: async () => {
       try {
         const data = await db.query(
-          "transfers",
+          "stock_transfers",
           query => query.select(`
             *,
-            source_warehouse:source_warehouse_id(*),
-            destination_warehouse:destination_warehouse_id(*),
-            source_pos:source_pos_id(*),
-            destination_pos:destination_pos_id(*),
-            items:transfer_items(*)
+            source_warehouse:from_warehouse_id(*),
+            destination_warehouse:to_warehouse_id(*),
+            product:product_id(*)
           `)
           .order("created_at", { ascending: false })
         );
         
-        // Use helper function to handle SelectQueryError
-        return castToTransfers(data || []);
+        console.log("Transfers data fetched:", data);
+        return data || [];
       } catch (error) {
         console.error("Error fetching transfers:", error);
         return [];
@@ -41,15 +39,7 @@ export function useTransfersData() {
 
   const deleteTransferMutation = useMutation({
     mutationFn: async (id: string) => {
-      // First delete the items
-      const itemsDeleted = await db.delete("transfer_items", "transfer_id", id);
-
-      if (!itemsDeleted) {
-        throw new Error("Failed to delete transfer items");
-      }
-
-      // Then delete the transfer
-      const transferDeleted = await db.delete("transfers", "id", id);
+      const transferDeleted = await db.delete("stock_transfers", "id", id);
 
       if (!transferDeleted) {
         throw new Error("Failed to delete transfer");
@@ -78,17 +68,12 @@ export function useTransfersData() {
   const fetchTransferById = async (id: string) => {
     try {
       const data = await db.query(
-        "transfers",
+        "stock_transfers",
         query => query.select(`
           *,
-          source_warehouse:source_warehouse_id(*),
-          destination_warehouse:destination_warehouse_id(*),
-          source_pos:source_pos_id(*),
-          destination_pos:destination_pos_id(*),
-          items:transfer_items(
-            *,
-            product:product_id(*)
-          )
+          source_warehouse:from_warehouse_id(*),
+          destination_warehouse:to_warehouse_id(*),
+          product:product_id(*)
         `)
         .eq("id", id)
         .single()

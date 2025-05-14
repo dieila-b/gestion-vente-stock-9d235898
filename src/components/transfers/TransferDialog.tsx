@@ -1,136 +1,237 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormField } from "@/components/ui/form";
-import { UseFormReturn } from "react-hook-form";
-import { Transfer } from "@/types/transfer";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { TransferFormValues } from "./schemas/transfer-form-schema";
-import { TransferDateField } from "./components/TransferDateField";
-import { TransferStatusField } from "./components/TransferStatusField";
-import { TransferNotesField } from "./components/TransferNotesField";
-import { TransferActions } from "./components/TransferActions";
-import { TransferTypeSelect } from "./components/TransferTypeSelect";
-import { TransferLocationFields } from "./components/TransferLocationFields";
-import { TransferProductFields } from "./components/TransferProductFields";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+// Define a simple schema for the transfer form
+const transferFormSchema = z.object({
+  from_warehouse_id: z.string().min(1, "Veuillez sélectionner un entrepôt source"),
+  to_warehouse_id: z.string().min(1, "Veuillez sélectionner un entrepôt destination"),
+  product_id: z.string().min(1, "Veuillez sélectionner un produit"),
+  quantity: z.number().min(1, "La quantité doit être supérieure à 0")
+});
+
+type TransferFormValues = z.infer<typeof transferFormSchema>;
 
 interface TransferDialogProps {
-  form: UseFormReturn<TransferFormValues>;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: TransferFormValues) => void;
-  editingTransfer: Transfer | null;
+  editingTransfer: any | null;
   warehouses: any[];
   products: any[];
-  posLocations: any[];
 }
 
 export const TransferDialog = ({
-  form,
   isOpen,
   onOpenChange,
   onSubmit,
   editingTransfer,
   warehouses,
   products,
-  posLocations,
 }: TransferDialogProps) => {
-  const transferType = form.watch('transfer_type');
-  const productId = form.watch('product_id');
-  const sourceWarehouseId = form.watch('source_warehouse_id');
-  const sourcePosId = form.watch('source_pos_id');
-  const [availableQuantity, setAvailableQuantity] = useState<number | null>(null);
+  // Setup form with zod validation
+  const form = useForm<TransferFormValues>({
+    resolver: zodResolver(transferFormSchema),
+    defaultValues: {
+      from_warehouse_id: "",
+      to_warehouse_id: "",
+      product_id: "",
+      quantity: 1
+    },
+  });
 
-  // Debugging logs
+  // Reset form when dialog opens/closes or when editingTransfer changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editingTransfer) {
+        // If editing, populate form with transfer data
+        form.reset({
+          from_warehouse_id: editingTransfer.from_warehouse_id,
+          to_warehouse_id: editingTransfer.to_warehouse_id,
+          product_id: editingTransfer.product_id,
+          quantity: editingTransfer.quantity
+        });
+      } else {
+        // If creating, reset to defaults
+        form.reset({
+          from_warehouse_id: "",
+          to_warehouse_id: "",
+          product_id: "",
+          quantity: 1
+        });
+      }
+    }
+  }, [isOpen, editingTransfer, form]);
+
+  // Debug logs
   useEffect(() => {
     console.log("TransferDialog rendering with:", {
       warehouses: warehouses?.length,
       warehouses_data: warehouses,
-      posLocations: posLocations?.length,
-      posLocations_data: posLocations,
       products: products?.length,
-      products_data: products,
-      transferType,
-      productId,
-      sourceWarehouseId,
+      products_data: products
     });
-  }, [warehouses, posLocations, products, transferType, productId, sourceWarehouseId]);
+  }, [warehouses, products]);
 
-  const handleTransferTypeChange = (value: string) => {
-    const newType = value as "depot_to_pos" | "pos_to_depot" | "depot_to_depot";
-    form.setValue('transfer_type', newType);
-    
-    // Reset all location fields
-    form.setValue('source_warehouse_id', undefined);
-    form.setValue('destination_warehouse_id', undefined);
-    form.setValue('source_pos_id', undefined);
-    form.setValue('destination_pos_id', undefined);
-    
-    // Reset product selection
-    form.setValue('product_id', '');
-    form.setValue('quantity', 1);
-    setAvailableQuantity(null);
-    
-    // Clear any validation errors
-    form.clearErrors();
-  };
-
-  const handleClose = () => {
-    form.reset();
-    onOpenChange(false);
+  // Form submission handler
+  const handleSubmit = (values: TransferFormValues) => {
+    console.log("Form values:", values);
+    onSubmit(values);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="border border-gray-300 bg-background max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="border border-gray-300 bg-background max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            {!!editingTransfer ? "Modifier le transfert" : "Créer un nouveau transfert"}
+            {editingTransfer ? "Modifier le transfert" : "Nouveau transfert"}
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations ci-dessous pour {!!editingTransfer ? "modifier" : "créer"} un transfert.
+            {editingTransfer ? 
+              "Modifiez les informations du transfert ci-dessous." :
+              "Créez un nouveau transfert entre entrepôts."}
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[80vh] overflow-y-auto">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TransferDateField form={form} />
-
-                <FormField
-                  control={form.control}
-                  name="transfer_type"
-                  render={({ field }) => (
-                    <TransferTypeSelect
-                      field={field}
-                      onTypeChange={handleTransferTypeChange}
-                    />
-                  )}
-                />
-
-                <TransferLocationFields
-                  form={form}
-                  warehouses={warehouses || []}
-                  posLocations={posLocations || []}
-                  transferType={transferType}
-                />
-
-                <TransferProductFields
-                  form={form}
-                  products={products || []}
-                  availableQuantity={availableQuantity}
-                />
-
-                <TransferStatusField form={form} />
-                <TransferNotesField form={form} />
-              </div>
-
-              <TransferActions
-                onClose={handleClose}
-                isEditing={!!editingTransfer}
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 mt-4">
+            <div className="grid grid-cols-1 gap-4">
+              {/* Source Warehouse */}
+              <FormField
+                control={form.control}
+                name="from_warehouse_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entrepôt source</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner l'entrepôt source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {warehouses?.map((warehouse) => (
+                          <SelectItem key={warehouse.id} value={warehouse.id}>
+                            {warehouse.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </form>
-          </Form>
-        </div>
+              
+              {/* Destination Warehouse */}
+              <FormField
+                control={form.control}
+                name="to_warehouse_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entrepôt destination</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner l'entrepôt destination" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {warehouses?.map((warehouse) => (
+                          <SelectItem 
+                            key={warehouse.id} 
+                            value={warehouse.id}
+                            disabled={warehouse.id === form.watch('from_warehouse_id')}
+                          >
+                            {warehouse.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Product */}
+              <FormField
+                control={form.control}
+                name="product_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Produit</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un produit" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {products?.length > 0 ? (
+                          products.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name} {product.reference ? `(${product.reference})` : ''}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-products" disabled>
+                            Aucun produit disponible
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Quantity */}
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantité</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min={1} 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                {editingTransfer ? "Mettre à jour" : "Créer"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
