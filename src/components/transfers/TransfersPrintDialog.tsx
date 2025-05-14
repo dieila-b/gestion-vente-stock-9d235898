@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import {
@@ -25,7 +26,7 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
     onBeforePrint: () => setIsPrinting(true),
     onAfterPrint: () => setIsPrinting(false),
     content: () => printRef.current,
-    // Fix the type error by providing a function that returns Promise<void>
+    // Fix the type error by returning an actual Promise<void>
     promise: () => Promise.resolve(),
   });
 
