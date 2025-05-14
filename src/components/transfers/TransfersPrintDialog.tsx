@@ -65,6 +65,23 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
     }
   };
 
+  // Helper function to safely format dates
+  const safeFormatDate = (dateString: string | undefined): string => {
+    if (!dateString) return "-";
+    
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid before formatting
+      if (isNaN(date.getTime())) {
+        return "-";
+      }
+      return format(date, "dd/MM/yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "-";
+    }
+  };
+
   const handlePrint = async () => {
     const element = document.getElementById('transfers-print-content');
     if (!element) return;
@@ -91,6 +108,16 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
     }
   };
 
+  // Get current date safely formatted
+  const currentDateFormatted = (() => {
+    try {
+      return format(new Date(), "dd/MM/yyyy HH:mm");
+    } catch (error) {
+      console.error("Error formatting current date:", error);
+      return "-";
+    }
+  })();
+
   return (
     <>
       <Button 
@@ -114,7 +141,7 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
           <div className="mt-4">
             <div id="transfers-print-content" className="bg-white text-black p-8 rounded-lg">
               <h1 className="text-2xl font-bold mb-6">Liste des Transferts</h1>
-              <p className="text-sm mb-4">Date d'impression: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+              <p className="text-sm mb-4">Date d'impression: {currentDateFormatted}</p>
               
               <table className="w-full border-collapse">
                 <thead>
@@ -134,9 +161,7 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
                     <tr key={transfer.id}>
                       <td className="border p-2">{transfer.reference || "-"}</td>
                       <td className="border p-2">
-                        {transfer.transfer_date 
-                          ? format(new Date(transfer.transfer_date), "dd/MM/yyyy")
-                          : format(new Date(transfer.created_at), "dd/MM/yyyy")}
+                        {safeFormatDate(transfer.transfer_date || transfer.created_at)}
                       </td>
                       <td className="border p-2">{getTransferTypeLabel(transfer)}</td>
                       <td className="border p-2">{getSourceName(transfer)}</td>

@@ -41,6 +41,23 @@ export const TransfersContent = ({
     };
   }, []);
 
+  // Helper function to safely format dates
+  const safeFormatDate = (dateString: string | undefined): string => {
+    if (!dateString) return "-";
+    
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid before formatting
+      if (isNaN(date.getTime())) {
+        return "-";
+      }
+      return format(date, "dd/MM/yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "-";
+    }
+  };
+
   const columns: ColumnDef<Transfer>[] = [
     {
       accessorKey: "reference",
@@ -50,10 +67,7 @@ export const TransfersContent = ({
     {
       accessorKey: "transfer_date",
       header: "Date",
-      cell: ({ row }) => {
-        const date = row.original.transfer_date || row.original.created_at;
-        return date ? format(new Date(date), "dd/MM/yyyy") : "-";
-      }
+      cell: ({ row }) => safeFormatDate(row.original.transfer_date || row.original.created_at)
     },
     {
       accessorKey: "transfer_type",
