@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,7 @@ interface NewWarehouse {
 }
 
 export default function MainStock() {
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isWarehouseDialogOpen, setIsWarehouseDialogOpen] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState<NewWarehouse>({
@@ -63,6 +65,7 @@ export default function MainStock() {
   });
   const { toast: useToastFn } = useToast();
   const queryClient = useQueryClient();
+  const { data: stockItems = [], isLoading } = useWarehouseStock(selectedWarehouse, false);
 
   const { data: warehouses = [] } = useQuery<Warehouse[]>({
     queryKey: ['warehouses'],
@@ -124,11 +127,19 @@ export default function MainStock() {
     }
   };
 
-  const filteredWarehouses = warehouses.filter(warehouse => 
-    warehouse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    warehouse.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    warehouse.manager.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = stockItems.filter((item) => {
+    const matchesWarehouse = selectedWarehouse === "_all" 
+      ? true 
+      : item.warehouse_id === selectedWarehouse;
+    
+    const matchesSearch = searchQuery.toLowerCase().trim() === "" 
+      ? true 
+      : (item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         item.product?.category?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return matchesWarehouse && matchesSearch;
+  });
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -253,7 +264,7 @@ export default function MainStock() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredWarehouses.map((warehouse) => {
+                  warehouses.map((warehouse) => {
                     const occupancyRate = (warehouse.occupied / warehouse.capacity) * 100;
                     const isNearCapacity = occupancyRate >= 90;
                     const isOverCapacity = occupancyRate > 100;
@@ -320,6 +331,81 @@ export default function MainStock() {
           </div>
         </div>
       </Card>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gradient mb-6">
+          {selectedWarehouse === "_all" 
+            ? "Liste des Articles" 
+            : `Liste des Articles - ${warehouses.find(w => w.id === selectedWarehouse)?.name || ""}`}
+        </h2>
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <Select
+            value={selectedWarehouse}
+            onValueChange={setSelectedWarehouse}
+          >
+            <SelectTrigger className="w-[200px] glass-effect">
+              <SelectValue placeholder="Sélectionner un entrepôt" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">Tous les entrepôts</SelectItem>
+              {warehouses.map((warehouse) => (
+                <SelectItem key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Référence</TableHead>
+                <TableHead>Catégorie</TableHead>
+                <TableHead>Article</TableHead>
+                <TableHead>Entrepôt</TableHead>
+                <TableHead className="text-right">Quantité</TableHead>
+                <TableHead className="text-right">Prix unitaire</TableHead>
+                <TableHead className="text-right">Valeur totale</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10">
+                    Chargement des données...
+                  </TableCell>
+                </TableRow>
+              ) : filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10">
+                    Aucun article trouvé
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.product?.reference}</TableCell>
+                    <TableCell>{item.product?.category}</TableCell>
+                    <TableCell className="font-medium">
+                      {item.product?.name}
+                    </TableCell>
+                    <TableCell>{item.warehouse?.name}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      {item.unit_price.toLocaleString('fr-FR')} GNF
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.total_value.toLocaleString('fr-FR')} GNF
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }
