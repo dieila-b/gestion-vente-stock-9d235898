@@ -31,7 +31,7 @@ export function useTransfersData() {
         console.log("Transfers data fetched:", data);
         
         // Add default values for potentially missing fields
-        const enhancedData = data?.map(transfer => ({
+        const enhancedData = (data || []).map(transfer => ({
           ...transfer,
           reference: transfer.reference || `T-${transfer.id.substring(0, 8)}`,
           transfer_type: transfer.transfer_type || "depot_to_depot",

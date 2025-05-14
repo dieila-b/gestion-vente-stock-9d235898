@@ -24,7 +24,6 @@ export const TransfersHeader = ({ transfers, onNewTransferClick }: TransfersHead
       <div className="flex gap-4 w-full sm:w-auto justify-end">
         <TransfersPrintDialog 
           transfers={transfers}
-          transferItems={[]}
         />
         <Button 
           onClick={onNewTransferClick}

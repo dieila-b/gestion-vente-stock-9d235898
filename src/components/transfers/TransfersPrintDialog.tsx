@@ -80,7 +80,7 @@ export function TransfersPrintDialog({ transfers }: TransfersPrintDialogProps) {
           </p>
           
           <Button
-            onClick={handlePrint}
+            onClick={() => handlePrint()}
             disabled={isPrinting}
             className="w-full"
           >
