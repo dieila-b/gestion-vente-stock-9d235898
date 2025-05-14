@@ -17,6 +17,7 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
   const [isOpen, setIsOpen] = useState(false);
 
   const getTransferQuantity = (transferId: string) => {
+    // Safely check if items exist before accessing them
     const items = transfers.find(t => t.id === transferId)?.items || [];
     return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   };
@@ -35,24 +36,30 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
   };
 
   const getSourceName = (transfer: Transfer) => {
+    // Safe check for transfer_type before accessing source properties
+    if (!transfer.transfer_type) return "N/A";
+    
     switch (transfer.transfer_type) {
       case "depot_to_pos":
       case "depot_to_depot":
-        return transfer.source_warehouse?.name;
+        return transfer.source_warehouse?.name || "N/A";
       case "pos_to_depot":
-        return transfer.source_pos?.name;
+        return transfer.source_pos?.name || "N/A";
       default:
         return "N/A";
     }
   };
 
   const getDestinationName = (transfer: Transfer) => {
+    // Safe check for transfer_type before accessing destination properties
+    if (!transfer.transfer_type) return "N/A";
+    
     switch (transfer.transfer_type) {
       case "depot_to_pos":
-        return transfer.destination_pos?.name;
+        return transfer.destination_pos?.name || "N/A";
       case "pos_to_depot":
       case "depot_to_depot":
-        return transfer.destination_warehouse?.name;
+        return transfer.destination_warehouse?.name || "N/A";
       default:
         return "N/A";
     }
@@ -125,9 +132,11 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
                 <tbody>
                   {transfers.map((transfer) => (
                     <tr key={transfer.id}>
-                      <td className="border p-2">{transfer.reference}</td>
+                      <td className="border p-2">{transfer.reference || "-"}</td>
                       <td className="border p-2">
-                        {format(new Date(transfer.transfer_date), "dd/MM/yyyy")}
+                        {transfer.transfer_date 
+                          ? format(new Date(transfer.transfer_date), "dd/MM/yyyy")
+                          : format(new Date(transfer.created_at), "dd/MM/yyyy")}
                       </td>
                       <td className="border p-2">{getTransferTypeLabel(transfer)}</td>
                       <td className="border p-2">{getSourceName(transfer)}</td>
@@ -138,7 +147,7 @@ export const TransfersPrintDialog = ({ transfers, transferItems }: TransfersPrin
                          transfer.status === "cancelled" ? "Annulé" :
                          "En attente"}
                       </td>
-                      <td className="border p-2">{transfer.notes}</td>
+                      <td className="border p-2">{transfer.notes || "-"}</td>
                     </tr>
                   ))}
                 </tbody>

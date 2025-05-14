@@ -45,12 +45,15 @@ export const TransfersContent = ({
     {
       accessorKey: "reference",
       header: "Référence",
-      cell: ({ row }) => <span className="font-medium">{row.original.reference}</span>
+      cell: ({ row }) => <span className="font-medium">{row.original.reference || "-"}</span>
     },
     {
       accessorKey: "transfer_date",
       header: "Date",
-      cell: ({ row }) => format(new Date(row.original.transfer_date), "dd/MM/yyyy")
+      cell: ({ row }) => {
+        const date = row.original.transfer_date || row.original.created_at;
+        return date ? format(new Date(date), "dd/MM/yyyy") : "-";
+      }
     },
     {
       accessorKey: "transfer_type",
@@ -61,7 +64,8 @@ export const TransfersContent = ({
           <span>
             {type === "depot_to_pos" ? "Dépôt → Point de vente" :
              type === "pos_to_depot" ? "Point de vente → Dépôt" :
-             "Dépôt → Dépôt"}
+             type === "depot_to_depot" ? "Dépôt → Dépôt" : 
+             "Type inconnu"}
           </span>
         );
       }
