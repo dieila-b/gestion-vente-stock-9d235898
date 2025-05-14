@@ -6,9 +6,9 @@ import { Transfer } from "@/types/transfer";
 import { DataTable } from "@/components/ui/data-table";
 import { useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
+import { safeFormatDate } from "@/utils/date-utils";
 
 interface TransfersContentProps {
   searchQuery: string;
@@ -41,28 +41,13 @@ export const TransfersContent = ({
     };
   }, []);
 
-  // Helper function to safely format dates
-  const safeFormatDate = (dateString: string | undefined): string => {
-    if (!dateString) return "-";
-    
-    try {
-      const date = new Date(dateString);
-      // Check if date is valid before formatting
-      if (isNaN(date.getTime())) {
-        return "-";
-      }
-      return format(date, "dd/MM/yyyy");
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "-";
-    }
-  };
-
   const columns: ColumnDef<Transfer>[] = [
     {
       accessorKey: "reference",
       header: "Référence",
-      cell: ({ row }) => <span className="font-medium">{row.original.reference || "-"}</span>
+      cell: ({ row }) => <span className="font-medium">
+        {row.original.reference || `Transfer-${row.original.id?.substring(0, 8)}` || "-"}
+      </span>
     },
     {
       accessorKey: "transfer_date",

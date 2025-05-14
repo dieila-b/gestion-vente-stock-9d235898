@@ -29,7 +29,16 @@ export function useTransfersData() {
         );
         
         console.log("Transfers data fetched:", data);
-        return data || [];
+        
+        // Add default values for potentially missing fields
+        const enhancedData = data?.map(transfer => ({
+          ...transfer,
+          reference: transfer.reference || `T-${transfer.id.substring(0, 8)}`,
+          transfer_type: transfer.transfer_type || "depot_to_depot",
+          status: transfer.status || "pending",
+        })) || [];
+        
+        return enhancedData;
       } catch (error) {
         console.error("Error fetching transfers:", error);
         return [];
@@ -80,7 +89,16 @@ export function useTransfersData() {
       );
 
       if (!data) throw new Error("Transfer not found");
-      return data;
+      
+      // Add default values for potentially missing fields
+      const enhancedData = {
+        ...data,
+        reference: data.reference || `T-${data.id.substring(0, 8)}`,
+        transfer_type: data.transfer_type || "depot_to_depot",
+        status: data.status || "pending",
+      };
+      
+      return enhancedData;
     } catch (error) {
       console.error("Error fetching transfer:", error);
       throw error;
