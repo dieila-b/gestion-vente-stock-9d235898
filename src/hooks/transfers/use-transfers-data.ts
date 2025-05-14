@@ -36,7 +36,7 @@ export function useTransfersData() {
           reference: transfer.reference || `T-${transfer.id.substring(0, 8)}`,
           transfer_type: transfer.transfer_type || "depot_to_depot",
           status: transfer.status || "pending",
-        })) || [];
+        }));
         
         return enhancedData;
       } catch (error) {

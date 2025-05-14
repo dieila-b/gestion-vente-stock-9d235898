@@ -8,7 +8,7 @@ import { fr } from 'date-fns/locale';
  * @param formatString Optional format string, defaults to dd/MM/yyyy
  * @returns Formatted date string or placeholder if invalid
  */
-export const safeFormatDate = (dateString?: string, formatString = "dd/MM/yyyy"): string => {
+export const safeFormatDate = (dateString?: string | Date | null, formatString = "dd/MM/yyyy"): string => {
   if (!dateString) return "-";
   
   try {
