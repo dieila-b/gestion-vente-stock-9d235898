@@ -1735,6 +1735,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json[]
       }
+      bypass_update_warehouse_stock: {
+        Args: {
+          warehouse_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Returns: Json
+      }
       get_purchase_order_by_id: {
         Args: { order_id: string }
         Returns: Json

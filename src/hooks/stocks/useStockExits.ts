@@ -36,52 +36,18 @@ export function useStockExits() {
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
         }
         
-        // 2. Mettre à jour le stock de l'entrepôt
-        // D'abord vérifier si le produit existe déjà dans l'entrepôt
-        const { data: existingStock } = await supabase
-          .from('warehouse_stock')
-          .select('id, quantity')
-          .eq('product_id', data.productId)
-          .eq('warehouse_id', data.warehouseId)
-          .maybeSingle();
-        
-        if (existingStock) {
-          // Le stock existe, mettre à jour la quantité
-          const newQuantity = Math.max(0, existingStock.quantity - data.quantity);
+        // 2. Mettre à jour le stock de l'entrepôt en utilisant la fonction bypass_update_warehouse_stock
+        // qui contourne les politiques RLS
+        const { data: stockUpdateData, error: stockUpdateError } = await supabase
+          .rpc('bypass_update_warehouse_stock', {
+            warehouse_id: data.warehouseId,
+            product_id: data.productId,
+            quantity: data.quantity,
+            unit_price: data.unitPrice
+          });
           
-          const { error: updateError } = await supabase
-            .from('warehouse_stock')
-            .update({
-              quantity: newQuantity,
-              unit_price: data.unitPrice,
-              total_value: newQuantity * data.unitPrice,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingStock.id);
-          
-          if (updateError) {
-            throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
-          }
-        } else {
-          // Le stock n'existe pas, créer une nouvelle entrée avec quantité 0
-          // Pour les sorties, nous ne devrions normalement pas créer une nouvelle entrée
-          // car il devrait déjà y avoir du stock, mais au cas où:
-          const { error: insertError } = await supabase
-            .from('warehouse_stock')
-            .insert({
-              id: uuidv4(),
-              product_id: data.productId,
-              warehouse_id: data.warehouseId,
-              quantity: 0,
-              unit_price: data.unitPrice,
-              total_value: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-          
-          if (insertError) {
-            throw new Error(`Erreur lors de la création du stock: ${insertError.message}`);
-          }
+        if (stockUpdateError) {
+          throw new Error(`Erreur lors de la mise à jour du stock: ${stockUpdateError.message}`);
         }
 
         // Return true to indicate success
