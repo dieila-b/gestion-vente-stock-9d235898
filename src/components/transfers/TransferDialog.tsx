@@ -47,11 +47,13 @@ export const TransferDialog = ({
       warehouses_data: warehouses,
       posLocations: posLocations?.length,
       posLocations_data: posLocations,
+      products: products?.length,
+      products_data: products,
       transferType,
       productId,
       sourceWarehouseId,
     });
-  }, [warehouses, posLocations, transferType, productId, sourceWarehouseId]);
+  }, [warehouses, posLocations, products, transferType, productId, sourceWarehouseId]);
 
   const handleTransferTypeChange = (value: string) => {
     const newType = value as "depot_to_pos" | "pos_to_depot" | "depot_to_depot";

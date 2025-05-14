@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { TransferFormValues } from "../schemas/transfer-form-schema";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 
 interface TransferProductFieldsProps {
   form: UseFormReturn<TransferFormValues>;
@@ -18,6 +19,13 @@ export const TransferProductFields = ({
   availableQuantity,
 }: TransferProductFieldsProps) => {
   const { toast } = useToast();
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  
+  // Log products received by this component for debugging
+  useEffect(() => {
+    console.log('TransferProductFields received products:', products?.length || 0);
+    setFilteredProducts(products || []);
+  }, [products]);
 
   return (
     <>
@@ -37,11 +45,17 @@ export const TransferProductFields = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name} {product.reference ? `(${product.reference})` : ''}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-products" disabled>
+                    Aucun produit disponible
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
             <FormMessage />

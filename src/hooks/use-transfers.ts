@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTransfersData } from '@/hooks/transfers/use-transfers-data';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useTransfers() {
   const [filteredTransfers, setFilteredTransfers] = useState<any[]>([]);
@@ -22,13 +23,18 @@ export function useTransfers() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Mock implementation - in a real app you would fetch from an API
-        const mockProducts = [
-          { id: 'prod1', name: 'Product 1', stock: 100 },
-          { id: 'prod2', name: 'Product 2', stock: 75 },
-          { id: 'prod3', name: 'Product 3', stock: 50 },
-        ];
-        setProducts(mockProducts);
+        const { data: catalogProducts, error } = await supabase
+          .from('catalog')
+          .select('id, name, stock, reference')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching products:', error);
+          return;
+        }
+        
+        console.log('Fetched products:', catalogProducts?.length || 0);
+        setProducts(catalogProducts || []);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
@@ -60,8 +66,10 @@ export function useTransfers() {
       warehouses_data: warehouses,
       posLocations: posLocations?.length,
       posLocations_data: posLocations,
+      products: products?.length,
+      products_data: products
     });
-  }, [warehouses, posLocations]);
+  }, [warehouses, posLocations, products]);
 
   return {
     transfers,
