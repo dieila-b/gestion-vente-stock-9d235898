@@ -3,6 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-adapter";
 import { safeWarehouse, isSelectQueryError } from "@/utils/supabase-safe-query";
 
+export interface StockItem {
+  id: string;
+  warehouse_id: string;
+  name: string;
+  quantity: number;
+  product: any;
+  unit_price: number;
+  total_value: number;
+}
+
 export function useStockStatistics() {
   const { data: warehouseStockData, isLoading: isLoadingWarehouseStock } = useQuery({
     queryKey: ['warehouse-stock-statistics'],
@@ -16,6 +26,8 @@ export function useStockStatistics() {
               warehouse:warehouse_id(name),
               id,
               quantity,
+              unit_price,
+              total_value,
               product:product_id(id, name, reference, category)
             `)
         );
@@ -28,7 +40,7 @@ export function useStockStatistics() {
     }
   });
   
-  const transformWarehouseData = (data: any[]) => {
+  const transformWarehouseData = (data: any[]): StockItem[] => {
     // Ensure data is an array before attempting to map over it
     if (!Array.isArray(data)) {
       console.error("warehouseStockData is not an array:", data);
@@ -42,7 +54,9 @@ export function useStockStatistics() {
           warehouse_id: "",
           name: "Unknown Warehouse",
           quantity: 0,
-          product: null
+          product: null,
+          unit_price: 0,
+          total_value: 0
         };
       }
       
@@ -53,6 +67,8 @@ export function useStockStatistics() {
         warehouse_id: item.warehouse_id || "",
         name: warehouse.name || "Unknown Warehouse",
         quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total_value: item.total_value || 0,
         product: item.product || null
       };
     });

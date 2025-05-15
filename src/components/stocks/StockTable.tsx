@@ -3,20 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { safeProduct } from "@/utils/supabase-safe-query";
 import { formatGNF } from "@/lib/currency";
-
-interface StockItem {
-  id: string;
-  quantity: number;
-  unit_price: number;
-  total_value: number;
-  warehouse_id?: string;
-  warehouse?: {
-    id: string;
-    name: string;
-  };
-  product?: any;
-  [key: string]: any;
-}
+import { StockItem } from "@/hooks/useStockStatistics";
 
 interface StockTableProps {
   items: StockItem[];
@@ -73,7 +60,7 @@ export function StockTable({ items }: StockTableProps) {
                 <TableCell>{product.reference || "N/A"}</TableCell>
                 <TableCell>{product.category || "N/A"}</TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>{item.warehouse?.name || "N/A"}</TableCell>
+                <TableCell>{item.name || "N/A"}</TableCell>
                 <TableCell className="text-right">{item.quantity || 0}</TableCell>
                 <TableCell className="text-right">
                   {formatGNF(item.unit_price || 0)}
