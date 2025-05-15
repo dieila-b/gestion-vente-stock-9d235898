@@ -47,9 +47,29 @@ export function StockEntryFormContent({
   const handleSubmit = async (values: StockEntryFormType) => {
     if (isSubmitting) return;
     
+    console.log("Form submission started with values:", values);
+    
     setIsSubmitting(true);
     try {
-      console.log("Form submitting with values:", values);
+      // Vérifications de base avant la soumission
+      if (!values.warehouseId || !values.productId) {
+        console.error("Missing required fields", { warehouseId: values.warehouseId, productId: values.productId });
+        toast.error("Données incomplètes", {
+          description: "Veuillez sélectionner un entrepôt et un produit."
+        });
+        return;
+      }
+      
+      if (values.quantity <= 0) {
+        toast.error("Quantité invalide", {
+          description: "La quantité doit être supérieure à zéro."
+        });
+        return;
+      }
+      
+      // Log pour le débogage
+      console.log("Form is valid, submitting to backend:", values);
+      
       const success = await onSubmit(values);
       
       if (success) {
@@ -83,6 +103,7 @@ export function StockEntryFormContent({
   // Update unit price when product selection changes
   useEffect(() => {
     if (selectedProduct && selectedProduct.price) {
+      console.log(`Updating unit price to ${selectedProduct.price} from product selection`);
       form.setValue('unitPrice', selectedProduct.price);
     }
   }, [selectedProduct, form]);

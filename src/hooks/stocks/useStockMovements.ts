@@ -49,7 +49,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
       
       return typedMovements;
     },
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 30, // 30 secondes (diminué pour une actualisation plus fréquente)
     refetchOnMount: true,
     refetchOnWindowFocus: true
   });
@@ -91,30 +91,51 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
 
   // Fonction pour créer un mouvement de stock (entrée ou sortie)
   const createStockMovement = async (data: StockEntryForm): Promise<boolean> => {
+    console.log(`Creating stock ${type} with data:`, data);
+    
     let success = false;
     
-    if (type === 'in') {
-      success = await createStockEntry(data);
-    } else {
-      success = await createStockExit(data);
+    try {
+      if (type === 'in') {
+        success = await createStockEntry(data);
+      } else {
+        success = await createStockExit(data);
+      }
+      
+      if (success) {
+        // Force refresh data
+        console.log("Stock movement created successfully, refreshing data...");
+        refreshData();
+        return true;
+      } else {
+        console.error("Stock movement creation returned false");
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error creating stock ${type}:`, error);
+      toast.error("Erreur", {
+        description: `Impossible de créer le mouvement de stock: ${error instanceof Error ? error.message : String(error)}`
+      });
+      return false;
     }
-    
-    if (success) {
-      // Force refresh data
-      refreshData();
-    }
-    
-    return success;
   };
   
   const refreshData = () => {
+    console.log("Refreshing stock movement data...");
+    // Invalidate all relevant queries
     queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
     queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
     queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
     queryClient.invalidateQueries({ queryKey: ['catalog'] });
     queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
-    toast.info("Données actualisées");
-    refetch();
+    
+    // Refetch immediately after invalidating
+    setTimeout(() => {
+      refetch();
+      toast.success("Données actualisées", {
+        description: "Les mouvements de stock ont été rechargés."
+      });
+    }, 300);
   };
 
   return {

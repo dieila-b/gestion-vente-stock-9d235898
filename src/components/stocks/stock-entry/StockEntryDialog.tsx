@@ -22,11 +22,16 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
   const [isOpen, setIsOpen] = useState(false);
   
   const handleSubmitSuccess = () => {
+    console.log("Stock entry submitted successfully, closing dialog");
     setIsOpen(false);
   };
   
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <ArrowUpCircle className="h-4 w-4" />

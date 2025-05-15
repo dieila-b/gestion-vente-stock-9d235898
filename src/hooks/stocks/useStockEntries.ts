@@ -14,6 +14,15 @@ export function useStockEntries() {
       setIsLoading(true);
       try {
         console.log("Creating stock entry with data:", data);
+        
+        if (!data.warehouseId || !data.productId) {
+          throw new Error("L'entrepôt et le produit sont obligatoires");
+        }
+        
+        if (data.quantity <= 0) {
+          throw new Error("La quantité doit être positive");
+        }
+        
         const totalValue = data.quantity * data.unitPrice;
         
         // 1. Insert the stock movement
@@ -169,7 +178,7 @@ export function useStockEntries() {
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
-      console.log("Stock entry successful - Queries invalidated");
+      console.log("Stock entry successful - All relevant queries invalidated");
     },
     onError: (error) => {
       toast.error("Erreur", {
@@ -181,15 +190,17 @@ export function useStockEntries() {
 
   const createStockEntry = async (data: StockEntryForm): Promise<boolean> => {
     try {
+      console.log("Creating stock entry via mutation with data:", data);
       await createStockEntryMutation.mutateAsync(data);
       return true;
     } catch (error) {
+      console.error("Error in createStockEntry wrapper:", error);
       return false;
     }
   };
 
   return {
     createStockEntry,
-    isLoading,
+    isLoading: isLoading || createStockEntryMutation.isPending,
   };
 }
