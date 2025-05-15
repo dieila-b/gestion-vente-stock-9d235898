@@ -1,136 +1,38 @@
 
 import type { PostgrestError } from "@supabase/supabase-js";
 
-// Type for SelectQueryError to match what Supabase returns when queries fail
-export interface SelectQueryError extends String {
-  error: true;
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
+// Define a type to represent the special error object returned by Supabase
+// when a foreign key reference fails in a select query
+export interface SelectQueryError {
+  code: string;
+  details: string;
+  hint: string;
+  message: string;
 }
 
-// Type guard to check if an object is a SelectQueryError
-export function isSelectQueryError(obj: any): obj is SelectQueryError {
-  return obj && typeof obj === 'object' && obj.error === true;
+/**
+ * Check if the value is a SelectQueryError from Supabase
+ */
+export function isSelectQueryError(value: any): value is SelectQueryError {
+  if (!value || typeof value !== 'object') return false;
+  
+  // Check for error properties that indicate a select query error object
+  return (
+    ('code' in value || 'message' in value || 'details' in value) &&
+    (typeof value.code === 'string' || typeof value.message === 'string')
+  );
 }
 
-// Safely access nested properties when they could be SelectQueryError
-export function safeGet<T, K extends keyof T>(obj: T | SelectQueryError, key: K, defaultValue: any = null): T[K] {
-  if (isSelectQueryError(obj)) {
-    return defaultValue;
-  }
-  return obj[key] ?? defaultValue;
-}
-
-// Safely access client properties from a relation that could be SelectQueryError
-export function safeClient(client: any): { 
-  id: string; 
-  company_name: string; 
-  contact_name?: string;
-  status?: string;
-  email?: string;
-  phone?: string;
-} {
-  if (isSelectQueryError(client)) {
-    return {
-      id: '',
-      company_name: 'Erreur de chargement',
-      contact_name: '',
-      status: '',
-      email: '',
-      phone: ''
-    };
-  }
-  return client;
-}
-
-// Safely handle arrays that could be SelectQueryError
-export function safeArray<T>(items: T[] | SelectQueryError): T[] {
-  if (isSelectQueryError(items)) {
-    return [];
-  }
-  return items;
-}
-
-// Safely handle supplier properties
-export function safeSupplier(supplier: any): {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-} {
-  if (isSelectQueryError(supplier)) {
-    return {
-      id: '',
-      name: 'Erreur de chargement',
-      phone: '',
-      email: ''
-    };
-  }
-  return supplier;
-}
-
-// Safely handle product properties
-export function safeProduct(product: any): {
-  id?: string;
-  name?: string;
-  reference?: string;
-  category?: string;
-} {
-  if (isSelectQueryError(product)) {
-    return {
-      id: '',
-      name: 'Produit non disponible',
-      reference: '',
-      category: ''
-    };
-  }
-  return product;
-}
-
-// Safely handle warehouse properties
-export function safeWarehouse(warehouse: any): {
-  id?: string;
-  name: string;
-} {
-  if (isSelectQueryError(warehouse)) {
-    return {
-      id: '',
-      name: 'Entrepôt non disponible'
-    };
-  }
-  return warehouse;
-}
-
-// Safely handle POS location properties
-export function safePOSLocation(location: any): any {
-  if (isSelectQueryError(location)) {
-    return {
-      id: '',
-      name: 'Emplacement non disponible',
-      phone: '',
-      email: '',
-      address: '',
-      status: '',
-      is_active: true,
-      manager: '',
-      capacity: 0,
-      occupied: 0,
-      surface: 0
-    };
-  }
-  return location;
-}
-
-// Cast with type checking to fix Transfer typings
-export function castToTransfers(data: any[]): any[] {
-  return data.map(item => ({
-    ...item,
-    source_warehouse: safeWarehouse(item.source_warehouse),
-    destination_warehouse: safeWarehouse(item.destination_warehouse),
-    source_pos: safePOSLocation(item.source_pos),
-    destination_pos: safePOSLocation(item.destination_pos),
-    items: safeArray(item.items)
-  }));
+/**
+ * Type guard to check if a value is a PostgrestError
+ */
+export function isPostgrestError(value: any): value is PostgrestError {
+  return (
+    value !== null && 
+    typeof value === 'object' && 
+    'code' in value && 
+    'message' in value &&
+    'details' in value &&
+    'hint' in value
+  );
 }

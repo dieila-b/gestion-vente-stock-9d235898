@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
 import { toast } from "@/components/ui/use-toast";
 import { formatGNF } from "@/lib/currency";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StockTable } from "@/components/stocks/StockTable";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
@@ -47,8 +49,28 @@ export default function MainStock() {
         .order('name');
       
       if (error) throw error;
+      
+      // Si aucun entrepôt n'est trouvé, créer un entrepôt par défaut
+      if (!data || data.length === 0) {
+        const { data: newWarehouse, error: createError } = await supabase
+          .from('warehouses')
+          .insert({
+            name: 'Entrepôt Principal',
+            location: 'Conakry',
+            status: 'Actif'
+          })
+          .select();
+          
+        if (createError) {
+          console.error("Failed to create default warehouse:", createError);
+          return [];
+        }
+        return newWarehouse;
+      }
+      
       return data;
-    }
+    },
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   const handleRefresh = () => {
@@ -136,54 +158,15 @@ export default function MainStock() {
           </Button>
         </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Référence</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Article</TableHead>
-                <TableHead>Entrepôt</TableHead>
-                <TableHead className="text-right">Quantité</TableHead>
-                <TableHead className="text-right">Prix unitaire</TableHead>
-                <TableHead className="text-right">Valeur totale</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    Chargement des données...
-                  </TableCell>
-                </TableRow>
-              ) : filteredItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
-                    Aucun article trouvé
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.product?.reference || "-"}</TableCell>
-                    <TableCell>{item.product?.category || "-"}</TableCell>
-                    <TableCell className="font-medium">
-                      {item.product?.name || "Produit inconnu"}
-                    </TableCell>
-                    <TableCell>{item.warehouse?.name || "-"}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      {formatGNF(item.unit_price)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatGNF(item.total_value)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : (
+          <StockTable items={filteredItems} />
+        )}
       </div>
     </div>
   );
