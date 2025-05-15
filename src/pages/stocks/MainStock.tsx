@@ -19,15 +19,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useWarehouseStock } from "@/hooks/use-warehouse-stock";
-import { toast } from "@/components/ui/use-toast";
+import { useWarehouseStock } from "@/hooks/warehouse-stock";
+import { toast } from "sonner";
 import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StockTable } from "@/components/stocks/StockTable";
-import { StockItem } from "@/hooks/useStockStatistics";
+import { StockItem } from "@/hooks/stock-statistics/types";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
@@ -38,7 +38,7 @@ export default function MainStock() {
   const { 
     data: stockItems = [], 
     isLoading,
-    refetch 
+    reload 
   } = useWarehouseStock(selectedWarehouse, false);
 
   const { data: warehouses = [] } = useQuery({
@@ -74,14 +74,12 @@ export default function MainStock() {
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
-  const handleRefresh = () => {
-    refetch();
-    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
-    toast({
-      title: "Actualisation en cours",
-      description: "Les données de stock sont en cours d'actualisation.",
+  const handleRefresh = useCallback(() => {
+    reload();
+    toast.info("Actualisation en cours", {
+      description: "Les données de stock sont en cours d'actualisation."
     });
-  };
+  }, [reload]);
 
   // Transform warehouse stock data to match StockItem interface
   const transformedItems: StockItem[] = stockItems.map((item) => {

@@ -76,30 +76,6 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
 
         // Debug - vérifions les données retournées
         console.log(`Found ${data?.length || 0} warehouse stock records`);
-        if (data && data.length > 0) {
-          console.log("Sample stock record:", data[0]);
-        } else {
-          console.log("No stock records found. Let's try inserting test data for demonstration");
-          
-          // On va ajouter quelques entrées de test si aucun enregistrement n'existe
-          const testProduct = await ensureTestProduct();
-          const testWarehouse = await ensureTestWarehouse();
-          
-          if (testProduct && testWarehouse) {
-            await createTestStockEntry(testProduct.id, testWarehouse.id);
-            
-            // Réexécuter la requête pour obtenir les données fraîchement créées
-            const { data: refreshedData, error: refreshError } = await query;
-            
-            if (refreshError) {
-              console.error("Failed to refresh data after creating test entries:", refreshError);
-              throw new Error(`Échec lors de la récupération des nouvelles données: ${refreshError.message}`);
-            }
-            
-            console.log("After creating test data:", refreshedData);
-            return refreshedData || [];
-          }
-        }
         
         return data || [];
       } catch (error) {

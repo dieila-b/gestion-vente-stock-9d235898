@@ -1,46 +1,29 @@
 
-import { StockItem, WarehouseStockData } from './types';
-import { isSelectQueryError } from "@/utils/supabase-safe-query";
+import { StockItem } from './types';
 
-export function transformWarehouseData(data: any[]): StockItem[] {
-  // Ensure data is an array before attempting to map over it
-  if (!Array.isArray(data)) {
-    console.error("warehouseStockData is not an array:", data);
+/**
+ * Transforms warehouse stock data into a standardized format for use in stock statistics
+ * @param warehouseData Raw data from the warehouse_stock table
+ * @returns Formatted array of StockItem objects
+ */
+export function transformWarehouseData(warehouseData: any[]): StockItem[] {
+  if (!Array.isArray(warehouseData)) {
+    console.error('Invalid warehouse data format:', warehouseData);
     return [];
   }
   
-  return data.map(item => {
-    if (isSelectQueryError(item)) {
-      return {
-        id: "",
-        warehouse_id: "",
-        name: "Unknown Warehouse",
-        quantity: 0,
-        product: null,
-        unit_price: 0,
-        total_value: 0
-      };
-    }
-    
-    const warehouse = safeWarehouse(item.warehouse);
-    
-    return {
-      id: item.id || "",
-      warehouse_id: item.warehouse_id || "",
-      name: warehouse.name || "Unknown Warehouse",
+  try {
+    return warehouseData.map(item => ({
+      id: item.id,
+      warehouse_id: item.warehouse_id,
+      name: item.warehouse?.name || "Entrepôt inconnu",
       quantity: item.quantity || 0,
+      product: item.product,
       unit_price: item.unit_price || 0,
       total_value: item.total_value || 0,
-      product: item.product || null
-    };
-  });
-}
-
-function safeWarehouse(warehouse: any): { name: string } {
-  if (!warehouse || isSelectQueryError(warehouse)) {
-    return { name: "Unknown Warehouse" };
+    }));
+  } catch (error) {
+    console.error('Error transforming warehouse data:', error);
+    return [];
   }
-  return {
-    name: warehouse.name || "Unknown Warehouse"
-  };
 }

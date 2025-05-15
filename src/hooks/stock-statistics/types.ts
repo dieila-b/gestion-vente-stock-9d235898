@@ -1,22 +1,46 @@
 
+/**
+ * Represents a stock item with location, product, and quantity information
+ */
 export interface StockItem {
+  /**
+   * Unique identifier for the stock record
+   */
   id: string;
+  
+  /**
+   * ID of the warehouse where this stock is located
+   */
   warehouse_id: string;
+  
+  /**
+   * Name of the warehouse or location
+   */
   name: string;
+  
+  /**
+   * Current quantity in stock
+   */
   quantity: number;
-  product: any;
-  unit_price: number;
-  total_value: number;
-}
-
-export interface WarehouseStockData {
-  id: string;
-  warehouse_id: string;
-  warehouse: {
+  
+  /**
+   * Product information (from catalog)
+   */
+  product: {
+    id: string;
     name: string;
+    reference?: string;
+    category?: string;
+    [key: string]: any;
   };
-  quantity: number;
+  
+  /**
+   * Unit price of the product in this location
+   */
   unit_price: number;
+  
+  /**
+   * Total value of this stock item (quantity * unit_price)
+   */
   total_value: number;
-  product: any;
 }
