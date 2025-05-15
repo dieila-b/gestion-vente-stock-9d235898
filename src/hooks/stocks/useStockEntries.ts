@@ -1,4 +1,29 @@
 
-// This is just a re-export file to maintain backward compatibility
-import { useStockEntries } from "./stock-entries/useStockEntries";
-export { useStockEntries };
+import { useState } from "react";
+import { StockEntryForm } from "./useStockMovementTypes";
+import { useStockEntryMutation } from "./stock-entries/use-stock-entry-mutation";
+import { UseStockEntriesReturn } from "./stock-entries/types";
+
+export function useStockEntries(): UseStockEntriesReturn {
+  const { createStockEntryMutation, isLoading: mutationLoading } = useStockEntryMutation();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const createStockEntry = async (data: StockEntryForm): Promise<boolean> => {
+    try {
+      console.log("Creating stock entry via mutation with data:", data);
+      setIsLoading(true);
+      await createStockEntryMutation.mutateAsync(data);
+      return true;
+    } catch (error) {
+      console.error("Error in createStockEntry wrapper:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    createStockEntry,
+    isLoading: isLoading || mutationLoading || createStockEntryMutation.isPending,
+  };
+}
