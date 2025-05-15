@@ -13,15 +13,23 @@ export function transformWarehouseData(warehouseData: any[]): StockItem[] {
   }
   
   try {
-    return warehouseData.map(item => ({
-      id: item.id,
-      warehouse_id: item.warehouse_id,
-      name: item.warehouse?.name || "Entrepôt inconnu",
-      quantity: item.quantity || 0,
-      product: item.product,
-      unit_price: item.unit_price || 0,
-      total_value: item.total_value || 0,
-    }));
+    return warehouseData.map(item => {
+      // Ensure we have valid data
+      if (!item || !item.product) {
+        console.warn('Skipping invalid warehouse stock item:', item);
+        return null;
+      }
+      
+      return {
+        id: item.id,
+        warehouse_id: item.warehouse_id,
+        name: item.warehouse?.name || "Entrepôt inconnu",
+        quantity: item.quantity || 0,
+        product: item.product,
+        unit_price: item.unit_price || 0,
+        total_value: item.total_value || 0,
+      };
+    }).filter(Boolean); // Remove any null items
   } catch (error) {
     console.error('Error transforming warehouse data:', error);
     return [];

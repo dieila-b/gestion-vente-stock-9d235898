@@ -7,10 +7,19 @@ import { toast } from 'sonner';
 
 export function useStockStatistics() {
   const queryClient = useQueryClient();
-  const { data: warehouseStockData, isLoading: isLoadingWarehouseStock, refetch } = useWarehouseStockQuery();
+  const { 
+    data: warehouseStockData, 
+    isLoading: isLoadingWarehouseStock, 
+    refetch, 
+    isError 
+  } = useWarehouseStockQuery();
   
-  // Ensure warehouseStockData is an array before transforming
+  console.log("Raw warehouse stock data:", warehouseStockData);
+  
+  // Transform warehouse stock data
   const warehouseStock = transformWarehouseData(Array.isArray(warehouseStockData) ? warehouseStockData : []);
+  
+  console.log("Transformed warehouse stock:", warehouseStock);
 
   // Function to refresh stock data
   const refreshStockData = () => {
@@ -29,6 +38,7 @@ export function useStockStatistics() {
   return {
     warehouseStock,
     isLoadingWarehouseStock,
+    isError,
     refreshStockData
   };
 }

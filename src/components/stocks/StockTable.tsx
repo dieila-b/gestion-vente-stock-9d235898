@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { safeProduct } from "@/utils/supabase-safe-query";
 import { formatGNF } from "@/lib/currency";
-import { StockItem } from "@/hooks/useStockStatistics";
+import { StockItem } from "@/hooks/stock-statistics/types";
 
 interface StockTableProps {
   items: StockItem[];
 }
 
 export function StockTable({ items }: StockTableProps) {
+  console.log("Stock table items:", items);
+  
   if (!items || items.length === 0) {
     return (
       <div className="rounded-md border">
@@ -53,13 +54,17 @@ export function StockTable({ items }: StockTableProps) {
         </TableHeader>
         <TableBody>
           {items.map((item) => {
-            const product = safeProduct(item.product);
+            // Safely handle missing product data
+            if (!item.product) {
+              console.warn("Skipping item with no product data:", item);
+              return null;
+            }
             
             return (
               <TableRow key={item.id}>
-                <TableCell>{product.reference || "N/A"}</TableCell>
-                <TableCell>{product.category || "N/A"}</TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
+                <TableCell>{item.product.reference || "N/A"}</TableCell>
+                <TableCell>{item.product.category || "N/A"}</TableCell>
+                <TableCell className="font-medium">{item.product.name}</TableCell>
                 <TableCell>{item.name || "N/A"}</TableCell>
                 <TableCell className="text-right">{item.quantity || 0}</TableCell>
                 <TableCell className="text-right">
@@ -70,7 +75,7 @@ export function StockTable({ items }: StockTableProps) {
                 </TableCell>
               </TableRow>
             );
-          })}
+          }).filter(Boolean)}
         </TableBody>
       </Table>
     </div>

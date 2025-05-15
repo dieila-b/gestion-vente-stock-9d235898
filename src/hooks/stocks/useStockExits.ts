@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export function useStockExits() {
   const [isLoading, setIsLoading] = useState(false);
@@ -102,7 +102,10 @@ export function useStockExits() {
 
             await supabase
               .from('catalog')
-              .update({ stock: newStock })
+              .update({ 
+                stock: newStock,
+                updated_at: new Date().toISOString()
+              })
               .eq('id', data.productId);
               
             console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
@@ -121,21 +124,20 @@ export function useStockExits() {
       }
     },
     onSuccess: () => {
-      toast({
-        title: "Sortie de stock réussie",
-        description: "La sortie de stock a été enregistrée avec succès.",
+      toast.success("Sortie de stock réussie", {
+        description: "La sortie de stock a été enregistrée avec succès."
       });
       // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
       console.log("Stock exit successful - Queries invalidated");
     },
     onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: `La sortie de stock a échoué: ${error.message}`,
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: `La sortie de stock a échoué: ${error instanceof Error ? error.message : String(error)}`
       });
       console.error("Stock exit failed:", error);
     },

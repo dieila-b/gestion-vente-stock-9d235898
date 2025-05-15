@@ -166,6 +166,7 @@ export function useStockEntries() {
       // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
       console.log("Stock entry successful - Queries invalidated");

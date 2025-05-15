@@ -1,5 +1,4 @@
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,36 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useState, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useWarehouseStock } from "@/hooks/warehouse-stock";
-import { toast } from "sonner";
-import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StockTable } from "@/components/stocks/StockTable";
-import { StockItem } from "@/hooks/stock-statistics/types";
+import { useStockStatistics } from "@/hooks/stock-statistics";
+import { toast } from "sonner";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
-  const queryClient = useQueryClient();
   
-  // This will get stock data from warehouse_stock table
+  // Use the stock statistics hook to get warehouse stock data
   const { 
-    data: stockItems = [], 
-    isLoading,
-    reload 
-  } = useWarehouseStock(selectedWarehouse, false);
+    warehouseStock, 
+    isLoadingWarehouseStock, 
+    refreshStockData 
+  } = useStockStatistics();
 
+  // Get warehouses data
   const { data: warehouses = [] } = useQuery({
     queryKey: ['warehouses'],
     queryFn: async () => {
@@ -75,27 +64,14 @@ export default function MainStock() {
   });
 
   const handleRefresh = useCallback(() => {
-    reload();
+    refreshStockData();
     toast.info("Actualisation en cours", {
       description: "Les données de stock sont en cours d'actualisation."
     });
-  }, [reload]);
+  }, [refreshStockData]);
 
-  // Transform warehouse stock data to match StockItem interface
-  const transformedItems: StockItem[] = stockItems.map((item) => {
-    return {
-      id: item.id,
-      warehouse_id: item.warehouse_id,
-      // Use the warehouse name for the "name" property required by StockItem
-      name: item.warehouse?.name || "Entrepôt inconnu",
-      quantity: item.quantity,
-      product: item.product,
-      unit_price: item.unit_price,
-      total_value: item.total_value
-    };
-  });
-
-  const filteredItems = transformedItems.filter((item) => {
+  // Apply filtering based on warehouse selection and search query
+  const filteredItems = warehouseStock.filter((item) => {
     const matchesWarehouse = selectedWarehouse === "_all" 
       ? true 
       : item.warehouse_id === selectedWarehouse;
@@ -171,7 +147,7 @@ export default function MainStock() {
           </Button>
         </div>
 
-        {isLoading ? (
+        {isLoadingWarehouseStock ? (
           <div className="space-y-3">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-24 w-full" />
