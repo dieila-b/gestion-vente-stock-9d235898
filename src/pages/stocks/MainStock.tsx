@@ -27,6 +27,7 @@ import { toast } from "@/components/ui/use-toast";
 import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StockTable } from "@/components/stocks/StockTable";
+import { StockItem } from "@/hooks/useStockStatistics";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
@@ -82,7 +83,21 @@ export default function MainStock() {
     });
   };
 
-  const filteredItems = stockItems.filter((item) => {
+  // Transform warehouse stock data to match StockItem interface
+  const transformedItems: StockItem[] = stockItems.map((item) => {
+    return {
+      id: item.id,
+      warehouse_id: item.warehouse_id,
+      // Use the warehouse name for the "name" property required by StockItem
+      name: item.warehouse?.name || "Entrepôt inconnu",
+      quantity: item.quantity,
+      product: item.product,
+      unit_price: item.unit_price,
+      total_value: item.total_value
+    };
+  });
+
+  const filteredItems = transformedItems.filter((item) => {
     const matchesWarehouse = selectedWarehouse === "_all" 
       ? true 
       : item.warehouse_id === selectedWarehouse;
