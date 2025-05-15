@@ -101,9 +101,7 @@ export function useStockEntries() {
               product_id: data.productId,
               quantity: data.quantity,
               unit_price: data.unitPrice,
-              total_value: totalValue,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              total_value: totalValue
             });
             
           if (insertError) {
@@ -112,6 +110,30 @@ export function useStockEntries() {
           }
           
           console.log("New stock entry successfully created");
+        }
+
+        // 4. Update the catalog product stock total
+        try {
+          const { data: productData, error: productError } = await supabase
+            .from('catalog')
+            .select('stock')
+            .eq('id', data.productId)
+            .single();
+
+          if (!productError && productData) {
+            const currentStock = productData.stock || 0;
+            const newStock = currentStock + data.quantity;
+
+            await supabase
+              .from('catalog')
+              .update({ stock: newStock })
+              .eq('id', data.productId);
+              
+            console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
+          }
+        } catch (err) {
+          console.error("Error updating catalog product stock:", err);
+          // Don't throw error here as the main operation succeeded
         }
 
         return true;
@@ -130,6 +152,7 @@ export function useStockEntries() {
       // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
       console.log("Stock entry successful - Queries invalidated");
     },
     onError: (error) => {

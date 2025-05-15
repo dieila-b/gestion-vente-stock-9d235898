@@ -1,10 +1,53 @@
 
-// This file now re-exports all data safety utilities from the new modular structure
-// It maintains backward compatibility for existing imports
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { db } from "./db-core";
-import { BankAccount, DeliveryNote, Supplier, SelectQueryError } from "@/types/db-adapter";
+export function safeProduct(product: any) {
+  // Guard against product being undefined or null
+  if (!product) {
+    return { 
+      id: '',
+      name: 'Produit inconnu',
+      reference: '',
+      category: ''
+    };
+  }
+  
+  // Check if product is an error object from Supabase
+  if (isSelectQueryError(product)) {
+    return { 
+      id: '',
+      name: 'Erreur de chargement',
+      reference: '',
+      category: ''
+    };
+  }
+  
+  // Return the product if it's valid
+  return product;
+}
 
-// Re-export everything from the new modular files
-export * from './data-safe';
+function isSelectQueryError(obj: any): boolean {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    obj.hasOwnProperty("code") &&
+    obj.hasOwnProperty("message") &&
+    obj.hasOwnProperty("details")
+  );
+}
+
+export function safePOSLocation(location: any) {
+  if (!location) {
+    return { 
+      id: '',
+      name: 'Emplacement inconnu'
+    };
+  }
+  
+  if (isSelectQueryError(location)) {
+    return { 
+      id: '',
+      name: 'Erreur de chargement'
+    };
+  }
+  
+  return location;
+}
