@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { 
   StockEntryForm as StockEntryFormType, 
   stockEntrySchema 
@@ -44,13 +45,31 @@ export function StockEntryFormContent({
   });
   
   const handleSubmit = async (values: StockEntryFormType) => {
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     try {
+      console.log("Form submitting with values:", values);
       const success = await onSubmit(values);
+      
       if (success) {
+        console.log("Stock entry created successfully");
+        toast.success("Entrée stock créée", {
+          description: "L'entrée de stock a été enregistrée avec succès."
+        });
         form.reset();
         onSubmitSuccess();
+      } else {
+        console.error("Stock entry creation failed without specific error");
+        toast.error("Échec de l'opération", {
+          description: "Impossible de créer l'entrée de stock."
+        });
       }
+    } catch (error) {
+      console.error("Exception during stock entry submission:", error);
+      toast.error("Erreur", {
+        description: `Erreur lors de la création: ${error instanceof Error ? error.message : String(error)}`
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -63,8 +82,8 @@ export function StockEntryFormContent({
   
   // Update unit price when product selection changes
   useEffect(() => {
-    if (selectedProduct && !form.getValues('unitPrice')) {
-      form.setValue('unitPrice', selectedProduct.price || 0);
+    if (selectedProduct && selectedProduct.price) {
+      form.setValue('unitPrice', selectedProduct.price);
     }
   }, [selectedProduct, form]);
   

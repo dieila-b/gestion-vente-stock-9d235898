@@ -2,11 +2,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { 
-  ensureTestProduct, 
-  ensureTestWarehouse, 
-  createTestStockEntry 
-} from "./test-data-utils";
 
 /**
  * Enhanced hook to fetch warehouse stock data with improved error handling and loading states
@@ -95,6 +90,7 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       }
     },
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
     staleTime: 1000 * 30, // 30 seconds - More frequent refreshes for stock data
     retry: (failureCount, error) => {
       // More aggressive retry strategy with exponential backoff handled by React Query
@@ -108,8 +104,6 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       return failureCount < maxRetries;
     },
     retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex), 30000), // Exponential backoff, max 30 seconds
-    refetchInterval: 1000 * 60 * 1, // 1 minute
-    gcTime: 1000 * 60 * 5, // Keep cached data for 5 minutes
   });
 
   // Return enhanced result object with simplified access to common states

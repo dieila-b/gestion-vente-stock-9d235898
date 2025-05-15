@@ -1,16 +1,18 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStockEntries } from "./useStockEntries";
 import { useStockExits } from "./useStockExits";
 import { StockEntryForm, StockMovement } from "./useStockMovementTypes";
+import { toast } from "sonner";
 
 export function useStockMovements(type: 'in' | 'out' = 'in') {
+  const queryClient = useQueryClient();
   const { createStockEntry } = useStockEntries();
   const { createStockExit } = useStockExits();
 
   // Récupération des mouvements de stock
-  const { data: movementsData = [], isLoading } = useQuery({
+  const { data: movementsData = [], isLoading, refetch } = useQuery({
     queryKey: ['stock-movements', type],
     queryFn: async () => {
       console.log(`Fetching ${type} stock movements`);
@@ -47,7 +49,9 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
       
       return typedMovements;
     },
-    staleTime: 1000 * 60 // 1 minute
+    staleTime: 1000 * 60, // 1 minute
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Récupération des entrepôts
@@ -87,9 +91,30 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
 
   // Fonction pour créer un mouvement de stock (entrée ou sortie)
   const createStockMovement = async (data: StockEntryForm): Promise<boolean> => {
-    return type === 'in' 
-      ? await createStockEntry(data)
-      : await createStockExit(data);
+    let success = false;
+    
+    if (type === 'in') {
+      success = await createStockEntry(data);
+    } else {
+      success = await createStockExit(data);
+    }
+    
+    if (success) {
+      // Force refresh data
+      refreshData();
+    }
+    
+    return success;
+  };
+  
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+    queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
+    queryClient.invalidateQueries({ queryKey: ['catalog'] });
+    queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+    toast.info("Données actualisées");
+    refetch();
   };
 
   return {
@@ -97,6 +122,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
     isLoading,
     warehouses,
     products,
-    createStockEntry: createStockMovement
+    createStockEntry: createStockMovement,
+    refetch: refreshData
   };
 }

@@ -4,15 +4,27 @@ import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
 import { StockEntryDialog } from "@/components/stocks/stock-entry/StockEntryDialog";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 export default function StockIn() {
+  const queryClient = useQueryClient();
   const {
     movements,
     isLoading,
     warehouses,
     products,
-    createStockEntry
+    createStockEntry,
+    refetch
   } = useStockMovements('in');
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+    queryClient.invalidateQueries({ queryKey: ['catalog'] });
+    refetch();
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -24,6 +36,10 @@ export default function StockIn() {
           </p>
         </div>
         <div className="flex gap-4">
+          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Actualiser
+          </Button>
           <StockMovementsPrintDialog />
           <StockEntryDialog 
             warehouses={warehouses} 
