@@ -15,6 +15,8 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
     
     const totalValue = data.quantity * data.unitPrice;
     
+    console.log(`Création d'une entrée stock pour le produit ${data.productId} dans l'entrepôt ${data.warehouseId} - Quantité: ${data.quantity}, Prix unitaire: ${data.unitPrice}, Valeur totale: ${totalValue}`);
+    
     // 1. Insert the stock movement - Use direct insert instead of RPC to avoid column ambiguity
     const { data: movementData, error: movementError } = await supabase
       .from('warehouse_stock_movements')
