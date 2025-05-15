@@ -22,10 +22,18 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Define the product type to include price
+interface ProductType {
+  id: string;
+  name: string;
+  reference?: string;
+  price?: number;
+}
+
 export function StockOutForm({ onClose }: { onClose: () => void }) {
   const { createStockExit, isLoading } = useStockExits();
   const { warehouses, products } = useStockQuery('out');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -39,10 +47,10 @@ export function StockOutForm({ onClose }: { onClose: () => void }) {
   });
 
   const onProductChange = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
+    const product = products.find((p) => p.id === productId) as ProductType;
     setSelectedProduct(product);
     
-    if (product) {
+    if (product && product.price !== undefined) {
       form.setValue('unitPrice', product.price || 0);
     }
   };
