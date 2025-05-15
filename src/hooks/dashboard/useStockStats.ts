@@ -1,8 +1,10 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useStockStats = () => {
+  const queryClient = useQueryClient();
+  
   // Fetch catalog for stock information with enabled refetching
   const { data: catalog } = useQuery({
     queryKey: ['stock-stats'],
