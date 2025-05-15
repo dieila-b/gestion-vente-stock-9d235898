@@ -8,7 +8,7 @@ import {
   QuantityInput, 
   PriceInput, 
   ReasonInput 
-} from "./FormFields";
+} from "./form-fields";
 
 interface StockEntryFormProps {
   warehouses: { id: string; name: string; }[];

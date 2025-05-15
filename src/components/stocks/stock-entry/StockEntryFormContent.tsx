@@ -1,6 +1,7 @@
 
 import { useStockEntryForm } from "./hooks/useStockEntryForm";
-import { Form, DialogClose, DialogFooter } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { 
@@ -12,7 +13,7 @@ import {
   QuantityInput, 
   PriceInput, 
   ReasonInput 
-} from "./FormFields";
+} from "./form-fields";
 
 interface StockEntryFormContentProps {
   warehouses: { id: string; name: string; }[];
