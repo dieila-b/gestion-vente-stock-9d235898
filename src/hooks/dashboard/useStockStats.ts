@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useStockStats = () => {
-  // Fetch catalog for stock information
+  // Fetch catalog for stock information with enabled refetching
   const { data: catalog } = useQuery({
-    queryKey: ['catalog'],
+    queryKey: ['stock-stats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('catalog')
@@ -15,8 +15,12 @@ export const useStockStats = () => {
         console.error('Error fetching catalog:', error);
         throw error;
       }
+      
+      console.log('Fetched catalog data for stock statistics:', data?.length || 0, 'products');
       return data || [];
-    }
+    },
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60, // 1 minute
   });
 
   // Calculate stock statistics
@@ -86,6 +90,7 @@ export const useStockStats = () => {
 
   return {
     catalog,
-    ...calculateStockStats()
+    ...calculateStockStats(),
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['stock-stats'] })
   };
 };

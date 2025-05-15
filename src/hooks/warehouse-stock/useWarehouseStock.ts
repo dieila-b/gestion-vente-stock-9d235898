@@ -1,7 +1,7 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { 
   ensureTestProduct, 
   ensureTestWarehouse, 
@@ -15,7 +15,7 @@ import {
  * @param isPOS - Whether to fetch POS stock (true) or warehouse stock (false)
  */
 export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const queryResult = useQuery({
     queryKey: ['warehouse-stock', locationId, isPOS],
@@ -110,10 +110,8 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
         
         // Don't show toast during initial load or if we're retrying
         if (queryResult.fetchStatus !== 'fetching' || queryResult.failureCount > 0) {
-          toast({
-            title: "Erreur de chargement",
-            description: `Impossible de charger les données de stock: ${errorMessage}`,
-            variant: "destructive",
+          toast.error("Erreur de chargement", {
+            description: `Impossible de charger les données de stock: ${errorMessage}`
           });
         }
         
@@ -121,7 +119,7 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       }
     },
     refetchOnWindowFocus: true,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 30, // 30 seconds - More frequent refreshes for stock data
     retry: (failureCount, error) => {
       // More aggressive retry strategy with exponential backoff handled by React Query
       // Don't retry for client-side cancellations or if we've tried too many times
@@ -134,7 +132,7 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       return failureCount < maxRetries;
     },
     retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex), 30000), // Exponential backoff, max 30 seconds
-    refetchInterval: 1000 * 60 * 2, // 2 minutes
+    refetchInterval: 1000 * 60 * 1, // 1 minute
     gcTime: 1000 * 60 * 5, // Keep cached data for 5 minutes
   });
 
@@ -149,10 +147,12 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
     refetch: queryResult.refetch,
     // Helper function to reload data
     reload: () => {
-      toast({
-        title: "Actualisation",
-        description: "Rechargement des données de stock...",
+      toast.info("Actualisation", {
+        description: "Rechargement des données de stock..."
       });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['catalog'] }); 
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
       return queryResult.refetch();
     }
   };

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export function useStockEntries() {
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +55,7 @@ export function useStockEntries() {
           const oldValue = existingStock.quantity * existingStock.unit_price;
           const newValue = data.quantity * data.unitPrice;
           const newTotalValue = oldValue + newValue;
-          const newUnitPrice = newTotalValue / newQuantity;
+          const newUnitPrice = newQuantity > 0 ? newTotalValue / newQuantity : data.unitPrice;
           
           console.log("Updating existing warehouse stock:", {
             id: existingStock.id,
@@ -114,26 +114,41 @@ export function useStockEntries() {
 
         // 4. Update the catalog product stock total
         try {
+          // First, get current stock value from catalog
           const { data: productData, error: productError } = await supabase
             .from('catalog')
             .select('stock')
             .eq('id', data.productId)
             .single();
 
-          if (!productError && productData) {
-            const currentStock = productData.stock || 0;
-            const newStock = currentStock + data.quantity;
-
-            await supabase
-              .from('catalog')
-              .update({ stock: newStock })
-              .eq('id', data.productId);
-              
-            console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
+          if (productError) {
+            console.error("Error getting current product stock:", productError);
+            throw productError;
           }
+
+          // Calculate new stock value
+          const currentStock = productData?.stock || 0;
+          const newStock = currentStock + data.quantity;
+          console.log(`Updating catalog product ${data.productId} stock from ${currentStock} to ${newStock}`);
+
+          // Update the catalog stock
+          const { error: updateCatalogError } = await supabase
+            .from('catalog')
+            .update({ 
+              stock: newStock,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', data.productId);
+
+          if (updateCatalogError) {
+            console.error("Error updating catalog product stock:", updateCatalogError);
+            throw updateCatalogError;
+          }
+              
+          console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
         } catch (err) {
           console.error("Error updating catalog product stock:", err);
-          // Don't throw error here as the main operation succeeded
+          throw new Error(`Erreur lors de la mise à jour du stock du produit: ${err instanceof Error ? err.message : String(err)}`);
         }
 
         return true;
@@ -145,21 +160,19 @@ export function useStockEntries() {
       }
     },
     onSuccess: () => {
-      toast({
-        title: "Entrée de stock réussie",
-        description: "L'entrée de stock a été enregistrée avec succès.",
+      toast.success("Entrée de stock réussie", {
+        description: "L'entrée de stock a été enregistrée avec succès."
       });
       // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] }); // Invalidate stock stats
       console.log("Stock entry successful - Queries invalidated");
     },
     onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: `L'entrée de stock a échoué: ${error.message}`,
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: `L'entrée de stock a échoué: ${error instanceof Error ? error.message : String(error)}`
       });
       console.error("Stock entry failed:", error);
     },
