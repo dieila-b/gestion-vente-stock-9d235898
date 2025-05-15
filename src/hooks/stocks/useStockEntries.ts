@@ -25,17 +25,19 @@ export function useStockEntries() {
         
         const totalValue = data.quantity * data.unitPrice;
         
-        // 1. Insert the stock movement
+        // 1. Insert the stock movement - Use direct insert instead of RPC to avoid column ambiguity
         const { data: movementData, error: movementError } = await supabase
-          .rpc('bypass_insert_stock_movement', {
+          .from('warehouse_stock_movements')
+          .insert({
             warehouse_id: data.warehouseId,
             product_id: data.productId,
             quantity: data.quantity,
             unit_price: data.unitPrice,
             total_value: totalValue,
-            movement_type: 'in',
+            type: 'in',
             reason: data.reason
-          });
+          })
+          .select();
 
         if (movementError) {
           console.error("Error creating movement:", movementError);

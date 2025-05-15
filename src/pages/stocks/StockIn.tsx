@@ -7,11 +7,12 @@ import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function StockIn() {
   const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     movements,
     isLoading,
@@ -27,31 +28,62 @@ export default function StockIn() {
     queryClient.invalidateQueries({ queryKey: ['stock-movements', 'in'] });
   }, [queryClient]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     console.log("Manual refresh requested");
+    setIsRefreshing(true);
     toast.info("Actualisation en cours", {
       description: "Chargement des données de mouvements de stock..."
     });
     
-    // Invalidate relevant queries
-    queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
-    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
-    queryClient.invalidateQueries({ queryKey: ['catalog'] });
-    
-    // Use the refetch function from useStockMovements for a complete refresh
-    refetch();
+    try {
+      // Invalidate relevant queries
+      await queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      await queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      await queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      
+      // Use the refetch function from useStockMovements for a complete refresh
+      await refetch();
+      
+      toast.success("Données actualisées", {
+        description: "Les mouvements de stock ont été rechargés."
+      });
+    } catch (error) {
+      toast.error("Erreur d'actualisation", {
+        description: "Impossible de recharger les données. Veuillez réessayer."
+      });
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleStockEntrySubmit = async (data: any) => {
     console.log("Stock entry submission from StockIn component:", data);
-    const result = await createStockEntry(data);
-    
-    if (result) {
-      console.log("Stock entry created successfully, refreshing data");
-      // Automatic refresh handled by the mutation's onSuccess
+    try {
+      const result = await createStockEntry(data);
+      
+      if (result) {
+        console.log("Stock entry created successfully, refreshing data");
+        toast.success("Entrée de stock créée", {
+          description: "L'entrée de stock a été enregistrée avec succès."
+        });
+        // Refresh data
+        await handleRefresh();
+        return true;
+      } else {
+        console.error("Stock entry creation failed");
+        toast.error("Échec de l'entrée de stock", {
+          description: "Impossible de créer l'entrée de stock. Veuillez réessayer."
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Exception during stock entry creation:", error);
+      toast.error("Erreur", {
+        description: `Erreur lors de l'entrée de stock: ${error instanceof Error ? error.message : String(error)}`
+      });
+      return false;
     }
-    
-    return result;
   };
 
   return (
@@ -68,9 +100,10 @@ export default function StockIn() {
             variant="outline" 
             onClick={handleRefresh} 
             className="flex items-center gap-2"
+            disabled={isRefreshing}
           >
-            <RefreshCw className="h-4 w-4" />
-            Actualiser
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Actualisation...' : 'Actualiser'}
           </Button>
           <StockMovementsPrintDialog />
           <StockEntryDialog 

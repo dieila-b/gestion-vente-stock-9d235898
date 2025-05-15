@@ -17,37 +17,45 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
     queryFn: async () => {
       console.log(`Fetching ${type} stock movements`);
       
-      const { data, error } = await supabase
-        .from('warehouse_stock_movements')
-        .select(`
-          id,
-          quantity,
-          unit_price,
-          total_value,
-          type,
-          reason,
-          created_at,
-          product:product_id(id, name, reference),
-          warehouse:warehouse_id(id, name)
-        `)
-        .eq('type', type)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('warehouse_stock_movements')
+          .select(`
+            id,
+            quantity,
+            unit_price,
+            total_value,
+            type,
+            reason,
+            created_at,
+            product:product_id(id, name, reference),
+            warehouse:warehouse_id(id, name)
+          `)
+          .eq('type', type)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error(`Error fetching ${type} movements:`, error);
-        throw error;
+        if (error) {
+          console.error(`Error fetching ${type} movements:`, error);
+          throw error;
+        }
+
+        console.log(`Found ${data.length} ${type} movements`);
+        
+        // Conversion explicite du type string vers le type littéral 'in' | 'out'
+        const typedMovements: StockMovement[] = data.map(item => ({
+          ...item,
+          type: item.type === 'in' ? 'in' : 'out' as 'in' | 'out',
+          pos_location: undefined
+        }));
+        
+        return typedMovements;
+      } catch (error) {
+        console.error(`Error in stock movements query:`, error);
+        toast.error("Erreur de chargement", {
+          description: "Impossible de charger les mouvements de stock."
+        });
+        return [] as StockMovement[];
       }
-
-      console.log(`Found ${data.length} ${type} movements`);
-      
-      // Conversion explicite du type string vers le type littéral 'in' | 'out'
-      const typedMovements: StockMovement[] = data.map(item => ({
-        ...item,
-        type: item.type === 'in' ? 'in' : 'out' as 'in' | 'out',
-        pos_location: undefined
-      }));
-      
-      return typedMovements;
     },
     staleTime: 1000 * 30, // 30 secondes (diminué pour une actualisation plus fréquente)
     refetchOnMount: true,
@@ -58,17 +66,25 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
   const { data: warehouses = [] } = useQuery({
     queryKey: ['warehouses'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('id, name')
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('warehouses')
+          .select('id, name')
+          .eq('is_active', true);
 
-      if (error) {
+        if (error) {
+          console.error("Error fetching warehouses:", error);
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
         console.error("Error fetching warehouses:", error);
-        throw error;
+        toast.error("Erreur", {
+          description: "Impossible de charger la liste des entrepôts."
+        });
+        return [];
       }
-      
-      return data;
     }
   });
 
@@ -76,16 +92,25 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('catalog')
-        .select('id, name, reference, price');
+      try {
+        const { data, error } = await supabase
+          .from('catalog')
+          .select('id, name, reference, price')
+          .order('name');
 
-      if (error) {
+        if (error) {
+          console.error("Error fetching products:", error);
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
         console.error("Error fetching products:", error);
-        throw error;
+        toast.error("Erreur", {
+          description: "Impossible de charger la liste des produits."
+        });
+        return [];
       }
-      
-      return data;
     }
   });
 
@@ -105,7 +130,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
       if (success) {
         // Force refresh data
         console.log("Stock movement created successfully, refreshing data...");
-        refreshData();
+        await refreshData();
         return true;
       } else {
         console.error("Stock movement creation returned false");
@@ -120,22 +145,30 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
     }
   };
   
-  const refreshData = () => {
+  const refreshData = async () => {
     console.log("Refreshing stock movement data...");
-    // Invalidate all relevant queries
-    queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
-    queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
-    queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
-    queryClient.invalidateQueries({ queryKey: ['catalog'] });
-    queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
-    
-    // Refetch immediately after invalidating
-    setTimeout(() => {
-      refetch();
+    try {
+      // Invalidate all relevant queries
+      await queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      await queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
+      await queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
+      await queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      await queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+      
+      // Refetch immediately after invalidating
+      await refetch();
+      
       toast.success("Données actualisées", {
         description: "Les mouvements de stock ont été rechargés."
       });
-    }, 300);
+      return true;
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast.error("Erreur d'actualisation", {
+        description: "Impossible de recharger les données."
+      });
+      return false;
+    }
   };
 
   return {
