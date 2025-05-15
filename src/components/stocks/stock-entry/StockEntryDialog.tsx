@@ -23,7 +23,10 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
   
   const handleSubmitSuccess = () => {
     console.log("Stock entry submitted successfully, closing dialog");
-    setIsOpen(false);
+    // Force close the dialog with a timeout to ensure state updates properly
+    setTimeout(() => {
+      setIsOpen(false);
+    }, 100);
   };
   
   const handleSubmit = async (data: StockEntryFormType): Promise<boolean> => {
@@ -32,8 +35,8 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
       const success = await onSubmit(data);
       
       if (success) {
-        console.log("Stock entry submission successful, closing dialog");
-        setIsOpen(false);
+        console.log("Stock entry submission successful");
+        // Note: We'll let the success callback handle dialog closing
         return true;
       } else {
         console.error("Stock entry submission failed");
