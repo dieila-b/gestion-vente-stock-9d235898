@@ -57,6 +57,7 @@ export function StockEntryFormContent({
         toast.error("Données incomplètes", {
           description: "Veuillez sélectionner un entrepôt et un produit."
         });
+        setIsSubmitting(false);
         return;
       }
       
@@ -64,6 +65,7 @@ export function StockEntryFormContent({
         toast.error("Quantité invalide", {
           description: "La quantité doit être supérieure à zéro."
         });
+        setIsSubmitting(false);
         return;
       }
       

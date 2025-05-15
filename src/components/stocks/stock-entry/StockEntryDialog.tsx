@@ -26,12 +26,27 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
     setIsOpen(false);
   };
   
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
+  const handleSubmit = async (data: StockEntryFormType): Promise<boolean> => {
+    console.log("StockEntryDialog - handleSubmit called with data:", data);
+    try {
+      const success = await onSubmit(data);
+      
+      if (success) {
+        console.log("Stock entry submission successful, closing dialog");
+        setIsOpen(false);
+        return true;
+      } else {
+        console.error("Stock entry submission failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error in StockEntryDialog handleSubmit:", error);
+      return false;
+    }
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <ArrowUpCircle className="h-4 w-4" />
@@ -49,7 +64,7 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
         <StockEntryFormContent 
           warehouses={warehouses} 
           products={products} 
-          onSubmit={onSubmit}
+          onSubmit={handleSubmit}
           onSubmitSuccess={handleSubmitSuccess}
         />
       </DialogContent>
