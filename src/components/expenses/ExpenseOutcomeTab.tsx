@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +25,7 @@ import { formatGNF } from "@/lib/currency";
 import { Plus, X } from "lucide-react";
 import { ExpenseIncomePrintDialog } from "./ExpenseIncomePrintDialog";
 import { addCashRegisterTransaction } from "@/api/cash-register-api";
-import { safeGet } from "@/utils/select-query-helper";
+import { safeGet } from "@/utils/data-safe/safe-access";
 
 export function ExpenseOutcomeTab() {
   const [isFormVisible, setIsFormVisible] = useState(false);

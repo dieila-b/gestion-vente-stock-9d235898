@@ -1,9 +1,11 @@
 
 import type { PostgrestError } from "@supabase/supabase-js";
 import { SelectQueryError, isSelectQueryError } from "./select-query-helper";
+import { safeGet, safeArray } from "./data-safe/safe-access";
 
 // Re-export the isSelectQueryError function
 export { isSelectQueryError } from "./select-query-helper";
+export { safeGet, safeArray } from "./data-safe/safe-access";
 
 export function safeProduct(product: any) {
   // Guard against product being undefined or null
@@ -50,6 +52,17 @@ export function safePOSLocation(location: any) {
   return location;
 }
 
+export function safeClient(client: any) {
+  if (!client || isSelectQueryError(client)) {
+    return {
+      id: '',
+      company_name: 'Client inconnu',
+      status: 'inactive'
+    };
+  }
+  return client;
+}
+
 // Add the missing utility functions
 export function safeSupplier(supplier: any) {
   if (!supplier || isSelectQueryError(supplier)) {
@@ -86,13 +99,6 @@ export function safeInvoice(invoice: any) {
     };
   }
   return invoice;
-}
-
-export function safeGet(obj: any, key: string, defaultValue: any = null) {
-  if (!obj || isSelectQueryError(obj)) {
-    return defaultValue;
-  }
-  return obj[key] ?? defaultValue;
 }
 
 export function castToTransfers(data: any[]) {

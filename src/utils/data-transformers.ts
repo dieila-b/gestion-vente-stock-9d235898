@@ -1,7 +1,8 @@
 
 import { POSLocation } from "@/types/pos-locations";
 import { Client } from "@/types/client";
-import { safeGet, safePOSLocation, safeClient } from "@/utils/select-query-helper";
+import { safeGet } from "@/utils/data-safe/safe-access";
+import { safePOSLocation, safeClient } from "@/utils/supabase-safe-query";
 
 // Safe transformer for POS locations
 export function transformPOSLocation(item: any): POSLocation {

@@ -5,12 +5,26 @@ import { AlertTriangle } from "lucide-react";
 import { useStockStatistics } from "@/hooks/useStockStatistics";
 import { EmptyState } from "@/components/ui/empty-state";
 
+interface StockItem {
+  id: string;
+  warehouse_id: string;
+  name: string;
+  quantity: number;
+  product: any;
+  unit_price?: number;
+  total_value?: number;
+}
+
 export default function LowStock() {
   const { warehouseStock, isLoadingWarehouseStock } = useStockStatistics();
   
   // Consider low stock as items with quantity between 1 and 5
   const lowStockItems = Array.isArray(warehouseStock) 
-    ? warehouseStock.filter(item => item.quantity > 0 && item.quantity <= 5)
+    ? warehouseStock.filter(item => item.quantity > 0 && item.quantity <= 5).map(item => ({
+        ...item,
+        unit_price: item.unit_price || 0,
+        total_value: item.total_value || 0
+      }))
     : [];
 
   return (

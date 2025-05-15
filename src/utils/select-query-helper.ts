@@ -1,5 +1,6 @@
 
 import type { PostgrestError } from "@supabase/supabase-js";
+import { safeGet, safeArray } from "./data-safe/safe-access";
 
 // Define a type to represent the special error object returned by Supabase
 // when a foreign key reference fails in a select query
@@ -36,3 +37,6 @@ export function isPostgrestError(value: any): value is PostgrestError {
     'hint' in value
   );
 }
+
+// Re-export utility functions from data-safe
+export { safeGet, safeArray };
