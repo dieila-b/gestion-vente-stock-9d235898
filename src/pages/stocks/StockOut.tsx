@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
-import { StockOutForm } from "@/components/stocks/stock-out/StockOutForm";
+import { StockOutDialog } from "@/components/stocks/stock-out/StockOutDialog";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 
@@ -25,7 +25,7 @@ export default function StockOut() {
         </div>
         <div className="flex gap-4">
           <StockMovementsPrintDialog />
-          <StockOutForm 
+          <StockOutDialog 
             warehouses={warehouses} 
             products={products} 
             onSubmit={createStockExit} 

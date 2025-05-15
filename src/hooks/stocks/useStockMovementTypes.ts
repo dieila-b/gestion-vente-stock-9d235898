@@ -1,4 +1,6 @@
 
+import { z } from "zod";
+
 export interface StockMovement {
   id: string;
   quantity: number;
@@ -37,3 +39,12 @@ export interface FormValues {
   unitPrice?: number;
   reason: string;
 }
+
+// Add the missing schema definition
+export const stockEntrySchema = z.object({
+  productId: z.string().min(1, { message: "Veuillez sélectionner un produit" }),
+  warehouseId: z.string().min(1, { message: "Veuillez sélectionner un entrepôt" }),
+  quantity: z.number().positive({ message: "La quantité doit être positive" }),
+  unitPrice: z.number().nonnegative({ message: "Le prix unitaire ne peut pas être négatif" }),
+  reason: z.string().min(3, { message: "Veuillez indiquer un motif valide" })
+});

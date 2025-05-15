@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { StockMovementsTable } from "@/components/stocks/StockMovementsTable";
-import { StockEntryForm } from "@/components/stocks/stock-entry";
+import { StockEntryDialog } from "@/components/stocks/stock-entry/StockEntryDialog";
 import { StockMovementsPrintDialog } from "@/components/stocks/StockMovementsPrintDialog";
 import { useStockMovements } from "@/hooks/stocks/useStockMovements";
 
@@ -25,7 +25,7 @@ export default function StockIn() {
         </div>
         <div className="flex gap-4">
           <StockMovementsPrintDialog />
-          <StockEntryForm 
+          <StockEntryDialog 
             warehouses={warehouses} 
             products={products} 
             onSubmit={createStockEntry} 
