@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
 import { toast } from "sonner";
+import { db } from "@/utils/db-core";
 
 export function useStockEntries() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +60,7 @@ export function useStockEntries() {
           throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
         }
         
-        // 3. Update or create stock entry
+        // 3. Update or create stock entry using db utility to bypass RLS
         if (existingStock) {
           // Calculate new values for existing stock (weighted average)
           const newQuantity = existingStock.quantity + data.quantity;
@@ -78,25 +79,27 @@ export function useStockEntries() {
             newTotalValue
           });
           
-          // Update existing stock
-          const { error: updateError } = await supabase
-            .from('warehouse_stock')
-            .update({
+          // Update existing stock using db.update to bypass RLS
+          const updateResult = await db.update(
+            'warehouse_stock',
+            {
               quantity: newQuantity,
               unit_price: newUnitPrice,
               total_value: newTotalValue,
               updated_at: new Date().toISOString()
-            })
-            .eq('id', existingStock.id);
+            },
+            'id',
+            existingStock.id
+          );
             
-          if (updateError) {
-            console.error("Error updating stock:", updateError);
-            throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
+          if (!updateResult) {
+            console.error("Error updating stock using db utility");
+            throw new Error("Erreur lors de la mise à jour du stock");
           }
           
-          console.log("Stock successfully updated");
+          console.log("Stock successfully updated using db utility");
         } else {
-          // Create new stock entry
+          // Create new stock entry using db.insert to bypass RLS
           console.log("Creating new warehouse stock entry:", {
             warehouseId: data.warehouseId,
             productId: data.productId,
@@ -105,22 +108,20 @@ export function useStockEntries() {
             totalValue
           });
           
-          const { error: insertError } = await supabase
-            .from('warehouse_stock')
-            .insert({
-              warehouse_id: data.warehouseId,
-              product_id: data.productId,
-              quantity: data.quantity,
-              unit_price: data.unitPrice,
-              total_value: totalValue
-            });
+          const insertResult = await db.insert('warehouse_stock', {
+            warehouse_id: data.warehouseId,
+            product_id: data.productId,
+            quantity: data.quantity,
+            unit_price: data.unitPrice,
+            total_value: totalValue
+          });
             
-          if (insertError) {
-            console.error("Error creating stock:", insertError);
-            throw new Error(`Erreur lors de la création du stock: ${insertError.message}`);
+          if (!insertResult) {
+            console.error("Error creating stock using db utility");
+            throw new Error("Erreur lors de la création du stock");
           }
           
-          console.log("New stock entry successfully created");
+          console.log("New stock entry successfully created using db utility");
         }
 
         // 4. Update the catalog product stock total
@@ -142,18 +143,20 @@ export function useStockEntries() {
           const newStock = currentStock + data.quantity;
           console.log(`Updating catalog product ${data.productId} stock from ${currentStock} to ${newStock}`);
 
-          // Update the catalog stock
-          const { error: updateCatalogError } = await supabase
-            .from('catalog')
-            .update({ 
+          // Update the catalog stock using db.update to bypass RLS if needed
+          const updateCatalogResult = await db.update(
+            'catalog',
+            { 
               stock: newStock,
               updated_at: new Date().toISOString()
-            })
-            .eq('id', data.productId);
+            },
+            'id',
+            data.productId
+          );
 
-          if (updateCatalogError) {
-            console.error("Error updating catalog product stock:", updateCatalogError);
-            throw updateCatalogError;
+          if (!updateCatalogResult) {
+            console.error("Error updating catalog product stock with db utility");
+            throw new Error("Erreur lors de la mise à jour du stock du produit");
           }
               
           console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);

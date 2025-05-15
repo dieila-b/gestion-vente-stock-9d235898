@@ -80,6 +80,7 @@ export function StockEntryFormContent({
           description: "L'entrée de stock a été enregistrée avec succès."
         });
         form.reset();
+        // Ensure we call the onSubmitSuccess callback to close the dialog
         onSubmitSuccess();
       } else {
         console.error("Stock entry creation failed without specific error");

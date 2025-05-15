@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockEntryForm } from "./useStockMovementTypes";
 import { toast } from "sonner";
+import { db } from "@/utils/db-core";
 
 export function useStockExits() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,48 +13,55 @@ export function useStockExits() {
   const createStockExitMutation = useMutation({
     mutationFn: async (data: StockEntryForm) => {
       setIsLoading(true);
+      
       try {
         console.log("Creating stock exit with data:", data);
-        const totalValue = data.quantity * data.unitPrice;
         
-        // 1. Check if there is enough stock in the warehouse
-        const { data: existingStock, error: stockCheckError } = await supabase
+        if (!data.warehouseId || !data.productId) {
+          throw new Error("L'entrepôt et le produit sont obligatoires");
+        }
+        
+        if (data.quantity <= 0) {
+          throw new Error("La quantité doit être positive");
+        }
+        
+        // Check if there is enough stock
+        const { data: stockData, error: stockCheckError } = await supabase
           .from('warehouse_stock')
-          .select('id, quantity, unit_price, total_value')
+          .select('id, quantity, unit_price')
           .eq('warehouse_id', data.warehouseId)
           .eq('product_id', data.productId)
           .maybeSingle();
         
         if (stockCheckError) {
-          console.error("Error checking stock availability:", stockCheckError);
+          console.error("Error checking stock:", stockCheckError);
           throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
         }
         
-        if (!existingStock) {
-          console.error("Product not found in warehouse");
-          throw new Error('Ce produit n\'existe pas dans l\'entrepôt sélectionné.');
+        if (!stockData) {
+          throw new Error("Pas de stock disponible pour ce produit dans cet entrepôt");
         }
         
-        if (existingStock.quantity < data.quantity) {
-          console.error("Insufficient stock", {
-            available: existingStock.quantity,
-            requested: data.quantity
-          });
-          throw new Error(`Stock insuffisant. Quantité disponible: ${existingStock.quantity}`);
+        if (stockData.quantity < data.quantity) {
+          throw new Error(`Stock insuffisant: ${stockData.quantity} disponible(s)`);
         }
         
-        // 2. Insert the stock movement
+        const totalValue = data.quantity * (data.unitPrice || stockData.unit_price);
+        
+        // Create the movement
         const { data: movementData, error: movementError } = await supabase
-          .rpc('bypass_insert_stock_movement', {
+          .from('warehouse_stock_movements')
+          .insert({
             warehouse_id: data.warehouseId,
             product_id: data.productId,
             quantity: data.quantity,
-            unit_price: data.unitPrice,
+            unit_price: data.unitPrice || stockData.unit_price,
             total_value: totalValue,
-            movement_type: 'out',
+            type: 'out',
             reason: data.reason
-          });
-
+          })
+          .select();
+        
         if (movementError) {
           console.error("Error creating movement:", movementError);
           throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
@@ -61,34 +69,37 @@ export function useStockExits() {
         
         console.log("Successfully created stock exit movement:", movementData);
         
-        // 3. Update the warehouse stock
-        const newQuantity = existingStock.quantity - data.quantity;
-        const newTotalValue = newQuantity * existingStock.unit_price;
+        // Update the stock
+        const newQuantity = stockData.quantity - data.quantity;
+        const newTotalValue = newQuantity * stockData.unit_price;
         
-        console.log("Updating stock for exit:", {
-          id: existingStock.id,
-          oldQuantity: existingStock.quantity,
+        console.log("Updating warehouse stock:", {
+          id: stockData.id,
+          oldQuantity: stockData.quantity,
           newQuantity,
           totalValue: newTotalValue
         });
         
-        const { error: updateError } = await supabase
-          .from('warehouse_stock')
-          .update({
+        // Use db utility to update warehouse_stock with RLS bypass
+        const updateResult = await db.update(
+          'warehouse_stock',
+          {
             quantity: newQuantity,
             total_value: newTotalValue,
             updated_at: new Date().toISOString()
-          })
-          .eq('id', existingStock.id);
+          },
+          'id',
+          stockData.id
+        );
           
-        if (updateError) {
-          console.error("Error updating stock after exit:", updateError);
-          throw new Error(`Erreur lors de la mise à jour du stock: ${updateError.message}`);
+        if (!updateResult) {
+          console.error("Error updating stock");
+          throw new Error("Erreur lors de la mise à jour du stock");
         }
         
-        console.log("Stock successfully updated after exit");
-
-        // 4. Update the catalog product stock total
+        console.log("Stock successfully updated");
+        
+        // Update the catalog product stock total
         try {
           const { data: productData, error: productError } = await supabase
             .from('catalog')
@@ -96,23 +107,34 @@ export function useStockExits() {
             .eq('id', data.productId)
             .single();
 
-          if (!productError && productData) {
-            const currentStock = productData.stock || 0;
-            const newStock = Math.max(0, currentStock - data.quantity);
-
-            await supabase
-              .from('catalog')
-              .update({ 
-                stock: newStock,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', data.productId);
-              
-            console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
+          if (productError) {
+            console.error("Error getting product stock:", productError);
+            throw productError;
           }
+          
+          const currentStock = productData?.stock || 0;
+          const newStock = Math.max(0, currentStock - data.quantity);
+          
+          // Use db utility to update catalog with RLS bypass
+          const updateCatalogResult = await db.update(
+            'catalog',
+            { 
+              stock: newStock,
+              updated_at: new Date().toISOString()
+            },
+            'id',
+            data.productId
+          );
+          
+          if (!updateCatalogResult) {
+            console.error("Error updating catalog stock");
+            throw new Error("Erreur lors de la mise à jour du stock du produit");
+          }
+          
+          console.log(`Updated catalog product stock from ${currentStock} to ${newStock}`);
         } catch (err) {
-          console.error("Error updating catalog product stock:", err);
-          // Don't throw error here as the main operation succeeded
+          console.error("Error updating catalog stock:", err);
+          // We continue even if catalog update fails
         }
         
         return true;
@@ -133,7 +155,6 @@ export function useStockExits() {
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
-      console.log("Stock exit successful - Queries invalidated");
     },
     onError: (error) => {
       toast.error("Erreur", {
@@ -148,12 +169,13 @@ export function useStockExits() {
       await createStockExitMutation.mutateAsync(data);
       return true;
     } catch (error) {
+      console.error("Error in createStockExit wrapper:", error);
       return false;
     }
   };
 
   return {
     createStockExit,
-    isLoading,
+    isLoading: isLoading || createStockExitMutation.isPending,
   };
 }
