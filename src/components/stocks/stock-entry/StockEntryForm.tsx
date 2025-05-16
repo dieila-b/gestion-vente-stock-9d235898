@@ -20,18 +20,24 @@ interface StockEntryFormProps {
 export function StockEntryForm({ warehouses, products, onSubmit, onSuccess }: StockEntryFormProps) {
   const { form, isSubmitting, handleSubmit } = useStockEntryForm({
     onSubmit: async (values) => {
-      const success = await onSubmit(values);
-      if (success && onSuccess) {
-        onSuccess();
+      try {
+        console.log("Soumission du formulaire avec les valeurs:", values);
+        const success = await onSubmit(values);
+        if (success && onSuccess) {
+          onSuccess();
+        }
+        return success;
+      } catch (error) {
+        console.error("Erreur lors de la soumission du formulaire:", error);
+        return false;
       }
-      return success;
     },
     products
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+      <form id="stock-entry-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
         <WarehouseSelect form={form} warehouses={warehouses} />
         <ProductSelect form={form} products={products} />
         
@@ -41,8 +47,6 @@ export function StockEntryForm({ warehouses, products, onSubmit, onSuccess }: St
         </div>
         
         <ReasonInput form={form} />
-        
-        {/* Form actions will be provided by parent component */}
       </form>
     </Form>
   );

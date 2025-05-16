@@ -9,13 +9,15 @@ interface StockEntryDialogContentProps {
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
   onSubmitSuccess: () => void;
+  isSubmitting?: boolean;
 }
 
 export function StockEntryDialogContent({
   warehouses,
   products,
   onSubmit,
-  onSubmitSuccess
+  onSubmitSuccess,
+  isSubmitting = false
 }: StockEntryDialogContentProps) {
   return (
     <>
@@ -28,9 +30,17 @@ export function StockEntryDialogContent({
       
       <DialogFooter className="mt-4">
         <DialogClose asChild>
-          <Button variant="outline" type="button">Annuler</Button>
+          <Button variant="outline" type="button" disabled={isSubmitting}>
+            Annuler
+          </Button>
         </DialogClose>
-        <Button type="submit" form="stock-entry-form">Enregistrer</Button>
+        <Button 
+          type="submit" 
+          form="stock-entry-form" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Traitement..." : "Enregistrer"}
+        </Button>
       </DialogFooter>
     </>
   );
