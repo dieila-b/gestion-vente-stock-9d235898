@@ -441,6 +441,42 @@ export type Database = {
           },
         ]
       }
+      entrees_stock: {
+        Row: {
+          action: string | null
+          article: string
+          created_at: string | null
+          emplacement: string
+          id: string
+          prix_unitaire: number | null
+          quantite: number
+          type: string | null
+          valeur_totale: number | null
+        }
+        Insert: {
+          action?: string | null
+          article: string
+          created_at?: string | null
+          emplacement: string
+          id?: string
+          prix_unitaire?: number | null
+          quantite: number
+          type?: string | null
+          valeur_totale?: number | null
+        }
+        Update: {
+          action?: string | null
+          article?: string
+          created_at?: string | null
+          emplacement?: string
+          id?: string
+          prix_unitaire?: number | null
+          quantite?: number
+          type?: string | null
+          valeur_totale?: number | null
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           created_at: string | null
@@ -1332,6 +1368,39 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: string | null
+        }
+        Relationships: []
+      }
+      stock_principal: {
+        Row: {
+          article: string
+          categorie_action: string | null
+          entrepot: string
+          id: string
+          prix_unitaire: number | null
+          quantite: number
+          updated_at: string | null
+          valeur_totale: number | null
+        }
+        Insert: {
+          article: string
+          categorie_action?: string | null
+          entrepot: string
+          id?: string
+          prix_unitaire?: number | null
+          quantite: number
+          updated_at?: string | null
+          valeur_totale?: number | null
+        }
+        Update: {
+          article?: string
+          categorie_action?: string | null
+          entrepot?: string
+          id?: string
+          prix_unitaire?: number | null
+          quantite?: number
+          updated_at?: string | null
+          valeur_totale?: number | null
         }
         Relationships: []
       }

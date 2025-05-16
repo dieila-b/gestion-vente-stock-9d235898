@@ -60,6 +60,9 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
 
     // 4. Update the catalog product stock total
     await updateCatalogStock(data);
+    
+    // 5. Update or create record in stock_principal table
+    await updateStockPrincipal(data, totalValue);
 
     return true;
   } catch (error: any) {
@@ -172,5 +175,116 @@ async function updateCatalogStock(data: StockEntryForm): Promise<void> {
   } catch (err) {
     console.error("Error updating catalog product stock:", err);
     throw new Error(`Erreur lors de la mise à jour du stock du produit: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+async function updateStockPrincipal(data: StockEntryForm, totalValue: number): Promise<void> {
+  try {
+    // Récupérer les informations du produit et de l'entrepôt pour stock_principal
+    const { data: productData, error: productError } = await supabase
+      .from('catalog')
+      .select('name')
+      .eq('id', data.productId)
+      .single();
+      
+    if (productError) {
+      console.error("Error getting product name for stock_principal:", productError);
+      throw productError;
+    }
+    
+    const { data: warehouseData, error: warehouseError } = await supabase
+      .from('warehouses')
+      .select('name')
+      .eq('id', data.warehouseId)
+      .single();
+      
+    if (warehouseError) {
+      console.error("Error getting warehouse name for stock_principal:", warehouseError);
+      throw warehouseError;
+    }
+    
+    const productName = productData.name;
+    const warehouseName = warehouseData.name;
+    
+    // Vérifier si une entrée existe déjà dans stock_principal
+    const { data: existingEntry, error: checkError } = await supabase
+      .from('stock_principal')
+      .select('id, quantite, prix_unitaire, valeur_totale')
+      .eq('article', productName)
+      .eq('entrepot', warehouseName)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking existing stock_principal entry:", checkError);
+      throw checkError;
+    }
+    
+    if (existingEntry) {
+      // Mettre à jour l'entrée existante (calcul de moyenne pondérée)
+      const newQuantity = existingEntry.quantite + data.quantity;
+      const oldValue = existingEntry.quantite * existingEntry.prix_unitaire;
+      const newValue = data.quantity * data.unitPrice;
+      const newTotalValue = oldValue + newValue;
+      const newUnitPrice = newQuantity > 0 ? newTotalValue / newQuantity : data.unitPrice;
+      
+      console.log("Updating existing stock_principal entry:", {
+        id: existingEntry.id,
+        article: productName,
+        entrepot: warehouseName,
+        oldQuantity: existingEntry.quantite,
+        newQuantity,
+        oldUnitPrice: existingEntry.prix_unitaire,
+        newUnitPrice,
+        oldTotalValue: existingEntry.valeur_totale,
+        newTotalValue
+      });
+      
+      const updateResult = await db.update(
+        'stock_principal',
+        {
+          quantite: newQuantity,
+          prix_unitaire: newUnitPrice,
+          valeur_totale: newTotalValue,
+          updated_at: new Date().toISOString()
+        },
+        'id',
+        existingEntry.id
+      );
+      
+      if (!updateResult) {
+        console.error("Error updating stock_principal using db utility");
+        throw new Error("Erreur lors de la mise à jour du stock principal");
+      }
+      
+      console.log("stock_principal successfully updated");
+    } else {
+      // Créer une nouvelle entrée
+      console.log("Creating new stock_principal entry:", {
+        article: productName,
+        entrepot: warehouseName,
+        quantite: data.quantity,
+        prix_unitaire: data.unitPrice,
+        valeur_totale: totalValue
+      });
+      
+      const insertResult = await db.insert('stock_principal', {
+        article: productName,
+        entrepot: warehouseName,
+        quantite: data.quantity,
+        prix_unitaire: data.unitPrice,
+        valeur_totale: totalValue,
+        categorie_action: 'Entrée automatique'
+      });
+      
+      if (!insertResult) {
+        console.error("Error creating stock_principal entry using db utility");
+        throw new Error("Erreur lors de la création de l'entrée dans le stock principal");
+      }
+      
+      console.log("New stock_principal entry successfully created");
+    }
+  } catch (err) {
+    console.error("Error updating stock_principal:", err);
+    throw new Error(`Erreur lors de la mise à jour du stock principal: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

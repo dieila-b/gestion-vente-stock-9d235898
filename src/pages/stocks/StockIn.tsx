@@ -26,6 +26,7 @@ export default function StockIn() {
   useEffect(() => {
     console.log("StockIn component mounted - fetching initial data");
     queryClient.invalidateQueries({ queryKey: ['stock-movements', 'in'] });
+    queryClient.invalidateQueries({ queryKey: ['stock_principal'] });
   }, [queryClient]);
 
   const handleRefresh = async () => {
@@ -40,6 +41,7 @@ export default function StockIn() {
       await queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
       await queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
       await queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      await queryClient.invalidateQueries({ queryKey: ['stock_principal'] });
       
       // Use the refetch function from useStockMovements for a complete refresh
       await refetch();

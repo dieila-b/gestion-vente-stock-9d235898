@@ -61,4 +61,5 @@ export function invalidateStockQueries(queryClient: ReturnType<typeof useQueryCl
   queryClient.invalidateQueries({ queryKey: ['warehouse-stock-statistics'] });
   queryClient.invalidateQueries({ queryKey: ['catalog'] });
   queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+  queryClient.invalidateQueries({ queryKey: ['stock_principal'] });
 }
