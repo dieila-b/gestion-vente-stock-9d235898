@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowUpCircle } from "lucide-react";
 import { StockEntryDialogContent } from "./StockEntryDialogContent";
@@ -38,6 +38,9 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nouvelle entrée de stock</DialogTitle>
+          <DialogDescription>
+            Enregistrez une nouvelle entrée de marchandises dans votre stock.
+          </DialogDescription>
         </DialogHeader>
         <StockEntryDialogContent 
           warehouses={warehouses} 
