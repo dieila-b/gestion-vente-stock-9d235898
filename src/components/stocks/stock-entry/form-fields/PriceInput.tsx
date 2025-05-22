@@ -13,7 +13,7 @@ export function PriceInput({ form, disabled = false }: PriceInputProps) {
   return (
     <FormField
       control={form.control}
-      name="price"
+      name="unitPrice"
       render={({ field }) => (
         <FormItem>
           <FormLabel>Prix unitaire</FormLabel>

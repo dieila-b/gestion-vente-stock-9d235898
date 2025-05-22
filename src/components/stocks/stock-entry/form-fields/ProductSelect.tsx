@@ -24,7 +24,7 @@ export function ProductSelect({ form, products, disabled = false }: ProductSelec
                 field.onChange(value);
                 const selectedProduct = products.find(p => p.id === value);
                 if (selectedProduct) {
-                  form.setValue('price', selectedProduct.price);
+                  form.setValue('unitPrice', selectedProduct.price);
                 }
               }}
               defaultValue={field.value}
