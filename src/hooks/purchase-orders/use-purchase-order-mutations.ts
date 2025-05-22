@@ -16,8 +16,11 @@ export const usePurchaseOrderMutations = () => {
   
   // Function to force refresh purchase orders data
   const refreshPurchaseOrders = async () => {
+    console.log("[usePurchaseOrderMutations] Forcing refresh of purchase orders data");
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    return queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+    const result = await queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+    console.log("[usePurchaseOrderMutations] Refresh result:", result);
+    return result;
   };
 
   return {

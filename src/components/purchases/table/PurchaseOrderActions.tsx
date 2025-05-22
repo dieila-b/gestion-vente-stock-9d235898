@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface PurchaseOrderActionsProps {
   order: PurchaseOrder;
@@ -40,11 +41,19 @@ export function PurchaseOrderActions({
     if (isProcessing) return;
     
     try {
-      console.log("Attempting to approve order:", order.id);
+      console.log(`[PurchaseOrderActions] Starting approval for order: ${order.id}, ${order.order_number}`);
       setLocalProcessing(true);
+      
+      if (!order.warehouse_id) {
+        toast.error("Impossible d'approuver: l'entrepôt n'est pas spécifié pour cette commande");
+        return;
+      }
+      
       await onApprove(order.id);
+      console.log(`[PurchaseOrderActions] Approval completed for order: ${order.id}`);
     } catch (error) {
-      console.error("Error in approve handler:", error);
+      console.error("[PurchaseOrderActions] Error in approve handler:", error);
+      toast.error("Erreur lors de l'approbation de la commande");
     } finally {
       setLocalProcessing(false);
     }
