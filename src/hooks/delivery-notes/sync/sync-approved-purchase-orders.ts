@@ -4,14 +4,14 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 /**
- * Synchronizes approved purchase orders by creating delivery notes for them
- * if they don't already exist
+ * Synchronise les bons de commande approuvés en créant des bons de livraison 
+ * pour ceux qui n'en ont pas encore
  */
 export async function syncApprovedPurchaseOrders() {
   try {
     console.log("Synchronizing approved purchase orders to delivery notes");
     
-    // Get all approved purchase orders - implémentation plus robuste
+    // Récupérer tous les bons de commande approuvés avec une implémentation robuste
     const { data: approvedOrders, error: fetchError } = await supabase
       .from('purchase_orders')
       .select(`
@@ -55,19 +55,20 @@ export async function syncApprovedPurchaseOrders() {
     
     console.log(`Found ${ordersWithoutNotes?.length || 0} approved orders without delivery notes:`, ordersWithoutNotes);
     
-    // Create delivery notes for each approved order
+    // Créer des bons de livraison pour chaque commande approuvée sans bon existant
     if (ordersWithoutNotes && ordersWithoutNotes.length > 0) {
       let createdCount = 0;
       
       for (const order of ordersWithoutNotes) {
         try {
-          // Generate a unique delivery note number with date and random component
+          // Générer un numéro unique pour le bon de livraison avec date et composante aléatoire
           const date = new Date();
           const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
           const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
           const deliveryNumber = `BL-${dateStr}-${randomId}`;
           
           console.log(`Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
+          console.log(`Order warehouse_id: ${order.warehouse_id || 'non défini'}`);
           
           const { data: newNote, error: createError } = await supabase
             .from('delivery_notes')
@@ -95,10 +96,10 @@ export async function syncApprovedPurchaseOrders() {
           const createdDeliveryNote = newNote[0];
           console.log(`Created delivery note for order ${order.id}:`, createdDeliveryNote);
           
-          // Create delivery note items based on purchase order items
+          // Créer les articles du bon de livraison basés sur les articles de la commande
           if (order.items && order.items.length > 0 && createdDeliveryNote) {
             const itemsData = order.items.map((item: any) => ({
-              id: uuidv4(), // Générer un ID unique pour chaque item
+              id: uuidv4(), // Générer un ID unique pour chaque article
               delivery_note_id: createdDeliveryNote.id,
               product_id: item.product_id,
               quantity_ordered: item.quantity,

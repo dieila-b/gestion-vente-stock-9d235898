@@ -1,7 +1,6 @@
 
-
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
-import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purchase-order-mutations";
+import { usePurchaseOrderMutations } from "./purchase-orders/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -63,6 +62,8 @@ export function usePurchaseOrders() {
         
         // Also refresh delivery notes to show newly created ones
         await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        
+        toast.success("Bon de commande approuvé avec succès");
       }
     } catch (error) {
       console.error("Error in handleApprove:", error);

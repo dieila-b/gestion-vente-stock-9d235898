@@ -1,5 +1,4 @@
 
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,7 +15,7 @@ export function useApprovePurchaseOrder() {
         // 1. Vérifier que le bon de commande existe
         const { data: orderData, error: checkError } = await supabase
           .from('purchase_orders')
-          .select('id, status')
+          .select('id, status, warehouse_id')
           .eq('id', id)
           .maybeSingle();
           
@@ -46,7 +45,7 @@ export function useApprovePurchaseOrder() {
             updated_at: new Date().toISOString()
           })
           .eq('id', id)
-          .select('id, status');
+          .select('id, status, warehouse_id');
 
         if (updateError) {
           console.error("Error updating purchase order status:", updateError);
@@ -71,8 +70,8 @@ export function useApprovePurchaseOrder() {
         }
         
         // Invalider le cache des requêtes pour forcer un rafraîchissement
-        queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
         toast.success("Commande approuvée avec succès");
         return { id, success: true };
