@@ -56,15 +56,12 @@ export function usePurchaseOrders() {
       
       console.log("Approval completed for:", id, "Result:", result);
       
-      if (result && result.success) {
-        // Refresh the orders list
-        await refreshOrders();
+      // Refresh the orders list regardless of outcome
+      await refreshOrders();
+      
+      // Also refresh delivery notes to show newly created ones
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
-        // Also refresh delivery notes to show newly created ones
-        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-        
-        toast.success("Bon de commande approuvé avec succès");
-      }
     } catch (error) {
       console.error("Error in handleApprove:", error);
       toast.error("Erreur lors de l'approbation de la commande");

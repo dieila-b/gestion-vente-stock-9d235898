@@ -27,7 +27,8 @@ export function PurchaseOrderActions({
   onDelete,
   onPrint
 }: PurchaseOrderActionsProps) {
-  const isProcessing = processingId === order.id;
+  const [localProcessing, setLocalProcessing] = useState<boolean>(false);
+  const isProcessing = processingId === order.id || localProcessing;
   
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
@@ -38,11 +39,14 @@ export function PurchaseOrderActions({
     
     if (isProcessing) return;
     
-    console.log("Attempting to approve order:", order.id);
     try {
+      console.log("Attempting to approve order:", order.id);
+      setLocalProcessing(true);
       await onApprove(order.id);
     } catch (error) {
       console.error("Error in approve handler:", error);
+    } finally {
+      setLocalProcessing(false);
     }
   };
 

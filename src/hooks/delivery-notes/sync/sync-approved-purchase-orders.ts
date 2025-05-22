@@ -35,7 +35,7 @@ export async function syncApprovedPurchaseOrders() {
       return false;
     }
     
-    console.log(`Found ${approvedOrders?.length || 0} approved orders total`);
+    console.log(`Found ${approvedOrders?.length || 0} approved orders total:`, approvedOrders);
     
     // Récupérer tous les bons de livraison existants
     const { data: existingNotes, error: notesError } = await supabase
@@ -61,6 +61,12 @@ export async function syncApprovedPurchaseOrders() {
       
       for (const order of ordersWithoutNotes) {
         try {
+          console.log("Processing order:", order);
+          // Vérifier que warehouse_id est bien présent
+          if (!order.warehouse_id) {
+            console.warn(`Order ${order.id} has no warehouse_id, using default.`);
+          }
+          
           // Générer un numéro unique pour le bon de livraison avec date et composante aléatoire
           const date = new Date();
           const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
@@ -70,17 +76,21 @@ export async function syncApprovedPurchaseOrders() {
           console.log(`Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
           console.log(`Order warehouse_id: ${order.warehouse_id || 'non défini'}`);
           
+          const deliveryNoteData = {
+            purchase_order_id: order.id,
+            supplier_id: order.supplier_id,
+            delivery_number: deliveryNumber,
+            status: 'pending',
+            warehouse_id: order.warehouse_id,
+            deleted: false,
+            notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
+          };
+          
+          console.log("Inserting delivery note with data:", deliveryNoteData);
+          
           const { data: newNote, error: createError } = await supabase
             .from('delivery_notes')
-            .insert({
-              purchase_order_id: order.id,
-              supplier_id: order.supplier_id,
-              delivery_number: deliveryNumber,
-              status: 'pending',
-              warehouse_id: order.warehouse_id,
-              deleted: false,
-              notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
-            })
+            .insert(deliveryNoteData)
             .select();
             
           if (createError) {
@@ -107,6 +117,8 @@ export async function syncApprovedPurchaseOrders() {
               unit_price: item.unit_price
             }));
             
+            console.log(`Creating ${itemsData.length} items for delivery note ${createdDeliveryNote.id}`);
+            
             const { error: itemsError } = await supabase
               .from('delivery_note_items')
               .insert(itemsData);
@@ -126,9 +138,12 @@ export async function syncApprovedPurchaseOrders() {
       }
       
       if (createdCount > 0) {
+        console.log(`Created ${createdCount} delivery notes successfully`);
         toast.success(`${createdCount} bon(s) de livraison créé(s) avec succès`);
+        return true;
+      } else {
+        console.warn("No delivery notes were created despite having orders without notes");
       }
-      return createdCount > 0;
     } else {
       console.log("No approved orders without delivery notes found");
     }

@@ -57,12 +57,17 @@ export function useApprovePurchaseOrder() {
         }
 
         console.log("Purchase order approved successfully:", updatedData);
+        toast.success("Commande approuvée avec succès");
         
         // 3. Synchroniser avec les bons de livraison
         try {
           console.log("Starting sync after approval");
           const syncResult = await syncApprovedPurchaseOrders();
           console.log("Sync result after approval:", syncResult);
+          
+          if (syncResult) {
+            toast.success("Bon de livraison créé avec succès");
+          }
         } catch (syncError: any) {
           console.error("Error in sync after approval:", syncError);
           toast.error(`Erreur pendant la synchronisation: ${syncError.message || 'Erreur inconnue'}`);
@@ -70,10 +75,9 @@ export function useApprovePurchaseOrder() {
         }
         
         // Invalider le cache des requêtes pour forcer un rafraîchissement
-        await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+        queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
-        toast.success("Commande approuvée avec succès");
         return { id, success: true };
       } catch (error: any) {
         console.error("Error in useApprovePurchaseOrder:", error);
@@ -86,6 +90,11 @@ export function useApprovePurchaseOrder() {
   // Retourner une fonction qui appelle directement mutateAsync
   return async (id: string) => {
     console.log("useApprovePurchaseOrder called with id:", id);
-    return mutation.mutateAsync(id);
+    try {
+      return await mutation.mutateAsync(id);
+    } catch (error) {
+      console.error("Error in useApprovePurchaseOrder wrapper:", error);
+      throw error;
+    }
   };
 }
