@@ -1,10 +1,12 @@
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
 
 export function useApprovePurchaseOrder() {
+  const queryClient = useQueryClient();
+  
   const mutation = useMutation({
     mutationFn: async (id: string) => {
       try {
@@ -38,7 +40,10 @@ export function useApprovePurchaseOrder() {
         // 2. Mettre à jour le statut du bon de commande
         const { data: updatedData, error: updateError } = await supabase
           .from('purchase_orders')
-          .update({ status: 'approved' })
+          .update({ 
+            status: 'approved',
+            updated_at: new Date().toISOString()
+          })
           .eq('id', id)
           .select('id, status');
 
@@ -63,6 +68,10 @@ export function useApprovePurchaseOrder() {
           toast.error(`Erreur pendant la synchronisation: ${syncError.message || 'Erreur inconnue'}`);
           // On continue car l'approbation elle-même a réussi
         }
+        
+        // Invalider le cache des requêtes pour forcer un rafraîchissement
+        queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
         
         toast.success("Commande approuvée avec succès");
         return { id, success: true };

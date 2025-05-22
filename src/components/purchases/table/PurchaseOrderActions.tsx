@@ -76,7 +76,11 @@ export function PurchaseOrderActions({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
-            onClick={() => onEdit(order.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit(order.id);
+            }}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -84,7 +88,11 @@ export function PurchaseOrderActions({
             Modifier
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onClick={() => onPrint(order)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPrint(order);
+            }}
             disabled={isProcessing}
             className="cursor-pointer"
           >
@@ -93,7 +101,11 @@ export function PurchaseOrderActions({
           </DropdownMenuItem>
           {canApprove && (
             <DropdownMenuItem 
-              onClick={() => onDelete(order.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(order.id);
+              }}
               disabled={isProcessing}
               className="text-red-600 cursor-pointer"
             >

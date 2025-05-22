@@ -19,6 +19,7 @@ export async function syncApprovedPurchaseOrders() {
         supplier_id,
         order_number,
         status,
+        warehouse_id,
         items:purchase_order_items(*)
       `)
       .eq('status', 'approved');
@@ -75,6 +76,7 @@ export async function syncApprovedPurchaseOrders() {
               supplier_id: order.supplier_id,
               delivery_number: deliveryNumber,
               status: 'pending',
+              warehouse_id: order.warehouse_id,
               deleted: false,
               notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
             })

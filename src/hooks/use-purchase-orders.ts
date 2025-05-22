@@ -4,14 +4,12 @@ import { usePurchaseOrderMutations } from "./purchase-orders/mutations/use-purch
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useApprovePurchaseOrder } from "./purchase-orders/mutations/use-approve-purchase-order";
 import { useState } from "react";
 
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleDelete, handleCreate } = usePurchaseOrderMutations();
-  const approveOrderFn = useApprovePurchaseOrder();
+  const { handleDelete, handleCreate, handleApprove: approveOrderFn } = usePurchaseOrderMutations();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
