@@ -1,14 +1,15 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { StockEntryForm } from "@/hooks/stocks/useStockMovementTypes";
 
 interface ReasonInputProps {
   form: UseFormReturn<StockEntryForm>;
+  disabled?: boolean;
 }
 
-export function ReasonInput({ form }: ReasonInputProps) {
+export function ReasonInput({ form, disabled = false }: ReasonInputProps) {
   return (
     <FormField
       control={form.control}
@@ -17,9 +18,10 @@ export function ReasonInput({ form }: ReasonInputProps) {
         <FormItem>
           <FormLabel>Motif</FormLabel>
           <FormControl>
-            <Textarea 
-              placeholder="Veuillez indiquer le motif de l'entrée"
-              {...field}
+            <Input 
+              {...field} 
+              placeholder="Raison de l'entrée de stock"
+              disabled={disabled}
             />
           </FormControl>
           <FormMessage />

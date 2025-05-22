@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StockEntryForm } from "../useStockMovementTypes";
 import { createStockEntryInDb } from "./stock-entry-service";
 import { toast } from "sonner";
+import { checkTableExists } from "@/utils/db-utils";
 
 export function useStockEntryMutation() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +16,7 @@ export function useStockEntryMutation() {
       try {
         console.log("Création d'une entrée de stock avec les données:", data);
         
+        // Validation des données requises
         if (!data.warehouseId || !data.productId) {
           throw new Error("L'entrepôt et le produit sont obligatoires");
         }
@@ -22,7 +24,24 @@ export function useStockEntryMutation() {
         if (data.quantity <= 0) {
           throw new Error("La quantité doit être positive");
         }
+
+        // Vérification de l'existence des tables nécessaires
+        const warehouseTableExists = await checkTableExists("warehouses");
+        const catalogTableExists = await checkTableExists("catalog");
+        const stockMovementsTableExists = await checkTableExists("warehouse_stock_movements");
+        const warehouseStockTableExists = await checkTableExists("warehouse_stock");
         
+        if (!warehouseTableExists || !catalogTableExists || !stockMovementsTableExists || !warehouseStockTableExists) {
+          console.error("Tables manquantes:", {
+            warehouses: warehouseTableExists,
+            catalog: catalogTableExists,
+            warehouse_stock_movements: stockMovementsTableExists,
+            warehouse_stock: warehouseStockTableExists
+          });
+          throw new Error("La structure de base de données n'est pas complète. Veuillez contacter l'administrateur.");
+        }
+        
+        // Création de l'entrée de stock
         const result = await createStockEntryInDb(data);
         return result;
       } catch (error: any) {
@@ -68,5 +87,5 @@ export function invalidateStockQueries(queryClient: ReturnType<typeof useQueryCl
     queryClient.refetchQueries({ queryKey: ['stock-movements'] });
     queryClient.refetchQueries({ queryKey: ['warehouse-stock'] });
     queryClient.refetchQueries({ queryKey: ['stock_principal'] });
-  }, 500);
+  }, 1000);  // Augmentation du délai à 1000ms pour donner plus de temps
 }
