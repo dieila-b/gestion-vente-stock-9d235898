@@ -9,7 +9,7 @@ import { useState } from "react";
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleDelete, handleCreate, handleApprove: approveOrderFn } = usePurchaseOrderMutations();
+  const { handleDelete, handleCreate, handleApprove: approveOrderFn, refreshPurchaseOrders } = usePurchaseOrderMutations();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
   const queryClient = useQueryClient();
 
@@ -23,25 +23,19 @@ export function usePurchaseOrders() {
     console.log("[usePurchaseOrders] Refreshing purchase orders...");
     
     try {
-      // First invalidate the query
-      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      
-      // Then trigger a refetch
-      const result = await refetch();
+      // Force a refetch with our specialized function
+      const result = await refreshPurchaseOrders();
       
       console.log("[usePurchaseOrders] Refresh result:", result);
       
-      if (result.isSuccess) {
-        toast.success("Liste des bons de commande rafraîchie");
-      } else if (result.isError) {
-        console.error("[usePurchaseOrders] Error refreshing orders:", result.error);
-        toast.error("Erreur lors du rafraîchissement");
-      }
+      // Aussi rafraîchir les bons de livraison pour afficher ceux nouvellement créés
+      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+      await queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
       
       return result;
-    } catch (refreshError) {
+    } catch (refreshError: any) {
       console.error("[usePurchaseOrders] Exception during refresh:", refreshError);
-      toast.error("Erreur pendant le rafraîchissement des données");
+      toast.error(`Erreur pendant le rafraîchissement: ${refreshError.message || "Erreur inconnue"}`);
       return { isSuccess: false, isError: true, error: refreshError };
     }
   };
@@ -77,9 +71,11 @@ export function usePurchaseOrders() {
       // Rafraîchir systématiquement les données après approbation
       await refreshOrders();
       
-      // Aussi rafraîchir les bons de livraison pour afficher ceux nouvellement créés
-      await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-      await queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
+      // On affiche un message de confirmation (ne pas se fier au retour de approveOrderFn qui peut
+      // être trompeur si le bon de livraison n'est pas créé mais que l'approbation a fonctionné)
+      if (!result?.alreadyApproved) {
+        toast.success(`Bon de commande approuvé avec succès`);
+      }
         
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleApprove:", error);

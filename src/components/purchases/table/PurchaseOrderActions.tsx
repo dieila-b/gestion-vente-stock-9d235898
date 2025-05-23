@@ -51,9 +51,12 @@ export function PurchaseOrderActions({
       
       await onApprove(order.id);
       console.log(`[PurchaseOrderActions] Approval completed for order: ${order.id}`);
-    } catch (error) {
+      
+      // Afficher une confirmation visuelle claire
+      toast.success(`Commande ${order.order_number} approuvée avec succès`);
+    } catch (error: any) {
       console.error("[PurchaseOrderActions] Error in approve handler:", error);
-      toast.error("Erreur lors de l'approbation de la commande");
+      toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
     } finally {
       setLocalProcessing(false);
     }

@@ -17,10 +17,31 @@ export const usePurchaseOrderMutations = () => {
   // Function to force refresh purchase orders data
   const refreshPurchaseOrders = async () => {
     console.log("[usePurchaseOrderMutations] Forcing refresh of purchase orders data");
+    
+    // Invalider d'abord toutes les requêtes associées aux bons de commande
     await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    const result = await queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
-    console.log("[usePurchaseOrderMutations] Refresh result:", result);
-    return result;
+    
+    // Invalider aussi les requêtes de bons de livraison qui peuvent avoir été créés
+    await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    
+    // Forcer un rafraîchissement complet
+    const purchaseOrdersResult = await queryClient.refetchQueries({ 
+      queryKey: ['purchase-orders'],
+      exact: false
+    });
+    
+    // Forcer aussi le rafraîchissement des bons de livraison
+    const deliveryNotesResult = await queryClient.refetchQueries({
+      queryKey: ['delivery-notes'],
+      exact: false
+    });
+    
+    console.log("[usePurchaseOrderMutations] Refresh results:", {
+      purchaseOrders: purchaseOrdersResult,
+      deliveryNotes: deliveryNotesResult
+    });
+    
+    return purchaseOrdersResult;
   };
 
   return {

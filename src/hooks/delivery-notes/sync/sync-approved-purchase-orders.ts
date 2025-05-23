@@ -94,54 +94,70 @@ export async function syncApprovedPurchaseOrders(specificOrderId?: string) {
           console.log(`[syncApprovedPurchaseOrders] Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
           console.log(`[syncApprovedPurchaseOrders] Order warehouse_id: ${order.warehouse_id}`);
           
-          const deliveryNoteData = {
-            id: uuidv4(), // Générer un ID explicite
-            purchase_order_id: order.id,
-            supplier_id: order.supplier_id,
-            delivery_number: deliveryNumber,
-            status: 'pending',
-            warehouse_id: order.warehouse_id,
-            deleted: false,
-            notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
-          };
+          // Créer un nouvel enregistrement dans delivery_notes avec un NOUVEL ID explicite
+          const deliveryNoteId = uuidv4();
           
-          console.log("[syncApprovedPurchaseOrders] Inserting delivery note with data:", deliveryNoteData);
+          // Insertion directe avec supabase pour éviter les problèmes de l'API db
+          const { data: newNote, error: insertError } = await supabase
+            .from('delivery_notes')
+            .insert({
+              id: deliveryNoteId,
+              purchase_order_id: order.id,
+              supplier_id: order.supplier_id,
+              delivery_number: deliveryNumber,
+              status: 'pending',
+              warehouse_id: order.warehouse_id,
+              deleted: false,
+              notes: `Bon de livraison créé automatiquement depuis la commande ${order.order_number || ''}`
+            })
+            .select()
+            .single();
           
-          // Utiliser l'API db plus fiable pour l'insertion
-          const newNote = await db.insert('delivery_notes', deliveryNoteData);
-            
-          if (!newNote) {
-            console.error(`[syncApprovedPurchaseOrders] Failed to create delivery note for order ${order.id}: No data returned`);
+          if (insertError || !newNote) {
+            console.error(`[syncApprovedPurchaseOrders] Failed to create delivery note for order ${order.id}:`, insertError);
             continue;
           }
           
           console.log(`[syncApprovedPurchaseOrders] Created delivery note for order ${order.id}:`, newNote);
           
           // Créer les articles du bon de livraison basés sur les articles de la commande
-          if (order.items && order.items.length > 0 && newNote) {
+          if (order.items && order.items.length > 0) {
             const itemsData = order.items.map((item: any) => ({
-              id: uuidv4(), // Générer un ID explicite pour chaque article
-              delivery_note_id: newNote.id,
+              id: uuidv4(),
+              delivery_note_id: deliveryNoteId,
               product_id: item.product_id,
               quantity_ordered: item.quantity,
               quantity_received: 0,
               unit_price: item.unit_price
             }));
             
-            console.log(`[syncApprovedPurchaseOrders] Creating ${itemsData.length} items for delivery note ${newNote.id}`);
+            console.log(`[syncApprovedPurchaseOrders] Creating ${itemsData.length} items for delivery note ${deliveryNoteId}`);
             
-            // Utiliser l'API db plus fiable pour l'insertion des articles
-            const insertPromises = itemsData.map(item => db.insert('delivery_note_items', item));
-            const insertResults = await Promise.all(insertPromises);
-              
-            if (insertResults.some(result => !result)) {
-              console.error(`[syncApprovedPurchaseOrders] Some items failed to insert for note ${newNote.id}`);
+            // Insérer les articles avec supabase directement
+            const { error: itemsError } = await supabase
+              .from('delivery_note_items')
+              .insert(itemsData);
+            
+            if (itemsError) {
+              console.error(`[syncApprovedPurchaseOrders] Error creating items for note ${deliveryNoteId}:`, itemsError);
             } else {
-              console.log(`[syncApprovedPurchaseOrders] Created ${itemsData.length} items for delivery note ${newNote.id}`);
-              createdCount++;
+              console.log(`[syncApprovedPurchaseOrders] Created ${itemsData.length} items for delivery note ${deliveryNoteId}`);
+              
+              // Mettre à jour le flag delivery_note_created sur le bon de commande
+              const { error: updateError } = await supabase
+                .from('purchase_orders')
+                .update({ delivery_note_created: true })
+                .eq('id', order.id);
+              
+              if (updateError) {
+                console.error(`[syncApprovedPurchaseOrders] Error updating delivery_note_created flag:`, updateError);
+              } else {
+                console.log(`[syncApprovedPurchaseOrders] Updated delivery_note_created flag for order ${order.id}`);
+                createdCount++;
+              }
             }
           } else {
-            console.warn(`[syncApprovedPurchaseOrders] No items found for order ${order.id} or delivery note not created`);
+            console.warn(`[syncApprovedPurchaseOrders] No items found for order ${order.id}`);
           }
         } catch (innerError: any) {
           console.error(`[syncApprovedPurchaseOrders] Error processing order ${order.id}:`, innerError);
