@@ -22,3 +22,6 @@ export async function createDeliveryNoteForApprovedOrder(orderId: string): Promi
     return false;
   }
 }
+
+// This is the missing exported function that caused the build error
+export const createDeliveryNoteDirectly = createDeliveryNoteForApprovedOrder;

@@ -3,13 +3,9 @@ import { toast } from "sonner";
 import { 
   fetchApprovedPurchaseOrders, 
   fetchExistingDeliveryNotes,
-  filterOrdersWithoutDeliveryNotes 
 } from "./utils/purchase-order-fetcher";
-import {
-  createDeliveryNote,
-  createDeliveryNoteItems,
-  markOrderHasDeliveryNote
-} from "./utils/delivery-note-generator";
+import { filterOrdersWithoutDeliveryNotes } from "./sync-service/order-filter";
+import { processMultipleOrdersForDeliveryNotes, processOrderForDeliveryNote } from "./sync-service/delivery-note-processor";
 
 /**
  * Synchronizes approved purchase orders by creating delivery notes
@@ -37,53 +33,35 @@ export async function syncApprovedPurchaseOrders(specificOrderId?: string) {
     
     // Step 4: Process orders and create delivery notes
     if (ordersWithoutNotes && ordersWithoutNotes.length > 0) {
-      let createdCount = 0;
-      
-      for (const order of ordersWithoutNotes) {
-        try {
-          console.log("[syncApprovedPurchaseOrders] Processing order:", order.id, order.order_number);
-          
-          // Skip orders without warehouse
-          if (!order.warehouse_id) {
-            console.warn(`[syncApprovedPurchaseOrders] Order ${order.id} has no warehouse_id, skipping.`);
-            toast.warning(`La commande ${order.order_number} n'a pas d'entrepôt spécifié. Veuillez l'éditer.`);
-            continue;
-          }
-          
-          // Create the delivery note
-          const deliveryNoteId = await createDeliveryNote(order);
-          if (!deliveryNoteId) {
-            continue;
-          }
-          
-          // Create delivery note items
-          if (order.items && order.items.length > 0) {
-            const itemsCreated = await createDeliveryNoteItems(deliveryNoteId, order.items);
-            if (itemsCreated) {
-              // Mark the order as having a delivery note
-              const updated = await markOrderHasDeliveryNote(order.id);
-              if (updated) {
-                createdCount++;
-              }
-            }
+      // If we have a specific order ID, process just that one
+      if (specificOrderId) {
+        const order = ordersWithoutNotes.find(o => o.id === specificOrderId);
+        if (order) {
+          const success = await processOrderForDeliveryNote(order);
+          if (success) {
+            toast.success("Bon de livraison créé avec succès");
+            return true;
           } else {
-            console.warn(`[syncApprovedPurchaseOrders] No items found for order ${order.id}`);
+            toast.warning("Impossible de créer un bon de livraison pour cette commande");
+            return false;
           }
-        } catch (innerError: any) {
-          console.error(`[syncApprovedPurchaseOrders] Error processing order ${order.id}:`, innerError);
-          toast.error(`Erreur lors du traitement de la commande ${order.order_number}: ${innerError.message || 'Erreur inconnue'}`);
+        } else {
+          console.log("[syncApprovedPurchaseOrders] Specific order not found or already has delivery note");
+          toast.info("Un bon de livraison existe déjà pour cette commande");
+          return false;
         }
-      }
-      
-      // Show summary toast based on results
-      if (createdCount > 0) {
-        console.log(`[syncApprovedPurchaseOrders] Created ${createdCount} delivery notes successfully`);
-        toast.success(`${createdCount} bon(s) de livraison créé(s) avec succès`);
-        return true;
       } else {
-        console.warn("[syncApprovedPurchaseOrders] No delivery notes were created despite having orders without notes");
-        if (specificOrderId) {
-          toast.warning("Impossible de créer un bon de livraison pour cette commande");
+        // Process all orders without delivery notes
+        const createdCount = await processMultipleOrdersForDeliveryNotes(ordersWithoutNotes);
+        
+        // Show summary toast based on results
+        if (createdCount > 0) {
+          console.log(`[syncApprovedPurchaseOrders] Created ${createdCount} delivery notes successfully`);
+          toast.success(`${createdCount} bon(s) de livraison créé(s) avec succès`);
+          return true;
+        } else {
+          console.warn("[syncApprovedPurchaseOrders] No delivery notes were created despite having orders without notes");
+          return false;
         }
       }
     } else {
@@ -91,9 +69,8 @@ export async function syncApprovedPurchaseOrders(specificOrderId?: string) {
       if (specificOrderId) {
         toast.info("Un bon de livraison existe déjà pour cette commande");
       }
+      return false;
     }
-    
-    return false;
   } catch (error: any) {
     console.error("[syncApprovedPurchaseOrders] Error:", error);
     toast.error(`Erreur de synchronisation: ${error.message || 'Erreur inconnue'}`);
