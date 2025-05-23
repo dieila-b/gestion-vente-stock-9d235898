@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
 import { db } from "@/utils/db-core";
+import { v4 as uuidv4 } from "uuid"; // Import the UUID v4 function
 
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
