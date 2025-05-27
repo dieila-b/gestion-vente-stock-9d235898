@@ -48,19 +48,19 @@ export function CartItem({
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setQuantityValue(newValue);
-    
-    // If we have a valid number and onSetQuantity is provided, call it immediately
-    if (onSetQuantity && newValue !== "") {
-      const numericValue = Math.max(1, parseInt(newValue, 10));
+  };
+
+  const handleQuantityBlur = () => {
+    const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
+    setQuantityValue(numericValue.toString());
+    if (onSetQuantity) {
       onSetQuantity(numericValue);
     }
   };
 
-  const handleQuantityBlur = () => {
-    if (onSetQuantity) {
-      const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
-      setQuantityValue(numericValue.toString());
-      onSetQuantity(numericValue);
+  const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleQuantityBlur();
     }
   };
 
@@ -76,33 +76,28 @@ export function CartItem({
         </div>
         
         <div className="col-span-2 flex items-center text-left space-x-1">
-          {onSetQuantity ? (
-            <Input
-              type="number"
-              min="1"
-              className="h-7 w-24 text-left"
-              value={quantityValue}
-              onChange={handleQuantityChange}
-              onBlur={handleQuantityBlur}
-            />
-          ) : (
-            <>
-              <button
-                className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm"
-                onClick={() => onUpdateQuantity(-1)}
-                disabled={item.quantity <= 1}
-              >
-                -
-              </button>
-              <span className="w-6 text-left">{item.quantity}</span>
-              <button
-                className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm"
-                onClick={() => onUpdateQuantity(1)}
-              >
-                +
-              </button>
-            </>
-          )}
+          <button
+            className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
+            onClick={() => onUpdateQuantity(-1)}
+            disabled={item.quantity <= 1}
+          >
+            -
+          </button>
+          <Input
+            type="number"
+            min="1"
+            className="h-7 w-16 text-center text-sm"
+            value={quantityValue}
+            onChange={handleQuantityChange}
+            onBlur={handleQuantityBlur}
+            onKeyDown={handleQuantityKeyDown}
+          />
+          <button
+            className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
+            onClick={() => onUpdateQuantity(1)}
+          >
+            +
+          </button>
         </div>
         
         <div className="col-span-2 text-left">
