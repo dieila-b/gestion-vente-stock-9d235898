@@ -45,7 +45,8 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     console.log("[approvePurchaseOrderService] RPC result:", result);
     
     // Type assertion to convert Json type to our ApprovalResult interface
-    const approvalResult = result as ApprovalResult;
+    // First cast to unknown, then to our interface to satisfy TypeScript
+    const approvalResult = result as unknown as ApprovalResult;
     
     // Check if order was already approved
     if (approvalResult.already_approved) {
