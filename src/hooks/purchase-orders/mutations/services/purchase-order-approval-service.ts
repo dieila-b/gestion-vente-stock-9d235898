@@ -44,19 +44,22 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     
     console.log("[approvePurchaseOrderService] RPC result:", result);
     
+    // Type assertion to convert Json type to our ApprovalResult interface
+    const approvalResult = result as ApprovalResult;
+    
     // Check if order was already approved
-    if (result.already_approved) {
+    if (approvalResult.already_approved) {
       console.log("[approvePurchaseOrderService] Order already approved:", id);
       toast.info("Ce bon de commande est déjà approuvé");
       return { id, alreadyApproved: true, success: true };
     }
     
     // Show success message based on result
-    if (result.delivery_note_created) {
-      toast.success(`Bon de commande approuvé et bon de livraison ${result.delivery_number} créé automatiquement`);
+    if (approvalResult.delivery_note_created) {
+      toast.success(`Bon de commande approuvé et bon de livraison ${approvalResult.delivery_number} créé automatiquement`);
     } else {
       toast.success("Bon de commande approuvé");
-      if (!result.has_warehouse) {
+      if (!approvalResult.has_warehouse) {
         toast.warning("Aucun bon de livraison créé - entrepôt manquant");
       }
     }
@@ -80,8 +83,8 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
       id, 
       success: true, 
       status: 'approved',
-      deliveryNoteCreated: result.delivery_note_created || false,
-      deliveryNumber: result.delivery_number
+      deliveryNoteCreated: approvalResult.delivery_note_created || false,
+      deliveryNumber: approvalResult.delivery_number
     };
     
   } catch (error: any) {
