@@ -25,8 +25,8 @@ export const TransfersPagination = ({
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 bg-gray-50/50 border-t border-gray-200">
-      <div className="text-sm text-gray-600">
+    <div className="flex items-center justify-between px-6 py-4 bg-white/5 border-t border-white/10">
+      <div className="text-sm text-gray-400">
         Affichage de {startItem} à {endItem} sur {totalItems} transfert{totalItems !== 1 ? 's' : ''}
       </div>
       <div className="flex items-center space-x-2">
@@ -35,7 +35,7 @@ export const TransfersPagination = ({
           size="sm"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="h-8"
+          className="h-8 border-white/20 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-50"
         >
           Précédent
         </Button>
@@ -58,7 +58,11 @@ export const TransfersPagination = ({
                 variant={currentPage === pageNumber ? "default" : "outline"}
                 size="sm"
                 onClick={() => onPageChange(pageNumber)}
-                className="h-8 w-8 p-0"
+                className={`h-8 w-8 p-0 ${
+                  currentPage === pageNumber 
+                    ? "bg-purple-600/20 text-purple-300 border-purple-500/30" 
+                    : "border-white/20 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
+                }`}
               >
                 {pageNumber}
               </Button>
@@ -70,7 +74,7 @@ export const TransfersPagination = ({
           size="sm"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="h-8"
+          className="h-8 border-white/20 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-50"
         >
           Suivant
         </Button>
