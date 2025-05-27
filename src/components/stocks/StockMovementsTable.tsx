@@ -21,6 +21,24 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
     return posLocation.name || "Sans nom";
   };
 
+  // Helper function to determine location display with type
+  const getLocationDisplay = (movement: StockMovement) => {
+    // Vérifier d'abord si c'est un PDV basé sur le reason qui contient "(PDV: nom)"
+    if (movement.reason && movement.reason.includes("(PDV:")) {
+      const pdvMatch = movement.reason.match(/\(PDV: ([^)]+)\)/);
+      if (pdvMatch) {
+        return `${pdvMatch[1]} (PDV)`;
+      }
+    }
+    
+    // Sinon, afficher l'entrepôt
+    if (movement.warehouse?.name) {
+      return `${movement.warehouse.name} (Entrepôt)`;
+    }
+    
+    return "Emplacement inconnu";
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -59,7 +77,7 @@ export function StockMovementsTable({ movements, isLoading, type }: StockMovemen
                 <TableCell>{movement.product?.name || "Produit inconnu"}</TableCell>
                 <TableCell>{movement.product?.reference || "-"}</TableCell>
                 <TableCell>
-                  {movement.warehouse?.name || "Entrepôt inconnu"}
+                  {getLocationDisplay(movement)}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
