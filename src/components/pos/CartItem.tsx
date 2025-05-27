@@ -30,19 +30,19 @@ export function CartItem({
   );
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const [hasQuantityError, setHasQuantityError] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Sync discount value when item changes
   useEffect(() => {
     setDiscountValue(item.discount ? item.discount.toString() : "0");
   }, [item.discount]);
 
-  // Only sync quantity when item quantity changes and input is not focused
+  // Only sync quantity when not editing
   useEffect(() => {
-    const inputElement = document.getElementById(`quantity-${item.id}`) as HTMLInputElement;
-    if (!inputElement || document.activeElement !== inputElement) {
+    if (!isEditing) {
       setQuantityInput(item.quantity.toString());
     }
-  }, [item.quantity, item.id]);
+  }, [item.quantity, isEditing]);
 
   // Notify parent about validation errors
   useEffect(() => {
@@ -61,58 +61,57 @@ export function CartItem({
     }
   };
 
-  const validateAndSetQuantity = (inputValue: string) => {
-    let numericValue = parseInt(inputValue, 10);
+  const handleQuantityFocus = () => {
+    setIsEditing(true);
+    setHasQuantityError(false);
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuantityInput(newValue);
+  };
+
+  const validateAndApplyQuantity = () => {
+    const numericValue = parseInt(quantityInput, 10);
     
-    // Si la valeur n'est pas valide, utiliser 1 comme minimum
+    // Si la valeur n'est pas valide, revenir à la quantité actuelle
     if (isNaN(numericValue) || numericValue < 1) {
-      numericValue = 1;
+      setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
+      return;
     }
     
     // Vérifier le stock disponible
     if (numericValue > availableStock) {
       setHasQuantityError(true);
       toast.error("La quantité saisie dépasse le stock disponible.");
-      // Réinitialiser à la quantité actuelle
       setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       return;
     }
     
     setHasQuantityError(false);
     
-    // Mettre à jour la quantité si elle a changé
+    // Appliquer la nouvelle quantité si elle a changé
     if (numericValue !== item.quantity && onSetQuantity) {
       onSetQuantity(numericValue);
     }
     
-    // S'assurer que l'input affiche la bonne valeur
-    setQuantityInput(numericValue.toString());
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setQuantityInput(newValue);
-    
-    // Validation en temps réel pour l'affichage d'erreur
-    if (newValue !== "") {
-      const numericValue = parseInt(newValue, 10);
-      if (!isNaN(numericValue) && numericValue > availableStock) {
-        setHasQuantityError(true);
-      } else {
-        setHasQuantityError(false);
-      }
-    } else {
-      setHasQuantityError(false);
-    }
+    setIsEditing(false);
   };
 
   const handleQuantityBlur = () => {
-    validateAndSetQuantity(quantityInput);
+    validateAndApplyQuantity();
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      validateAndSetQuantity(quantityInput);
+      validateAndApplyQuantity();
+      e.currentTarget.blur();
+    }
+    if (e.key === 'Escape') {
+      setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       e.currentTarget.blur();
     }
   };
@@ -151,7 +150,6 @@ export function CartItem({
               -
             </button>
             <Input
-              id={`quantity-${item.id}`}
               type="number"
               min="1"
               max={availableStock}
@@ -160,6 +158,7 @@ export function CartItem({
               }`}
               value={quantityInput}
               onChange={handleQuantityChange}
+              onFocus={handleQuantityFocus}
               onBlur={handleQuantityBlur}
               onKeyDown={handleQuantityKeyDown}
             />
