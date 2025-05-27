@@ -5,16 +5,16 @@ import { approvePurchaseOrderService } from "./services/purchase-order-approval-
 
 /**
  * Hook for approving purchase orders
- * @returns Function to approve a purchase order by ID
+ * @returns Mutation object with mutateAsync function
  */
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
   
-  const mutation = useMutation({
+  return useMutation({
     mutationFn: async (id: string) => {
+      console.log("[useApprovePurchaseOrder] Starting approval process for order:", id);
+      
       try {
-        console.log("[useApprovePurchaseOrder] Starting approval process for order:", id);
-        
         // Process approval using the service
         const result = await approvePurchaseOrderService(id, queryClient);
         
@@ -25,17 +25,16 @@ export function useApprovePurchaseOrder() {
         toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
         throw error;
       }
+    },
+    onSuccess: (data) => {
+      console.log("[useApprovePurchaseOrder] Approval successful:", data);
+      if (!data?.alreadyApproved) {
+        toast.success("Bon de commande approuvé avec succès");
+      }
+    },
+    onError: (error: any) => {
+      console.error("[useApprovePurchaseOrder] Mutation error:", error);
+      toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
     }
   });
-
-  // Return a function that calls mutateAsync
-  return async (id: string) => {
-    console.log("[useApprovePurchaseOrder] Called with id:", id);
-    try {
-      return await mutation.mutateAsync(id);
-    } catch (error) {
-      console.error("[useApprovePurchaseOrder] Error in wrapper:", error);
-      throw error;
-    }
-  };
 }

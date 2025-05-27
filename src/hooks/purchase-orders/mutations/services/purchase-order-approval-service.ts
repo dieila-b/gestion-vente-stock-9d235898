@@ -12,7 +12,7 @@ import { QueryClient } from "@tanstack/react-query";
 export async function approvePurchaseOrderService(id: string, queryClient: QueryClient) {
   console.log("[approvePurchaseOrderService] Starting approval for order:", id);
   
-  // 1. Verify that the purchase order exists and has a warehouse specified
+  // 1. Verify that the purchase order exists
   const { data: order, error: orderError } = await supabase
     .from('purchase_orders')
     .select('id, status, warehouse_id, order_number, supplier_id')
@@ -32,12 +32,7 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     return { id, alreadyApproved: true };
   }
   
-  // Allow approval even without warehouse_id for now
-  if (!order.warehouse_id) {
-    console.warn("[approvePurchaseOrderService] Order has no warehouse_id, but proceeding:", id);
-  }
-  
-  // 2. Update purchase order status with precise timestamp
+  // 2. Update purchase order status
   const now = new Date().toISOString();
   const { data: updatedData, error: updateError } = await supabase
     .from('purchase_orders')
@@ -56,9 +51,9 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
 
   console.log("[approvePurchaseOrderService] Purchase order approved successfully:", updatedData);
   
-  // 3. Create delivery note manually since trigger might not be working
+  // 3. Create delivery note
   try {
-    const deliveryNumber = 'BL-' + order.order_number?.replace('BC-', '') || `BL-${Date.now()}`;
+    const deliveryNumber = 'BL-' + (order.order_number?.replace('BC-', '') || `${Date.now()}`);
     
     const { data: deliveryNote, error: deliveryError } = await supabase
       .from('delivery_notes')
@@ -75,15 +70,12 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
       
     if (deliveryError) {
       console.error("[approvePurchaseOrderService] Error creating delivery note:", deliveryError);
-      // Don't throw error here, approval was successful
-      toast.warning("Bon de commande approuvé mais erreur lors de la création du bon de livraison");
+      console.log("[approvePurchaseOrderService] Bon de commande approuvé mais bon de livraison non créé");
     } else {
       console.log("[approvePurchaseOrderService] Delivery note created:", deliveryNote);
-      toast.success("Bon de commande approuvé et bon de livraison créé");
     }
   } catch (deliveryCreationError) {
     console.error("[approvePurchaseOrderService] Exception creating delivery note:", deliveryCreationError);
-    // Don't throw error here, approval was successful
   }
   
   // 4. Force invalidation of queries for immediate refresh

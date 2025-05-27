@@ -9,8 +9,9 @@ import { useState } from "react";
 export function usePurchaseOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const { data: orders = [], isLoading, error, refetch } = usePurchaseOrdersQuery();
-  const { handleDelete, handleCreate, handleApprove: approveOrderFn, refreshPurchaseOrders } = usePurchaseOrderMutations();
+  const { handleDelete, handleCreate, refreshPurchaseOrders } = usePurchaseOrderMutations();
   const { handleEdit, EditDialog, isDialogOpen } = useEditPurchaseOrder();
+  const approveOrderMutation = usePurchaseOrderMutations().handleApprove;
   const queryClient = useQueryClient();
 
   // Log if errors occur
@@ -40,7 +41,7 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle the approve function with improved error handling
+  // Handle the approve function with simplified logic
   const handleApprove = async (id: string): Promise<void> => {
     try {
       console.log("[usePurchaseOrders] Starting approval process for:", id);
@@ -55,27 +56,15 @@ export function usePurchaseOrders() {
         return;
       }
 
-      // Vérifier que l'entrepôt est spécifié
-      if (!orderToApprove.warehouse_id) {
-        console.error("[usePurchaseOrders] Order has no warehouse_id:", id);
-        toast.error("Impossible d'approuver: l'entrepôt n'est pas spécifié pour cette commande");
-        setProcessingOrderId(null);
-        return;
-      }
+      console.log("[usePurchaseOrders] Order found, proceeding with approval:", orderToApprove.order_number);
       
-      console.log("[usePurchaseOrders] Order validation passed, proceeding with approval");
-      const result = await approveOrderFn(id);
+      // Utiliser directement la mutation d'approbation
+      const result = await approveOrderMutation.mutateAsync(id);
       
       console.log("[usePurchaseOrders] Approval completed:", result);
       
       // Rafraîchir systématiquement les données après approbation
       await refreshOrders();
-      
-      // On affiche un message de confirmation (ne pas se fier au retour de approveOrderFn qui peut
-      // être trompeur si le bon de livraison n'est pas créé mais que l'approbation a fonctionné)
-      if (!result?.alreadyApproved) {
-        toast.success(`Bon de commande approuvé avec succès`);
-      }
         
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleApprove:", error);

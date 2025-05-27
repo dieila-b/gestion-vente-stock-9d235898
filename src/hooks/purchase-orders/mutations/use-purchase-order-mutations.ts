@@ -11,7 +11,7 @@ export const usePurchaseOrderMutations = () => {
   const handleDelete = useDeletePurchaseOrder();
   const handleEdit = useEditPurchaseOrder();
   const handleUpdate = useUpdatePurchaseOrder();
-  const handleApprove = useApprovePurchaseOrder();
+  const handleApprove = useApprovePurchaseOrder(); // Ceci retourne maintenant l'objet mutation
   const handleCreate = useCreatePurchaseOrder();
   
   // Function to force refresh purchase orders data
@@ -21,7 +21,7 @@ export const usePurchaseOrderMutations = () => {
   };
 
   return {
-    handleApprove,
+    handleApprove, // Retourne directement l'objet mutation
     handleDelete,
     handleEdit,
     handleUpdate,
