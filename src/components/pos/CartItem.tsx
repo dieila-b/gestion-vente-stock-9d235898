@@ -3,7 +3,7 @@ import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface CartItemProps {
@@ -29,19 +29,6 @@ export function CartItem({
     item.discount ? item.discount.toString() : "0"
   );
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
-  const [isFocused, setIsFocused] = useState(false);
-
-  // Sync discount value when item changes
-  useEffect(() => {
-    setDiscountValue(item.discount ? item.discount.toString() : "0");
-  }, [item.discount]);
-
-  // Only sync quantity when not focused
-  useEffect(() => {
-    if (!isFocused) {
-      setQuantityInput(item.quantity.toString());
-    }
-  }, [item.quantity, isFocused]);
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -53,22 +40,46 @@ export function CartItem({
     }
   };
 
-  const handleQuantityFocus = () => {
-    setIsFocused(true);
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow any input while typing
+    setQuantityInput(value);
   };
 
   const handleQuantityBlur = () => {
-    setIsFocused(false);
-    applyQuantityChange();
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = quantityInput.trim();
     
-    // Permettre la saisie de nombres positifs uniquement
-    if (value === "" || /^\d+$/.test(value)) {
-      setQuantityInput(value);
+    // If empty or zero, reset to current quantity
+    if (value === "" || value === "0") {
+      setQuantityInput(item.quantity.toString());
+      return;
     }
+
+    const numericValue = parseInt(value, 10);
+
+    // If invalid number, reset to current quantity
+    if (isNaN(numericValue) || numericValue < 1) {
+      setQuantityInput(item.quantity.toString());
+      return;
+    }
+
+    // Check stock availability
+    if (numericValue > availableStock) {
+      toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
+      setQuantityInput(item.quantity.toString());
+      if (onValidationError) onValidationError(true);
+      return;
+    }
+
+    if (onValidationError) onValidationError(false);
+
+    // Only update if the value is different
+    if (numericValue !== item.quantity && onSetQuantity) {
+      onSetQuantity(numericValue);
+    }
+    
+    // Always sync the input with the actual quantity after validation
+    setQuantityInput(numericValue.toString());
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,46 +92,19 @@ export function CartItem({
     }
   };
 
-  const applyQuantityChange = () => {
-    const value = quantityInput.trim();
-    
-    if (value === "" || value === "0") {
-      setQuantityInput(item.quantity.toString());
-      return;
-    }
-
-    const numericValue = parseInt(value, 10);
-
-    if (isNaN(numericValue) || numericValue < 1) {
-      setQuantityInput(item.quantity.toString());
-      return;
-    }
-
-    if (numericValue > availableStock) {
-      toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
-      setQuantityInput(item.quantity.toString());
-      if (onValidationError) onValidationError(true);
-      return;
-    }
-
-    if (onValidationError) onValidationError(false);
-
-    if (numericValue !== item.quantity && onSetQuantity) {
-      onSetQuantity(numericValue);
-    }
-  };
-
   const handleQuantityIncrease = () => {
     if (item.quantity >= availableStock) {
       toast.error("Stock insuffisant pour augmenter la quantité.");
       return;
     }
     onUpdateQuantity(1);
+    setQuantityInput((item.quantity + 1).toString());
   };
 
   const handleQuantityDecrease = () => {
     if (item.quantity <= 1) return;
     onUpdateQuantity(-1);
+    setQuantityInput((item.quantity - 1).toString());
   };
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
@@ -147,11 +131,9 @@ export function CartItem({
               className="h-7 w-16 text-center text-sm"
               value={quantityInput}
               onChange={handleQuantityChange}
-              onFocus={handleQuantityFocus}
               onBlur={handleQuantityBlur}
               onKeyDown={handleQuantityKeyDown}
               inputMode="numeric"
-              pattern="[0-9]*"
             />
             <button
               className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
