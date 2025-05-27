@@ -32,14 +32,11 @@ export function CartItem({
     item.quantity.toString()
   );
   const [hasQuantityError, setHasQuantityError] = useState(false);
-  const [isUserTyping, setIsUserTyping] = useState(false);
 
-  // Only update quantityValue when item.quantity changes AND user is not actively typing
+  // Sync quantityValue with item.quantity only when it changes externally (not from user input)
   useEffect(() => {
-    if (!isUserTyping) {
-      setQuantityValue(item.quantity.toString());
-    }
-  }, [item.quantity, isUserTyping]);
+    setQuantityValue(item.quantity.toString());
+  }, [item.quantity]);
 
   useEffect(() => {
     setDiscountValue(item.discount ? item.discount.toString() : "0");
@@ -62,62 +59,45 @@ export function CartItem({
     }
   };
 
-  const validateQuantity = (value: string) => {
-    const numericValue = value === "" ? 1 : Math.max(1, parseInt(value, 10));
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuantityValue(newValue);
+    
+    // Clear any previous errors when user starts typing
+    if (hasQuantityError) {
+      setHasQuantityError(false);
+    }
+  };
+
+  const validateAndApplyQuantity = () => {
+    const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
     
     if (numericValue > availableStock) {
       setHasQuantityError(true);
       toast.error("La quantité saisie dépasse le stock disponible.");
-      return false;
+      // Reset to current valid quantity
+      setQuantityValue(item.quantity.toString());
+      return;
     }
     
     setHasQuantityError(false);
-    return true;
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setIsUserTyping(true);
-    setQuantityValue(newValue);
     
-    // Immediate validation feedback without blocking input
-    if (newValue !== "") {
-      const numericValue = parseInt(newValue, 10);
-      if (!isNaN(numericValue) && numericValue > availableStock) {
-        setHasQuantityError(true);
-      } else {
-        setHasQuantityError(false);
-      }
+    // Only call onSetQuantity if the value actually changed
+    if (numericValue !== item.quantity && onSetQuantity) {
+      onSetQuantity(numericValue);
+    } else if (numericValue !== parseInt(quantityValue, 10)) {
+      // Update display value to the corrected number
+      setQuantityValue(numericValue.toString());
     }
   };
 
   const handleQuantityBlur = () => {
-    setIsUserTyping(false);
-    const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
-    
-    if (validateQuantity(quantityValue)) {
-      // Only update if the value is valid and different from current
-      if (numericValue !== item.quantity && onSetQuantity) {
-        onSetQuantity(numericValue);
-      }
-    } else {
-      // Reset to current valid quantity if invalid
-      setQuantityValue(item.quantity.toString());
-    }
+    validateAndApplyQuantity();
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      setIsUserTyping(false);
-      const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
-      
-      if (validateQuantity(quantityValue)) {
-        if (numericValue !== item.quantity && onSetQuantity) {
-          onSetQuantity(numericValue);
-        }
-      } else {
-        setQuantityValue(item.quantity.toString());
-      }
+      validateAndApplyQuantity();
       e.currentTarget.blur();
     }
   };
@@ -165,7 +145,6 @@ export function CartItem({
             onChange={handleQuantityChange}
             onBlur={handleQuantityBlur}
             onKeyDown={handleQuantityKeyDown}
-            onFocus={() => setIsUserTyping(true)}
           />
           <button
             className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
