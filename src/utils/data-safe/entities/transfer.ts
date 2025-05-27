@@ -8,10 +8,17 @@ import { safeProduct } from './product';
  * Cast with type checking to fix Transfer typings
  */
 export function castToTransfers(data: any[]): any[] {
-  return (data || []).map(item => ({
-    ...item,
-    source_warehouse: safeWarehouse(item.source_warehouse),
-    destination_warehouse: safeWarehouse(item.destination_warehouse),
-    product: safeProduct(item.product),
-  }));
+  return (data || []).map(item => {
+    // Handle if item is a JSON object from Supabase functions
+    const transfer = typeof item === 'string' ? JSON.parse(item) : item;
+    
+    return {
+      ...transfer,
+      source_warehouse: safeWarehouse(transfer.source_warehouse),
+      destination_warehouse: safeWarehouse(transfer.destination_warehouse),
+      source_pos: safePOSLocation(transfer.source_pos),
+      destination_pos: safePOSLocation(transfer.destination_pos),
+      product: safeProduct(transfer.product),
+    };
+  });
 }

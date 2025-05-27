@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useTransfersData } from '@/hooks/transfers/use-transfers-data';
 import { supabase } from '@/integrations/supabase/client';
+import { castToTransfers } from '@/utils/data-safe/entities/transfer';
 
 export function useTransfers() {
   const [filteredTransfers, setFilteredTransfers] = useState<any[]>([]);
@@ -9,7 +10,7 @@ export function useTransfers() {
   const [products, setProducts] = useState<any[]>([]);
 
   const {
-    transfers,
+    transfers: rawTransfers,
     isLoading,
     isError,
     refetch,
@@ -18,6 +19,9 @@ export function useTransfers() {
     posLocations,
     warehouses,
   } = useTransfersData();
+
+  // Cast transfers to proper type
+  const transfers = castToTransfers(rawTransfers || []);
 
   // Fetch products for the transfer form
   useEffect(() => {
