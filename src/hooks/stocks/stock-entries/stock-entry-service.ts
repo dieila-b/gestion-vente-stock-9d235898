@@ -17,7 +17,7 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
     
     console.log(`Création d'une entrée stock pour le produit ${data.productId} dans l'entrepôt ${data.warehouseId} - Quantité: ${data.quantity}, Prix unitaire: ${data.unitPrice}, Valeur totale: ${totalValue}`);
     
-    // 1. Insert the stock movement - Use direct insert instead of RPC to avoid column ambiguity
+    // 1. Insert the stock movement
     const { data: movementData, error: movementError } = await supabase
       .from('warehouse_stock_movements')
       .insert({
@@ -38,31 +38,28 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
     
     console.log("Successfully created stock movement:", movementData);
     
-    // 2. Check if stock exists for this product in this warehouse
-    const { data: existingStock, error: stockCheckError } = await supabase
-      .from('warehouse_stock')
-      .select('id, quantity, unit_price, total_value')
-      .eq('warehouse_id', data.warehouseId)
-      .eq('product_id', data.productId)
-      .maybeSingle();
+    // 2. Déterminer si c'est un entrepôt ou un emplacement POS
+    const isWarehouse = await checkIfWarehouse(data.warehouseId);
+    const isPOSLocation = await checkIfPOSLocation(data.warehouseId);
     
-    if (stockCheckError) {
-      console.error("Error checking existing stock:", stockCheckError);
-      throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
-    }
+    console.log(`Type d'emplacement - Entrepôt: ${isWarehouse}, POS: ${isPOSLocation}`);
     
-    // 3. Update or create stock entry using db utility to bypass RLS
-    if (existingStock) {
-      await updateExistingStock(existingStock, data);
+    // 3. Update warehouse_stock table appropriately
+    if (isWarehouse) {
+      await updateWarehouseStock(data, totalValue, true); // true = warehouse
+    } else if (isPOSLocation) {
+      await updateWarehouseStock(data, totalValue, false); // false = POS location
     } else {
-      await createNewStock(data, totalValue);
+      console.warn(`Emplacement ${data.warehouseId} non trouvé dans warehouses ni pos_locations`);
+      // Par défaut, traiter comme un entrepôt
+      await updateWarehouseStock(data, totalValue, true);
     }
 
     // 4. Update the catalog product stock total
     await updateCatalogStock(data);
     
     // 5. Update or create record in stock_principal table
-    await updateStockPrincipal(data, totalValue);
+    await updateStockPrincipal(data, totalValue, isWarehouse);
 
     return true;
   } catch (error: any) {
@@ -71,69 +68,143 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
   }
 }
 
-async function updateExistingStock(existingStock: any, data: StockEntryForm): Promise<void> {
-  // Calculate new values for existing stock (weighted average)
-  const newQuantity = existingStock.quantity + data.quantity;
-  const oldValue = existingStock.quantity * existingStock.unit_price;
-  const newValue = data.quantity * data.unitPrice;
-  const newTotalValue = oldValue + newValue;
-  const newUnitPrice = newQuantity > 0 ? newTotalValue / newQuantity : data.unitPrice;
-  
-  console.log("Updating existing warehouse stock:", {
-    id: existingStock.id,
-    oldQuantity: existingStock.quantity,
-    newQuantity,
-    oldUnitPrice: existingStock.unit_price,
-    newUnitPrice,
-    oldTotalValue: existingStock.total_value,
-    newTotalValue
-  });
-  
-  // Update existing stock using db.update to bypass RLS
-  const updateResult = await db.update(
-    'warehouse_stock',
-    {
-      quantity: newQuantity,
-      unit_price: newUnitPrice,
-      total_value: newTotalValue,
-      updated_at: new Date().toISOString()
-    },
-    'id',
-    existingStock.id
-  );
+async function checkIfWarehouse(locationId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('warehouses')
+      .select('id')
+      .eq('id', locationId)
+      .maybeSingle();
     
-  if (!updateResult) {
-    console.error("Error updating stock using db utility");
-    throw new Error("Erreur lors de la mise à jour du stock");
+    if (error) {
+      console.error("Error checking warehouse:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error("Exception checking warehouse:", error);
+    return false;
   }
-  
-  console.log("Stock successfully updated using db utility");
 }
 
-async function createNewStock(data: StockEntryForm, totalValue: number): Promise<void> {
-  // Create new stock entry using db.insert to bypass RLS
-  console.log("Creating new warehouse stock entry:", {
-    warehouseId: data.warehouseId,
-    productId: data.productId,
-    quantity: data.quantity,
-    unitPrice: data.unitPrice,
-    totalValue
-  });
-  
-  const insertResult = await db.insert('warehouse_stock', {
-    warehouse_id: data.warehouseId,
-    product_id: data.productId,
-    quantity: data.quantity,
-    unit_price: data.unitPrice,
-    total_value: totalValue
-  });
+async function checkIfPOSLocation(locationId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('pos_locations')
+      .select('id')
+      .eq('id', locationId)
+      .maybeSingle();
     
-  if (!insertResult) {
-    console.error("Error creating stock using db utility");
-    throw new Error("Erreur lors de la création du stock");
+    if (error) {
+      console.error("Error checking POS location:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error("Exception checking POS location:", error);
+    return false;
   }
-  
-  console.log("New stock entry successfully created using db utility");
+}
+
+async function updateWarehouseStock(data: StockEntryForm, totalValue: number, isWarehouse: boolean): Promise<void> {
+  try {
+    // Check if stock exists for this product in this location
+    let query = supabase
+      .from('warehouse_stock')
+      .select('id, quantity, unit_price, total_value')
+      .eq('product_id', data.productId);
+    
+    if (isWarehouse) {
+      query = query.eq('warehouse_id', data.warehouseId).is('pos_location_id', null);
+    } else {
+      query = query.eq('pos_location_id', data.warehouseId).is('warehouse_id', null);
+    }
+    
+    const { data: existingStock, error: stockCheckError } = await query.maybeSingle();
+    
+    if (stockCheckError) {
+      console.error("Error checking existing stock:", stockCheckError);
+      throw new Error(`Erreur lors de la vérification du stock: ${stockCheckError.message}`);
+    }
+    
+    if (existingStock) {
+      // Update existing stock with weighted average price calculation
+      const newQuantity = existingStock.quantity + data.quantity;
+      const oldValue = existingStock.quantity * existingStock.unit_price;
+      const newValue = data.quantity * data.unitPrice;
+      const newTotalValue = oldValue + newValue;
+      const newUnitPrice = newQuantity > 0 ? newTotalValue / newQuantity : data.unitPrice;
+      
+      console.log("Updating existing warehouse stock:", {
+        id: existingStock.id,
+        oldQuantity: existingStock.quantity,
+        newQuantity,
+        oldUnitPrice: existingStock.unit_price,
+        newUnitPrice,
+        oldTotalValue: existingStock.total_value,
+        newTotalValue,
+        isWarehouse
+      });
+      
+      const updateResult = await db.update(
+        'warehouse_stock',
+        {
+          quantity: newQuantity,
+          unit_price: newUnitPrice,
+          total_value: newTotalValue,
+          updated_at: new Date().toISOString()
+        },
+        'id',
+        existingStock.id
+      );
+        
+      if (!updateResult) {
+        console.error("Error updating stock using db utility");
+        throw new Error("Erreur lors de la mise à jour du stock");
+      }
+      
+      console.log("Stock successfully updated");
+    } else {
+      // Create new stock entry
+      console.log("Creating new warehouse stock entry:", {
+        productId: data.productId,
+        locationId: data.warehouseId,
+        quantity: data.quantity,
+        unitPrice: data.unitPrice,
+        totalValue,
+        isWarehouse
+      });
+      
+      const stockData: any = {
+        product_id: data.productId,
+        quantity: data.quantity,
+        unit_price: data.unitPrice,
+        total_value: totalValue
+      };
+      
+      if (isWarehouse) {
+        stockData.warehouse_id = data.warehouseId;
+        stockData.pos_location_id = null;
+      } else {
+        stockData.pos_location_id = data.warehouseId;
+        stockData.warehouse_id = null;
+      }
+      
+      const insertResult = await db.insert('warehouse_stock', stockData);
+        
+      if (!insertResult) {
+        console.error("Error creating stock using db utility");
+        throw new Error("Erreur lors de la création du stock");
+      }
+      
+      console.log("New stock entry successfully created");
+    }
+  } catch (error) {
+    console.error("Error in updateWarehouseStock:", error);
+    throw error;
+  }
 }
 
 async function updateCatalogStock(data: StockEntryForm): Promise<void> {
@@ -178,9 +249,9 @@ async function updateCatalogStock(data: StockEntryForm): Promise<void> {
   }
 }
 
-async function updateStockPrincipal(data: StockEntryForm, totalValue: number): Promise<void> {
+async function updateStockPrincipal(data: StockEntryForm, totalValue: number, isWarehouse: boolean): Promise<void> {
   try {
-    // Récupérer les informations du produit et de l'entrepôt pour stock_principal
+    // Récupérer les informations du produit et de l'emplacement pour stock_principal
     const { data: productData, error: productError } = await supabase
       .from('catalog')
       .select('name')
@@ -192,26 +263,41 @@ async function updateStockPrincipal(data: StockEntryForm, totalValue: number): P
       throw productError;
     }
     
-    const { data: warehouseData, error: warehouseError } = await supabase
-      .from('warehouses')
-      .select('name')
-      .eq('id', data.warehouseId)
-      .single();
-      
-    if (warehouseError) {
-      console.error("Error getting warehouse name for stock_principal:", warehouseError);
-      throw warehouseError;
+    let locationName = '';
+    if (isWarehouse) {
+      const { data: warehouseData, error: warehouseError } = await supabase
+        .from('warehouses')
+        .select('name')
+        .eq('id', data.warehouseId)
+        .single();
+        
+      if (warehouseError) {
+        console.error("Error getting warehouse name for stock_principal:", warehouseError);
+        throw warehouseError;
+      }
+      locationName = warehouseData.name;
+    } else {
+      const { data: posData, error: posError } = await supabase
+        .from('pos_locations')
+        .select('name')
+        .eq('id', data.warehouseId)
+        .single();
+        
+      if (posError) {
+        console.error("Error getting POS location name for stock_principal:", posError);
+        throw posError;
+      }
+      locationName = posData.name;
     }
     
     const productName = productData.name;
-    const warehouseName = warehouseData.name;
     
     // Vérifier si une entrée existe déjà dans stock_principal
     const { data: existingEntry, error: checkError } = await supabase
       .from('stock_principal')
       .select('id, quantite, prix_unitaire, valeur_totale')
       .eq('article', productName)
-      .eq('entrepot', warehouseName)
+      .eq('entrepot', locationName)
       .maybeSingle();
       
     if (checkError) {
@@ -230,7 +316,7 @@ async function updateStockPrincipal(data: StockEntryForm, totalValue: number): P
       console.log("Updating existing stock_principal entry:", {
         id: existingEntry.id,
         article: productName,
-        entrepot: warehouseName,
+        entrepot: locationName,
         oldQuantity: existingEntry.quantite,
         newQuantity,
         oldUnitPrice: existingEntry.prix_unitaire,
@@ -261,7 +347,7 @@ async function updateStockPrincipal(data: StockEntryForm, totalValue: number): P
       // Créer une nouvelle entrée
       console.log("Creating new stock_principal entry:", {
         article: productName,
-        entrepot: warehouseName,
+        entrepot: locationName,
         quantite: data.quantity,
         prix_unitaire: data.unitPrice,
         valeur_totale: totalValue
@@ -269,7 +355,7 @@ async function updateStockPrincipal(data: StockEntryForm, totalValue: number): P
       
       const insertResult = await db.insert('stock_principal', {
         article: productName,
-        entrepot: warehouseName,
+        entrepot: locationName,
         quantite: data.quantity,
         prix_unitaire: data.unitPrice,
         valeur_totale: totalValue,
