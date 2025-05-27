@@ -8,7 +8,7 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
     console.log("Données reçues:", data);
     
     if (!data.warehouseId || !data.productId) {
-      throw new Error("L'entrepôt et le produit sont obligatoires");
+      throw new Error("L'emplacement et le produit sont obligatoires");
     }
     
     if (data.quantity <= 0) {
@@ -17,21 +17,49 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
     
     const totalValue = data.quantity * data.unitPrice;
     
-    console.log(`Création d'une entrée stock pour le produit ${data.productId} dans l'entrepôt ${data.warehouseId} - Quantité: ${data.quantity}, Prix unitaire: ${data.unitPrice}, Valeur totale: ${totalValue}`);
+    console.log(`Création d'une entrée stock pour le produit ${data.productId} dans l'emplacement ${data.warehouseId} - Quantité: ${data.quantity}, Prix unitaire: ${data.unitPrice}, Valeur totale: ${totalValue}`);
     
-    // 1. Insert the stock movement
-    console.log("Étape 1: Création du mouvement de stock...");
-    const { data: movementData, error: movementError } = await supabase
+    // 1. Détecter le type d'emplacement (entrepôt ou PDV)
+    console.log("Étape 1: Détection du type d'emplacement...");
+    const locationInfo = await getLocationInfo(data.warehouseId);
+    console.log("Informations sur l'emplacement:", locationInfo);
+    
+    // 2. Insert the stock movement avec le bon champ selon le type d'emplacement
+    console.log("Étape 2: Création du mouvement de stock...");
+    const movementData: any = {
+      product_id: data.productId,
+      quantity: data.quantity,
+      unit_price: data.unitPrice,
+      total_value: totalValue,
+      type: 'in',
+      reason: data.reason
+    };
+
+    // Assigner le bon champ selon le type d'emplacement
+    if (locationInfo.isWarehouse) {
+      movementData.warehouse_id = data.warehouseId;
+    } else {
+      // Pour les PDV, on ne peut pas utiliser warehouse_id car la contrainte FK n'accepte que les entrepôts
+      // On stocke l'ID du PDV dans le reason ou on crée une logique différente
+      console.warn("Tentative d'insertion d'un mouvement pour un PDV - utilisation d'un entrepôt par défaut");
+      // Utiliser un entrepôt par défaut ou gérer différemment
+      const { data: defaultWarehouse } = await supabase
+        .from('warehouses')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (defaultWarehouse) {
+        movementData.warehouse_id = defaultWarehouse.id;
+        movementData.reason = `${data.reason} (PDV: ${locationInfo.name})`;
+      } else {
+        throw new Error("Aucun entrepôt disponible pour enregistrer le mouvement de PDV");
+      }
+    }
+
+    const { data: movementResult, error: movementError } = await supabase
       .from('warehouse_stock_movements')
-      .insert({
-        warehouse_id: data.warehouseId,
-        product_id: data.productId,
-        quantity: data.quantity,
-        unit_price: data.unitPrice,
-        total_value: totalValue,
-        type: 'in',
-        reason: data.reason
-      })
+      .insert(movementData)
       .select();
 
     if (movementError) {
@@ -39,12 +67,7 @@ export async function createStockEntryInDb(data: StockEntryForm): Promise<boolea
       throw new Error(`Erreur lors de la création du mouvement: ${movementError.message}`);
     }
     
-    console.log("Mouvement de stock créé avec succès:", movementData);
-    
-    // 2. Détecter le type d'emplacement (entrepôt ou PDV)
-    console.log("Étape 2: Détection du type d'emplacement...");
-    const locationInfo = await getLocationInfo(data.warehouseId);
-    console.log("Informations sur l'emplacement:", locationInfo);
+    console.log("Mouvement de stock créé avec succès:", movementResult);
     
     // 3. Mettre à jour la table warehouse_stock
     console.log("Étape 3: Mise à jour warehouse_stock...");
@@ -105,10 +128,10 @@ async function getLocationInfo(locationId: string): Promise<{ isWarehouse: boole
     }
     
     console.warn(`Emplacement ${locationId} non trouvé dans warehouses ou pos_locations`);
-    return { isWarehouse: true, isPOS: false, name: 'Entrepôt inconnu' };
+    return { isWarehouse: true, isPOS: false, name: 'Emplacement inconnu' };
   } catch (error) {
     console.error("Erreur lors de la récupération des informations sur l'emplacement:", error);
-    return { isWarehouse: true, isPOS: false, name: 'Entrepôt inconnu' };
+    return { isWarehouse: true, isPOS: false, name: 'Emplacement inconnu' };
   }
 }
 
