@@ -32,7 +32,16 @@ export function PurchaseOrderActions({
     e.preventDefault();
     e.stopPropagation();
     
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.log("[PurchaseOrderActions] Already processing, ignoring click");
+      return;
+    }
+    
+    if (!order?.id) {
+      console.error("[PurchaseOrderActions] No order ID available");
+      toast.error("ID du bon de commande manquant");
+      return;
+    }
     
     try {
       console.log(`[PurchaseOrderActions] Starting approval for order: ${order.id}, ${order.order_number}`);
@@ -43,9 +52,47 @@ export function PurchaseOrderActions({
       
     } catch (error: any) {
       console.error("[PurchaseOrderActions] Error in approve handler:", error);
-      toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);
+      // Don't show toast here as the parent handler already shows it
     } finally {
       setLocalProcessing(false);
+    }
+  };
+
+  const handleEdit = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isProcessing) return;
+    
+    try {
+      await onEdit(order.id);
+    } catch (error: any) {
+      console.error("[PurchaseOrderActions] Error in edit handler:", error);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isProcessing) return;
+    
+    try {
+      await onDelete(order.id);
+    } catch (error: any) {
+      console.error("[PurchaseOrderActions] Error in delete handler:", error);
+    }
+  };
+
+  const handlePrint = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      onPrint(order);
+    } catch (error: any) {
+      console.error("[PurchaseOrderActions] Error in print handler:", error);
+      toast.error("Erreur lors de l'impression");
     }
   };
 
@@ -56,11 +103,7 @@ export function PurchaseOrderActions({
         variant="outline"
         size="icon"
         className="h-8 w-8 rounded-lg border-gray-300 hover:bg-gray-50"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onEdit(order.id);
-        }}
+        onClick={handleEdit}
         disabled={isProcessing}
         title="Modifier"
       >
@@ -91,11 +134,7 @@ export function PurchaseOrderActions({
           variant="outline"
           size="icon"
           className="h-8 w-8 rounded-lg border-red-300 hover:bg-red-50"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete(order.id);
-          }}
+          onClick={handleDelete}
           disabled={isProcessing}
           title="Supprimer"
         >
@@ -108,11 +147,7 @@ export function PurchaseOrderActions({
         variant="outline"
         size="icon"
         className="h-8 w-8 rounded-lg border-blue-300 hover:bg-blue-50"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onPrint(order);
-        }}
+        onClick={handlePrint}
         disabled={isProcessing}
         title="Imprimer"
       >

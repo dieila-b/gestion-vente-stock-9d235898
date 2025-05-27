@@ -12,29 +12,34 @@ export function useApprovePurchaseOrder() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log("[useApprovePurchaseOrder] Starting approval process for order:", id);
+      console.log("[useApprovePurchaseOrder] Starting approval for order:", id);
       
-      try {
-        // Process approval using the service
-        const result = await approvePurchaseOrderService(id, queryClient);
-        
-        console.log("[useApprovePurchaseOrder] Approval process completed:", result);
-        return result;
-      } catch (error: any) {
-        console.error("[useApprovePurchaseOrder] Error in approval process:", error);
-        toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
-        throw error;
+      if (!id) {
+        throw new Error("ID du bon de commande manquant");
       }
+      
+      const result = await approvePurchaseOrderService(id, queryClient);
+      console.log("[useApprovePurchaseOrder] Service result:", result);
+      
+      return result;
     },
-    onSuccess: (data) => {
-      console.log("[useApprovePurchaseOrder] Approval successful:", data);
+    onSuccess: (data, variables) => {
+      console.log("[useApprovePurchaseOrder] Mutation successful:", data);
+      
       if (!data?.alreadyApproved) {
-        toast.success("Bon de commande approuvé avec succès");
+        // Force refresh of purchase orders list
+        queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+        
+        // Show success message only if not already approved
+        if (data?.success) {
+          toast.success("Bon de commande approuvé avec succès");
+        }
       }
     },
-    onError: (error: any) => {
-      console.error("[useApprovePurchaseOrder] Mutation error:", error);
-      toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
+    onError: (error: any, variables) => {
+      console.error("[useApprovePurchaseOrder] Mutation failed:", error);
+      const errorMessage = error?.message || 'Erreur inconnue lors de l\'approbation';
+      toast.error(`Erreur lors de l'approbation: ${errorMessage}`);
     }
   });
 }

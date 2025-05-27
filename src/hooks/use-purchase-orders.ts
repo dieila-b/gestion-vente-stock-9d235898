@@ -19,17 +19,16 @@ export function usePurchaseOrders() {
     console.error("[usePurchaseOrders] Error:", error);
   }
 
-  // Force refresh the data with minimal stale time
+  // Force refresh the data
   const refreshOrders = async () => {
     console.log("[usePurchaseOrders] Refreshing purchase orders...");
     
     try {
       // Force a refetch with our specialized function
       const result = await refreshPurchaseOrders();
-      
       console.log("[usePurchaseOrders] Refresh result:", result);
       
-      // Aussi rafraîchir les bons de livraison pour afficher ceux nouvellement créés
+      // Also refresh delivery notes
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       await queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
       
@@ -41,44 +40,50 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle the approve function with simplified logic
+  // Handle the approve function with better error handling
   const handleApprove = async (id: string): Promise<void> => {
+    if (!id) {
+      console.error("[usePurchaseOrders] No order ID provided");
+      toast.error("ID du bon de commande manquant");
+      return;
+    }
+
     try {
-      console.log("[usePurchaseOrders] Starting approval process for:", id);
+      console.log("[usePurchaseOrders] Starting approval for order:", id);
       setProcessingOrderId(id);
       
-      // Vérifier que l'order existe bien avant de tenter l'approbation
+      // Check if order exists in current list
       const orderToApprove = orders.find(order => order.id === id);
       if (!orderToApprove) {
         console.error("[usePurchaseOrders] Order not found in current list:", id);
         toast.error("Bon de commande introuvable");
-        setProcessingOrderId(null);
         return;
       }
 
       console.log("[usePurchaseOrders] Order found, proceeding with approval:", orderToApprove.order_number);
       
-      // Utiliser directement la mutation d'approbation
+      // Use the mutation directly
       const result = await approveOrderMutation.mutateAsync(id);
-      
       console.log("[usePurchaseOrders] Approval completed:", result);
       
-      // Rafraîchir systématiquement les données après approbation
+      // Force refresh the data after successful approval
       await refreshOrders();
         
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleApprove:", error);
-      toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
+      
+      // Don't show toast here as the mutation already handles it
+      // Just log the error for debugging
     } finally {
       setProcessingOrderId(null);
     }
   };
 
-  // Create wrapper functions with correct signature for Promise<void>
+  // Create wrapper functions
   const handleEditWrapper = async (id: string): Promise<void> => {
     try {
       setProcessingOrderId(id);
-      console.log("[usePurchaseOrders] Wrapping edit for order ID:", id);
+      console.log("[usePurchaseOrders] Opening edit for order ID:", id);
       await handleEdit(id);
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleEditWrapper:", error);
