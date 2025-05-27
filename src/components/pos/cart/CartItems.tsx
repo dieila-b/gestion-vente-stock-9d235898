@@ -9,6 +9,9 @@ interface CartItemsProps {
   onRemove: (productId: string) => void;
   onUpdateDiscount: (productId: string, discount: number) => void;
   onSetQuantity?: (productId: string, quantity: number) => void;
+  hasOutOfStockItems: boolean;
+  hasLowStockItems: boolean;
+  availableStock?: Record<string, number>;
 }
 
 export function CartItems({
@@ -16,7 +19,10 @@ export function CartItems({
   onUpdateQuantity,
   onRemove,
   onUpdateDiscount,
-  onSetQuantity
+  onSetQuantity,
+  hasOutOfStockItems,
+  hasLowStockItems,
+  availableStock = {}
 }: CartItemsProps) {
   return (
     <>
@@ -39,8 +45,18 @@ export function CartItems({
               onUpdateDiscount={(productId, discount) => onUpdateDiscount(item.id, discount)}
               onRemove={() => onRemove(item.id)}
               onSetQuantity={onSetQuantity ? (quantity) => onSetQuantity(item.id, quantity) : undefined}
+              availableStock={availableStock[item.id] || 0}
             />
           ))}
+          {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (
+            <div className="mt-4 p-3 border border-amber-500/30 rounded-md bg-amber-500/10 text-amber-400 text-sm">
+              {hasOutOfStockItems ? (
+                <p>Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
+              ) : (
+                <p>Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
+              )}
+            </div>
+          )}
         </div>
       </ScrollArea>
     </>
