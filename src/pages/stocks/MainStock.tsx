@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StockTable } from "@/components/stocks/StockTable";
 import { useWarehouseStock } from "@/hooks/warehouse-stock/useWarehouseStock";
 import { toast } from "sonner";
+import { StockItem } from "@/hooks/stock-statistics/types";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
@@ -71,11 +72,34 @@ export default function MainStock() {
     });
   }, [refreshWarehouseStock]);
 
+  // Transform warehouse stock data to match StockItem interface
+  const transformedStockItems: StockItem[] = useMemo(() => {
+    return warehouseStock.map((item) => {
+      // Get the location name from warehouse or pos_location
+      const locationName = item.warehouse?.name || item.pos_location?.name || "Emplacement inconnu";
+      
+      return {
+        id: item.id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_value: item.total_value,
+        name: locationName, // Add the required name property
+        product: item.product ? {
+          id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          category: item.product.category,
+          reference: item.product.reference
+        } : null
+      };
+    }).filter(item => item.product !== null); // Filter out items without product data
+  }, [warehouseStock]);
+
   // Apply filtering based on warehouse selection and search query
-  const filteredItems = warehouseStock.filter((item) => {
+  const filteredItems = transformedStockItems.filter((item) => {
     const matchesWarehouse = selectedWarehouse === "_all" 
       ? true 
-      : item.warehouse_id === selectedWarehouse;
+      : item.name === warehouses.find(w => w.id === selectedWarehouse)?.name;
     
     const matchesSearch = searchQuery.toLowerCase().trim() === "" 
       ? true 
@@ -87,6 +111,7 @@ export default function MainStock() {
   });
 
   console.log("Warehouse stock data:", warehouseStock);
+  console.log("Transformed stock items:", transformedStockItems);
   console.log("Filtered stock items:", filteredItems);
 
   return (
