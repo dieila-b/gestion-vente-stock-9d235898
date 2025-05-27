@@ -29,27 +29,19 @@ export function CartItem({
     item.discount ? item.discount.toString() : "0"
   );
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
-  const [hasQuantityError, setHasQuantityError] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Sync discount value when item changes
   useEffect(() => {
     setDiscountValue(item.discount ? item.discount.toString() : "0");
   }, [item.discount]);
 
-  // Only sync quantity when not editing
+  // Only sync quantity when not focused
   useEffect(() => {
-    if (!isEditing) {
+    if (!isFocused) {
       setQuantityInput(item.quantity.toString());
     }
-  }, [item.quantity, isEditing]);
-
-  // Notify parent about validation errors
-  useEffect(() => {
-    if (onValidationError) {
-      onValidationError(hasQuantityError);
-    }
-  }, [hasQuantityError, onValidationError]);
+  }, [item.quantity, isFocused]);
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -62,63 +54,65 @@ export function CartItem({
   };
 
   const handleQuantityFocus = () => {
-    setIsEditing(true);
-    setHasQuantityError(false);
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setQuantityInput(newValue);
-  };
-
-  const validateAndApplyQuantity = () => {
-    const numericValue = parseInt(quantityInput, 10);
-    
-    // Si la valeur n'est pas valide, revenir à la quantité actuelle
-    if (isNaN(numericValue) || numericValue < 1) {
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      return;
-    }
-    
-    // Vérifier le stock disponible
-    if (numericValue > availableStock) {
-      setHasQuantityError(true);
-      toast.error("La quantité saisie dépasse le stock disponible.");
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      return;
-    }
-    
-    setHasQuantityError(false);
-    
-    // Appliquer la nouvelle quantité si elle a changé
-    if (numericValue !== item.quantity && onSetQuantity) {
-      onSetQuantity(numericValue);
-    }
-    
-    setIsEditing(false);
+    setIsFocused(true);
   };
 
   const handleQuantityBlur = () => {
-    validateAndApplyQuantity();
+    setIsFocused(false);
+    applyQuantityChange();
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Permettre la saisie de nombres positifs uniquement
+    if (value === "" || /^\d+$/.test(value)) {
+      setQuantityInput(value);
+    }
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      validateAndApplyQuantity();
       e.currentTarget.blur();
     }
     if (e.key === 'Escape') {
       setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
       e.currentTarget.blur();
+    }
+  };
+
+  const applyQuantityChange = () => {
+    const value = quantityInput.trim();
+    
+    if (value === "" || value === "0") {
+      setQuantityInput(item.quantity.toString());
+      return;
+    }
+
+    const numericValue = parseInt(value, 10);
+
+    if (isNaN(numericValue) || numericValue < 1) {
+      setQuantityInput(item.quantity.toString());
+      return;
+    }
+
+    if (numericValue > availableStock) {
+      toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
+      setQuantityInput(item.quantity.toString());
+      if (onValidationError) onValidationError(true);
+      return;
+    }
+
+    if (onValidationError) onValidationError(false);
+
+    if (numericValue !== item.quantity && onSetQuantity) {
+      onSetQuantity(numericValue);
     }
   };
 
   const handleQuantityIncrease = () => {
     if (item.quantity >= availableStock) {
-      toast.error("La quantité demandée dépasse le stock disponible pour cet article.");
+      toast.error("Stock insuffisant pour augmenter la quantité.");
       return;
     }
     onUpdateQuantity(1);
@@ -127,7 +121,6 @@ export function CartItem({
   const handleQuantityDecrease = () => {
     if (item.quantity <= 1) return;
     onUpdateQuantity(-1);
-    setHasQuantityError(false);
   };
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
@@ -150,17 +143,15 @@ export function CartItem({
               -
             </button>
             <Input
-              type="number"
-              min="1"
-              max={availableStock}
-              className={`h-7 w-16 text-center text-sm ${
-                hasQuantityError ? 'border-red-500 bg-red-50' : ''
-              }`}
+              type="text"
+              className="h-7 w-16 text-center text-sm"
               value={quantityInput}
               onChange={handleQuantityChange}
               onFocus={handleQuantityFocus}
               onBlur={handleQuantityBlur}
               onKeyDown={handleQuantityKeyDown}
+              inputMode="numeric"
+              pattern="[0-9]*"
             />
             <button
               className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
@@ -201,12 +192,6 @@ export function CartItem({
           </div>
         </div>
       </div>
-      
-      {hasQuantityError && (
-        <div className="text-red-500 text-xs ml-2">
-          Stock disponible: {availableStock}
-        </div>
-      )}
     </div>
   );
 }
