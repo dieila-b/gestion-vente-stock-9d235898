@@ -27,6 +27,7 @@ export function PurchaseOrderActions({
   
   // Don't show approve button for already approved orders
   const canApprove = order.status !== 'approved';
+  const isApproved = order.status === 'approved';
 
   const handleApprove = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,61 +104,77 @@ export function PurchaseOrderActions({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Bouton Modifier */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
-        onClick={handleEdit}
-        disabled={isProcessing}
-        title="Modifier"
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
-
-      {/* Bouton Approuver (seulement si pas encore approuvé) */}
-      {canApprove && (
+      {/* Pour les commandes approuvées, afficher seulement le bouton d'impression */}
+      {isApproved ? (
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-          onClick={handleApprove}
+          className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+          onClick={handlePrint}
           disabled={isProcessing}
-          title={`Approuver le bon de commande ${order.order_number}`}
+          title="Imprimer"
         >
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
+          <Printer className="h-4 w-4" />
+        </Button>
+      ) : (
+        <>
+          {/* Bouton Modifier */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+            onClick={handleEdit}
+            disabled={isProcessing}
+            title="Modifier"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+
+          {/* Bouton Approuver (seulement si pas encore approuvé) */}
+          {canApprove && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+              onClick={handleApprove}
+              disabled={isProcessing}
+              title={`Approuver le bon de commande ${order.order_number}`}
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </Button>
           )}
-        </Button>
-      )}
 
-      {/* Bouton Supprimer (seulement si pas encore approuvé) */}
-      {canApprove && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-          onClick={handleDelete}
-          disabled={isProcessing}
-          title="Supprimer"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      )}
+          {/* Bouton Supprimer (seulement si pas encore approuvé) */}
+          {canApprove && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDelete}
+              disabled={isProcessing}
+              title="Supprimer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
 
-      {/* Bouton Imprimer */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
-        onClick={handlePrint}
-        disabled={isProcessing}
-        title="Imprimer"
-      >
-        <Printer className="h-4 w-4" />
-      </Button>
+          {/* Bouton Imprimer */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+            onClick={handlePrint}
+            disabled={isProcessing}
+            title="Imprimer"
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
+        </>
+      )}
     </div>
   );
 }
