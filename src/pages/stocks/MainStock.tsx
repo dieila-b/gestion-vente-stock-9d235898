@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +83,7 @@ export default function MainStock() {
         unit_price: item.unit_price,
         total_value: item.total_value,
         name: locationName, // Add the required name property
+        warehouse_id: item.warehouse_id || item.pos_location_id || '', // Add the required warehouse_id property
         product: item.product ? {
           id: item.product.id,
           name: item.product.name,
