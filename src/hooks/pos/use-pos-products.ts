@@ -2,41 +2,93 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/utils/db-adapter";
 
-export function usePOSProducts() {
+export function usePOSProducts(selectedPDV?: string) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
-  // Fetch all products
+  // Fetch products with stock for selected PDV
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ['pos-products'],
+    queryKey: ['pos-products', selectedPDV],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('catalog')
-          .select('id, name, reference, price, image_url, category, stock')
-          .order('name');
+        if (!selectedPDV || selectedPDV === "_all") {
+          // If no specific PDV selected, get all products from catalog
+          const { data, error } = await supabase
+            .from('catalog')
+            .select('id, name, reference, price, image_url, category, stock')
+            .order('name');
 
-        if (error) {
-          throw error;
+          if (error) {
+            throw error;
+          }
+
+          console.log('Fetched catalog products:', data?.length || 0);
+          
+          // Extract unique categories
+          const uniqueCategories = Array.from(
+            new Set(data?.map(product => product.category).filter(Boolean))
+          ) as string[];
+          
+          setCategories(uniqueCategories);
+          
+          return data || [];
+        } else {
+          // Get products with stock for specific PDV
+          const { data, error } = await supabase
+            .from('warehouse_stock')
+            .select(`
+              id,
+              quantity,
+              product:product_id (
+                id,
+                name,
+                reference,
+                price,
+                image_url,
+                category,
+                stock
+              )
+            `)
+            .eq('pos_location_id', selectedPDV)
+            .gt('quantity', 0); // Only products with stock > 0
+
+          if (error) {
+            console.error('Error fetching PDV products:', error);
+            throw error;
+          }
+
+          console.log('Fetched PDV products:', data?.length || 0);
+
+          // Transform the data to match expected format
+          const transformedProducts = data?.map(item => ({
+            id: item.product?.id,
+            name: item.product?.name,
+            reference: item.product?.reference,
+            price: item.product?.price,
+            image_url: item.product?.image_url,
+            category: item.product?.category,
+            stock: item.quantity, // Use stock from warehouse_stock
+            product_id: item.product?.id
+          })).filter(product => product.id) || [];
+
+          // Extract unique categories
+          const uniqueCategories = Array.from(
+            new Set(transformedProducts.map(product => product.category).filter(Boolean))
+          ) as string[];
+          
+          setCategories(uniqueCategories);
+          
+          return transformedProducts;
         }
-
-        // Extract unique categories
-        const uniqueCategories = Array.from(
-          new Set(data.map(product => product.category).filter(Boolean))
-        ) as string[];
-        
-        setCategories(uniqueCategories);
-        
-        return data || [];
       } catch (error) {
         console.error("Error fetching products:", error);
         return [];
       }
-    }
+    },
+    enabled: true, // Always enabled, but behavior changes based on selectedPDV
   });
 
   // Filter products based on search query and category

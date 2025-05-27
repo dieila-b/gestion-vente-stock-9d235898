@@ -26,7 +26,7 @@ export function usePOS(editOrderId?: string | null) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(cart.client);
   
   // POS location state
-  const [selectedPDV, setSelectedPDV] = useState<string>("");
+  const [selectedPDV, setSelectedPDV] = useState<string>("_all");
   const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
 
   // Get POS locations
@@ -41,13 +41,13 @@ export function usePOS(editOrderId?: string | null) {
 
   // Set default POS location if none selected
   useEffect(() => {
-    if (!selectedPDV && posLocations.length > 0) {
+    if (selectedPDV === "_all" && posLocations.length > 0) {
       setSelectedPDV(posLocations[0].id);
     }
   }, [posLocations, selectedPDV]);
 
-  // Get products with usePOSProducts hook
-  const productsData = usePOSProducts();
+  // Get products with usePOSProducts hook - now passes selectedPDV
+  const productsData = usePOSProducts(selectedPDV);
   
   // Payment dialog state
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -82,7 +82,7 @@ export function usePOS(editOrderId?: string | null) {
   // Fetch stock items whenever the selected POS location changes
   useEffect(() => {
     const fetchStockItems = async () => {
-      if (!selectedPDV) return;
+      if (!selectedPDV || selectedPDV === "_all") return;
       
       try {
         const { data, error } = await supabase
@@ -119,7 +119,7 @@ export function usePOS(editOrderId?: string | null) {
 
   // Refetch stock items
   const refetchStock = async () => {
-    if (!selectedPDV) return;
+    if (!selectedPDV || selectedPDV === "_all") return;
     
     try {
       const { data, error } = await supabase
