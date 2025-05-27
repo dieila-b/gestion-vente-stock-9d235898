@@ -4,7 +4,6 @@ import { useState } from "react";
 import { StockEntryForm } from "../useStockMovementTypes";
 import { createStockEntryInDb } from "./stock-entry-service";
 import { toast } from "sonner";
-import { checkTableExists } from "@/utils/db-utils";
 
 export function useStockEntryMutation() {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,24 +24,10 @@ export function useStockEntryMutation() {
           throw new Error("La quantité doit être positive");
         }
 
-        // Vérification de l'existence des tables nécessaires
-        const warehouseTableExists = await checkTableExists("warehouses");
-        const catalogTableExists = await checkTableExists("catalog");
-        const stockMovementsTableExists = await checkTableExists("warehouse_stock_movements");
-        const warehouseStockTableExists = await checkTableExists("warehouse_stock");
-        
-        if (!warehouseTableExists || !catalogTableExists || !stockMovementsTableExists || !warehouseStockTableExists) {
-          console.error("Tables manquantes:", {
-            warehouses: warehouseTableExists,
-            catalog: catalogTableExists,
-            warehouse_stock_movements: stockMovementsTableExists,
-            warehouse_stock: warehouseStockTableExists
-          });
-          throw new Error("La structure de base de données n'est pas complète. Veuillez contacter l'administrateur.");
-        }
-        
-        // Création de l'entrée de stock
+        // Création directe de l'entrée de stock sans vérifications de tables
+        console.log("Calling createStockEntryInDb with validated data...");
         const result = await createStockEntryInDb(data);
+        console.log("createStockEntryInDb result:", result);
         return result;
       } catch (error: any) {
         console.error("Erreur dans createStockEntry:", error);
