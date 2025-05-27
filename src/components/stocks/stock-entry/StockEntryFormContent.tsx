@@ -17,6 +17,7 @@ import {
 
 interface StockEntryFormContentProps {
   warehouses: { id: string; name: string; }[];
+  posLocations?: { id: string; name: string; }[];
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
   onSubmitSuccess: () => void;
@@ -24,6 +25,7 @@ interface StockEntryFormContentProps {
 
 export function StockEntryFormContent({ 
   warehouses, 
+  posLocations = [],
   products, 
   onSubmit,
   onSubmitSuccess 
@@ -35,7 +37,7 @@ export function StockEntryFormContent({
         if (!values.warehouseId || !values.productId) {
           console.error("Missing required fields", { warehouseId: values.warehouseId, productId: values.productId });
           toast.error("Données incomplètes", {
-            description: "Veuillez sélectionner un entrepôt et un produit."
+            description: "Veuillez sélectionner un emplacement et un produit."
           });
           return false;
         }
@@ -84,7 +86,11 @@ export function StockEntryFormContent({
   return (
     <Form {...form}>
       <form id="stock-entry-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
-        <WarehouseSelect form={form} warehouses={warehouses} />
+        <WarehouseSelect 
+          form={form} 
+          warehouses={warehouses} 
+          posLocations={posLocations}
+        />
         <ProductSelect form={form} products={products} />
         
         <div className="grid grid-cols-2 gap-4">

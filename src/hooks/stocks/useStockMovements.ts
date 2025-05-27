@@ -88,6 +88,32 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
     }
   });
 
+  // Récupération des points de vente
+  const { data: posLocations = [] } = useQuery({
+    queryKey: ['pos-locations'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('pos_locations')
+          .select('id, name')
+          .eq('is_active', true);
+
+        if (error) {
+          console.error("Error fetching POS locations:", error);
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error fetching POS locations:", error);
+        toast.error("Erreur", {
+          description: "Impossible de charger la liste des points de vente."
+        });
+        return [];
+      }
+    }
+  });
+
   // Récupération des produits
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -175,6 +201,7 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
     movements: movementsData,
     isLoading,
     warehouses,
+    posLocations,
     products,
     createStockEntry: createStockMovement,
     refetch: refreshData

@@ -7,6 +7,7 @@ import { useState } from "react";
 
 interface StockEntryDialogContentProps {
   warehouses: { id: string; name: string; }[];
+  posLocations?: { id: string; name: string; }[];
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
   onSubmitSuccess: () => void;
@@ -15,6 +16,7 @@ interface StockEntryDialogContentProps {
 
 export function StockEntryDialogContent({
   warehouses,
+  posLocations = [],
   products,
   onSubmit,
   onSubmitSuccess,
@@ -49,6 +51,7 @@ export function StockEntryDialogContent({
       
       <StockEntryForm 
         warehouses={warehouses} 
+        posLocations={posLocations}
         products={products} 
         onSubmit={handleSubmit}
         onSuccess={onSubmitSuccess}

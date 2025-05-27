@@ -17,6 +17,7 @@ export default function StockIn() {
     movements,
     isLoading,
     warehouses,
+    posLocations,
     products,
     createStockEntry,
     refetch
@@ -110,6 +111,7 @@ export default function StockIn() {
           <StockMovementsPrintDialog />
           <StockEntryDialog 
             warehouses={warehouses} 
+            posLocations={posLocations}
             products={products} 
             onSubmit={handleStockEntrySubmit} 
           />

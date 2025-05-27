@@ -10,6 +10,7 @@ export default function StockOut() {
     movements,
     isLoading,
     warehouses,
+    posLocations,
     products,
     createStockEntry: createStockExit
   } = useStockMovements('out');
@@ -27,6 +28,7 @@ export default function StockOut() {
           <StockMovementsPrintDialog />
           <StockOutDialog 
             warehouses={warehouses} 
+            posLocations={posLocations}
             products={products} 
             onSubmit={createStockExit} 
           />

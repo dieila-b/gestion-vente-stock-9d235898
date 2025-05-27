@@ -15,10 +15,11 @@ import {
   QuantityInput, 
   PriceInput, 
   ReasonInput 
-} from "./FormFields";
+} from "../stock-entry/form-fields";
 
 interface StockOutFormContentProps {
   warehouses: { id: string; name: string; }[];
+  posLocations?: { id: string; name: string; }[];
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
   onSubmitSuccess: () => void;
@@ -26,6 +27,7 @@ interface StockOutFormContentProps {
 
 export function StockOutFormContent({ 
   warehouses, 
+  posLocations = [],
   products, 
   onSubmit,
   onSubmitSuccess 
@@ -71,7 +73,11 @@ export function StockOutFormContent({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
-        <WarehouseSelect form={form} warehouses={warehouses} />
+        <WarehouseSelect 
+          form={form} 
+          warehouses={warehouses} 
+          posLocations={posLocations}
+        />
         <ProductSelect form={form} products={products} />
         
         <div className="grid grid-cols-2 gap-4">

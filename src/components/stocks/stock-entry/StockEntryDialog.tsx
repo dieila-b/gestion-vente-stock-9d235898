@@ -9,11 +9,12 @@ import { toast } from "sonner";
 
 interface StockEntryDialogProps {
   warehouses: { id: string; name: string }[];
+  posLocations?: { id: string; name: string }[];
   products: { id: string; name: string; reference?: string; price: number }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
 }
 
-export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryDialogProps) {
+export function StockEntryDialog({ warehouses, posLocations = [], products, onSubmit }: StockEntryDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,7 +34,7 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
       // Validation côté client
       if (!data.warehouseId || !data.productId) {
         toast.error("Données incomplètes", {
-          description: "Veuillez sélectionner un entrepôt et un produit."
+          description: "Veuillez sélectionner un emplacement et un produit."
         });
         return false;
       }
@@ -98,6 +99,7 @@ export function StockEntryDialog({ warehouses, products, onSubmit }: StockEntryD
         </DialogHeader>
         <StockEntryDialogContent 
           warehouses={warehouses} 
+          posLocations={posLocations}
           products={products} 
           onSubmit={handleSubmit}
           onSubmitSuccess={handleSubmitSuccess}

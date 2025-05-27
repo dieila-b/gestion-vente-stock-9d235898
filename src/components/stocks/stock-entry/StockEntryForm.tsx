@@ -13,12 +13,13 @@ import { useState } from "react";
 
 interface StockEntryFormProps {
   warehouses: { id: string; name: string; }[];
+  posLocations?: { id: string; name: string; }[];
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
   onSuccess?: () => void;
 }
 
-export function StockEntryForm({ warehouses, products, onSubmit, onSuccess }: StockEntryFormProps) {
+export function StockEntryForm({ warehouses, posLocations = [], products, onSubmit, onSuccess }: StockEntryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   
   const { form, isSubmitting: formSubmitting, handleSubmit } = useStockEntryForm({
@@ -50,7 +51,12 @@ export function StockEntryForm({ warehouses, products, onSubmit, onSuccess }: St
         onSubmit={form.handleSubmit(handleSubmit)} 
         className="space-y-4 py-4"
       >
-        <WarehouseSelect form={form} warehouses={warehouses} disabled={isSubmitting} />
+        <WarehouseSelect 
+          form={form} 
+          warehouses={warehouses} 
+          posLocations={posLocations}
+          disabled={isSubmitting} 
+        />
         <ProductSelect form={form} products={products} disabled={isSubmitting} />
         
         <div className="grid grid-cols-2 gap-4">

@@ -14,11 +14,12 @@ import { StockOutFormContent } from "./StockOutFormContent";
 
 interface StockOutDialogProps {
   warehouses: { id: string; name: string; }[];
+  posLocations?: { id: string; name: string; }[];
   products: { id: string; name: string; reference?: string; price: number; }[];
   onSubmit: (data: StockEntryFormType) => Promise<boolean>;
 }
 
-export function StockOutDialog({ warehouses, products, onSubmit }: StockOutDialogProps) {
+export function StockOutDialog({ warehouses, posLocations = [], products, onSubmit }: StockOutDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   const handleSubmitSuccess = () => {
@@ -43,6 +44,7 @@ export function StockOutDialog({ warehouses, products, onSubmit }: StockOutDialo
         
         <StockOutFormContent 
           warehouses={warehouses} 
+          posLocations={posLocations}
           products={products} 
           onSubmit={onSubmit}
           onSubmitSuccess={handleSubmitSuccess}
