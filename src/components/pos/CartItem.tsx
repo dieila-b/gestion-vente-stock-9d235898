@@ -3,7 +3,7 @@ import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface CartItemProps {
@@ -28,15 +28,9 @@ export function CartItem({
   const [discountValue, setDiscountValue] = useState<string>(
     item.discount ? item.discount.toString() : "0"
   );
+  // État local pour contrôler complètement l'input pendant la frappe
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
-  const [isInputFocused, setIsInputFocused] = useState(false);
-
-  // Sync quantity input only when item changes and input is not focused
-  useEffect(() => {
-    if (!isInputFocused) {
-      setQuantityInput(item.quantity.toString());
-    }
-  }, [item.quantity, isInputFocused]);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -48,48 +42,64 @@ export function CartItem({
     }
   };
 
+  const handleQuantityFocus = () => {
+    setIsEditing(true);
+    // Sélectionner tout le texte pour faciliter la saisie
+    setTimeout(() => {
+      const input = document.activeElement as HTMLInputElement;
+      if (input) input.select();
+    }, 0);
+  };
+
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow any input while typing
-    setQuantityInput(value);
+    
+    // Permettre uniquement les chiffres pendant la frappe
+    if (value === "" || /^\d+$/.test(value)) {
+      setQuantityInput(value);
+    }
   };
 
-  const handleQuantityFocus = () => {
-    setIsInputFocused(true);
-  };
-
-  const handleQuantityBlur = () => {
-    setIsInputFocused(false);
+  const validateAndSetQuantity = () => {
     const value = quantityInput.trim();
     
-    // If empty or zero, reset to current quantity
+    // Si vide, restaurer la quantité actuelle
     if (value === "" || value === "0") {
       setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       return;
     }
 
     const numericValue = parseInt(value, 10);
 
-    // If invalid number, reset to current quantity
+    // Si invalide, restaurer la quantité actuelle
     if (isNaN(numericValue) || numericValue < 1) {
       setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       return;
     }
 
-    // Check stock availability
+    // Vérifier le stock disponible
     if (numericValue > availableStock) {
       toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
       setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       if (onValidationError) onValidationError(true);
       return;
     }
 
     if (onValidationError) onValidationError(false);
 
-    // Only update if the value is different
+    // Appliquer la nouvelle quantité seulement si elle est différente
     if (numericValue !== item.quantity && onSetQuantity) {
       onSetQuantity(numericValue);
     }
+    
+    setIsEditing(false);
+  };
+
+  const handleQuantityBlur = () => {
+    validateAndSetQuantity();
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -98,6 +108,7 @@ export function CartItem({
     }
     if (e.key === 'Escape') {
       setQuantityInput(item.quantity.toString());
+      setIsEditing(false);
       e.currentTarget.blur();
     }
   };
@@ -108,14 +119,25 @@ export function CartItem({
       return;
     }
     onUpdateQuantity(1);
-    // Ne pas modifier quantityInput ici - laisser useEffect s'en charger
+    // Mettre à jour l'input seulement si on n'est pas en train d'éditer
+    if (!isEditing) {
+      setQuantityInput((item.quantity + 1).toString());
+    }
   };
 
   const handleQuantityDecrease = () => {
     if (item.quantity <= 1) return;
     onUpdateQuantity(-1);
-    // Ne pas modifier quantityInput ici - laisser useEffect s'en charger
+    // Mettre à jour l'input seulement si on n'est pas en train d'éditer
+    if (!isEditing) {
+      setQuantityInput((item.quantity - 1).toString());
+    }
   };
+
+  // Synchroniser l'input avec la quantité réelle SEULEMENT quand on n'édite pas
+  if (!isEditing && quantityInput !== item.quantity.toString()) {
+    setQuantityInput(item.quantity.toString());
+  }
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
   const itemTotal = unitPriceAfterDiscount * item.quantity;
