@@ -91,19 +91,21 @@ export function DeliveryNoteList({
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => onView(note.id)}
                   title="Voir"
+                  className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
                 {onEdit && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => onEdit(note.id)}
                     title="Modifier"
+                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
@@ -112,10 +114,11 @@ export function DeliveryNoteList({
                 )}
                 {onApprove && note.status === 'pending' && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => onApprove(note.id)}
                     title="Approuver"
+                    className="h-10 w-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"></polyline>
@@ -123,11 +126,11 @@ export function DeliveryNoteList({
                   </Button>
                 )}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => onDelete(note.id)}
                   title="Supprimer"
-                  className="text-destructive hover:text-destructive"
+                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

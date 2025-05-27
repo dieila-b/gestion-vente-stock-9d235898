@@ -105,30 +105,30 @@ export function PurchaseOrderActions({
     <div className="flex items-center gap-2">
       {/* Bouton Modifier */}
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-lg border-gray-300 hover:bg-gray-50"
+        className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
         onClick={handleEdit}
         disabled={isProcessing}
         title="Modifier"
       >
-        <Pencil className="h-4 w-4 text-gray-600" />
+        <Pencil className="h-4 w-4" />
       </Button>
 
       {/* Bouton Approuver (seulement si pas encore approuvé) */}
       {canApprove && (
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg border-green-300 hover:bg-green-50"
+          className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
           onClick={handleApprove}
           disabled={isProcessing}
           title={`Approuver le bon de commande ${order.order_number}`}
         >
           {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-4 w-4" />
           )}
         </Button>
       )}
@@ -136,27 +136,27 @@ export function PurchaseOrderActions({
       {/* Bouton Supprimer (seulement si pas encore approuvé) */}
       {canApprove && (
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg border-red-300 hover:bg-red-50"
+          className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
           onClick={handleDelete}
           disabled={isProcessing}
           title="Supprimer"
         >
-          <Trash2 className="h-4 w-4 text-red-600" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       )}
 
       {/* Bouton Imprimer */}
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-lg border-blue-300 hover:bg-blue-50"
+        className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
         onClick={handlePrint}
         disabled={isProcessing}
         title="Imprimer"
       >
-        <Printer className="h-4 w-4 text-blue-600" />
+        <Printer className="h-4 w-4" />
       </Button>
     </div>
   );
