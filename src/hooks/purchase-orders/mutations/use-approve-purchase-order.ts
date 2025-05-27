@@ -39,9 +39,10 @@ export function useApprovePurchaseOrder() {
           });
         });
         
-        // Force refresh to get latest data from server
+        // Force refresh to get latest data from server after a short delay
         setTimeout(() => {
           queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+          queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
         }, 500);
       }
     },
@@ -49,6 +50,9 @@ export function useApprovePurchaseOrder() {
       console.error("[useApprovePurchaseOrder] Mutation failed:", error);
       const errorMessage = error?.message || 'Erreur inconnue lors de l\'approbation';
       toast.error(`Erreur: ${errorMessage}`);
+      
+      // Force refresh to ensure UI state is correct
+      queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
     }
   });
 }
