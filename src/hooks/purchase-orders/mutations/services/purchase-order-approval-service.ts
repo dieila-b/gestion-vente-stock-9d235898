@@ -25,16 +25,20 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
   
   try {
     // Use RPC function to securely approve the purchase order
+    console.log("[approvePurchaseOrderService] Calling RPC function approve_purchase_order");
     const { data: result, error } = await supabase.rpc('approve_purchase_order', { 
       order_id: id 
-    }) as { data: ApprovalResult | null, error: any };
+    });
       
+    console.log("[approvePurchaseOrderService] RPC raw response:", { data: result, error });
+    
     if (error) {
       console.error("[approvePurchaseOrderService] RPC error:", error);
       throw new Error(`Erreur lors de l'approbation: ${error.message}`);
     }
     
     if (!result) {
+      console.error("[approvePurchaseOrderService] No result returned from RPC");
       throw new Error("Aucun résultat retourné par la fonction d'approbation");
     }
     
@@ -59,6 +63,7 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     
     // Force refresh queries to get latest data
     try {
+      console.log("[approvePurchaseOrderService] Invalidating and refetching queries");
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       

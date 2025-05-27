@@ -33,6 +33,7 @@ export function useApprovePurchaseOrder() {
           
           return oldData.map((order: any) => {
             if (order.id === variables) {
+              console.log("[useApprovePurchaseOrder] Updating order status in cache:", variables);
               return { ...order, status: 'approved' };
             }
             return order;
@@ -41,6 +42,7 @@ export function useApprovePurchaseOrder() {
         
         // Force refresh to get latest data from server after a short delay
         setTimeout(() => {
+          console.log("[useApprovePurchaseOrder] Triggering delayed refresh");
           queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
           queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
         }, 500);
