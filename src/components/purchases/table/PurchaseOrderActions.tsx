@@ -107,7 +107,7 @@ export function PurchaseOrderActions({
       <Button
         variant="ghost"
         size="icon"
-        className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+        className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
         onClick={handleEdit}
         disabled={isProcessing}
         title="Modifier"
@@ -120,7 +120,7 @@ export function PurchaseOrderActions({
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+          className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
           onClick={handleApprove}
           disabled={isProcessing}
           title={`Approuver le bon de commande ${order.order_number}`}
