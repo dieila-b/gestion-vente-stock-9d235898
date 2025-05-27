@@ -1,10 +1,11 @@
 
 import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
-import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useQuantityValidation } from "./cart-item/useQuantityValidation";
+import { useDiscountHandling } from "./cart-item/useDiscountHandling";
+import { QuantityControls } from "./cart-item/QuantityControls";
+import { DiscountInput } from "./cart-item/DiscountInput";
 
 interface CartItemProps {
   item: CartItemType;
@@ -25,96 +26,28 @@ export function CartItem({
   availableStock = 0,
   onValidationError,
 }: CartItemProps) {
-  const [discountValue, setDiscountValue] = useState<string>(
-    item.discount ? item.discount.toString() : "0"
-  );
-  const [quantityValue, setQuantityValue] = useState<string>(
-    item.quantity.toString()
-  );
-  const [hasQuantityError, setHasQuantityError] = useState(false);
+  const {
+    quantityValue,
+    hasQuantityError,
+    handleQuantityChange,
+    handleQuantityBlur,
+    handleQuantityKeyDown,
+    setHasQuantityError,
+  } = useQuantityValidation({
+    initialQuantity: item.quantity,
+    availableStock,
+    onSetQuantity,
+    onValidationError,
+  });
 
-  // Sync quantityValue with item.quantity only when it changes externally (not from user input)
-  useEffect(() => {
-    setQuantityValue(item.quantity.toString());
-  }, [item.quantity]);
-
-  useEffect(() => {
-    setDiscountValue(item.discount ? item.discount.toString() : "0");
-  }, [item.discount]);
-
-  // Notify parent component about validation errors
-  useEffect(() => {
-    if (onValidationError) {
-      onValidationError(hasQuantityError);
-    }
-  }, [hasQuantityError, onValidationError]);
-
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setDiscountValue(newValue);
-    
-    if (onUpdateDiscount) {
-      const numericValue = newValue === "" ? 0 : parseFloat(newValue);
-      onUpdateDiscount(item.id, numericValue);
-    }
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setQuantityValue(newValue);
-    
-    // Clear any previous errors when user starts typing
-    if (hasQuantityError) {
-      setHasQuantityError(false);
-    }
-  };
-
-  const validateAndApplyQuantity = () => {
-    const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
-    
-    if (numericValue > availableStock) {
-      setHasQuantityError(true);
-      toast.error("La quantité saisie dépasse le stock disponible.");
-      // Reset to current valid quantity
-      setQuantityValue(item.quantity.toString());
-      return;
-    }
-    
-    setHasQuantityError(false);
-    
-    // Only call onSetQuantity if the value actually changed
-    if (numericValue !== item.quantity && onSetQuantity) {
-      onSetQuantity(numericValue);
-    } else if (numericValue !== parseInt(quantityValue, 10)) {
-      // Update display value to the corrected number
-      setQuantityValue(numericValue.toString());
-    }
-  };
-
-  const handleQuantityBlur = () => {
-    validateAndApplyQuantity();
-  };
-
-  const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      validateAndApplyQuantity();
-      e.currentTarget.blur();
-    }
-  };
-
-  const handleQuantityIncrease = () => {
-    if (item.quantity >= availableStock) {
-      toast.error("La quantité demandée dépasse le stock disponible pour cet article.");
-      return;
-    }
-    onUpdateQuantity(1);
-  };
-
-  const handleQuantityDecrease = () => {
-    if (item.quantity <= 1) return;
-    onUpdateQuantity(-1);
-    setHasQuantityError(false); // Clear error when decreasing
-  };
+  const {
+    discountValue,
+    handleDiscountChange,
+  } = useDiscountHandling({
+    initialDiscount: item.discount,
+    productId: item.id,
+    onUpdateDiscount,
+  });
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
   const itemTotal = unitPriceAfterDiscount * item.quantity;
@@ -126,46 +59,23 @@ export function CartItem({
           {item.name}
         </div>
         
-        <div className="col-span-2 flex items-center text-left space-x-1">
-          <button
-            className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
-            onClick={handleQuantityDecrease}
-            disabled={item.quantity <= 1}
-          >
-            -
-          </button>
-          <Input
-            type="number"
-            min="1"
-            max={availableStock}
-            className={`h-7 w-16 text-center text-sm ${
-              hasQuantityError ? 'border-red-500 bg-red-50' : ''
-            }`}
-            value={quantityValue}
-            onChange={handleQuantityChange}
-            onBlur={handleQuantityBlur}
-            onKeyDown={handleQuantityKeyDown}
-          />
-          <button
-            className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
-            onClick={handleQuantityIncrease}
-            disabled={item.quantity >= availableStock}
-          >
-            +
-          </button>
-        </div>
+        <QuantityControls
+          quantity={item.quantity}
+          quantityValue={quantityValue}
+          hasQuantityError={hasQuantityError}
+          availableStock={availableStock}
+          onUpdateQuantity={onUpdateQuantity}
+          onQuantityChange={handleQuantityChange}
+          onQuantityBlur={handleQuantityBlur}
+          onQuantityKeyDown={handleQuantityKeyDown}
+          onSetHasQuantityError={setHasQuantityError}
+        />
         
-        <div className="col-span-2 text-left">
-          {onUpdateDiscount && (
-            <Input
-              type="number"
-              min="0"
-              className="h-7 w-28 text-left"
-              value={discountValue}
-              onChange={handleDiscountChange}
-            />
-          )}
-        </div>
+        <DiscountInput
+          discountValue={discountValue}
+          onDiscountChange={handleDiscountChange}
+          onUpdateDiscount={onUpdateDiscount}
+        />
         
         <div className="col-span-2 text-left">
           {formatGNF(unitPriceAfterDiscount)}
