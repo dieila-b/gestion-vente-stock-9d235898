@@ -1407,29 +1407,70 @@ export type Database = {
       stock_transfers: {
         Row: {
           created_at: string | null
+          destination_pos_id: string | null
+          destination_warehouse_id: string | null
           from_warehouse_id: string | null
           id: string
+          notes: string | null
           product_id: string | null
           quantity: number
+          reference: string | null
+          source_pos_id: string | null
+          source_warehouse_id: string | null
+          status: string | null
           to_warehouse_id: string | null
+          transfer_date: string | null
+          transfer_type: string | null
         }
         Insert: {
           created_at?: string | null
+          destination_pos_id?: string | null
+          destination_warehouse_id?: string | null
           from_warehouse_id?: string | null
           id?: string
+          notes?: string | null
           product_id?: string | null
           quantity?: number
+          reference?: string | null
+          source_pos_id?: string | null
+          source_warehouse_id?: string | null
+          status?: string | null
           to_warehouse_id?: string | null
+          transfer_date?: string | null
+          transfer_type?: string | null
         }
         Update: {
           created_at?: string | null
+          destination_pos_id?: string | null
+          destination_warehouse_id?: string | null
           from_warehouse_id?: string | null
           id?: string
+          notes?: string | null
           product_id?: string | null
           quantity?: number
+          reference?: string | null
+          source_pos_id?: string | null
+          source_warehouse_id?: string | null
+          status?: string | null
           to_warehouse_id?: string | null
+          transfer_date?: string | null
+          transfer_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_transfers_destination_pos_id_fkey"
+            columns: ["destination_pos_id"]
+            isOneToOne: false
+            referencedRelation: "pos_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_destination_warehouse_id_fkey"
+            columns: ["destination_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_transfers_from_warehouse_id_fkey"
             columns: ["from_warehouse_id"]
@@ -1442,6 +1483,20 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_source_pos_id_fkey"
+            columns: ["source_pos_id"]
+            isOneToOne: false
+            referencedRelation: "pos_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_source_warehouse_id_fkey"
+            columns: ["source_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
           {
@@ -1800,7 +1855,15 @@ export type Database = {
         }
         Returns: Json
       }
+      bypass_insert_stock_transfer: {
+        Args: { transfer_data: Json }
+        Returns: Json
+      }
       bypass_select_purchase_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
+      bypass_select_stock_transfers: {
         Args: Record<PropertyKey, never>
         Returns: Json[]
       }

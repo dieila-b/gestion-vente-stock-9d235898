@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { transferFormSchema, TransferFormValues } from "./schemas/transfer-form-schema";
 import { TransferTypeSelect } from "./components/TransferTypeSelect";
 import { TransferLocationFields } from "./components/TransferLocationFields";
+import { useTransfersData } from "@/hooks/transfers/use-transfers-data";
 
 interface TransferDialogProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const TransferDialog = ({
   products,
 }: TransferDialogProps) => {
   const [transferType, setTransferType] = useState<"depot_to_pos" | "pos_to_depot" | "depot_to_depot" | "pos_to_pos">("depot_to_depot");
-  const [posLocations, setPosLocations] = useState<any[]>([]);
+  const { posLocations, createTransfer } = useTransfersData();
 
   // Setup form with zod validation
   const form = useForm<TransferFormValues>({
@@ -47,31 +48,6 @@ export const TransferDialog = ({
       quantity: 1
     },
   });
-
-  // Fetch POS locations
-  useEffect(() => {
-    const fetchPosLocations = async () => {
-      try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        const { data, error } = await supabase
-          .from('pos_locations')
-          .select('id, name')
-          .eq('is_active', true);
-        
-        if (error) {
-          console.error('Error fetching POS locations:', error);
-        } else {
-          setPosLocations(data || []);
-        }
-      } catch (error) {
-        console.error('Error fetching POS locations:', error);
-      }
-    };
-
-    if (isOpen) {
-      fetchPosLocations();
-    }
-  }, [isOpen]);
 
   // Handle transfer type change
   const handleTransferTypeChange = (value: string) => {
@@ -126,22 +102,17 @@ export const TransferDialog = ({
     }
   }, [isOpen, editingTransfer, form]);
 
-  // Debug logs
-  useEffect(() => {
-    console.log("TransferDialog rendering with:", {
-      warehouses: warehouses?.length,
-      warehouses_data: warehouses,
-      posLocations: posLocations?.length,
-      posLocations_data: posLocations,
-      products: products?.length,
-      products_data: products
-    });
-  }, [warehouses, posLocations, products]);
-
   // Form submission handler
-  const handleSubmit = (values: TransferFormValues) => {
-    console.log("Form values:", values);
-    onSubmit(values);
+  const handleSubmit = async (values: TransferFormValues) => {
+    console.log("Form values submitted:", values);
+    
+    try {
+      // Utiliser la fonction createTransfer du hook
+      createTransfer(values);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error submitting transfer:", error);
+    }
   };
 
   return (

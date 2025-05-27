@@ -25,15 +25,6 @@ export default function TransfersPage() {
     warehouses,
   } = useTransfers();
 
-  // Debug logs
-  useEffect(() => {
-    console.log("TransfersPage data:", {
-      warehouses: warehouses?.length,
-      warehouses_data: warehouses,
-      products: products?.length,
-    });
-  }, [warehouses, products]);
-
   const handleEdit = async (transfer: any) => {
     setEditingTransfer(transfer);
     setIsDialogOpen(true);
@@ -52,7 +43,6 @@ export default function TransfersPage() {
 
   const handleFormSubmit = async (values: any) => {
     console.log("Form submitted with values:", values);
-    // The form submission is handled by the dialog component
     setIsDialogOpen(false);
     
     // Refresh the transfers list

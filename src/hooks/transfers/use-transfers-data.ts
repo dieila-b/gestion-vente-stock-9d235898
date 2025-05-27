@@ -1,8 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
-import { db } from "@/utils/db-adapter"; 
-import { castToTransfers } from "@/utils/supabase-safe-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useTransfersData() {
   const { toast } = useToast();
@@ -17,40 +16,16 @@ export function useTransfersData() {
     queryKey: ["transfers"],
     queryFn: async () => {
       try {
-        const data = await db.query(
-          "stock_transfers",
-          query => query.select(`
-            *,
-            source_warehouse:from_warehouse_id(*),
-            destination_warehouse:to_warehouse_id(*),
-            product:product_id(*)
-          `)
-          .order("created_at", { ascending: false })
-        );
+        // Utiliser la fonction Supabase pour récupérer les transferts
+        const { data, error } = await supabase.rpc('bypass_select_stock_transfers');
+        
+        if (error) {
+          console.error("Error fetching transfers:", error);
+          throw error;
+        }
         
         console.log("Transfers data fetched:", data);
-        
-        // Add default values for potentially missing fields
-        const enhancedData = Array.isArray(data) ? data.map(transfer => {
-          // Ensure transfer is a valid object
-          if (!transfer || typeof transfer !== 'object') {
-            return {
-              id: '',
-              reference: '',
-              transfer_type: 'depot_to_depot',
-              status: 'pending',
-            };
-          }
-          
-          return {
-            ...transfer,
-            reference: transfer.reference || (transfer.id ? `T-${transfer.id.substring(0, 8)}` : 'T-Unknown'),
-            transfer_type: transfer.transfer_type || "depot_to_depot",
-            status: transfer.status || "pending",
-          };
-        }) : [];
-        
-        return enhancedData;
+        return data || [];
       } catch (error) {
         console.error("Error fetching transfers:", error);
         return [];
@@ -58,12 +33,49 @@ export function useTransfersData() {
     },
   });
 
+  const createTransferMutation = useMutation({
+    mutationFn: async (transferData: any) => {
+      console.log("Creating transfer with data:", transferData);
+      
+      // Utiliser la fonction Supabase pour insérer le transfert
+      const { data, error } = await supabase.rpc('bypass_insert_stock_transfer', {
+        transfer_data: transferData
+      });
+
+      if (error) {
+        console.error("Error creating transfer:", error);
+        throw error;
+      }
+
+      console.log("Transfer created successfully:", data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      toast({
+        title: "Transfert créé",
+        description: "Le transfert a été créé avec succès",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating transfer:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de créer le transfert",
+      });
+    },
+  });
+
   const deleteTransferMutation = useMutation({
     mutationFn: async (id: string) => {
-      const transferDeleted = await db.delete("stock_transfers", "id", id);
+      const { error } = await supabase
+        .from("stock_transfers")
+        .delete()
+        .eq("id", id);
 
-      if (!transferDeleted) {
-        throw new Error("Failed to delete transfer");
+      if (error) {
+        throw error;
       }
 
       return { success: true };
@@ -88,33 +100,22 @@ export function useTransfersData() {
   // Function to fetch a specific transfer by ID
   const fetchTransferById = async (id: string) => {
     try {
-      const data = await db.query(
-        "stock_transfers",
-        query => query.select(`
+      const { data, error } = await supabase
+        .from("stock_transfers")
+        .select(`
           *,
-          source_warehouse:from_warehouse_id(*),
-          destination_warehouse:to_warehouse_id(*),
+          source_warehouse:source_warehouse_id(*),
+          destination_warehouse:destination_warehouse_id(*),
+          source_pos:source_pos_id(*),
+          destination_pos:destination_pos_id(*),
           product:product_id(*)
         `)
         .eq("id", id)
-        .single()
-      );
+        .single();
 
-      if (!data) throw new Error("Transfer not found");
+      if (error) throw error;
       
-      // Fix: Ensure we're handling data as an object, not an array
-      // Make sure data is treated as a single object, not an array
-      const transferData = data as Record<string, any>;
-      
-      // Add default values for potentially missing fields
-      const enhancedData = {
-        ...transferData,
-        reference: transferData.reference || (transferData.id ? `T-${transferData.id.substring(0, 8)}` : 'T-Unknown'),
-        transfer_type: transferData.transfer_type || "depot_to_depot",
-        status: transferData.status || "pending",
-      };
-      
-      return enhancedData;
+      return data;
     } catch (error) {
       console.error("Error fetching transfer:", error);
       throw error;
@@ -126,10 +127,15 @@ export function useTransfersData() {
     queryKey: ["pos-locations-for-dropdown"],
     queryFn: async () => {
       try {
-        const data = await db.query(
-          "pos_locations",
-          query => query.select("id, name").eq("is_active", true)
-        );
+        const { data, error } = await supabase
+          .from("pos_locations")
+          .select("id, name")
+          .eq("is_active", true);
+        
+        if (error) {
+          console.error("Error fetching POS locations:", error);
+          return [];
+        }
         
         return data || [];
       } catch (error) {
@@ -144,10 +150,15 @@ export function useTransfersData() {
     queryKey: ["warehouses-for-dropdown"],
     queryFn: async () => {
       try {
-        const data = await db.query(
-          "warehouses",
-          query => query.select("id, name").eq("is_active", true)
-        );
+        const { data, error } = await supabase
+          .from("warehouses")
+          .select("id, name")
+          .eq("is_active", true);
+        
+        if (error) {
+          console.error("Error fetching warehouses:", error);
+          return [];
+        }
         
         return data || [];
       } catch (error) {
@@ -162,6 +173,7 @@ export function useTransfersData() {
     isLoading,
     isError,
     refetch,
+    createTransfer: createTransferMutation.mutate,
     deleteTransfer: deleteTransferMutation.mutate,
     fetchTransferById,
     posLocations,
