@@ -24,14 +24,15 @@ export function usePurchaseOrders() {
     console.log("[usePurchaseOrders] Refreshing purchase orders...");
     
     try {
-      // Force a refetch with our specialized function
-      const result = await refreshPurchaseOrders();
-      console.log("[usePurchaseOrders] Refresh result:", result);
+      // Invalidate and refetch purchase orders
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      const result = await queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
       
       // Also refresh delivery notes
       await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       await queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
       
+      console.log("[usePurchaseOrders] Refresh completed:", result);
       return result;
     } catch (refreshError: any) {
       console.error("[usePurchaseOrders] Exception during refresh:", refreshError);
@@ -40,7 +41,7 @@ export function usePurchaseOrders() {
     }
   };
 
-  // Handle the approve function with better error handling
+  // Handle the approve function with better error handling and UI feedback
   const handleApprove = async (id: string): Promise<void> => {
     if (!id) {
       console.error("[usePurchaseOrders] No order ID provided");
@@ -60,20 +61,24 @@ export function usePurchaseOrders() {
         return;
       }
 
+      if (orderToApprove.status === 'approved') {
+        console.log("[usePurchaseOrders] Order already approved:", id);
+        toast.info("Ce bon de commande est déjà approuvé");
+        return;
+      }
+
       console.log("[usePurchaseOrders] Order found, proceeding with approval:", orderToApprove.order_number);
       
-      // Use the mutation directly
+      // Use the mutation and wait for completion
       const result = await approveOrderMutation.mutateAsync(id);
-      console.log("[usePurchaseOrders] Approval completed:", result);
+      console.log("[usePurchaseOrders] Approval completed successfully:", result);
       
       // Force refresh the data after successful approval
       await refreshOrders();
         
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleApprove:", error);
-      
-      // Don't show toast here as the mutation already handles it
-      // Just log the error for debugging
+      // Error is already handled by the mutation's onError
     } finally {
       setProcessingOrderId(null);
     }

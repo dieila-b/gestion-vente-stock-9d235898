@@ -43,6 +43,11 @@ export function PurchaseOrderActions({
       return;
     }
     
+    if (order.status === 'approved') {
+      toast.info("Ce bon de commande est déjà approuvé");
+      return;
+    }
+    
     try {
       console.log(`[PurchaseOrderActions] Starting approval for order: ${order.id}, ${order.order_number}`);
       setLocalProcessing(true);
@@ -52,7 +57,7 @@ export function PurchaseOrderActions({
       
     } catch (error: any) {
       console.error("[PurchaseOrderActions] Error in approve handler:", error);
-      // Don't show toast here as the parent handler already shows it
+      toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
     } finally {
       setLocalProcessing(false);
     }
@@ -118,7 +123,7 @@ export function PurchaseOrderActions({
           className="h-8 w-8 rounded-lg border-green-300 hover:bg-green-50"
           onClick={handleApprove}
           disabled={isProcessing}
-          title="Approuver"
+          title={`Approuver le bon de commande ${order.order_number}`}
         >
           {isProcessing ? (
             <Loader2 className="h-4 w-4 animate-spin text-green-600" />

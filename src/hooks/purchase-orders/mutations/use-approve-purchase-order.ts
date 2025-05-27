@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { approvePurchaseOrderService } from "./services/purchase-order-approval-service";
 
 /**
- * Hook for approving purchase orders
+ * Hook for approving purchase orders with improved error handling
  * @returns Mutation object with mutateAsync function
  */
 export function useApprovePurchaseOrder() {
@@ -27,19 +27,28 @@ export function useApprovePurchaseOrder() {
       console.log("[useApprovePurchaseOrder] Mutation successful:", data);
       
       if (!data?.alreadyApproved) {
-        // Force refresh of purchase orders list
-        queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+        // Force immediate UI update
+        queryClient.setQueryData(['purchase-orders'], (oldData: any) => {
+          if (!oldData) return oldData;
+          
+          return oldData.map((order: any) => {
+            if (order.id === variables) {
+              return { ...order, status: 'approved' };
+            }
+            return order;
+          });
+        });
         
-        // Show success message only if not already approved
-        if (data?.success) {
-          toast.success("Bon de commande approuvé avec succès");
-        }
+        // Force refresh to get latest data from server
+        setTimeout(() => {
+          queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+        }, 500);
       }
     },
     onError: (error: any, variables) => {
       console.error("[useApprovePurchaseOrder] Mutation failed:", error);
       const errorMessage = error?.message || 'Erreur inconnue lors de l\'approbation';
-      toast.error(`Erreur lors de l'approbation: ${errorMessage}`);
+      toast.error(`Erreur: ${errorMessage}`);
     }
   });
 }
