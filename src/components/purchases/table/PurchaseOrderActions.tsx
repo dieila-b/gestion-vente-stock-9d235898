@@ -38,16 +38,9 @@ export function PurchaseOrderActions({
       console.log(`[PurchaseOrderActions] Starting approval for order: ${order.id}, ${order.order_number}`);
       setLocalProcessing(true);
       
-      if (!order.warehouse_id) {
-        toast.error("Impossible d'approuver: l'entrepôt n'est pas spécifié pour cette commande");
-        return;
-      }
-      
       await onApprove(order.id);
       console.log(`[PurchaseOrderActions] Approval completed for order: ${order.id}`);
       
-      // Afficher une confirmation visuelle claire
-      toast.success(`Commande ${order.order_number} approuvée avec succès`);
     } catch (error: any) {
       console.error("[PurchaseOrderActions] Error in approve handler:", error);
       toast.error(`Erreur lors de l'approbation: ${error.message || "Erreur inconnue"}`);

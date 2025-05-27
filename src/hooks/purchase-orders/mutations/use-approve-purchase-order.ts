@@ -1,8 +1,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { syncApprovedPurchaseOrders } from "@/hooks/delivery-notes/sync/sync-approved-purchase-orders";
-import { createDeliveryNoteDirectly } from "./utils/delivery-note-creator";
 import { approvePurchaseOrderService } from "./services/purchase-order-approval-service";
 
 /**
@@ -20,31 +18,7 @@ export function useApprovePurchaseOrder() {
         // Process approval using the service
         const result = await approvePurchaseOrderService(id, queryClient);
         
-        // Handle synchronization with delivery notes
-        try {
-          console.log("[useApprovePurchaseOrder] Starting sync after approval");
-          const syncResult = await syncApprovedPurchaseOrders(id);
-          console.log("[useApprovePurchaseOrder] Sync result after approval:", syncResult);
-          
-          // Invalidate queries to reflect changes
-          await queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
-          
-          if (!syncResult) {
-            console.log("[useApprovePurchaseOrder] No delivery note created, attempting direct creation...");
-            await createDeliveryNoteDirectly(id);
-          }
-        } catch (syncError: any) {
-          console.error("[useApprovePurchaseOrder] Error in sync after approval:", syncError);
-          toast.error(`Erreur pendant la synchronisation: ${syncError.message || 'Erreur inconnue'}`);
-          
-          try {
-            console.log("[useApprovePurchaseOrder] Attempting fallback creation of delivery note");
-            await createDeliveryNoteDirectly(id);
-          } catch (fallbackError: any) {
-            console.error("[useApprovePurchaseOrder] Fallback creation failed:", fallbackError);
-          }
-        }
-        
+        console.log("[useApprovePurchaseOrder] Approval process completed:", result);
         return result;
       } catch (error: any) {
         console.error("[useApprovePurchaseOrder] Error in approval process:", error);
