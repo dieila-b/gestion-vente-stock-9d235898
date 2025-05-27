@@ -1,7 +1,8 @@
 
 import { CartItem as CartItemType } from "@/types/pos";
-import { CartItem } from "../CartItem";
+import { CartItem } from "@/components/pos/CartItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useCallback } from "react";
 
 interface CartItemsProps {
   items: CartItemType[];
@@ -12,6 +13,7 @@ interface CartItemsProps {
   hasOutOfStockItems: boolean;
   hasLowStockItems: boolean;
   availableStock?: Record<string, number>;
+  onValidationChange?: (hasErrors: boolean) => void;
 }
 
 export function CartItems({
@@ -22,8 +24,25 @@ export function CartItems({
   onSetQuantity,
   hasOutOfStockItems,
   hasLowStockItems,
-  availableStock = {}
+  availableStock = {},
+  onValidationChange
 }: CartItemsProps) {
+  const [itemErrors, setItemErrors] = useState<Record<string, boolean>>({});
+
+  const handleItemValidationError = useCallback((itemId: string, hasError: boolean) => {
+    setItemErrors(prev => {
+      const newErrors = { ...prev, [itemId]: hasError };
+      
+      // Check if any item has errors
+      const hasAnyErrors = Object.values(newErrors).some(error => error);
+      if (onValidationChange) {
+        onValidationChange(hasAnyErrors);
+      }
+      
+      return newErrors;
+    });
+  }, [onValidationChange]);
+
   return (
     <>
       {items.length > 0 && (
@@ -46,6 +65,7 @@ export function CartItems({
               onRemove={() => onRemove(item.id)}
               onSetQuantity={onSetQuantity ? (quantity) => onSetQuantity(item.id, quantity) : undefined}
               availableStock={availableStock[item.id] || 0}
+              onValidationError={(hasError) => handleItemValidationError(item.id, hasError)}
             />
           ))}
           {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (

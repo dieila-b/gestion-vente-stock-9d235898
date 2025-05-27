@@ -44,6 +44,7 @@ export function Cart({
 }: CartProps) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [hasValidationErrors, setHasValidationErrors] = useState(false);
   const { toast } = useToast();
 
   const handlePrint = () => {
@@ -57,6 +58,7 @@ export function Cart({
   const handleClear = () => {
     if (clearCart) {
       clearCart();
+      setHasValidationErrors(false); // Reset validation errors when clearing cart
       toast({
         title: "Panier annulé",
         description: "Le panier a été vidé"
@@ -92,6 +94,15 @@ export function Cart({
       toast({
         title: "Erreur",
         description: "Veuillez sélectionner un client",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (hasValidationErrors) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez corriger les erreurs de quantité avant de procéder au paiement",
         variant: "destructive"
       });
       return;
@@ -137,11 +148,18 @@ export function Cart({
             hasOutOfStockItems={false}
             hasLowStockItems={false}
             availableStock={availableStock}
+            onValidationChange={setHasValidationErrors}
           />
         )}
       </div>
 
       <div className="sticky bottom-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
+        {hasValidationErrors && (
+          <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+            ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
+          </div>
+        )}
+        
         <CartSummary
           subtotal={subtotal}
           totalDiscount={totalDiscount}
