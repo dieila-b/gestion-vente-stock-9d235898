@@ -55,13 +55,14 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     
     console.log("[approvePurchaseOrderService] Purchase order approved successfully:", updatedOrder);
     
-    // 3. Create delivery note - don't fail if warehouse_id is missing
+    // 3. Create delivery note
     let deliveryNoteCreated = false;
     try {
       // Generate delivery number
       const deliveryNumber = 'BL-' + (order.order_number?.replace('BC-', '') || `${Date.now()}`);
       
-      const deliveryNoteData = {
+      // Create delivery note data object
+      const deliveryNoteData: any = {
         supplier_id: order.supplier_id,
         purchase_order_id: id,
         delivery_number: deliveryNumber,
