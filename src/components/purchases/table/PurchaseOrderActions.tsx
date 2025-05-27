@@ -1,12 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Printer, Check, Trash2, Pencil, Loader2 } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { Printer, Check, Trash2, Pencil, Loader2 } from "lucide-react";
 import { PurchaseOrder } from "@/types/purchase-order";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -64,73 +58,73 @@ export function PurchaseOrderActions({
 
   return (
     <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {canApprove && (
-            <DropdownMenuItem 
-              onClick={handleApprove}
-              disabled={isProcessing}
-              className="cursor-pointer"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Traitement...
-                </>
-              ) : (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Approuver
-                </>
-              )}
-            </DropdownMenuItem>
+      {/* Bouton Modifier */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8 rounded-lg border-gray-300 hover:bg-gray-50"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEdit(order.id);
+        }}
+        disabled={isProcessing}
+        title="Modifier"
+      >
+        <Pencil className="h-4 w-4 text-gray-600" />
+      </Button>
+
+      {/* Bouton Approuver (seulement si pas encore approuvé) */}
+      {canApprove && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-lg border-green-300 hover:bg-green-50"
+          onClick={handleApprove}
+          disabled={isProcessing}
+          title="Approuver"
+        >
+          {isProcessing ? (
+            <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+          ) : (
+            <Check className="h-4 w-4 text-green-600" />
           )}
-          <DropdownMenuItem 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onEdit(order.id);
-            }}
-            disabled={isProcessing}
-            className="cursor-pointer"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Modifier
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onPrint(order);
-            }}
-            disabled={isProcessing}
-            className="cursor-pointer"
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimer
-          </DropdownMenuItem>
-          {canApprove && (
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onDelete(order.id);
-              }}
-              disabled={isProcessing}
-              className="text-red-600 cursor-pointer"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </Button>
+      )}
+
+      {/* Bouton Supprimer (seulement si pas encore approuvé) */}
+      {canApprove && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-lg border-red-300 hover:bg-red-50"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(order.id);
+          }}
+          disabled={isProcessing}
+          title="Supprimer"
+        >
+          <Trash2 className="h-4 w-4 text-red-600" />
+        </Button>
+      )}
+
+      {/* Bouton Imprimer */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8 rounded-lg border-blue-300 hover:bg-blue-50"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onPrint(order);
+        }}
+        disabled={isProcessing}
+        title="Imprimer"
+      >
+        <Printer className="h-4 w-4 text-blue-600" />
+      </Button>
     </div>
   );
 }
