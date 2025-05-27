@@ -6,7 +6,7 @@ export const transferFormSchema = z.object({
   source_pos_id: z.string().optional(),
   destination_warehouse_id: z.string().optional(),
   destination_pos_id: z.string().optional(),
-  transfer_type: z.enum(["depot_to_pos", "pos_to_depot", "depot_to_depot"], {
+  transfer_type: z.enum(["depot_to_pos", "pos_to_depot", "depot_to_depot", "pos_to_pos"], {
     required_error: "Veuillez sélectionner un type de transfert"
   }),
   notes: z.string().optional(),
@@ -68,6 +68,28 @@ export const transferFormSchema = z.object({
         code: "custom",
         message: "Les dépôts source et destination doivent être différents",
         path: ["destination_warehouse_id"],
+      });
+    }
+  } else if (data.transfer_type === 'pos_to_pos') {
+    if (!data.source_pos_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Le point de vente source est requis",
+        path: ["source_pos_id"],
+      });
+    }
+    if (!data.destination_pos_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Le point de vente de destination est requis",
+        path: ["destination_pos_id"],
+      });
+    }
+    if (data.source_pos_id === data.destination_pos_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Les points de vente source et destination doivent être différents",
+        path: ["destination_pos_id"],
       });
     }
   }

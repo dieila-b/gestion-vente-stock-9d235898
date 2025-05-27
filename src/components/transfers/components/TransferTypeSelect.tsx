@@ -29,6 +29,7 @@ export const TransferTypeSelect = ({
           <SelectItem value="depot_to_pos">Dépôt → Point de vente</SelectItem>
           <SelectItem value="pos_to_depot">Point de vente → Dépôt</SelectItem>
           <SelectItem value="depot_to_depot">Dépôt → Dépôt</SelectItem>
+          <SelectItem value="pos_to_pos">Point de vente → Point de vente</SelectItem>
         </SelectContent>
       </Select>
       <FormMessage />

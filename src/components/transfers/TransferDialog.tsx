@@ -7,17 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-// Define a simple schema for the transfer form
-const transferFormSchema = z.object({
-  from_warehouse_id: z.string().min(1, "Veuillez sélectionner un entrepôt source"),
-  to_warehouse_id: z.string().min(1, "Veuillez sélectionner un entrepôt destination"),
-  product_id: z.string().min(1, "Veuillez sélectionner un produit"),
-  quantity: z.number().min(1, "La quantité doit être supérieure à 0")
-});
-
-type TransferFormValues = z.infer<typeof transferFormSchema>;
+import { transferFormSchema, TransferFormValues } from "./schemas/transfer-form-schema";
+import { TransferTypeSelect } from "./components/TransferTypeSelect";
+import { TransferLocationFields } from "./components/TransferLocationFields";
 
 interface TransferDialogProps {
   isOpen: boolean;
@@ -36,33 +28,97 @@ export const TransferDialog = ({
   warehouses,
   products,
 }: TransferDialogProps) => {
+  const [transferType, setTransferType] = useState<"depot_to_pos" | "pos_to_depot" | "depot_to_depot" | "pos_to_pos">("depot_to_depot");
+  const [posLocations, setPosLocations] = useState<any[]>([]);
+
   // Setup form with zod validation
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
-      from_warehouse_id: "",
-      to_warehouse_id: "",
+      source_warehouse_id: "",
+      source_pos_id: "",
+      destination_warehouse_id: "",
+      destination_pos_id: "",
+      transfer_type: "depot_to_depot",
+      notes: "",
+      status: "pending",
+      transfer_date: new Date().toISOString().split("T")[0],
       product_id: "",
       quantity: 1
     },
   });
+
+  // Fetch POS locations
+  useEffect(() => {
+    const fetchPosLocations = async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase
+          .from('pos_locations')
+          .select('id, name')
+          .eq('is_active', true);
+        
+        if (error) {
+          console.error('Error fetching POS locations:', error);
+        } else {
+          setPosLocations(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching POS locations:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchPosLocations();
+    }
+  }, [isOpen]);
+
+  // Handle transfer type change
+  const handleTransferTypeChange = (value: string) => {
+    const newType = value as "depot_to_pos" | "pos_to_depot" | "depot_to_depot" | "pos_to_pos";
+    setTransferType(newType);
+    form.setValue("transfer_type", newType);
+    
+    // Reset location fields when type changes
+    form.setValue("source_warehouse_id", "");
+    form.setValue("source_pos_id", "");
+    form.setValue("destination_warehouse_id", "");
+    form.setValue("destination_pos_id", "");
+  };
 
   // Reset form when dialog opens/closes or when editingTransfer changes
   useEffect(() => {
     if (isOpen) {
       if (editingTransfer) {
         // If editing, populate form with transfer data
+        const transferTypeValue = editingTransfer.transfer_type || "depot_to_depot";
+        setTransferType(transferTypeValue);
         form.reset({
-          from_warehouse_id: editingTransfer.from_warehouse_id,
-          to_warehouse_id: editingTransfer.to_warehouse_id,
-          product_id: editingTransfer.product_id,
-          quantity: editingTransfer.quantity
+          source_warehouse_id: editingTransfer.source_warehouse_id || "",
+          source_pos_id: editingTransfer.source_pos_id || "",
+          destination_warehouse_id: editingTransfer.destination_warehouse_id || "",
+          destination_pos_id: editingTransfer.destination_pos_id || "",
+          transfer_type: transferTypeValue,
+          notes: editingTransfer.notes || "",
+          status: editingTransfer.status || "pending",
+          transfer_date: editingTransfer.transfer_date ? 
+            new Date(editingTransfer.transfer_date).toISOString().split("T")[0] : 
+            new Date().toISOString().split("T")[0],
+          product_id: editingTransfer.product_id || "",
+          quantity: editingTransfer.quantity || 1
         });
       } else {
         // If creating, reset to defaults
+        setTransferType("depot_to_depot");
         form.reset({
-          from_warehouse_id: "",
-          to_warehouse_id: "",
+          source_warehouse_id: "",
+          source_pos_id: "",
+          destination_warehouse_id: "",
+          destination_pos_id: "",
+          transfer_type: "depot_to_depot",
+          notes: "",
+          status: "pending",
+          transfer_date: new Date().toISOString().split("T")[0],
           product_id: "",
           quantity: 1
         });
@@ -75,10 +131,12 @@ export const TransferDialog = ({
     console.log("TransferDialog rendering with:", {
       warehouses: warehouses?.length,
       warehouses_data: warehouses,
+      posLocations: posLocations?.length,
+      posLocations_data: posLocations,
       products: products?.length,
       products_data: products
     });
-  }, [warehouses, products]);
+  }, [warehouses, posLocations, products]);
 
   // Form submission handler
   const handleSubmit = (values: TransferFormValues) => {
@@ -96,73 +154,31 @@ export const TransferDialog = ({
           <DialogDescription>
             {editingTransfer ? 
               "Modifiez les informations du transfert ci-dessous." :
-              "Créez un nouveau transfert entre entrepôts."}
+              "Créez un nouveau transfert entre emplacements."}
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 mt-4">
             <div className="grid grid-cols-1 gap-4">
-              {/* Source Warehouse */}
+              {/* Transfer Type */}
               <FormField
                 control={form.control}
-                name="from_warehouse_id"
+                name="transfer_type"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Entrepôt source</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner l'entrepôt source" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {warehouses?.map((warehouse) => (
-                          <SelectItem key={warehouse.id} value={warehouse.id}>
-                            {warehouse.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                  <TransferTypeSelect 
+                    field={field} 
+                    onTypeChange={handleTransferTypeChange} 
+                  />
                 )}
               />
-              
-              {/* Destination Warehouse */}
-              <FormField
-                control={form.control}
-                name="to_warehouse_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Entrepôt destination</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner l'entrepôt destination" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {warehouses?.map((warehouse) => (
-                          <SelectItem 
-                            key={warehouse.id} 
-                            value={warehouse.id}
-                            disabled={warehouse.id === form.watch('from_warehouse_id')}
-                          >
-                            {warehouse.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+
+              {/* Location Fields */}
+              <TransferLocationFields 
+                form={form} 
+                warehouses={warehouses} 
+                posLocations={posLocations}
+                transferType={transferType}
               />
               
               {/* Product */}
@@ -213,6 +229,24 @@ export const TransferDialog = ({
                         min={1} 
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Notes */}
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Notes sur le transfert..."
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />

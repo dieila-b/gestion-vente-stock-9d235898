@@ -9,7 +9,7 @@ interface TransferLocationFieldsProps {
   form: UseFormReturn<TransferFormValues>;
   warehouses: any[];
   posLocations: any[];
-  transferType: "depot_to_pos" | "pos_to_depot" | "depot_to_depot";
+  transferType: "depot_to_pos" | "pos_to_depot" | "depot_to_depot" | "pos_to_pos";
 }
 
 export const TransferLocationFields = ({
@@ -31,6 +31,7 @@ export const TransferLocationFields = ({
 
   return (
     <>
+      {/* Source Location */}
       {(transferType === 'depot_to_pos' || transferType === 'depot_to_depot') && (
         <FormField
           control={form.control}
@@ -70,7 +71,7 @@ export const TransferLocationFields = ({
         />
       )}
 
-      {transferType === 'pos_to_depot' && (
+      {(transferType === 'pos_to_depot' || transferType === 'pos_to_pos') && (
         <FormField
           control={form.control}
           name="source_pos_id"
@@ -94,7 +95,11 @@ export const TransferLocationFields = ({
                 >
                   {safePosLocations.length > 0 ? (
                     safePosLocations.map((pos) => (
-                      <SelectItem key={pos.id} value={pos.id}>
+                      <SelectItem 
+                        key={pos.id} 
+                        value={pos.id}
+                        disabled={transferType === 'pos_to_pos' && pos.id === form.watch('destination_pos_id')}
+                      >
                         {pos.name}
                       </SelectItem>
                     ))
@@ -109,6 +114,7 @@ export const TransferLocationFields = ({
         />
       )}
 
+      {/* Destination Location */}
       {(transferType === 'pos_to_depot' || transferType === 'depot_to_depot') && (
         <FormField
           control={form.control}
@@ -152,7 +158,7 @@ export const TransferLocationFields = ({
         />
       )}
 
-      {transferType === 'depot_to_pos' && (
+      {(transferType === 'depot_to_pos' || transferType === 'pos_to_pos') && (
         <FormField
           control={form.control}
           name="destination_pos_id"
@@ -176,7 +182,11 @@ export const TransferLocationFields = ({
                 >
                   {safePosLocations.length > 0 ? (
                     safePosLocations.map((pos) => (
-                      <SelectItem key={pos.id} value={pos.id}>
+                      <SelectItem 
+                        key={pos.id} 
+                        value={pos.id}
+                        disabled={transferType === 'pos_to_pos' && pos.id === form.watch('source_pos_id')}
+                      >
                         {pos.name}
                       </SelectItem>
                     ))
