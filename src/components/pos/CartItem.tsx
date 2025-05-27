@@ -3,7 +3,7 @@ import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 interface CartItemProps {
@@ -29,6 +29,14 @@ export function CartItem({
     item.discount ? item.discount.toString() : "0"
   );
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Sync quantity input only when item changes and input is not focused
+  useEffect(() => {
+    if (!isInputFocused) {
+      setQuantityInput(item.quantity.toString());
+    }
+  }, [item.quantity, isInputFocused]);
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -46,7 +54,12 @@ export function CartItem({
     setQuantityInput(value);
   };
 
+  const handleQuantityFocus = () => {
+    setIsInputFocused(true);
+  };
+
   const handleQuantityBlur = () => {
+    setIsInputFocused(false);
     const value = quantityInput.trim();
     
     // If empty or zero, reset to current quantity
@@ -77,9 +90,6 @@ export function CartItem({
     if (numericValue !== item.quantity && onSetQuantity) {
       onSetQuantity(numericValue);
     }
-    
-    // Always sync the input with the actual quantity after validation
-    setQuantityInput(numericValue.toString());
   };
 
   const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -98,13 +108,13 @@ export function CartItem({
       return;
     }
     onUpdateQuantity(1);
-    setQuantityInput((item.quantity + 1).toString());
+    // Ne pas modifier quantityInput ici - laisser useEffect s'en charger
   };
 
   const handleQuantityDecrease = () => {
     if (item.quantity <= 1) return;
     onUpdateQuantity(-1);
-    setQuantityInput((item.quantity - 1).toString());
+    // Ne pas modifier quantityInput ici - laisser useEffect s'en charger
   };
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
@@ -131,6 +141,7 @@ export function CartItem({
               className="h-7 w-16 text-center text-sm"
               value={quantityInput}
               onChange={handleQuantityChange}
+              onFocus={handleQuantityFocus}
               onBlur={handleQuantityBlur}
               onKeyDown={handleQuantityKeyDown}
               inputMode="numeric"
