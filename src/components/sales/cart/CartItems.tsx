@@ -11,6 +11,7 @@ interface CartItemsProps {
   onSetQuantity?: (productId: string, quantity: number) => void;
   hasOutOfStockItems: boolean;
   hasLowStockItems: boolean;
+  availableStock?: Record<string, number>;
 }
 
 export function CartItems({
@@ -20,7 +21,8 @@ export function CartItems({
   onUpdateDiscount,
   onSetQuantity,
   hasOutOfStockItems,
-  hasLowStockItems
+  hasLowStockItems,
+  availableStock = {}
 }: CartItemsProps) {
   return (
     <>
@@ -45,6 +47,7 @@ export function CartItems({
               onSetQuantity={onSetQuantity ? 
                 (quantity) => onSetQuantity(item.id, quantity)
                 : undefined}
+              availableStock={availableStock[item.id] || 0}
             />
           ))}
           {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (

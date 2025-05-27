@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { CartItem as CartItemType } from "@/types/pos";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Client } from "@/types/client_unified";  // Updated import
+import { Client } from "@/types/client_unified";
 
 import { CartHeader } from "./cart/CartHeader";
 import { CartItems } from "./cart/CartItems";
@@ -24,6 +24,7 @@ interface CartProps {
   selectedClient: Client | null;
   clearCart?: () => void;
   onSetQuantity?: (productId: string, quantity: number) => void;
+  availableStock?: Record<string, number>;
 }
 
 export function Cart({ 
@@ -38,7 +39,8 @@ export function Cart({
   isLoading,
   selectedClient,
   clearCart,
-  onSetQuantity
+  onSetQuantity,
+  availableStock = {}
 }: CartProps) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -132,6 +134,9 @@ export function Cart({
             onRemove={onRemove}
             onUpdateDiscount={onUpdateDiscount}
             onSetQuantity={onSetQuantity}
+            hasOutOfStockItems={false}
+            hasLowStockItems={false}
+            availableStock={availableStock}
           />
         )}
       </div>

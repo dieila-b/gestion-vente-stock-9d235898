@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Client } from "@/types/client";
 import { toast } from "sonner";
 import { safeFetchFromTable } from "@/utils/supabase-safe-query";
+import { UserPlus } from "lucide-react";
+import { QuickClientForm } from "./QuickClientForm";
 
 interface ClientSelectProps {
   selectedClient: Client | null;
@@ -15,6 +17,7 @@ interface ClientSelectProps {
 
 export function ClientSelect({ selectedClient, onClientSelect }: ClientSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isQuickFormOpen, setIsQuickFormOpen] = useState(false);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients'],
@@ -42,6 +45,11 @@ export function ClientSelect({ selectedClient, onClientSelect }: ClientSelectPro
     client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleClientCreated = (newClient: Client) => {
+    onClientSelect(newClient);
+    setIsQuickFormOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
@@ -50,8 +58,16 @@ export function ClientSelect({ selectedClient, onClientSelect }: ClientSelectPro
           placeholder="Rechercher un client..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
+          className="flex-1"
         />
+        <Button 
+          variant="outline" 
+          onClick={() => setIsQuickFormOpen(true)}
+          className="flex items-center space-x-2"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Nouveau client</span>
+        </Button>
         {selectedClient && (
           <Button 
             variant="ghost" 
@@ -93,6 +109,12 @@ export function ClientSelect({ selectedClient, onClientSelect }: ClientSelectPro
           )}
         </div>
       )}
+      
+      <QuickClientForm
+        isOpen={isQuickFormOpen}
+        onClose={() => setIsQuickFormOpen(false)}
+        onClientCreated={handleClientCreated}
+      />
     </div>
   );
 }

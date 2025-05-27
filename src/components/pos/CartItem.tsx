@@ -4,6 +4,7 @@ import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface CartItemProps {
   item: CartItemType;
@@ -11,6 +12,7 @@ interface CartItemProps {
   onUpdateDiscount?: (productId: string, discount: number) => void;
   onRemove: () => void;
   onSetQuantity?: (quantity: number) => void;
+  availableStock?: number;
 }
 
 export function CartItem({
@@ -19,6 +21,7 @@ export function CartItem({
   onUpdateDiscount,
   onRemove,
   onSetQuantity,
+  availableStock = 0,
 }: CartItemProps) {
   const [discountValue, setDiscountValue] = useState<string>(
     item.discount ? item.discount.toString() : "0"
@@ -52,6 +55,14 @@ export function CartItem({
 
   const handleQuantityBlur = () => {
     const numericValue = quantityValue === "" ? 1 : Math.max(1, parseInt(quantityValue, 10));
+    
+    // Vérifier si la quantité demandée dépasse le stock disponible
+    if (numericValue > availableStock) {
+      toast.error("Quantité demandée supérieure au stock disponible.");
+      setQuantityValue(Math.min(item.quantity, availableStock).toString());
+      return;
+    }
+    
     setQuantityValue(numericValue.toString());
     if (onSetQuantity) {
       onSetQuantity(numericValue);
@@ -62,6 +73,14 @@ export function CartItem({
     if (e.key === 'Enter') {
       handleQuantityBlur();
     }
+  };
+
+  const handleQuantityIncrease = () => {
+    if (item.quantity >= availableStock) {
+      toast.error("Quantité demandée supérieure au stock disponible.");
+      return;
+    }
+    onUpdateQuantity(1);
   };
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
@@ -86,6 +105,7 @@ export function CartItem({
           <Input
             type="number"
             min="1"
+            max={availableStock}
             className="h-7 w-16 text-center text-sm"
             value={quantityValue}
             onChange={handleQuantityChange}
@@ -94,7 +114,7 @@ export function CartItem({
           />
           <button
             className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
-            onClick={() => onUpdateQuantity(1)}
+            onClick={handleQuantityIncrease}
           >
             +
           </button>

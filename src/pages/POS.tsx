@@ -10,7 +10,8 @@ import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AlertCircle } from "lucide-react";
-import { Client } from "@/types/client_unified"; // Use unified client type
+import { Client } from "@/types/client_unified";
+import { toast } from "sonner";
 
 export default function POS() {
   const [searchParams] = useSearchParams();
@@ -84,9 +85,14 @@ export default function POS() {
   }, [currentProducts, availableStock, updateAvailableStock]);
 
   const handleAddToCart = (product: Product) => {
-    // Pass the current stock when adding to cart
+    // Vérifier le stock disponible avant d'ajouter
     const stockItem = stockItems.find(item => item.product_id === product.id);
     const currentStock = stockItem ? stockItem.quantity : product.stock || 0;
+    
+    if (currentStock <= 0) {
+      toast.error("Produit en rupture de stock");
+      return;
+    }
     
     addToCart(product, currentStock);
   };
@@ -147,6 +153,7 @@ export default function POS() {
               selectedClient={selectedClient}
               clearCart={clearCart}
               onSetQuantity={setQuantity}
+              availableStock={availableStock}
             />
           </div>
         </div>
