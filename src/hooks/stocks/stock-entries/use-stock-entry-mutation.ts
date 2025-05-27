@@ -24,10 +24,15 @@ export function useStockEntryMutation() {
           throw new Error("La quantité doit être positive");
         }
 
-        // Création directe de l'entrée de stock sans vérifications de tables
+        // Création de l'entrée de stock
         console.log("Calling createStockEntryInDb with validated data...");
         const result = await createStockEntryInDb(data);
         console.log("createStockEntryInDb result:", result);
+        
+        if (!result) {
+          throw new Error("L'entrée de stock a échoué sans erreur spécifique");
+        }
+        
         return result;
       } catch (error: any) {
         console.error("Erreur dans createStockEntry:", error);
@@ -37,6 +42,7 @@ export function useStockEntryMutation() {
       }
     },
     onSuccess: () => {
+      console.log("Entrée de stock réussie - Invalidation des requêtes");
       toast.success("Entrée de stock réussie", {
         description: "L'entrée de stock a été enregistrée avec succès."
       });
@@ -72,5 +78,5 @@ export function invalidateStockQueries(queryClient: ReturnType<typeof useQueryCl
     queryClient.refetchQueries({ queryKey: ['stock-movements'] });
     queryClient.refetchQueries({ queryKey: ['warehouse-stock'] });
     queryClient.refetchQueries({ queryKey: ['stock_principal'] });
-  }, 1000);  // Augmentation du délai à 1000ms pour donner plus de temps
+  }, 1000);
 }
