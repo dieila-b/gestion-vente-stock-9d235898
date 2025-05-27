@@ -1,69 +1,44 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
-import { db } from "@/utils/db-core";
-import { transformDeliveryNotes } from "./data/transform-delivery-notes";
-import { syncApprovedPurchaseOrders } from "./sync/sync-approved-purchase-orders";
 
 /**
- * Hook to fetch delivery notes from the database.
- * Also triggers synchronization of approved purchase orders to create delivery notes.
+ * Hook to fetch delivery notes from the database using the new RPC function
  */
 export function useFetchDeliveryNotes() {
   return useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
-      console.log("Fetching delivery notes...");
+      console.log("Fetching delivery notes using RPC function...");
       try {
-        // First sync approved purchase orders to create any missing delivery notes
-        console.log("Syncing approved purchase orders before fetching delivery notes...");
-        await syncApprovedPurchaseOrders();
-        
-        // Then fetch all delivery notes using our db utility for more reliable results
-        const deliveryNotesData = await db.query(
-          'delivery_notes',
-          q => q.select(`
-            id,
-            delivery_number,
-            created_at,
-            updated_at,
-            notes,
-            status,
-            purchase_order_id,
-            supplier_id,
-            supplier:suppliers (
-              id,
-              name,
-              phone,
-              email
-            ),
-            purchase_order:purchase_orders (
-              id,
-              order_number,
-              total_amount
-            ),
-            items:delivery_note_items (
-              id,
-              product_id,
-              quantity_ordered,
-              quantity_received,
-              unit_price,
-              product:catalog (
-                id,
-                name,
-                reference
-              )
-            )
-          `)
-          .eq('deleted', false)
-          .order('created_at', { ascending: false }),
-          []
-        );
+        // Use the new RPC function for better performance and consistency
+        const { data: deliveryNotesData, error } = await supabase
+          .rpc('bypass_select_delivery_notes');
+
+        if (error) {
+          console.error("Error fetching delivery notes:", error);
+          throw error;
+        }
 
         console.log("Fetched delivery notes:", deliveryNotesData);
         
-        // Transform and clean up the data
-        const deliveryNotes = transformDeliveryNotes(deliveryNotesData);
+        // Transform the data to match our TypeScript interfaces
+        const deliveryNotes: DeliveryNote[] = (deliveryNotesData || []).map((note: any) => ({
+          id: note.id,
+          delivery_number: note.delivery_number,
+          created_at: note.created_at,
+          updated_at: note.updated_at,
+          status: note.status,
+          notes: note.notes,
+          purchase_order_id: note.purchase_order_id,
+          supplier_id: note.supplier_id,
+          warehouse_id: note.warehouse_id,
+          deleted: note.deleted,
+          supplier: note.supplier,
+          purchase_order: note.purchase_order,
+          items: [] // Les items seront chargés séparément si nécessaire
+        }));
         
         console.log("Transformed delivery notes:", deliveryNotes);
         return deliveryNotes;
@@ -71,6 +46,8 @@ export function useFetchDeliveryNotes() {
         console.error("Error fetching delivery notes:", error);
         return [];
       }
-    }
+    },
+    staleTime: 1000 * 30, // 30 secondes
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }

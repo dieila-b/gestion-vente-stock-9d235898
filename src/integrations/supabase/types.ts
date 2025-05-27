@@ -1859,6 +1859,10 @@ export type Database = {
         Args: { transfer_data: Json }
         Returns: Json
       }
+      bypass_select_delivery_notes: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
       bypass_select_purchase_orders: {
         Args: Record<PropertyKey, never>
         Returns: Json[]

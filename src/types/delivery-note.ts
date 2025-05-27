@@ -8,6 +8,8 @@ export interface DeliveryNote {
   status: string;
   supplier_id?: string;
   purchase_order_id?: string;
+  warehouse_id?: string; // Ajout du champ manquant
+  deleted?: boolean; // Ajout du champ manquant
   
   supplier?: {
     id: string;
