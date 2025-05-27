@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { ClientSelect } from "@/components/clients/ClientSelect";
+import { ClientSelect } from "@/components/pos/ClientSelect";
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

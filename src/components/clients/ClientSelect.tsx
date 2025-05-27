@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
-import { Dispatch, SetStateAction } from "react";
+import { toast } from "sonner";
 
 export interface ClientSelectProps {
   selectedClient?: Client | null;
@@ -28,13 +28,19 @@ export function ClientSelect({
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('company_name', { ascending: true });
-      
-      if (error) throw error;
-      return data as Client[];
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('company_name', { ascending: true });
+        
+        if (error) throw error;
+        return data as Client[];
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+        toast.error("Erreur lors de la récupération des clients");
+        return [];
+      }
     }
   });
 
@@ -91,6 +97,11 @@ export function ClientSelect({
             <p className="text-sm text-muted-foreground">
               {selectedClient.phone || selectedClient.email || ''}
             </p>
+            {selectedClient.client_code && (
+              <p className="text-xs text-muted-foreground">
+                Code: {selectedClient.client_code}
+              </p>
+            )}
           </div>
         </div>
         <Button
@@ -138,8 +149,13 @@ export function ClientSelect({
               </div>
               <div className="text-sm text-muted-foreground flex justify-between">
                 <span>{client.phone || ''}</span>
-                <span>{client.balance ? `${client.balance.toLocaleString('fr-FR')} €` : ''}</span>
+                <span>{client.balance ? `${client.balance.toLocaleString('fr-FR')} GNF` : ''}</span>
               </div>
+              {client.client_code && (
+                <div className="text-xs text-muted-foreground">
+                  Code: {client.client_code}
+                </div>
+              )}
             </div>
           ))}
         </div>
