@@ -3,6 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { QueryClient } from "@tanstack/react-query";
 
+// Interface pour le résultat de la fonction RPC approve_purchase_order
+interface ApprovalResult {
+  success: boolean;
+  already_approved: boolean;
+  delivery_note_created?: boolean;
+  delivery_note_id?: string;
+  delivery_number?: string;
+  has_warehouse?: boolean;
+  message: string;
+}
+
 /**
  * Service for approving purchase orders using RPC function
  * @param id Purchase order ID
@@ -14,10 +25,9 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
   
   try {
     // Use RPC function to securely approve the purchase order
-    const { data: result, error } = await supabase
-      .rpc('approve_purchase_order', { 
-        order_id: id 
-      });
+    const { data: result, error } = await supabase.rpc('approve_purchase_order', { 
+      order_id: id 
+    }) as { data: ApprovalResult | null, error: any };
       
     if (error) {
       console.error("[approvePurchaseOrderService] RPC error:", error);
@@ -65,7 +75,7 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
       id, 
       success: true, 
       status: 'approved',
-      deliveryNoteCreated: result.delivery_note_created,
+      deliveryNoteCreated: result.delivery_note_created || false,
       deliveryNumber: result.delivery_number
     };
     

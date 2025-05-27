@@ -1831,6 +1831,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_purchase_order: {
+        Args: { order_id: string }
+        Returns: Json
+      }
       authenticate_internal_user: {
         Args: { email_input: string; password_input: string }
         Returns: Json
