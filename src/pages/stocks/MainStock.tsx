@@ -15,19 +15,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StockTable } from "@/components/stocks/StockTable";
-import { useStockStatistics } from "@/hooks/stock-statistics";
+import { useWarehouseStock } from "@/hooks/warehouse-stock/useWarehouseStock";
 import { toast } from "sonner";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Use the stock statistics hook to get warehouse stock data
+  // Utiliser le hook warehouse stock pour récupérer les données d'entrepôt
   const { 
-    warehouseStock, 
-    isLoadingWarehouseStock, 
-    refreshStockData 
-  } = useStockStatistics();
+    data: warehouseStock, 
+    isLoading: isLoadingWarehouseStock, 
+    reload: refreshWarehouseStock 
+  } = useWarehouseStock(selectedWarehouse === "_all" ? undefined : selectedWarehouse, false);
 
   // Get warehouses data
   const { data: warehouses = [] } = useQuery({
@@ -64,11 +64,12 @@ export default function MainStock() {
   });
 
   const handleRefresh = useCallback(() => {
-    refreshStockData();
+    console.log("Refreshing warehouse stock data...");
+    refreshWarehouseStock();
     toast.info("Actualisation en cours", {
       description: "Les données de stock sont en cours d'actualisation."
     });
-  }, [refreshStockData]);
+  }, [refreshWarehouseStock]);
 
   // Apply filtering based on warehouse selection and search query
   const filteredItems = warehouseStock.filter((item) => {
@@ -85,6 +86,7 @@ export default function MainStock() {
     return matchesWarehouse && matchesSearch;
   });
 
+  console.log("Warehouse stock data:", warehouseStock);
   console.log("Filtered stock items:", filteredItems);
 
   return (
@@ -100,8 +102,10 @@ export default function MainStock() {
           <Button 
             className="glass-effect hover:neon-glow flex gap-2 items-center"
             onClick={handleRefresh}
+            disabled={isLoadingWarehouseStock}
           >
-            <RefreshCw className="h-4 w-4" /> Actualiser
+            <RefreshCw className={`h-4 w-4 ${isLoadingWarehouseStock ? 'animate-spin' : ''}`} /> 
+            {isLoadingWarehouseStock ? 'Actualisation...' : 'Actualiser'}
           </Button>
           <Button className="glass-effect hover:neon-glow">
             Exporter les données

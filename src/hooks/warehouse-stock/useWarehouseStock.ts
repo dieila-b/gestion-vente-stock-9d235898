@@ -61,6 +61,9 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
           }
         }
 
+        // Ajouter un filtre pour s'assurer qu'on récupère seulement les stocks avec une quantité > 0
+        query = query.gt('quantity', 0);
+
         console.log("Executing warehouse stock query...");
         const { data, error } = await query;
 
@@ -70,7 +73,8 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
         }
 
         // Debug - vérifions les données retournées
-        console.log(`Found ${data?.length || 0} warehouse stock records`);
+        console.log(`Found ${data?.length || 0} warehouse stock records with quantity > 0`);
+        console.log("Raw warehouse stock data:", data);
         
         return data || [];
       } catch (error) {
@@ -123,6 +127,7 @@ export function useWarehouseStock(locationId?: string, isPOS: boolean = true) {
       queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] }); 
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_principal'] });
       return queryResult.refetch();
     }
   };
