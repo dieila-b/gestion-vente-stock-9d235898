@@ -21,23 +21,28 @@ export function usePurchaseData(orderId?: string) {
       try {
         console.log('Fetching purchase order data for ID:', orderId);
         
-        // Use the get_purchase_order_by_id database function
-        const { data, error } = await supabase
-          .rpc('get_purchase_order_by_id', { order_id: orderId });
+        // Get purchase order with supplier and warehouse data
+        const { data: purchaseData, error: purchaseError } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            supplier:suppliers(*),
+            warehouse:warehouses(*)
+          `)
+          .eq('id', orderId)
+          .single();
 
-        if (error) {
-          console.error('Error fetching purchase order:', error);
-          throw error;
+        if (purchaseError) {
+          console.error('Error fetching purchase order:', purchaseError);
+          throw purchaseError;
         }
 
-        if (!data) {
+        if (!purchaseData) {
           console.log('No purchase order found with ID:', orderId);
           return null;
         }
 
-        // Cast data to a PurchaseOrder object to handle the JSON response properly
-        const purchaseData = data as unknown as PurchaseOrder;
-        console.log('Full response from get_purchase_order_by_id:', purchaseData);
+        console.log('Purchase order fetched:', purchaseData);
         
         // Initialize form data from purchase data
         setFormData({
@@ -61,8 +66,8 @@ export function usePurchaseData(orderId?: string) {
           warehouse_id: purchaseData.warehouse_id,
         });
         
-        // Process the items array and always fetch items separately to ensure we have the latest data
-        console.log('Fetching items separately for fresh data...');
+        // Get items for this purchase order
+        console.log('Fetching items for purchase order:', orderId);
         const { data: items, error: itemsError } = await supabase
           .from('purchase_order_items')
           .select(`
@@ -76,7 +81,8 @@ export function usePurchaseData(orderId?: string) {
           throw itemsError;
         }
 
-        console.log('Items fetched separately:', items);
+        console.log('Items fetched:', items?.length || 0, items);
+        
         if (items && items.length > 0) {
           const formattedItems = items.map(item => ({
             id: item.id,
@@ -93,7 +99,7 @@ export function usePurchaseData(orderId?: string) {
             } : null
           }));
           
-          console.log('Formatted items from fetch:', formattedItems);
+          console.log('Setting order items:', formattedItems);
           setOrderItems(formattedItems);
         } else {
           console.log('No items found, setting empty array');

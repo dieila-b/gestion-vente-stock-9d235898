@@ -29,6 +29,14 @@ export function ProductsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
   
+  // Log pour debugging
+  useEffect(() => {
+    console.log("ProductsSection received items:", items?.length || 0);
+    if (items && items.length > 0) {
+      console.log("First item:", items[0]);
+    }
+  }, [items]);
+  
   // Fetch available products
   const { data: products = [], isLoading: productsLoading } = useQuery<CatalogProduct[]>({
     queryKey: ['catalog-products'],
@@ -117,7 +125,20 @@ export function ProductsSection({
     return items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
   };
 
-  if (!items || items.length === 0) {
+  // Show loading state during initial load
+  if (!items) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-center items-center py-8">
+          <Loader className="h-6 w-6 animate-spin mr-2" />
+          <span className="text-white/60">Chargement des produits...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no items
+  if (items.length === 0) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
