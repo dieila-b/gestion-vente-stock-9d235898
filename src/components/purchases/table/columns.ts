@@ -24,7 +24,12 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
     accessorKey: "items",
     header: "Articles",
     cell: ({ row }) => {
-      return row.original.items?.length || 0;
+      const items = row.original.items;
+      if (!items || items.length === 0) return 0;
+      
+      // Compter les articles distincts en utilisant les product_id uniques
+      const distinctProducts = new Set(items.map(item => item.product_id));
+      return distinctProducts.size;
     }
   },
   {
