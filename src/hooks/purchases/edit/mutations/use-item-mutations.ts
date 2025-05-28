@@ -9,139 +9,109 @@ export function useItemMutations(
   orderItems: PurchaseOrderItem[],
   setOrderItems: (items: PurchaseOrderItem[]) => void
 ) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Update item quantity
-  const updateItemQuantity = async (itemId: string, quantity: number) => {
-    if (!orderId || !itemId) {
-      console.error("Missing orderId or itemId for item update");
-      return false;
-    }
-
-    setIsLoading(true);
+  const updateItemQuantity = async (itemId: string, quantity: number): Promise<boolean> => {
+    if (!orderId || isUpdating || quantity <= 0) return false;
+    
+    setIsUpdating(true);
     try {
-      console.log(`Updating quantity for item ${itemId} to ${quantity}`);
-
-      // Find the item to update its price
-      const item = orderItems.find(item => item.id === itemId);
+      console.log("Updating item quantity:", itemId, quantity);
+      
+      // Find the item to get unit price
+      const item = orderItems.find(i => i.id === itemId);
       if (!item) {
-        console.error("Item not found in the order items");
+        toast.error("Article non trouvé");
         return false;
       }
 
-      // Calculate the new total price
-      const unitPrice = item.unit_price || 0;
-      const totalPrice = quantity * unitPrice;
+      const newTotalPrice = quantity * item.unit_price;
 
-      // Update the database
-      const { data, error } = await supabase
+      // Update in database
+      const { error } = await supabase
         .from('purchase_order_items')
         .update({
-          quantity: quantity,
-          total_price: totalPrice,
-          updated_at: new Date().toISOString()
+          quantity,
+          total_price: newTotalPrice
         })
-        .eq('id', itemId)
-        .select();
+        .eq('id', itemId);
 
       if (error) {
-        console.error("Error updating item quantity:", error);
+        console.error("Error updating quantity:", error);
         toast.error("Erreur lors de la mise à jour de la quantité");
         return false;
       }
 
-      console.log("Item quantity updated successfully:", data);
+      // Update local state
+      setOrderItems(orderItems.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity, total_price: newTotalPrice }
+          : item
+      ));
 
-      // Update the local state
-      const updatedItems = orderItems.map(item => {
-        if (item.id === itemId) {
-          return { 
-            ...item, 
-            quantity: quantity, 
-            total_price: totalPrice 
-          };
-        }
-        return item;
-      });
-
-      setOrderItems(updatedItems);
       return true;
+
     } catch (error) {
-      console.error("Error in updateItemQuantity:", error);
-      toast.error("Une erreur s'est produite lors de la mise à jour");
+      console.error("Exception updating quantity:", error);
+      toast.error("Erreur lors de la mise à jour de la quantité");
       return false;
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  // Update item price
-  const updateItemPrice = async (itemId: string, price: number) => {
-    if (!orderId || !itemId) {
-      console.error("Missing orderId or itemId for price update");
-      return false;
-    }
-
-    setIsLoading(true);
+  const updateItemPrice = async (itemId: string, price: number): Promise<boolean> => {
+    if (!orderId || isUpdating || price < 0) return false;
+    
+    setIsUpdating(true);
     try {
-      console.log(`Updating price for item ${itemId} to ${price}`);
-
-      // Find the item to update its price
-      const item = orderItems.find(item => item.id === itemId);
+      console.log("Updating item price:", itemId, price);
+      
+      // Find the item to get quantity
+      const item = orderItems.find(i => i.id === itemId);
       if (!item) {
-        console.error("Item not found in the order items");
+        toast.error("Article non trouvé");
         return false;
       }
 
-      // Calculate the new total price
-      const quantity = item.quantity || 0;
-      const totalPrice = quantity * price;
+      const newTotalPrice = item.quantity * price;
 
-      // Update the database
-      const { data, error } = await supabase
+      // Update in database
+      const { error } = await supabase
         .from('purchase_order_items')
         .update({
           unit_price: price,
-          total_price: totalPrice,
-          updated_at: new Date().toISOString()
+          total_price: newTotalPrice
         })
-        .eq('id', itemId)
-        .select();
+        .eq('id', itemId);
 
       if (error) {
-        console.error("Error updating item price:", error);
+        console.error("Error updating price:", error);
         toast.error("Erreur lors de la mise à jour du prix");
         return false;
       }
 
-      console.log("Item price updated successfully:", data);
+      // Update local state
+      setOrderItems(orderItems.map(item => 
+        item.id === itemId 
+          ? { ...item, unit_price: price, total_price: newTotalPrice }
+          : item
+      ));
 
-      // Update the local state
-      const updatedItems = orderItems.map(item => {
-        if (item.id === itemId) {
-          return { 
-            ...item, 
-            unit_price: price, 
-            total_price: totalPrice 
-          };
-        }
-        return item;
-      });
-
-      setOrderItems(updatedItems);
       return true;
+
     } catch (error) {
-      console.error("Error in updateItemPrice:", error);
-      toast.error("Une erreur s'est produite lors de la mise à jour");
+      console.error("Exception updating price:", error);
+      toast.error("Erreur lors de la mise à jour du prix");
       return false;
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
   return {
     updateItemQuantity,
     updateItemPrice,
-    isLoading
+    isUpdating
   };
 }

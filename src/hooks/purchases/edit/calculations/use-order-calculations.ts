@@ -78,3 +78,8 @@ export const updateOrderTotal = async (orderId: string, updateData: any) => {
     throw error;
   }
 };
+
+// Nouvelle fonction pour recalculer automatiquement les totaux après modification d'articles
+export const recalculateOrderTotals = async (orderId: string, formData: any) => {
+  return await updateOrderTotal(orderId, formData);
+};

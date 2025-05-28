@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { usePurchaseData } from './edit/use-purchase-data';
 import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
-import { updateOrderTotal } from './edit/calculations/use-order-calculations';
+import { updateOrderTotal, recalculateOrderTotals } from './edit/calculations/use-order-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -80,7 +80,7 @@ export function usePurchaseEdit(orderId?: string) {
     
     try {
       console.log("Refreshing totals for order:", orderId);
-      const updatedTotals = await updateOrderTotal(orderId, formData);
+      const updatedTotals = await recalculateOrderTotals(orderId, formData);
       
       // Update form data with new totals
       setFormData(prevData => ({
@@ -97,6 +97,18 @@ export function usePurchaseEdit(orderId?: string) {
       console.error("Error refreshing totals:", error);
     }
   }, [orderId, formData, setFormData]);
+
+  // Auto-refresh totals when items change
+  useEffect(() => {
+    if (orderId && orderItems && orderItems.length >= 0) {
+      console.log("Items changed, auto-refreshing totals...");
+      const timeoutId = setTimeout(() => {
+        refreshTotals();
+      }, 500); // Debounce for 500ms
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [orderItems, refreshTotals, orderId]);
 
   // Save all form data
   const saveChanges = async () => {

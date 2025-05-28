@@ -1,129 +1,124 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { PurchaseOrderItem } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
-import { v4 as uuidv4 } from 'uuid';
-import { toast } from 'sonner';
 
 export function useItemAddRemove(
   orderId: string | undefined,
   orderItems: PurchaseOrderItem[],
   setOrderItems: (items: PurchaseOrderItem[]) => void
 ) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Add a new item to the purchase order
   const addItem = async (product: CatalogProduct): Promise<boolean> => {
-    if (!orderId) {
-      console.error("Missing orderId for item addition");
-      return false;
-    }
-
-    setIsLoading(true);
+    if (!orderId || isProcessing) return false;
+    
+    setIsProcessing(true);
     try {
-      console.log(`Adding product ${product.id} to purchase order ${orderId}`);
+      console.log("Adding product to order:", product.name);
       
-      // Set default values for the new item
-      const newItemId = uuidv4();
-      const defaultQuantity = 1;
-      const defaultPrice = product.purchase_price || product.price || 0;
-      const totalPrice = defaultQuantity * defaultPrice;
+      // Create new item data
+      const newItemData = {
+        id: crypto.randomUUID(),
+        purchase_order_id: orderId,
+        product_id: product.id,
+        quantity: 1,
+        unit_price: product.purchase_price || 0,
+        selling_price: product.price || 0,
+        total_price: product.purchase_price || 0,
+      };
 
-      // Create the new item in the database
+      // Insert into database
       const { data, error } = await supabase
         .from('purchase_order_items')
-        .insert({
-          id: newItemId,
-          purchase_order_id: orderId,
-          product_id: product.id,
-          quantity: defaultQuantity,
-          unit_price: defaultPrice,
-          selling_price: product.price || 0,
-          total_price: totalPrice,
-          created_at: new Date().toISOString()
-        })
-        .select();
+        .insert(newItemData)
+        .select(`
+          id,
+          product_id,
+          quantity,
+          unit_price,
+          selling_price,
+          total_price,
+          product:catalog(id, name, reference)
+        `)
+        .single();
 
       if (error) {
-        console.error("Error adding item to purchase order:", error);
-        toast.error("Erreur lors de l'ajout du produit");
+        console.error("Error adding item:", error);
+        toast.error("Erreur lors de l'ajout de l'article");
         return false;
       }
 
-      console.log("Item added successfully:", data);
-
-      // Update the local state with the new item
+      // Update local state
       const newItem: PurchaseOrderItem = {
-        id: newItemId,
-        purchase_order_id: orderId,
-        product_id: product.id,
-        quantity: defaultQuantity,
-        unit_price: defaultPrice,
-        selling_price: product.price || 0,
-        total_price: totalPrice,
-        product: {
+        id: data.id,
+        product_id: data.product_id,
+        quantity: data.quantity,
+        unit_price: data.unit_price,
+        selling_price: data.selling_price,
+        total_price: data.total_price,
+        product: data.product ? {
+          id: data.product.id,
+          name: data.product.name,
+          reference: data.product.reference
+        } : {
           id: product.id,
           name: product.name,
-          reference: product.reference
+          reference: product.reference || ''
         }
       };
 
-      // Add the new item to the list
       setOrderItems([...orderItems, newItem]);
-      toast.success("Produit ajouté avec succès");
+      toast.success("Article ajouté avec succès");
       return true;
+
     } catch (error) {
-      console.error("Error in addItem:", error);
-      toast.error("Une erreur s'est produite lors de l'ajout du produit");
+      console.error("Exception adding item:", error);
+      toast.error("Erreur lors de l'ajout de l'article");
       return false;
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  // Remove an item from the purchase order
   const removeItem = async (itemId: string): Promise<boolean> => {
-    if (!orderId || !itemId) {
-      console.error("Missing orderId or itemId for item removal");
-      return false;
-    }
-
-    setIsLoading(true);
+    if (!orderId || isProcessing) return false;
+    
+    setIsProcessing(true);
     try {
-      console.log(`Removing item ${itemId} from purchase order ${orderId}`);
-
-      // Delete the item from the database
+      console.log("Removing item:", itemId);
+      
+      // Remove from database
       const { error } = await supabase
         .from('purchase_order_items')
         .delete()
         .eq('id', itemId);
 
       if (error) {
-        console.error("Error removing item from purchase order:", error);
-        toast.error("Erreur lors de la suppression du produit");
+        console.error("Error removing item:", error);
+        toast.error("Erreur lors de la suppression de l'article");
         return false;
       }
 
-      console.log("Item removed successfully");
-
-      // Update the local state by filtering out the removed item
-      const updatedItems = orderItems.filter(item => item.id !== itemId);
-      setOrderItems(updatedItems);
-      toast.success("Produit supprimé avec succès");
+      // Update local state
+      setOrderItems(orderItems.filter(item => item.id !== itemId));
+      toast.success("Article supprimé avec succès");
       return true;
+
     } catch (error) {
-      console.error("Error in removeItem:", error);
-      toast.error("Une erreur s'est produite lors de la suppression du produit");
+      console.error("Exception removing item:", error);
+      toast.error("Erreur lors de la suppression de l'article");
       return false;
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
   return {
     addItem,
     removeItem,
-    isLoading
+    isProcessing
   };
 }
