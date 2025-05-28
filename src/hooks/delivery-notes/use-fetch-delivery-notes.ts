@@ -26,7 +26,10 @@ export function useFetchDeliveryNotes() {
         // Then fetch items for each delivery note
         const deliveryNotesWithItems: DeliveryNote[] = [];
         
-        for (const note of deliveryNotesData || []) {
+        for (const noteData of deliveryNotesData || []) {
+          // Cast the Json data to a proper object
+          const note = noteData as any;
+          
           // Fetch items for this delivery note
           const { data: itemsData, error: itemsError } = await supabase
             .from('delivery_note_items')
