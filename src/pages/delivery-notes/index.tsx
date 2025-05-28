@@ -17,7 +17,7 @@ export default function DeliveryNotesPage() {
     deliveryNotes, 
     isLoading,
     handleView,
-    handleDelete 
+    handleDelete: originalHandleDelete 
   } = useDeliveryNotes();
   
   const { approveDeliveryNote } = useDeliveryNoteMutations();
@@ -33,8 +33,24 @@ export default function DeliveryNotesPage() {
            supplierName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const handleApprove = async (noteId: string) => {
-    setSelectedNoteForApproval(noteId);
+  const handleApprove = async (noteId: string): Promise<boolean> => {
+    try {
+      setSelectedNoteForApproval(noteId);
+      return true;
+    } catch (error) {
+      console.error("Error preparing approval:", error);
+      return false;
+    }
+  };
+
+  const handleDelete = async (noteId: string): Promise<boolean> => {
+    try {
+      const result = await originalHandleDelete(noteId);
+      return result !== false;
+    } catch (error) {
+      console.error("Error deleting delivery note:", error);
+      return false;
+    }
   };
 
   const handleApprovalSubmit = async (
