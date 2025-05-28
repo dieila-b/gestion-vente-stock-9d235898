@@ -1,10 +1,11 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Trash2, Printer } from "lucide-react";
+import { Eye, Trash2, Edit, Check, Printer } from "lucide-react";
+import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { DeliveryNote } from "@/types/delivery-note";
+import { formatDate } from "@/lib/formatters";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
@@ -13,6 +14,7 @@ interface DeliveryNoteListProps {
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
   onApprove?: (id: string) => void;
+  onPrint?: (id: string) => void;
 }
 
 export function DeliveryNoteList({
@@ -21,7 +23,8 @@ export function DeliveryNoteList({
   onView,
   onDelete,
   onEdit,
-  onApprove
+  onApprove,
+  onPrint
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -64,6 +67,17 @@ export function DeliveryNoteList({
     }
   };
 
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    
+    if (count === 1) {
+      return `1 article`;
+    }
+    return `${count} articles`;
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -71,6 +85,7 @@ export function DeliveryNoteList({
           <TableHead>N° Livraison</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Fournisseur</TableHead>
+          <TableHead>Articles</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead>Bon commande</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -84,57 +99,55 @@ export function DeliveryNoteList({
               {formatDisplayDate(note.created_at)}
             </TableCell>
             <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
+            <TableCell>
+              <div className="text-sm">
+                {formatArticles(note.items)}
+              </div>
+            </TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>
             <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
-                {/* Éditer - Jaune */}
-                {onEdit && note.status !== 'received' && (
+                {onEdit && note.status === 'pending' && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onEdit(note.id)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
                     title="Modifier"
+                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
                   </Button>
                 )}
-                
-                {/* Approuver - Vert */}
                 {onApprove && note.status === 'pending' && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onApprove(note.id)}
-                    className="bg-green-500 hover:bg-green-600 text-white border-green-500"
                     title="Approuver"
+                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
                   >
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                
-                {/* Imprimer - Gris */}
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onView(note.id)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white border-gray-500"
-                  title="Imprimer"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(note.id)}
+                  title="Supprimer"
+                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
                 >
-                  <Printer className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-                
-                {/* Supprimer - Rouge */}
-                {note.status !== 'received' && (
+                {onPrint && (
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(note.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white border-red-500"
-                    title="Supprimer"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onPrint(note.id)}
+                    title="Imprimer"
+                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Printer className="h-4 w-4" />
                   </Button>
                 )}
               </div>

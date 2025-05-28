@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DeliveryNote } from "@/types/delivery-note";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Trash2, Printer } from "lucide-react";
+import { Check, Edit, Eye, Trash2, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,6 +15,7 @@ interface DeliveryNoteListProps {
   onApprove?: (id: string) => Promise<boolean> | void;
   onEdit?: (id: string) => void;
   onView: (id: string) => void;
+  onPrint?: (id: string) => void;
 }
 
 export function DeliveryNoteList({
@@ -24,6 +25,7 @@ export function DeliveryNoteList({
   onApprove,
   onEdit,
   onView,
+  onPrint,
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -56,6 +58,17 @@ export function DeliveryNoteList({
     }
   };
 
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    
+    if (count === 1) {
+      return `1 article`;
+    }
+    return `${count} articles`;
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -80,7 +93,9 @@ export function DeliveryNoteList({
             </TableCell>
             <TableCell>{note.supplier?.name}</TableCell>
             <TableCell>
-              {note.items?.length || 0} articles
+              <div className="text-sm">
+                {formatArticles(note.items)}
+              </div>
             </TableCell>
             <TableCell>
               {getStatusBadge(note.status)}
@@ -88,49 +103,46 @@ export function DeliveryNoteList({
             <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell>
               <div className="flex space-x-2">
-                {/* Éditer - Jaune */}
-                {onEdit && note.status !== 'received' && (
+                {onEdit && note.status === 'pending' && (
                   <Button 
-                    variant="outline" 
-                    size="sm" 
+                    variant="ghost" 
+                    size="icon" 
                     onClick={() => onEdit(note.id)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                    title="Modifier"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
                   </Button>
                 )}
-                
-                {/* Approuver - Vert */}
                 {onApprove && note.status === 'pending' && (
                   <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => onApprove(note.id)}
-                    className="bg-green-500 hover:bg-green-600 text-white border-green-500"
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onApprove(note.id)} 
+                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                    title="Approuver"
                   >
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                
-                {/* Imprimer - Gris */}
                 <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onView(note.id)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white border-gray-500"
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => onDelete(note.id)} 
+                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                  title="Supprimer"
                 >
-                  <Printer className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-                
-                {/* Supprimer - Rouge */}
-                {note.status !== 'received' && (
+                {onPrint && (
                   <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => onDelete(note.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onPrint(note.id)} 
+                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                    title="Imprimer"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Printer className="h-4 w-4" />
                   </Button>
                 )}
               </div>

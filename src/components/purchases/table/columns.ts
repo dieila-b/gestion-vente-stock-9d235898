@@ -24,12 +24,12 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
     accessorKey: "items",
     header: "Articles",
     cell: ({ row }) => {
-      const items = row.original.items;
-      if (!items || items.length === 0) return 0;
+      const items = row.original.items || [];
+      const count = items.length;
       
-      // Compter les articles distincts en utilisant les product_id uniques
-      const distinctProducts = new Set(items.map(item => item.product_id));
-      return distinctProducts.size;
+      if (count === 0) return "0 article";
+      if (count === 1) return `1 article`;
+      return `${count} articles`;
     }
   },
   {

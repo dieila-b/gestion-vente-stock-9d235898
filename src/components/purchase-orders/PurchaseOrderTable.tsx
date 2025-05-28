@@ -23,6 +23,17 @@ export const PurchaseOrderTable = ({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) => {
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    
+    if (count === 1) {
+      return `1 article`;
+    }
+    return `${count} articles`;
+  };
+
   return (
     <div className="rounded-lg border">
       <Table>
@@ -31,7 +42,7 @@ export const PurchaseOrderTable = ({
             <TableHead>N° Commande</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
-            <TableHead>Nombre articles</TableHead>
+            <TableHead>Articles</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Montant net</TableHead>
             <TableHead>Action</TableHead>
@@ -54,7 +65,11 @@ export const PurchaseOrderTable = ({
                   {format(new Date(order.created_at), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
                 <TableCell>{order.supplier.name}</TableCell>
-                <TableCell>{order.items.length}</TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {formatArticles(order.items || [])}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     order.status === 'approved' ? 'bg-green-100 text-green-800' :
