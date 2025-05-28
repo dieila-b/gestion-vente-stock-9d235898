@@ -82,6 +82,7 @@ export function useFetchDeliveryNotes() {
             })) || []
           };
           
+          console.log(`Delivery note ${note.delivery_number} has ${transformedNote.items.length} items`);
           deliveryNotesWithItems.push(transformedNote);
         }
         
