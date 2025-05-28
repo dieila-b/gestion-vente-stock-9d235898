@@ -7,8 +7,16 @@ import { useDeliveryNoteCreation } from "./delivery-notes/use-delivery-note-crea
 import { useDeliveryNoteSync } from "./delivery-notes/use-delivery-note-sync";
 
 export function useDeliveryNotes() {
+  console.log("🚀 useDeliveryNotes hook initialized");
+  
   // Query to fetch delivery notes using the updated hook
-  const { data: deliveryNotes = [], isLoading, refetch } = useFetchDeliveryNotes();
+  const { data: deliveryNotes = [], isLoading, error, refetch } = useFetchDeliveryNotes();
+  
+  console.log("📊 useDeliveryNotes state:", {
+    deliveryNotesCount: deliveryNotes?.length || 0,
+    isLoading,
+    error: error?.message || null
+  });
 
   // Actions
   const { handleView, handleEdit, handlePrint } = useDeliveryNoteActions();
@@ -33,6 +41,7 @@ export function useDeliveryNotes() {
   return {
     deliveryNotes,
     isLoading,
+    error,
     handleView,
     handleEdit,
     handleApprove: (id: string) => handleApprove(id, deliveryNotes),

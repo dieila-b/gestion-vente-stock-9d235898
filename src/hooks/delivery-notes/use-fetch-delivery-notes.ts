@@ -10,9 +10,18 @@ export function useFetchDeliveryNotes() {
   return useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
-      console.log("Fetching delivery notes with items...");
+      console.log("🔍 Starting delivery notes fetch...");
+      
       try {
-        // Fetch delivery notes with direct join to get items
+        // Test basic connectivity first
+        const { data: testData, error: testError } = await supabase
+          .from('delivery_notes')
+          .select('id')
+          .limit(1);
+          
+        console.log("🔗 Basic connectivity test:", { testData, testError });
+        
+        // Fetch delivery notes with their relationships
         const { data: deliveryNotesData, error } = await supabase
           .from('delivery_notes')
           .select(`
@@ -55,15 +64,25 @@ export function useFetchDeliveryNotes() {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error("Error fetching delivery notes:", error);
+          console.error("❌ Error fetching delivery notes:", error);
           throw error;
         }
 
-        console.log("Raw delivery notes data:", deliveryNotesData);
+        console.log("📦 Raw delivery notes data:", deliveryNotesData);
+        console.log("📊 Number of delivery notes found:", deliveryNotesData?.length || 0);
+        
+        if (!deliveryNotesData || deliveryNotesData.length === 0) {
+          console.log("⚠️  No delivery notes found in database");
+          return [];
+        }
         
         // Transform the data to match our TypeScript interfaces
-        const transformedNotes: DeliveryNote[] = (deliveryNotesData || []).map(note => {
-          console.log(`Processing delivery note ${note.delivery_number} with ${note.items?.length || 0} items`);
+        const transformedNotes: DeliveryNote[] = deliveryNotesData.map(note => {
+          console.log(`🔄 Processing delivery note ${note.delivery_number}:`, {
+            id: note.id,
+            itemsCount: note.items?.length || 0,
+            items: note.items
+          });
           
           return {
             id: note.id,
@@ -103,11 +122,14 @@ export function useFetchDeliveryNotes() {
           };
         });
         
-        console.log("Transformed delivery notes with items:", transformedNotes);
+        console.log("✅ Transformed delivery notes:", transformedNotes);
+        console.log("📈 Final count:", transformedNotes.length);
+        
         return transformedNotes;
       } catch (error) {
-        console.error("Error fetching delivery notes:", error);
-        return [];
+        console.error("💥 Critical error in delivery notes fetch:", error);
+        // Don't return empty array on error, let the error bubble up
+        throw error;
       }
     },
     staleTime: 1000 * 30, // 30 secondes

@@ -27,7 +27,14 @@ export function DeliveryNoteList({
   onView,
   onPrint,
 }: DeliveryNoteListProps) {
+  console.log("📋 DeliveryNoteList render:", {
+    isLoading,
+    deliveryNotesCount: deliveryNotes?.length || 0,
+    deliveryNotes: deliveryNotes
+  });
+
   if (isLoading) {
+    console.log("⏳ Showing loading state");
     return (
       <div className="space-y-3">
         <Skeleton className="h-12 w-full" />
@@ -37,7 +44,26 @@ export function DeliveryNoteList({
     );
   }
 
-  if (!deliveryNotes?.length) {
+  if (!deliveryNotes) {
+    console.log("⚠️  deliveryNotes is null or undefined");
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-500">Erreur: Impossible de charger les bons de livraison</p>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(deliveryNotes)) {
+    console.log("⚠️  deliveryNotes is not an array:", typeof deliveryNotes);
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-500">Erreur: Format de données incorrect</p>
+      </div>
+    );
+  }
+
+  if (deliveryNotes.length === 0) {
+    console.log("📭 No delivery notes found");
     return (
       <div className="py-8 text-center">
         <p className="text-gray-500">Aucun bon de livraison trouvé</p>
@@ -59,23 +85,18 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
-    if (!items || items.length === 0) {
-      console.log("No items found for delivery note");
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      console.log("📦 No items found for delivery note");
       return "0 article";
     }
     
     const count = items.length;
-    const distinctCount = new Set(items.map(item => item.product_id)).size;
-    
-    console.log(`Delivery note has ${count} total items, ${distinctCount} distinct products`);
-    
-    // Show both total items and distinct products if different
-    if (count !== distinctCount) {
-      return `${distinctCount} article${distinctCount > 1 ? 's' : ''} distincts (${count} total)`;
-    }
+    console.log(`📦 Found ${count} items for delivery note`);
     
     return `${count} article${count > 1 ? 's' : ''}`;
   };
+
+  console.log("✅ Rendering delivery notes table with", deliveryNotes.length, "notes");
 
   return (
     <Table>
@@ -93,7 +114,11 @@ export function DeliveryNoteList({
       </TableHeader>
       <TableBody>
         {deliveryNotes.map((note) => {
-          console.log(`Rendering delivery note ${note.delivery_number} with ${note.items?.length || 0} items:`, note.items);
+          console.log(`🔍 Rendering delivery note ${note.delivery_number}:`, {
+            id: note.id,
+            itemsCount: note.items?.length || 0,
+            items: note.items
+          });
           
           return (
             <TableRow key={note.id}>
