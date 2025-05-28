@@ -44,7 +44,18 @@ export function usePurchaseData(orderId?: string) {
 
         console.log('Purchase order fetched:', purchaseData);
         
-        // Initialize form data from purchase data
+        // Helper function to validate status values
+        const validateStatus = (status: string): "draft" | "pending" | "delivered" | "approved" => {
+          const validStatuses = ["draft", "pending", "delivered", "approved"] as const;
+          return validStatuses.includes(status as any) ? status as "draft" | "pending" | "delivered" | "approved" : "pending";
+        };
+
+        const validatePaymentStatus = (status: string): "pending" | "partial" | "paid" => {
+          const validPaymentStatuses = ["pending", "partial", "paid"] as const;
+          return validPaymentStatuses.includes(status as any) ? status as "pending" | "partial" | "paid" : "pending";
+        };
+
+        // Initialize form data from purchase data with proper type validation
         setFormData({
           id: purchaseData.id,
           order_number: purchaseData.order_number,
@@ -61,8 +72,8 @@ export function usePurchaseData(orderId?: string) {
           total_ttc: purchaseData.total_ttc || 0,
           total_amount: purchaseData.total_amount || 0,
           paid_amount: purchaseData.paid_amount || 0,
-          status: purchaseData.status,
-          payment_status: purchaseData.payment_status,
+          status: validateStatus(purchaseData.status || "pending"),
+          payment_status: validatePaymentStatus(purchaseData.payment_status || "pending"),
           warehouse_id: purchaseData.warehouse_id,
         });
         
