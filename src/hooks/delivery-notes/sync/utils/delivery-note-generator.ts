@@ -37,6 +37,7 @@ export async function createDeliveryNote(order: {
     
     console.log(`[createDeliveryNote] Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
     console.log(`[createDeliveryNote] Order warehouse_id: ${order.warehouse_id}`);
+    console.log(`[createDeliveryNote] Order has ${order.items?.length || 0} items`);
     
     // Create a delivery note with a new UUID
     const deliveryNoteId = uuidv4();
@@ -83,7 +84,21 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
       return false;
     }
     
-    const itemsData = orderItems.map((item: any) => ({
+    console.log(`[createDeliveryNoteItems] Creating items for delivery note ${deliveryNoteId} from ${orderItems.length} order items`);
+    
+    // Ensure we have all required data for each item
+    const validItems = orderItems.filter(item => item.product_id && item.quantity && item.unit_price);
+    
+    if (validItems.length === 0) {
+      console.error(`[createDeliveryNoteItems] No valid items found for delivery note ${deliveryNoteId}`);
+      return false;
+    }
+    
+    if (validItems.length !== orderItems.length) {
+      console.warn(`[createDeliveryNoteItems] Only ${validItems.length} of ${orderItems.length} items are valid`);
+    }
+    
+    const itemsData = validItems.map((item: any) => ({
       id: uuidv4(),
       delivery_note_id: deliveryNoteId,
       product_id: item.product_id,
@@ -92,7 +107,7 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
       unit_price: item.unit_price
     }));
     
-    console.log(`[createDeliveryNoteItems] Creating ${itemsData.length} items for delivery note ${deliveryNoteId}`);
+    console.log(`[createDeliveryNoteItems] Inserting ${itemsData.length} items:`, itemsData);
     
     // Insert the items
     const { error: itemsError } = await supabase
@@ -104,7 +119,7 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
       return false;
     }
     
-    console.log(`[createDeliveryNoteItems] Created ${itemsData.length} items for delivery note ${deliveryNoteId}`);
+    console.log(`[createDeliveryNoteItems] Successfully created ${itemsData.length} items for delivery note ${deliveryNoteId}`);
     return true;
   } catch (error: any) {
     console.error(`[createDeliveryNoteItems] Error creating items:`, error);

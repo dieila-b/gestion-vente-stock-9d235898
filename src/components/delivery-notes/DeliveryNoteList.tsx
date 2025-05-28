@@ -62,11 +62,14 @@ export function DeliveryNoteList({
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
+    const distinctCount = new Set(items.map(item => item.product_id)).size;
     
-    if (count === 1) {
-      return `1 article`;
+    // Show both total items and distinct products if different
+    if (count !== distinctCount) {
+      return `${distinctCount} article${distinctCount > 1 ? 's' : ''} distincts (${count} total)`;
     }
-    return `${count} articles`;
+    
+    return `${count} article${count > 1 ? 's' : ''}`;
   };
 
   return (
