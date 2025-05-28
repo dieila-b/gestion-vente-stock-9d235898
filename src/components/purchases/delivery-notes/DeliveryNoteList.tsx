@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, Edit, Check } from "lucide-react";
+import { Eye, Trash2, Edit, Check, Printer } from "lucide-react";
 import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,9 @@ interface DeliveryNoteListProps {
   isLoading: boolean;
   onView: (id: string) => void;
   onDelete: (id: string) => void;
-  onEdit?: (id: string) => void; // Optional for backwards compatibility
-  onApprove?: (id: string) => void; // Optional for backwards compatibility
+  onEdit?: (id: string) => void;
+  onApprove?: (id: string) => void;
+  onPrint?: (id: string) => void;
 }
 
 export function DeliveryNoteList({
@@ -22,7 +23,8 @@ export function DeliveryNoteList({
   onView,
   onDelete,
   onEdit,
-  onApprove
+  onApprove,
+  onPrint
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -106,16 +108,7 @@ export function DeliveryNoteList({
             <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onView(note.id)}
-                  title="Voir"
-                  className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {onEdit && (
+                {onEdit && note.status === 'pending' && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -132,7 +125,7 @@ export function DeliveryNoteList({
                     size="icon"
                     onClick={() => onApprove(note.id)}
                     title="Approuver"
-                    className="h-10 w-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
                   >
                     <Check className="h-4 w-4" />
                   </Button>
@@ -146,6 +139,17 @@ export function DeliveryNoteList({
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
+                {onPrint && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onPrint(note.id)}
+                    title="Imprimer"
+                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                  >
+                    <Printer className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </TableCell>
           </TableRow>

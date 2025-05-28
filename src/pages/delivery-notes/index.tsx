@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DeliveryNoteHeader } from "@/components/purchases/delivery-notes/DeliveryNoteHeader";
 import { DeliveryNoteList } from "@/components/purchases/delivery-notes/DeliveryNoteList";
+import { DeliveryNoteApprovalDialog } from "@/components/delivery-notes/DeliveryNoteApprovalDialog";
 import { useDeliveryNotes } from "@/hooks/use-delivery-notes";
 import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 
@@ -12,7 +14,13 @@ export default function DeliveryNotesPage() {
     deliveryNotes, 
     isLoading,
     handleView,
-    handleDelete 
+    handleEdit,
+    handleApprove,
+    handlePrint,
+    handleDelete,
+    selectedNoteForApproval,
+    closeApprovalDialog,
+    onApprovalComplete
   } = useDeliveryNotes();
   
   // Filter delivery notes based on search query
@@ -41,10 +49,20 @@ export default function DeliveryNotesPage() {
               deliveryNotes={filteredDeliveryNotes}
               isLoading={isLoading}
               onView={handleView}
+              onEdit={handleEdit}
+              onApprove={handleApprove}
+              onPrint={handlePrint}
               onDelete={handleDelete}
             />
           </CardContent>
         </Card>
+
+        <DeliveryNoteApprovalDialog
+          note={selectedNoteForApproval}
+          open={!!selectedNoteForApproval}
+          onClose={closeApprovalDialog}
+          onApprovalComplete={onApprovalComplete}
+        />
       </div>
     </DashboardLayout>
   );

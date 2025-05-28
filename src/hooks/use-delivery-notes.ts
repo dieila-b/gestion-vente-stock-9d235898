@@ -8,10 +8,12 @@ import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 import { useFetchDeliveryNotes } from "./delivery-notes/use-fetch-delivery-notes";
 import { formatDate } from "@/lib/formatters";
 import { syncApprovedPurchaseOrders } from "./delivery-notes/sync/sync-approved-purchase-orders";
+import { useState } from "react";
 
 export function useDeliveryNotes() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [selectedNoteForApproval, setSelectedNoteForApproval] = useState<DeliveryNote | null>(null);
 
   // Query to fetch delivery notes using the updated hook
   const { data: deliveryNotes = [], isLoading, refetch } = useFetchDeliveryNotes();
@@ -29,6 +31,39 @@ export function useDeliveryNotes() {
   // Handle view
   const handleView = (id: string) => {
     navigate(`/delivery-notes/${id}`);
+  };
+
+  // Handle edit
+  const handleEdit = (id: string) => {
+    navigate(`/delivery-notes/${id}`);
+  };
+
+  // Handle print
+  const handlePrint = (id: string) => {
+    const note = deliveryNotes.find(n => n.id === id);
+    if (note) {
+      // TODO: Implement print functionality
+      toast.info("Fonctionnalité d'impression à implémenter");
+    }
+  };
+
+  // Handle approve - open approval dialog
+  const handleApprove = (id: string) => {
+    const note = deliveryNotes.find(n => n.id === id);
+    if (note) {
+      setSelectedNoteForApproval(note);
+    }
+  };
+
+  // Close approval dialog
+  const closeApprovalDialog = () => {
+    setSelectedNoteForApproval(null);
+  };
+
+  // Handle approval completion
+  const onApprovalComplete = () => {
+    refetch();
+    setSelectedNoteForApproval(null);
   };
 
   // Handle delete
@@ -153,7 +188,13 @@ export function useDeliveryNotes() {
     deliveryNotes,
     isLoading,
     handleView,
+    handleEdit,
+    handleApprove,
+    handlePrint,
     handleDelete,
+    selectedNoteForApproval,
+    closeApprovalDialog,
+    onApprovalComplete,
     createDeliveryNoteFromPO,
     syncFromApprovedOrders,
     refetch
