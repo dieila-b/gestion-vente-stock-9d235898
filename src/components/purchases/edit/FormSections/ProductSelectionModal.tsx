@@ -26,9 +26,9 @@ export function ProductSelectionModal({
   isLoading = false
 }: ProductSelectionModalProps) {
   const filteredProducts = products.filter(product => {
-    const productName = product.name || '';
-    const productReference = product.reference || '';
-    const query = searchQuery.toLowerCase();
+    const productName = (product.name || '').toString();
+    const productReference = (product.reference || '').toString();
+    const query = (searchQuery || '').toLowerCase();
     
     return productName.toLowerCase().includes(query) ||
            productReference.toLowerCase().includes(query);
