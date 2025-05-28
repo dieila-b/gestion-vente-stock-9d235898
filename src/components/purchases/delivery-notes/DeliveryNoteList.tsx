@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2 } from "lucide-react";
@@ -70,13 +69,11 @@ export function DeliveryNoteList({
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
-    const totalOrdered = items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
-    const totalReceived = items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
     
     if (count === 1) {
-      return `1 article (${totalReceived}/${totalOrdered})`;
+      return `1 article`;
     }
-    return `${count} articles (${totalReceived}/${totalOrdered})`;
+    return `${count} articles`;
   };
 
   return (

@@ -26,11 +26,10 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
     cell: ({ row }) => {
       const items = row.original.items || [];
       const count = items.length;
-      const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
       
       if (count === 0) return "0 article";
-      if (count === 1) return `1 article (${totalQuantity} unités)`;
-      return `${count} articles (${totalQuantity} unités)`;
+      if (count === 1) return `1 article`;
+      return `${count} articles`;
     }
   },
   {

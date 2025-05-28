@@ -28,12 +28,11 @@ export function PurchaseOrderTable({
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
-    const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
     
     if (count === 1) {
-      return `1 article (${totalQuantity} unités)`;
+      return `1 article`;
     }
-    return `${count} articles (${totalQuantity} unités)`;
+    return `${count} articles`;
   };
 
   return (
