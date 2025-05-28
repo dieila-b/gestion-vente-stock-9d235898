@@ -1,3 +1,4 @@
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -100,20 +101,40 @@ export function DeliveryNoteList({
             <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={() => onView(note.id)}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => onView(note.id)}
+                  className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                >
                   <Eye className="h-4 w-4" />
                 </Button>
                 {onEdit && (
-                  <Button variant="outline" size="sm" onClick={() => onEdit(note.id)}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onEdit(note.id)}
+                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                 )}
                 {onApprove && note.status === 'pending' && (
-                  <Button variant="outline" size="sm" onClick={() => onApprove(note.id)} className="text-green-600">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onApprove(note.id)} 
+                    className="h-10 w-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                  >
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={() => onDelete(note.id)} className="text-red-600">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => onDelete(note.id)} 
+                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
