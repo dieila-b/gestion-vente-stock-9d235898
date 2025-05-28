@@ -110,11 +110,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
   };
   
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
       {isLoading ? (
         <div className="p-6 text-center">
           <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Chargement...</p>
+          <p>Chargement du bon de commande...</p>
         </div>
       ) : !purchase ? (
         <div className="p-6 text-center space-y-4">
@@ -124,7 +124,10 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         </div>
       ) : (
         <>
-          <h3 className="text-lg font-semibold">Informations générales</h3>
+          <div className="border-b border-white/10 pb-4">
+            <h2 className="text-xl font-semibold text-white">Modifier le bon de commande</h2>
+            <p className="text-white/60">Commande #{purchase.order_number}</p>
+          </div>
           
           <GeneralInfoSection 
             purchase={purchase as PurchaseOrder}
@@ -139,34 +142,39 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             updatePaymentStatus={updatePaymentStatus}
           />
 
-          <h3 className="text-lg font-semibold mt-6">Coûts additionnels</h3>
+          <div className="border-t border-white/10 pt-6">
+            <h3 className="text-lg font-semibold mb-4 text-white">Coûts additionnels</h3>
+            <AdditionalCostsSection 
+              formData={formData}
+              updateFormField={updateFormField}
+              totalAmount={purchase.total_amount}
+            />
+          </div>
           
-          <AdditionalCostsSection 
-            formData={formData}
-            updateFormField={updateFormField}
-            totalAmount={purchase.total_amount}
-          />
-          
-          <NotesSection 
-            notes={formData.notes || ''}
-            updateFormField={updateFormField}
-          />
+          <div className="border-t border-white/10 pt-6">
+            <NotesSection 
+              notes={formData.notes || ''}
+              updateFormField={updateFormField}
+            />
+          </div>
             
-          <h3 className="text-lg font-semibold mt-6">Produits ({orderItems?.length || 0})</h3>
+          <div className="border-t border-white/10 pt-6">
+            <ProductsSection 
+              items={orderItems || []}
+              updateItemQuantity={updateItemQuantity}
+              updateItemPrice={updateItemPrice}
+              removeItem={removeItem}
+              addItem={addItem}
+            />
+          </div>
           
-          <ProductsSection 
-            items={orderItems || []}
-            updateItemQuantity={updateItemQuantity}
-            updateItemPrice={updateItemPrice}
-            removeItem={removeItem}
-            addItem={addItem}
-          />
-          
-          <FormActions 
-            onSave={handleSave}
-            onCancel={onClose}
-            isSaving={isSaving}
-          />
+          <div className="border-t border-white/10 pt-6">
+            <FormActions 
+              onSave={handleSave}
+              onCancel={onClose}
+              isSaving={isSaving}
+            />
+          </div>
         </>
       )}
     </div>

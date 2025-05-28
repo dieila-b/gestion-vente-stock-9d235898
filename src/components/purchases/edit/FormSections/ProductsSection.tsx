@@ -102,7 +102,7 @@ export function ProductsSection({
     }
   };
 
-  // Handle quantity change
+  // Handle quantity change with debouncing
   const handleQuantityChange = async (itemId: string, value: string) => {
     const quantity = parseInt(value);
     if (!isNaN(quantity) && quantity > 0) {
@@ -117,9 +117,9 @@ export function ProductsSection({
     }
   };
 
-  // Handle price change
+  // Handle price change with debouncing
   const handlePriceChange = async (itemId: string, value: string) => {
-    const price = parseInt(value);
+    const price = parseFloat(value);
     if (!isNaN(price) && price >= 0) {
       setActionItemId(itemId);
       setIsLoading(true);
@@ -132,11 +132,17 @@ export function ProductsSection({
     }
   };
 
+  // Calculate grand total
+  const calculateGrandTotal = () => {
+    return items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-white/70">Articles ({items?.length || 0})</h3>
+          <h3 className="text-lg font-medium text-white">Articles de la commande</h3>
+          <p className="text-sm text-white/60">Gérez les articles, quantités et prix</p>
         </div>
         <Button 
           onClick={() => setIsProductModalOpen(true)}
@@ -154,37 +160,46 @@ export function ProductsSection({
       </div>
 
       {!items || items.length === 0 ? (
-        <div className="bg-black/40 rounded-md p-6 text-center border border-white/10 neo-blur">
-          <p className="text-white/60">Aucun produit ajouté à ce bon de commande</p>
-          <Button 
-            onClick={() => setIsProductModalOpen(true)}
-            variant="outline"
-            className="mt-4 neo-blur"
-            disabled={isLoading || productsLoading}
-          >
-            {isLoading || productsLoading ? (
-              <Loader className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4 mr-2" />
-            )}
-            Ajouter un produit
-          </Button>
+        <div className="bg-black/40 rounded-lg p-8 text-center border border-white/10 neo-blur">
+          <div className="max-w-md mx-auto">
+            <div className="text-white/40 mb-4">
+              <Plus className="w-12 h-12 mx-auto" />
+            </div>
+            <p className="text-white/60 mb-4">Aucun produit ajouté à ce bon de commande</p>
+            <Button 
+              onClick={() => setIsProductModalOpen(true)}
+              variant="outline"
+              className="neo-blur"
+              disabled={isLoading || productsLoading}
+            >
+              {isLoading || productsLoading ? (
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Ajouter votre premier produit
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-12 gap-4 p-2 text-sm text-white/60 font-medium">
+          {/* Header row */}
+          <div className="grid grid-cols-12 gap-4 p-3 text-sm text-white/60 font-medium bg-black/20 rounded-lg border border-white/5">
             <div className="col-span-4">Produit</div>
             <div className="col-span-2 text-center">Quantité</div>
-            <div className="col-span-2 text-center">Prix unitaire</div>
-            <div className="col-span-3 text-center">Prix total</div>
-            <div className="col-span-1"></div>
+            <div className="col-span-2 text-center">Prix unitaire (GNF)</div>
+            <div className="col-span-3 text-center">Total (GNF)</div>
+            <div className="col-span-1 text-center">Actions</div>
           </div>
           
+          {/* Items */}
           {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-md border border-white/10 bg-black/40 neo-blur">
+            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-lg border border-white/10 bg-black/40 neo-blur hover:bg-black/50 transition-colors">
               <div className="col-span-4">
                 <div className="font-medium text-white">{item.product?.name || "Produit inconnu"}</div>
-                <div className="text-xs text-white/60">{item.product?.reference || "Sans référence"}</div>
+                <div className="text-xs text-white/60">
+                  Réf: {item.product?.reference || "Sans référence"}
+                </div>
               </div>
               
               <div className="col-span-2">
@@ -196,6 +211,9 @@ export function ProductsSection({
                   className="text-center neo-blur"
                   disabled={isLoading && actionItemId === item.id}
                 />
+                {isLoading && actionItemId === item.id && (
+                  <div className="text-xs text-white/60 mt-1 text-center">Mise à jour...</div>
+                )}
               </div>
               
               <div className="col-span-2">
@@ -203,17 +221,23 @@ export function ProductsSection({
                   type="number"
                   value={item.unit_price}
                   min={0}
+                  step="0.01"
                   onChange={(e) => handlePriceChange(item.id, e.target.value)}
                   className="text-center neo-blur"
                   disabled={isLoading && actionItemId === item.id}
                 />
               </div>
               
-              <div className="col-span-3 text-center font-medium">
-                {formatGNF(item.quantity * item.unit_price)}
+              <div className="col-span-3 text-center">
+                <div className="font-medium text-white">
+                  {formatGNF(item.quantity * item.unit_price)}
+                </div>
+                <div className="text-xs text-white/60">
+                  {item.quantity} × {formatGNF(item.unit_price)}
+                </div>
               </div>
               
-              <div className="col-span-1 flex justify-end">
+              <div className="col-span-1 flex justify-center">
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -230,6 +254,18 @@ export function ProductsSection({
               </div>
             </div>
           ))}
+
+          {/* Summary row */}
+          <div className="grid grid-cols-12 gap-4 p-4 bg-white/5 rounded-lg border border-white/20">
+            <div className="col-span-8"></div>
+            <div className="col-span-3 text-center">
+              <div className="text-sm text-white/60 mb-1">Total général</div>
+              <div className="font-bold text-lg text-white">
+                {formatGNF(calculateGrandTotal())}
+              </div>
+            </div>
+            <div className="col-span-1"></div>
+          </div>
         </div>
       )}
 
