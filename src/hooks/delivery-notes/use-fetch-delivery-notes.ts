@@ -12,28 +12,32 @@ export function useFetchDeliveryNotes() {
     queryFn: async () => {
       console.log("Fetching delivery notes with items...");
       try {
-        // First get the delivery notes
+        // Fetch delivery notes with direct join to get items
         const { data: deliveryNotesData, error } = await supabase
-          .rpc('bypass_select_delivery_notes');
-
-        if (error) {
-          console.error("Error fetching delivery notes:", error);
-          throw error;
-        }
-
-        console.log("Fetched delivery notes:", deliveryNotesData);
-        
-        // Then fetch items for each delivery note
-        const deliveryNotesWithItems: DeliveryNote[] = [];
-        
-        for (const noteData of deliveryNotesData || []) {
-          // Cast the Json data to a proper object
-          const note = noteData as any;
-          
-          // Fetch items for this delivery note
-          const { data: itemsData, error: itemsError } = await supabase
-            .from('delivery_note_items')
-            .select(`
+          .from('delivery_notes')
+          .select(`
+            id,
+            delivery_number,
+            created_at,
+            updated_at,
+            status,
+            notes,
+            purchase_order_id,
+            supplier_id,
+            warehouse_id,
+            deleted,
+            supplier:suppliers(
+              id,
+              name,
+              email,
+              phone
+            ),
+            purchase_order:purchase_orders(
+              id,
+              order_number,
+              total_amount
+            ),
+            items:delivery_note_items(
               id,
               delivery_note_id,
               product_id,
@@ -45,16 +49,23 @@ export function useFetchDeliveryNotes() {
                 name,
                 reference
               )
-            `)
-            .eq('delivery_note_id', note.id);
-            
-          if (itemsError) {
-            console.error("Error fetching delivery note items:", itemsError);
-            // Continue with empty items array instead of throwing
-          }
+            )
+          `)
+          .eq('deleted', false)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching delivery notes:", error);
+          throw error;
+        }
+
+        console.log("Raw delivery notes data:", deliveryNotesData);
+        
+        // Transform the data to match our TypeScript interfaces
+        const transformedNotes: DeliveryNote[] = (deliveryNotesData || []).map(note => {
+          console.log(`Processing delivery note ${note.delivery_number} with ${note.items?.length || 0} items`);
           
-          // Transform the data to match our TypeScript interfaces
-          const transformedNote: DeliveryNote = {
+          return {
             id: note.id,
             delivery_number: note.delivery_number,
             created_at: note.created_at,
@@ -65,9 +76,18 @@ export function useFetchDeliveryNotes() {
             supplier_id: note.supplier_id,
             warehouse_id: note.warehouse_id,
             deleted: note.deleted,
-            supplier: note.supplier,
-            purchase_order: note.purchase_order,
-            items: itemsData?.map(item => ({
+            supplier: note.supplier ? {
+              id: note.supplier.id,
+              name: note.supplier.name,
+              phone: note.supplier.phone || '',
+              email: note.supplier.email || ''
+            } : undefined,
+            purchase_order: note.purchase_order ? {
+              id: note.purchase_order.id,
+              order_number: note.purchase_order.order_number,
+              total_amount: note.purchase_order.total_amount
+            } : undefined,
+            items: (note.items || []).map(item => ({
               id: item.id,
               delivery_note_id: item.delivery_note_id,
               product_id: item.product_id,
@@ -79,15 +99,12 @@ export function useFetchDeliveryNotes() {
                 name: item.product.name,
                 reference: item.product.reference
               } : undefined
-            })) || []
+            }))
           };
-          
-          console.log(`Delivery note ${note.delivery_number} has ${transformedNote.items.length} items`);
-          deliveryNotesWithItems.push(transformedNote);
-        }
+        });
         
-        console.log("Transformed delivery notes with items:", deliveryNotesWithItems);
-        return deliveryNotesWithItems;
+        console.log("Transformed delivery notes with items:", transformedNotes);
+        return transformedNotes;
       } catch (error) {
         console.error("Error fetching delivery notes:", error);
         return [];

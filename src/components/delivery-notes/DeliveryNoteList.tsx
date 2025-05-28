@@ -59,10 +59,15 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
-    if (!items || items.length === 0) return "0 article";
+    if (!items || items.length === 0) {
+      console.log("No items found for delivery note");
+      return "0 article";
+    }
     
     const count = items.length;
     const distinctCount = new Set(items.map(item => item.product_id)).size;
+    
+    console.log(`Delivery note has ${count} total items, ${distinctCount} distinct products`);
     
     // Show both total items and distinct products if different
     if (count !== distinctCount) {
@@ -87,71 +92,75 @@ export function DeliveryNoteList({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {deliveryNotes.map((note) => (
-          <TableRow key={note.id}>
-            <TableCell>{note.delivery_number}</TableCell>
-            <TableCell>{note.purchase_order?.order_number}</TableCell>
-            <TableCell>
-              {note.created_at ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
-            </TableCell>
-            <TableCell>{note.supplier?.name}</TableCell>
-            <TableCell>
-              <div className="text-sm">
-                {formatArticles(note.items)}
-              </div>
-            </TableCell>
-            <TableCell>
-              {getStatusBadge(note.status)}
-            </TableCell>
-            <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                {onEdit && note.status === 'pending' && (
+        {deliveryNotes.map((note) => {
+          console.log(`Rendering delivery note ${note.delivery_number} with ${note.items?.length || 0} items:`, note.items);
+          
+          return (
+            <TableRow key={note.id}>
+              <TableCell>{note.delivery_number}</TableCell>
+              <TableCell>{note.purchase_order?.order_number}</TableCell>
+              <TableCell>
+                {note.created_at ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
+              </TableCell>
+              <TableCell>{note.supplier?.name}</TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {formatArticles(note.items)}
+                </div>
+              </TableCell>
+              <TableCell>
+                {getStatusBadge(note.status)}
+              </TableCell>
+              <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  {onEdit && note.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEdit(note.id)}
+                      className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                      title="Modifier"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onApprove && note.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onApprove(note.id)} 
+                      className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                      title="Approuver"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => onEdit(note.id)}
-                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
-                    title="Modifier"
+                    onClick={() => onDelete(note.id)} 
+                    className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    title="Supprimer"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
-                {onApprove && note.status === 'pending' && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onApprove(note.id)} 
-                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                    title="Approuver"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => onDelete(note.id)} 
-                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                  title="Supprimer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                {onPrint && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onPrint(note.id)} 
-                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
-                    title="Imprimer"
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+                  {onPrint && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onPrint(note.id)} 
+                      className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                      title="Imprimer"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

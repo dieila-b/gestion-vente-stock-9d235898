@@ -86,8 +86,18 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     
     console.log(`[createDeliveryNoteItems] Creating items for delivery note ${deliveryNoteId} from ${orderItems.length} order items`);
     
-    // Ensure we have all required data for each item
-    const validItems = orderItems.filter(item => item.product_id && item.quantity && item.unit_price);
+    // Validate and filter items
+    const validItems = orderItems.filter(item => {
+      const isValid = item.product_id && 
+                     typeof item.quantity === 'number' && item.quantity > 0 &&
+                     typeof item.unit_price === 'number' && item.unit_price >= 0;
+      
+      if (!isValid) {
+        console.warn(`[createDeliveryNoteItems] Invalid item:`, item);
+      }
+      
+      return isValid;
+    });
     
     if (validItems.length === 0) {
       console.error(`[createDeliveryNoteItems] No valid items found for delivery note ${deliveryNoteId}`);
@@ -109,7 +119,7 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     
     console.log(`[createDeliveryNoteItems] Inserting ${itemsData.length} items:`, itemsData);
     
-    // Insert the items
+    // Insert the items in batches if needed
     const { error: itemsError } = await supabase
       .from('delivery_note_items')
       .insert(itemsData);
@@ -117,6 +127,18 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     if (itemsError) {
       console.error(`[createDeliveryNoteItems] Error creating items for note ${deliveryNoteId}:`, itemsError);
       return false;
+    }
+    
+    // Verify items were created
+    const { data: createdItems, error: verifyError } = await supabase
+      .from('delivery_note_items')
+      .select('id')
+      .eq('delivery_note_id', deliveryNoteId);
+    
+    if (verifyError) {
+      console.error(`[createDeliveryNoteItems] Error verifying created items:`, verifyError);
+    } else {
+      console.log(`[createDeliveryNoteItems] Verified ${createdItems?.length || 0} items created for delivery note ${deliveryNoteId}`);
     }
     
     console.log(`[createDeliveryNoteItems] Successfully created ${itemsData.length} items for delivery note ${deliveryNoteId}`);

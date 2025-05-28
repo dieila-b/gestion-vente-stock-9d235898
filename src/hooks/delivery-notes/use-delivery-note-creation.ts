@@ -39,7 +39,7 @@ export function useDeliveryNoteCreation() {
         return false;
       }
       
-      console.log(`[createDeliveryNoteFromPO] Order ${order.order_number} has ${order.items?.length || 0} items`);
+      console.log(`[createDeliveryNoteFromPO] Order ${order.order_number} has ${order.items?.length || 0} items:`, order.items);
       
       // Vérifier que la commande a des articles
       if (!order.items || order.items.length === 0) {
@@ -93,16 +93,33 @@ export function useDeliveryNoteCreation() {
       
       console.log(`[createDeliveryNoteFromPO] Created delivery note: ${newNote.delivery_number}`);
       
-      // Créer les articles du bon de livraison
-      const itemsData = order.items.map((item: any) => ({
-        delivery_note_id: newNote.id,
-        product_id: item.product_id,
-        quantity_ordered: item.quantity,
-        quantity_received: 0,
-        unit_price: item.unit_price
-      }));
+      // Créer les articles du bon de livraison avec validation
+      const itemsData = order.items.map((item: any) => {
+        if (!item.product_id || !item.quantity || !item.unit_price) {
+          console.warn(`[createDeliveryNoteFromPO] Invalid item data:`, item);
+          return null;
+        }
+        return {
+          delivery_note_id: newNote.id,
+          product_id: item.product_id,
+          quantity_ordered: item.quantity,
+          quantity_received: 0,
+          unit_price: item.unit_price
+        };
+      }).filter(Boolean);
       
-      console.log(`[createDeliveryNoteFromPO] Creating ${itemsData.length} delivery note items`);
+      if (itemsData.length === 0) {
+        console.error(`[createDeliveryNoteFromPO] No valid items to create for delivery note`);
+        // Nettoyer le bon de livraison créé
+        await supabase
+          .from('delivery_notes')
+          .update({ deleted: true })
+          .eq('id', newNote.id);
+        toast.error("Aucun article valide trouvé dans la commande");
+        return false;
+      }
+      
+      console.log(`[createDeliveryNoteFromPO] Creating ${itemsData.length} delivery note items:`, itemsData);
       
       const { error: itemsError } = await supabase
         .from('delivery_note_items')
