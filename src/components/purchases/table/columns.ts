@@ -22,9 +22,15 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
   },
   {
     accessorKey: "items",
-    header: "Nombre d'articles",
+    header: "Articles",
     cell: ({ row }) => {
-      return row.original.items?.length || 0;
+      const items = row.original.items || [];
+      const count = items.length;
+      const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      
+      if (count === 0) return "0 article";
+      if (count === 1) return `1 article (${totalQuantity} unités)`;
+      return `${count} articles (${totalQuantity} unités)`;
     }
   },
   {

@@ -56,6 +56,19 @@ export function DeliveryNoteList({
     }
   };
 
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    const totalOrdered = items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
+    const totalReceived = items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+    
+    if (count === 1) {
+      return `1 article (${totalReceived}/${totalOrdered})`;
+    }
+    return `${count} articles (${totalReceived}/${totalOrdered})`;
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -80,7 +93,9 @@ export function DeliveryNoteList({
             </TableCell>
             <TableCell>{note.supplier?.name}</TableCell>
             <TableCell>
-              {note.items.reduce((acc, item) => acc + (item.quantity_received || 0), 0)} / {note.items.reduce((acc, item) => acc + item.quantity_ordered, 0)}
+              <div className="text-sm">
+                {formatArticles(note.items || [])}
+              </div>
             </TableCell>
             <TableCell>
               {getStatusBadge(note.status)}

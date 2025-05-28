@@ -66,6 +66,19 @@ export function DeliveryNoteList({
     }
   };
 
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    const totalOrdered = items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
+    const totalReceived = items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+    
+    if (count === 1) {
+      return `1 article (${totalReceived}/${totalOrdered})`;
+    }
+    return `${count} articles (${totalReceived}/${totalOrdered})`;
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -73,6 +86,7 @@ export function DeliveryNoteList({
           <TableHead>N° Livraison</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Fournisseur</TableHead>
+          <TableHead>Articles</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead>Bon commande</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -86,6 +100,11 @@ export function DeliveryNoteList({
               {formatDisplayDate(note.created_at)}
             </TableCell>
             <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
+            <TableCell>
+              <div className="text-sm">
+                {formatArticles(note.items || [])}
+              </div>
+            </TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>
             <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">

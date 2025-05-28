@@ -24,6 +24,18 @@ export function PurchaseOrderTable({
   onEdit,
   onPrint
 }: PurchaseOrderTableProps) {
+  const formatArticles = (items: any[]) => {
+    if (!items || items.length === 0) return "0 article";
+    
+    const count = items.length;
+    const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    
+    if (count === 1) {
+      return `1 article (${totalQuantity} unités)`;
+    }
+    return `${count} articles (${totalQuantity} unités)`;
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -32,6 +44,7 @@ export function PurchaseOrderTable({
             <TableHead>N° Commande</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Fournisseur</TableHead>
+            <TableHead>Articles</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Actions</TableHead>
@@ -40,13 +53,13 @@ export function PurchaseOrderTable({
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4">
+              <TableCell colSpan={7} className="text-center py-4">
                 Chargement...
               </TableCell>
             </TableRow>
           ) : orders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4">
+              <TableCell colSpan={7} className="text-center py-4">
                 Aucun bon de commande trouvé
               </TableCell>
             </TableRow>
@@ -58,6 +71,11 @@ export function PurchaseOrderTable({
                   {format(new Date(order.created_at), 'dd/MM/yyyy', { locale: fr })}
                 </TableCell>
                 <TableCell>{order.supplier?.name || 'Non défini'}</TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {formatArticles(order.items || [])}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
