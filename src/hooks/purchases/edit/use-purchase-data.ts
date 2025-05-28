@@ -43,41 +43,26 @@ export function usePurchaseData(orderId?: string) {
         }
 
         console.log('Purchase order fetched:', purchaseData);
-        
-        // Helper function to validate status values
-        const validateStatus = (status: string): "draft" | "pending" | "delivered" | "approved" => {
-          const validStatuses = ["draft", "pending", "delivered", "approved"] as const;
-          return validStatuses.includes(status as any) ? status as "draft" | "pending" | "delivered" | "approved" : "pending";
-        };
+        return purchaseData;
+      } catch (error) {
+        console.error('Error in purchase order fetch:', error);
+        throw error;
+      }
+    },
+    enabled: !!orderId,
+    staleTime: 30000, // 30 seconds
+  });
 
-        const validatePaymentStatus = (status: string): "pending" | "partial" | "paid" => {
-          const validPaymentStatuses = ["pending", "partial", "paid"] as const;
-          return validPaymentStatuses.includes(status as any) ? status as "pending" | "partial" | "paid" : "pending";
-        };
+  // Fetch purchase order items separately
+  const {
+    data: items,
+    isLoading: isItemsLoading
+  } = useQuery({
+    queryKey: ['purchase-items', orderId],
+    queryFn: async () => {
+      if (!orderId) return [];
 
-        // Initialize form data from purchase data with proper type validation
-        setFormData({
-          id: purchaseData.id,
-          order_number: purchaseData.order_number,
-          supplier_id: purchaseData.supplier_id,
-          expected_delivery_date: purchaseData.expected_delivery_date,
-          notes: purchaseData.notes,
-          logistics_cost: purchaseData.logistics_cost || 0,
-          transit_cost: purchaseData.transit_cost || 0,
-          tax_rate: purchaseData.tax_rate || 0,
-          shipping_cost: purchaseData.shipping_cost || 0,
-          discount: purchaseData.discount || 0,
-          subtotal: purchaseData.subtotal || 0,
-          tax_amount: purchaseData.tax_amount || 0,
-          total_ttc: purchaseData.total_ttc || 0,
-          total_amount: purchaseData.total_amount || 0,
-          paid_amount: purchaseData.paid_amount || 0,
-          status: validateStatus(purchaseData.status || "pending"),
-          payment_status: validatePaymentStatus(purchaseData.payment_status || "pending"),
-          warehouse_id: purchaseData.warehouse_id,
-        });
-        
-        // Get items for this purchase order
+      try {
         console.log('Fetching items for purchase order:', orderId);
         const { data: items, error: itemsError } = await supabase
           .from('purchase_order_items')
@@ -93,39 +78,79 @@ export function usePurchaseData(orderId?: string) {
         }
 
         console.log('Items fetched:', items?.length || 0, items);
-        
-        if (items && items.length > 0) {
-          const formattedItems = items.map(item => ({
-            id: item.id,
-            purchase_order_id: item.purchase_order_id,
-            product_id: item.product_id,
-            quantity: Number(item.quantity || 0),
-            unit_price: Number(item.unit_price || 0),
-            selling_price: Number(item.selling_price || 0),
-            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-            product: item.product ? {
-              id: item.product.id,
-              name: item.product.name,
-              reference: item.product.reference
-            } : null
-          }));
-          
-          console.log('Setting order items:', formattedItems);
-          setOrderItems(formattedItems);
-        } else {
-          console.log('No items found, setting empty array');
-          setOrderItems([]);
-        }
-
-        return purchaseData;
+        return items || [];
       } catch (error) {
-        console.error('Error in purchase order fetch:', error);
-        throw error;
+        console.error('Error fetching items:', error);
+        return [];
       }
     },
     enabled: !!orderId,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   });
+
+  // Initialize form data when purchase data is loaded
+  useEffect(() => {
+    if (purchase) {
+      console.log('Initializing form data with purchase:', purchase);
+      
+      // Helper function to validate status values
+      const validateStatus = (status: string): "draft" | "pending" | "delivered" | "approved" => {
+        const validStatuses = ["draft", "pending", "delivered", "approved"] as const;
+        return validStatuses.includes(status as any) ? status as "draft" | "pending" | "delivered" | "approved" : "pending";
+      };
+
+      const validatePaymentStatus = (status: string): "pending" | "partial" | "paid" => {
+        const validPaymentStatuses = ["pending", "partial", "paid"] as const;
+        return validPaymentStatuses.includes(status as any) ? status as "pending" | "partial" | "paid" : "pending";
+      };
+
+      setFormData({
+        id: purchase.id,
+        order_number: purchase.order_number,
+        supplier_id: purchase.supplier_id,
+        expected_delivery_date: purchase.expected_delivery_date,
+        notes: purchase.notes,
+        logistics_cost: purchase.logistics_cost || 0,
+        transit_cost: purchase.transit_cost || 0,
+        tax_rate: purchase.tax_rate || 0,
+        shipping_cost: purchase.shipping_cost || 0,
+        discount: purchase.discount || 0,
+        subtotal: purchase.subtotal || 0,
+        tax_amount: purchase.tax_amount || 0,
+        total_ttc: purchase.total_ttc || 0,
+        total_amount: purchase.total_amount || 0,
+        paid_amount: purchase.paid_amount || 0,
+        status: validateStatus(purchase.status || "pending"),
+        payment_status: validatePaymentStatus(purchase.payment_status || "pending"),
+        warehouse_id: purchase.warehouse_id,
+      });
+    }
+  }, [purchase]);
+
+  // Initialize order items when items data is loaded
+  useEffect(() => {
+    if (items && items.length >= 0) {
+      console.log('Initializing order items:', items);
+      
+      const formattedItems = items.map(item => ({
+        id: item.id,
+        purchase_order_id: item.purchase_order_id,
+        product_id: item.product_id,
+        quantity: Number(item.quantity || 0),
+        unit_price: Number(item.unit_price || 0),
+        selling_price: Number(item.selling_price || 0),
+        total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+        product: item.product ? {
+          id: item.product.id,
+          name: item.product.name,
+          reference: item.product.reference
+        } : null
+      }));
+      
+      console.log('Setting formatted order items:', formattedItems);
+      setOrderItems(formattedItems);
+    }
+  }, [items]);
 
   // Function to update form data field
   const updateFormField = (field: keyof PurchaseOrder, value: any) => {
@@ -139,7 +164,7 @@ export function usePurchaseData(orderId?: string) {
     orderItems,
     setOrderItems,
     updateFormField,
-    isPurchaseLoading,
+    isPurchaseLoading: isPurchaseLoading || isItemsLoading,
     refetch,
     setFormData
   };
