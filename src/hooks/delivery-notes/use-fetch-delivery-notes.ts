@@ -13,15 +13,7 @@ export function useFetchDeliveryNotes() {
       console.log("🔍 Starting delivery notes fetch...");
       
       try {
-        // Test basic connectivity first
-        const { data: testData, error: testError } = await supabase
-          .from('delivery_notes')
-          .select('id')
-          .limit(1);
-          
-        console.log("🔗 Basic connectivity test:", { testData, testError });
-        
-        // Fetch delivery notes with their relationships
+        // Fetch delivery notes with their relationships using standard Supabase queries
         const { data: deliveryNotesData, error } = await supabase
           .from('delivery_notes')
           .select(`
@@ -128,7 +120,6 @@ export function useFetchDeliveryNotes() {
         return transformedNotes;
       } catch (error) {
         console.error("💥 Critical error in delivery notes fetch:", error);
-        // Don't return empty array on error, let the error bubble up
         throw error;
       }
     },
