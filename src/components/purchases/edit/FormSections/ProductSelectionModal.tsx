@@ -25,10 +25,14 @@ export function ProductSelectionModal({
   onSelectProduct,
   isLoading = false
 }: ProductSelectionModalProps) {
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.reference && product.reference.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProducts = products.filter(product => {
+    const productName = product.name || '';
+    const productReference = product.reference || '';
+    const query = searchQuery.toLowerCase();
+    
+    return productName.toLowerCase().includes(query) ||
+           productReference.toLowerCase().includes(query);
+  });
 
   const handleSelectProduct = (product: CatalogProduct) => {
     onSelectProduct(product);
@@ -65,7 +69,7 @@ export function ProductSelectionModal({
                   className="flex items-center justify-between p-3 rounded-md border border-white/10 bg-black/40 neo-blur hover:bg-white/5"
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-white">{product.name}</div>
+                    <div className="font-medium text-white">{product.name || "Produit sans nom"}</div>
                     <div className="text-sm text-white/60">
                       Réf: {product.reference || "Sans référence"} | 
                       Stock: {product.stock || 0} | 
