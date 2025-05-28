@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DeliveryNoteHeader } from "@/components/purchases/delivery-notes/DeliveryNoteHeader";
 import { DeliveryNoteList } from "@/components/purchases/delivery-notes/DeliveryNoteList";
-import { DeliveryNoteApprovalDialog } from "@/components/delivery-notes/DeliveryNoteApprovalDialog";
+import { DeliveryNoteApprovalDialog } from "@/components/delivery-notes/approval";
 import { useDeliveryNotes } from "@/hooks/use-delivery-notes";
 import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 
