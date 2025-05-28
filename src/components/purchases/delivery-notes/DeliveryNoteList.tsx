@@ -1,20 +1,18 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
-import { formatGNF } from "@/lib/currency";
+import { Pencil, Check, Trash2, Printer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { DeliveryNote } from "@/types/delivery-note";
-import { formatDate } from "@/lib/formatters";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
   isLoading: boolean;
   onView: (id: string) => void;
   onDelete: (id: string) => void;
-  onEdit?: (id: string) => void; // Optional for backwards compatibility
-  onApprove?: (id: string) => void; // Optional for backwards compatibility
+  onEdit?: (id: string) => void;
+  onApprove?: (id: string) => void;
 }
 
 export function DeliveryNoteList({
@@ -90,50 +88,55 @@ export function DeliveryNoteList({
             <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onView(note.id)}
-                  title="Voir"
-                  className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {onEdit && (
+                {/* Éditer - Jaune */}
+                {onEdit && note.status !== 'received' && (
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onEdit(note.id)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
                     title="Modifier"
-                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                    </svg>
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 )}
+                
+                {/* Approuver - Vert */}
                 {onApprove && note.status === 'pending' && (
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onApprove(note.id)}
+                    className="bg-green-500 hover:bg-green-600 text-white border-green-500"
                     title="Approuver"
-                    className="h-10 w-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    <Check className="h-4 w-4" />
                   </Button>
                 )}
+                
+                {/* Imprimer - Gris */}
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(note.id)}
-                  title="Supprimer"
-                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onView(note.id)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white border-gray-500"
+                  title="Imprimer"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Printer className="h-4 w-4" />
                 </Button>
+                
+                {/* Supprimer - Rouge */}
+                {note.status !== 'received' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(note.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </TableCell>
           </TableRow>
