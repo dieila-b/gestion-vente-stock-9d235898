@@ -101,7 +101,7 @@ export function DeliveryNoteList({
             <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
             <TableCell>
               <div className="text-sm">
-                {formatArticles(note.items || [])}
+                {formatArticles(note.items)}
               </div>
             </TableCell>
             <TableCell>{getStatusBadge(note.status)}</TableCell>

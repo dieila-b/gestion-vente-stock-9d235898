@@ -94,7 +94,7 @@ export function DeliveryNoteList({
             <TableCell>{note.supplier?.name}</TableCell>
             <TableCell>
               <div className="text-sm">
-                {formatArticles(note.items || [])}
+                {formatArticles(note.items)}
               </div>
             </TableCell>
             <TableCell>
