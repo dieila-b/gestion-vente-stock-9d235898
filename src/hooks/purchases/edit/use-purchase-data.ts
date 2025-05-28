@@ -61,53 +61,43 @@ export function usePurchaseData(orderId?: string) {
           warehouse_id: purchaseData.warehouse_id,
         });
         
-        // Process the items array
-        if (purchaseData.items && Array.isArray(purchaseData.items) && purchaseData.items.length > 0) {
-          console.log('Items from RPC response:', purchaseData.items);
-          const formattedItems = purchaseData.items.map(item => ({
-            ...item,
+        // Process the items array and always fetch items separately to ensure we have the latest data
+        console.log('Fetching items separately for fresh data...');
+        const { data: items, error: itemsError } = await supabase
+          .from('purchase_order_items')
+          .select(`
+            *,
+            product:catalog(id, name, reference)
+          `)
+          .eq('purchase_order_id', orderId);
+
+        if (itemsError) {
+          console.error('Error fetching purchase order items:', itemsError);
+          throw itemsError;
+        }
+
+        console.log('Items fetched separately:', items);
+        if (items && items.length > 0) {
+          const formattedItems = items.map(item => ({
+            id: item.id,
+            purchase_order_id: item.purchase_order_id,
+            product_id: item.product_id,
             quantity: Number(item.quantity || 0),
             unit_price: Number(item.unit_price || 0),
             selling_price: Number(item.selling_price || 0),
-            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0)
+            total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
+            product: item.product ? {
+              id: item.product.id,
+              name: item.product.name,
+              reference: item.product.reference
+            } : null
           }));
           
-          console.log('Formatted items:', formattedItems);
+          console.log('Formatted items from fetch:', formattedItems);
           setOrderItems(formattedItems);
         } else {
-          // Fallback to fetch items separately if needed
-          console.log('No items in RPC response or empty array, fetching separately');
-          const { data: items, error: itemsError } = await supabase
-            .from('purchase_order_items')
-            .select(`
-              *,
-              product:product_id(id, name, reference)
-            `)
-            .eq('purchase_order_id', orderId);
-
-          if (itemsError) {
-            console.error('Error fetching purchase order items:', itemsError);
-            throw itemsError;
-          }
-
-          console.log('Items fetched separately:', items);
-          if (items && items.length > 0) {
-            const formattedItems = items.map(item => ({
-              id: item.id,
-              purchase_order_id: item.purchase_order_id,
-              product_id: item.product_id,
-              quantity: Number(item.quantity || 0),
-              unit_price: Number(item.unit_price || 0),
-              selling_price: Number(item.selling_price || 0),
-              total_price: Number(item.quantity || 0) * Number(item.unit_price || 0),
-              product: item.product
-            }));
-            
-            console.log('Formatted items from separate fetch:', formattedItems);
-            setOrderItems(formattedItems);
-          } else {
-            setOrderItems([]);
-          }
+          console.log('No items found, setting empty array');
+          setOrderItems([]);
         }
 
         return purchaseData;

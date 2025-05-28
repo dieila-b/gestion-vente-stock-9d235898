@@ -137,12 +137,14 @@ export function ProductsSection({
     return items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
   };
 
+  console.log("Rendering ProductsSection with", items.length, "items");
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex-1">
           <h3 className="text-lg font-medium text-white">Articles de la commande</h3>
-          <p className="text-sm text-white/60">Gérez les articles, quantités et prix</p>
+          <p className="text-sm text-white/60">Gérez les articles, quantités et prix ({items.length} article{items.length !== 1 ? 's' : ''})</p>
         </div>
         <Button 
           onClick={() => setIsProductModalOpen(true)}
@@ -193,67 +195,72 @@ export function ProductsSection({
           </div>
           
           {/* Items */}
-          {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-lg border border-white/10 bg-black/40 neo-blur hover:bg-black/50 transition-colors">
-              <div className="col-span-4">
-                <div className="font-medium text-white">{item.product?.name || "Produit inconnu"}</div>
-                <div className="text-xs text-white/60">
-                  Réf: {item.product?.reference || "Sans référence"}
+          {items.map((item) => {
+            const itemTotal = Number(item.quantity || 0) * Number(item.unit_price || 0);
+            return (
+              <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center rounded-lg border border-white/10 bg-black/40 neo-blur hover:bg-black/50 transition-colors">
+                <div className="col-span-4">
+                  <div className="font-medium text-white">
+                    {item.product?.name || "Produit inconnu"}
+                  </div>
+                  <div className="text-xs text-white/60">
+                    Réf: {item.product?.reference || "Sans référence"}
+                  </div>
                 </div>
-              </div>
-              
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  value={item.quantity}
-                  min={1}
-                  onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                  className="text-center neo-blur"
-                  disabled={isLoading && actionItemId === item.id}
-                />
-                {isLoading && actionItemId === item.id && (
-                  <div className="text-xs text-white/60 mt-1 text-center">Mise à jour...</div>
-                )}
-              </div>
-              
-              <div className="col-span-2">
-                <Input
-                  type="number"
-                  value={item.unit_price}
-                  min={0}
-                  step="0.01"
-                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                  className="text-center neo-blur"
-                  disabled={isLoading && actionItemId === item.id}
-                />
-              </div>
-              
-              <div className="col-span-3 text-center">
-                <div className="font-medium text-white">
-                  {formatGNF(item.quantity * item.unit_price)}
-                </div>
-                <div className="text-xs text-white/60">
-                  {item.quantity} × {formatGNF(item.unit_price)}
-                </div>
-              </div>
-              
-              <div className="col-span-1 flex justify-center">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  disabled={isLoading && actionItemId === item.id}
-                >
-                  {isLoading && actionItemId === item.id ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4" />
+                
+                <div className="col-span-2">
+                  <Input
+                    type="number"
+                    value={item.quantity || 0}
+                    min={1}
+                    onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                    className="text-center neo-blur"
+                    disabled={isLoading && actionItemId === item.id}
+                  />
+                  {isLoading && actionItemId === item.id && (
+                    <div className="text-xs text-white/60 mt-1 text-center">Mise à jour...</div>
                   )}
-                </Button>
+                </div>
+                
+                <div className="col-span-2">
+                  <Input
+                    type="number"
+                    value={item.unit_price || 0}
+                    min={0}
+                    step="0.01"
+                    onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                    className="text-center neo-blur"
+                    disabled={isLoading && actionItemId === item.id}
+                  />
+                </div>
+                
+                <div className="col-span-3 text-center">
+                  <div className="font-medium text-white">
+                    {formatGNF(itemTotal)}
+                  </div>
+                  <div className="text-xs text-white/60">
+                    {item.quantity} × {formatGNF(Number(item.unit_price || 0))}
+                  </div>
+                </div>
+                
+                <div className="col-span-1 flex justify-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                    disabled={isLoading && actionItemId === item.id}
+                  >
+                    {isLoading && actionItemId === item.id ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Summary row */}
           <div className="grid grid-cols-12 gap-4 p-4 bg-white/5 rounded-lg border border-white/20">

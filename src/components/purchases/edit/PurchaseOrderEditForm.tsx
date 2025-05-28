@@ -143,6 +143,17 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           />
 
           <div className="border-t border-white/10 pt-6">
+            <h3 className="text-lg font-semibold mb-4 text-white">Articles de la commande</h3>
+            <ProductsSection 
+              items={orderItems || []}
+              updateItemQuantity={updateItemQuantity}
+              updateItemPrice={updateItemPrice}
+              removeItem={removeItem}
+              addItem={addItem}
+            />
+          </div>
+
+          <div className="border-t border-white/10 pt-6">
             <h3 className="text-lg font-semibold mb-4 text-white">Coûts additionnels</h3>
             <AdditionalCostsSection 
               formData={formData}
@@ -155,16 +166,6 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
             <NotesSection 
               notes={formData.notes || ''}
               updateFormField={updateFormField}
-            />
-          </div>
-            
-          <div className="border-t border-white/10 pt-6">
-            <ProductsSection 
-              items={orderItems || []}
-              updateItemQuantity={updateItemQuantity}
-              updateItemPrice={updateItemPrice}
-              removeItem={removeItem}
-              addItem={addItem}
             />
           </div>
           
