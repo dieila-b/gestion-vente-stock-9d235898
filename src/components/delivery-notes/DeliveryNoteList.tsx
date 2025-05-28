@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DeliveryNote } from "@/types/delivery-note";
 import { Button } from "@/components/ui/button";
-import { Check, Edit, Eye, Trash2, Printer } from "lucide-react";
+import { Check, Edit, Eye, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,7 +15,6 @@ interface DeliveryNoteListProps {
   onApprove?: (id: string) => Promise<boolean> | void;
   onEdit?: (id: string) => void;
   onView: (id: string) => void;
-  onPrint?: (id: string) => void;
 }
 
 export function DeliveryNoteList({
@@ -25,7 +24,6 @@ export function DeliveryNoteList({
   onApprove,
   onEdit,
   onView,
-  onPrint,
 }: DeliveryNoteListProps) {
   if (isLoading) {
     return (
@@ -58,17 +56,6 @@ export function DeliveryNoteList({
     }
   };
 
-  const formatArticles = (items: any[]) => {
-    if (!items || items.length === 0) return "0 article";
-    
-    const count = items.length;
-    
-    if (count === 1) {
-      return `1 article`;
-    }
-    return `${count} articles`;
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -93,9 +80,7 @@ export function DeliveryNoteList({
             </TableCell>
             <TableCell>{note.supplier?.name}</TableCell>
             <TableCell>
-              <div className="text-sm">
-                {formatArticles(note.items)}
-              </div>
+              {note.items.reduce((acc, item) => acc + (item.quantity_received || 0), 0)} / {note.items.reduce((acc, item) => acc + item.quantity_ordered, 0)}
             </TableCell>
             <TableCell>
               {getStatusBadge(note.status)}
@@ -103,48 +88,22 @@ export function DeliveryNoteList({
             <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell>
               <div className="flex space-x-2">
-                {onEdit && note.status === 'pending' && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onEdit(note.id)}
-                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
-                    title="Modifier"
-                  >
+                <Button variant="outline" size="sm" onClick={() => onView(note.id)}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+                {onEdit && (
+                  <Button variant="outline" size="sm" onClick={() => onEdit(note.id)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                 )}
                 {onApprove && note.status === 'pending' && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onApprove(note.id)} 
-                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                    title="Approuver"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => onApprove(note.id)} className="text-green-600">
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => onDelete(note.id)} 
-                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                  title="Supprimer"
-                >
+                <Button variant="outline" size="sm" onClick={() => onDelete(note.id)} className="text-red-600">
                   <Trash2 className="h-4 w-4" />
                 </Button>
-                {onPrint && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onPrint(note.id)} 
-                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
-                    title="Imprimer"
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </TableCell>
           </TableRow>

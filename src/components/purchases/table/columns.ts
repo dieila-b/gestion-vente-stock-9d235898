@@ -22,14 +22,9 @@ export const columns: ColumnDef<PurchaseOrder>[] = [
   },
   {
     accessorKey: "items",
-    header: "Articles",
+    header: "Nombre d'articles",
     cell: ({ row }) => {
-      const items = row.original.items || [];
-      const count = items.length;
-      
-      if (count === 0) return "0 article";
-      if (count === 1) return `1 article`;
-      return `${count} articles`;
+      return row.original.items?.length || 0;
     }
   },
   {
