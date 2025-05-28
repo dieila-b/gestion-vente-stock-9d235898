@@ -45,8 +45,8 @@ export default function DeliveryNotesPage() {
 
   const handleDelete = async (noteId: string): Promise<boolean> => {
     try {
-      const result = await originalHandleDelete(noteId);
-      return result !== false;
+      await originalHandleDelete(noteId);
+      return true;
     } catch (error) {
       console.error("Error deleting delivery note:", error);
       return false;
