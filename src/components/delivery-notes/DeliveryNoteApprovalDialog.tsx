@@ -4,11 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeliveryNote } from "@/types/delivery-note";
 import { AlertCircle, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useFetchWarehouses } from "@/hooks/delivery-notes/use-fetch-warehouses";
+import { useFetchPOSLocations } from "@/hooks/use-pos-locations";
 
 interface DeliveryNoteApprovalDialogProps {
   note: DeliveryNote | null;
@@ -29,8 +32,12 @@ export function DeliveryNoteApprovalDialog({
   onApprovalComplete
 }: DeliveryNoteApprovalDialogProps) {
   const [receivedQuantities, setReceivedQuantities] = useState<Record<string, number>>({});
+  const [selectedLocationId, setSelectedLocationId] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: warehouses = [] } = useFetchWarehouses();
+  const { data: posLocations = [] } = useFetchPOSLocations();
 
   useEffect(() => {
     if (note?.items) {
@@ -41,6 +48,8 @@ export function DeliveryNoteApprovalDialog({
       });
       setReceivedQuantities(initialQuantities);
     }
+    setSelectedLocationId("");
+    setErrors([]);
   }, [note]);
 
   const handleQuantityChange = (itemId: string, value: string) => {
@@ -51,6 +60,10 @@ export function DeliveryNoteApprovalDialog({
 
   const validateForm = () => {
     const newErrors: string[] = [];
+
+    if (!selectedLocationId) {
+      newErrors.push("Veuillez sélectionner un emplacement de stockage");
+    }
 
     if (!note?.items) {
       newErrors.push("Aucun article trouvé");
@@ -69,13 +82,132 @@ export function DeliveryNoteApprovalDialog({
     return newErrors.length === 0;
   };
 
+  const updateStockForLocation = async (productId: string, quantity: number, unitPrice: number) => {
+    if (quantity <= 0) return;
+
+    try {
+      // Déterminer le type d'emplacement
+      const isWarehouse = warehouses.some(w => w.id === selectedLocationId);
+      
+      // 1. Créer le mouvement de stock
+      const movementData: any = {
+        product_id: productId,
+        quantity: quantity,
+        unit_price: unitPrice,
+        total_value: quantity * unitPrice,
+        type: 'in',
+        reason: `Réception bon de livraison ${note.delivery_number}`
+      };
+
+      if (isWarehouse) {
+        movementData.warehouse_id = selectedLocationId;
+      } else {
+        // Pour les PDV, utiliser un entrepôt par défaut car la FK n'accepte que les entrepôts
+        const defaultWarehouse = warehouses[0];
+        if (defaultWarehouse) {
+          movementData.warehouse_id = defaultWarehouse.id;
+          movementData.reason = `${movementData.reason} (PDV: ${posLocations.find(p => p.id === selectedLocationId)?.name || 'PDV'})`;
+        }
+      }
+
+      const { error: movementError } = await supabase
+        .from('warehouse_stock_movements')
+        .insert(movementData);
+
+      if (movementError) throw movementError;
+
+      // 2. Mettre à jour warehouse_stock
+      const stockQuery = supabase
+        .from('warehouse_stock')
+        .select('id, quantity, unit_price, total_value')
+        .eq('product_id', productId);
+
+      if (isWarehouse) {
+        stockQuery.eq('warehouse_id', selectedLocationId).is('pos_location_id', null);
+      } else {
+        stockQuery.eq('pos_location_id', selectedLocationId).is('warehouse_id', null);
+      }
+
+      const { data: existingStock, error: stockCheckError } = await stockQuery.maybeSingle();
+
+      if (stockCheckError) throw stockCheckError;
+
+      if (existingStock) {
+        // Mise à jour avec calcul de prix moyen pondéré
+        const newQuantity = existingStock.quantity + quantity;
+        const oldValue = existingStock.quantity * existingStock.unit_price;
+        const newValue = quantity * unitPrice;
+        const newTotalValue = oldValue + newValue;
+        const newUnitPrice = newQuantity > 0 ? newTotalValue / newQuantity : unitPrice;
+
+        const { error: updateError } = await supabase
+          .from('warehouse_stock')
+          .update({
+            quantity: newQuantity,
+            unit_price: newUnitPrice,
+            total_value: newTotalValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingStock.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Créer une nouvelle entrée
+        const stockData: any = {
+          product_id: productId,
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_value: quantity * unitPrice
+        };
+
+        if (isWarehouse) {
+          stockData.warehouse_id = selectedLocationId;
+          stockData.pos_location_id = null;
+        } else {
+          stockData.pos_location_id = selectedLocationId;
+          stockData.warehouse_id = null;
+        }
+
+        const { error: insertError } = await supabase
+          .from('warehouse_stock')
+          .insert(stockData);
+
+        if (insertError) throw insertError;
+      }
+
+      // 3. Mettre à jour le stock du catalogue
+      const { data: productData, error: productError } = await supabase
+        .from('catalog')
+        .select('stock')
+        .eq('id', productId)
+        .single();
+
+      if (productError) throw productError;
+
+      const newCatalogStock = (productData?.stock || 0) + quantity;
+      const { error: catalogUpdateError } = await supabase
+        .from('catalog')
+        .update({ 
+          stock: newCatalogStock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productId);
+
+      if (catalogUpdateError) throw catalogUpdateError;
+
+    } catch (error: any) {
+      console.error('Erreur lors de la mise à jour du stock:', error);
+      throw new Error(`Erreur lors de la mise à jour du stock: ${error.message}`);
+    }
+  };
+
   const handleApprove = async () => {
     if (!note || !validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
-      // Update delivery note items with received quantities
+      // 1. Update delivery note items with received quantities
       const updates = note.items.map(item => ({
         id: item.id,
         quantity_received: receivedQuantities[item.id] || 0
@@ -91,21 +223,30 @@ export function DeliveryNoteApprovalDialog({
         if (error) throw error;
       }
 
-      // Update delivery note status to 'received'
+      // 2. Mettre à jour les stocks pour chaque article reçu
+      for (const item of note.items) {
+        const receivedQty = receivedQuantities[item.id] || 0;
+        if (receivedQty > 0) {
+          await updateStockForLocation(item.product_id, receivedQty, item.unit_price);
+        }
+      }
+
+      // 3. Update delivery note status to 'received'
       const { error: noteError } = await supabase
         .from('delivery_notes')
         .update({ 
           status: 'received',
+          warehouse_id: selectedLocationId,
           updated_at: new Date().toISOString()
         })
         .eq('id', note.id);
       
       if (noteError) throw noteError;
 
-      // Create purchase invoice from approved delivery note
+      // 4. Create purchase invoice from approved delivery note
       await createPurchaseInvoice(note, updates);
 
-      toast.success("Bon de livraison approuvé et facture d'achat créée");
+      toast.success("Bon de livraison approuvé, stocks mis à jour et facture d'achat créée");
       onApprovalComplete();
       onClose();
     } catch (error: any) {
@@ -155,9 +296,15 @@ export function DeliveryNoteApprovalDialog({
 
   if (!note) return null;
 
+  // Combiner les entrepôts et PDV pour la sélection
+  const allLocations = [
+    ...warehouses.map(w => ({ id: w.id, name: w.name, type: 'Entrepôt' })),
+    ...posLocations.map(p => ({ id: p.id, name: p.name, type: 'Point de Vente' }))
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Check className="h-5 w-5 text-green-600" />
@@ -178,7 +325,7 @@ export function DeliveryNoteApprovalDialog({
           </Alert>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <strong>Fournisseur:</strong> {note.supplier?.name}
@@ -189,9 +336,44 @@ export function DeliveryNoteApprovalDialog({
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium">Emplacement de stockage *</label>
+            <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un emplacement" />
+              </SelectTrigger>
+              <SelectContent>
+                {warehouses.length > 0 && (
+                  <>
+                    <SelectItem value="warehouses-header" disabled className="font-semibold text-sm text-muted-foreground">
+                      Entrepôts
+                    </SelectItem>
+                    {warehouses.map(warehouse => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {posLocations.length > 0 && (
+                  <>
+                    <SelectItem value="pos-header" disabled className="font-semibold text-sm text-muted-foreground">
+                      Points de Vente
+                    </SelectItem>
+                    {posLocations.map(pos => (
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <h3 className="text-lg font-semibold">Quantités reçues par article</h3>
             <p className="text-sm text-gray-600">
-              Saisissez les quantités réellement reçues pour chaque article
+              Saisissez les quantités réellement reçues pour chaque article. Ces quantités seront ajoutées au stock de l'emplacement sélectionné.
             </p>
           </div>
 
@@ -244,7 +426,7 @@ export function DeliveryNoteApprovalDialog({
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700"
           >
-            {isSubmitting ? "Approbation en cours..." : "Approuver et créer la facture"}
+            {isSubmitting ? "Approbation en cours..." : "Approuver et mettre à jour les stocks"}
           </Button>
         </DialogFooter>
       </DialogContent>
