@@ -3,6 +3,64 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+/**
+ * Generates a unique delivery note number with format BL-YYYY-MM-DD-XXX
+ * @returns A formatted delivery note number
+ */
+async function generateDeliveryNoteNumber(): Promise<string> {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const datePrefix = `${year}-${month}-${day}`;
+  
+  try {
+    // Get today's delivery notes count to determine the next counter
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    
+    const { data: todayNotes, error } = await supabase
+      .from('delivery_notes')
+      .select('delivery_number')
+      .gte('created_at', startOfDay.toISOString())
+      .lt('created_at', endOfDay.toISOString())
+      .like('delivery_number', `BL-${datePrefix}-%`)
+      .order('delivery_number', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching today delivery notes:', error);
+      // Fallback to random number if query fails
+      const randomCounter = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `BL-${datePrefix}-${randomCounter}`;
+    }
+    
+    // Extract the highest counter from today's delivery notes
+    let nextCounter = 1;
+    if (todayNotes && todayNotes.length > 0) {
+      for (const note of todayNotes) {
+        if (note.delivery_number) {
+          const counterMatch = note.delivery_number.match(/BL-\d{4}-\d{2}-\d{2}-(\d{3})$/);
+          if (counterMatch) {
+            const counter = parseInt(counterMatch[1], 10);
+            if (counter >= nextCounter) {
+              nextCounter = counter + 1;
+            }
+          }
+        }
+      }
+    }
+    
+    const counterStr = nextCounter.toString().padStart(3, '0');
+    return `BL-${datePrefix}-${counterStr}`;
+    
+  } catch (error) {
+    console.error('Error generating delivery note number:', error);
+    // Fallback to random number
+    const randomCounter = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `BL-${datePrefix}-${randomCounter}`;
+  }
+}
+
 export function useDeliveryNoteCreation() {
   const queryClient = useQueryClient();
 
@@ -67,8 +125,8 @@ export function useDeliveryNoteCreation() {
         return true;
       }
       
-      // Générer un numéro de bon de livraison unique
-      const deliveryNumber = `BL-${Date.now().toString().slice(-8)}`;
+      // Générer un numéro de bon de livraison unique avec le nouveau format
+      const deliveryNumber = await generateDeliveryNoteNumber();
       
       // Créer le bon de livraison
       const { data: newNote, error: createError } = await supabase

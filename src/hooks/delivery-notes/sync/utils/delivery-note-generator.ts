@@ -4,14 +4,61 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 /**
- * Generates a unique delivery note number with date and random component
- * @returns A formatted delivery note number (BL-YYYYMMDD-XXX)
+ * Generates a unique delivery note number with format BL-YYYY-MM-DD-XXX
+ * @returns A formatted delivery note number (BL-YYYY-MM-DD-XXX)
  */
-export function generateDeliveryNoteNumber(): string {
-  const date = new Date();
-  const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
-  const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `BL-${dateStr}-${randomId}`;
+export async function generateDeliveryNoteNumber(): Promise<string> {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const datePrefix = `${year}-${month}-${day}`;
+  
+  try {
+    // Get today's delivery notes count to determine the next counter
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    
+    const { data: todayNotes, error } = await supabase
+      .from('delivery_notes')
+      .select('delivery_number')
+      .gte('created_at', startOfDay.toISOString())
+      .lt('created_at', endOfDay.toISOString())
+      .like('delivery_number', `BL-${datePrefix}-%`)
+      .order('delivery_number', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching today delivery notes:', error);
+      // Fallback to random number if query fails
+      const randomCounter = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `BL-${datePrefix}-${randomCounter}`;
+    }
+    
+    // Extract the highest counter from today's delivery notes
+    let nextCounter = 1;
+    if (todayNotes && todayNotes.length > 0) {
+      for (const note of todayNotes) {
+        if (note.delivery_number) {
+          const counterMatch = note.delivery_number.match(/BL-\d{4}-\d{2}-\d{2}-(\d{3})$/);
+          if (counterMatch) {
+            const counter = parseInt(counterMatch[1], 10);
+            if (counter >= nextCounter) {
+              nextCounter = counter + 1;
+            }
+          }
+        }
+      }
+    }
+    
+    const counterStr = nextCounter.toString().padStart(3, '0');
+    return `BL-${datePrefix}-${counterStr}`;
+    
+  } catch (error) {
+    console.error('Error generating delivery note number:', error);
+    // Fallback to random number
+    const randomCounter = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `BL-${datePrefix}-${randomCounter}`;
+  }
 }
 
 /**
@@ -32,8 +79,8 @@ export async function createDeliveryNote(order: {
       return null;
     }
     
-    // Generate a unique delivery number
-    const deliveryNumber = generateDeliveryNoteNumber();
+    // Generate a unique delivery number with the new format
+    const deliveryNumber = await generateDeliveryNoteNumber();
     
     console.log(`[createDeliveryNote] Creating delivery note for order ${order.id} with number ${deliveryNumber}`);
     console.log(`[createDeliveryNote] Order warehouse_id: ${order.warehouse_id}`);
