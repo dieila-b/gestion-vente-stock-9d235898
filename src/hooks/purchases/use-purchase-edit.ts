@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { usePurchaseData } from './edit/use-purchase-data';
 import { usePurchaseItems } from './edit/use-purchase-items';
 import { usePurchaseStatus } from './edit/use-purchase-status';
-import { updateOrderTotal, recalculateOrderTotals } from './edit/calculations/use-order-calculations';
 import { PurchaseOrder } from '@/types/purchase-order';
 import { CatalogProduct } from '@/types/catalog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -76,29 +75,19 @@ export function usePurchaseEdit(orderId?: string) {
     updatePurchaseOrder
   );
   
-  // Function to refresh totals
+  // Function to refresh totals and recalculate
   const refreshTotals = useCallback(async () => {
     if (!orderId) return;
     
     try {
       console.log("Refreshing totals for order:", orderId);
-      const updatedTotals = await recalculateOrderTotals(orderId, formData);
-      
-      // Update form data with new totals
-      setFormData(prevData => ({
-        ...prevData,
-        subtotal: updatedTotals.subtotal,
-        tax_amount: updatedTotals.taxAmount,
-        total_ttc: updatedTotals.totalTTC,
-        total_amount: updatedTotals.totalAmount,
-      }));
-      
+      const updatedTotals = calculateTotals();
       console.log("Totals refreshed:", updatedTotals);
       return updatedTotals;
     } catch (error) {
       console.error("Error refreshing totals:", error);
     }
-  }, [orderId, formData, setFormData]);
+  }, [orderId, calculateTotals]);
 
   // Auto-refresh totals when items change or form data changes
   useEffect(() => {
@@ -112,7 +101,7 @@ export function usePurchaseEdit(orderId?: string) {
     }
   }, [orderItems, formData.tax_rate, formData.shipping_cost, formData.transit_cost, formData.logistics_cost, formData.discount, calculateTotals, orderId]);
 
-  // Save all form data
+  // Save all form data with proper validation and error handling
   const saveChanges = async () => {
     if (!orderId) {
       console.error("Missing orderId in saveChanges");
@@ -126,18 +115,30 @@ export function usePurchaseEdit(orderId?: string) {
     try {
       // Calculate latest totals before saving
       const latestTotals = calculateTotals();
+      console.log("Latest totals calculated:", latestTotals);
       
-      // Ensure formData has updated_at set to current timestamp
-      const dataWithTimestamp = {
+      // Prepare the data to save with proper type conversion
+      const dataToSave = {
         ...formData,
         ...latestTotals,
+        // Ensure numeric fields are properly converted
+        subtotal: Number(latestTotals.subtotal || 0),
+        tax_amount: Number(latestTotals.tax_amount || 0),
+        total_ttc: Number(latestTotals.total_ttc || 0),
+        total_amount: Number(latestTotals.total_amount || 0),
+        shipping_cost: Number(formData.shipping_cost || 0),
+        transit_cost: Number(formData.transit_cost || 0),
+        logistics_cost: Number(formData.logistics_cost || 0),
+        discount: Number(formData.discount || 0),
+        tax_rate: Number(formData.tax_rate || 0),
+        paid_amount: Number(formData.paid_amount || 0),
         updated_at: new Date().toISOString()
       };
       
-      console.log("Data being sent to update:", dataWithTimestamp);
+      console.log("Data being sent to update:", dataToSave);
       
-      // Important: Wait for the update to complete
-      const updatedOrder = await updatePurchaseOrder(orderId, dataWithTimestamp);
+      // Update the purchase order
+      const updatedOrder = await updatePurchaseOrder(orderId, dataToSave);
       
       if (!updatedOrder) {
         console.error("Failed to update purchase order");
@@ -146,17 +147,19 @@ export function usePurchaseEdit(orderId?: string) {
         return false;
       }
       
-      console.log("Purchase order updated result:", updatedOrder);
+      console.log("Purchase order updated successfully:", updatedOrder);
       
       // Force invalidate and refetch to ensure we have latest data
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['purchase-with-items', orderId] });
       
-      toast.success("Bon de commande mis à jour avec succès");
+      // Refetch the data to get the latest state
+      await refetch();
       
-      // Ensure we finished loading state before returning
+      toast.success("Bon de commande mis à jour avec succès");
       setIsLoading(false);
       return true;
+      
     } catch (error) {
       console.error("Error saving changes:", error);
       toast.error("Erreur lors de l'enregistrement des modifications");

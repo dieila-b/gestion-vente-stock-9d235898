@@ -22,12 +22,20 @@ export function useUpdatePurchaseOrder() {
         console.log("Updating purchase order:", params.id);
         console.log("Update data:", JSON.stringify(params.data, null, 2));
         
-        // Validate status and payment_status if present
+        // Validate and clean the data
         const validatedData = { ...params.data };
 
+        // Remove any undefined or null values that shouldn't be updated
+        Object.keys(validatedData).forEach(key => {
+          if (validatedData[key as keyof PurchaseOrder] === undefined) {
+            delete validatedData[key as keyof PurchaseOrder];
+          }
+        });
+
+        // Validate status and payment_status if present
         if (validatedData.status && !isValidOrderStatus(validatedData.status)) {
-          console.warn("Invalid status provided, defaulting to 'draft'");
-          validatedData.status = 'draft';
+          console.warn("Invalid status provided, defaulting to 'pending'");
+          validatedData.status = 'pending';
         }
 
         if (validatedData.payment_status && !isValidPaymentStatus(validatedData.payment_status)) {
@@ -40,52 +48,33 @@ export function useUpdatePurchaseOrder() {
         
         // Convert numeric fields to numbers to ensure they're properly saved
         const numericFields = ['subtotal', 'tax_amount', 'total_ttc', 'total_amount', 
-                              'discount', 'shipping_cost', 'transit_cost', 'logistics_cost', 'tax_rate'];
+                              'discount', 'shipping_cost', 'transit_cost', 'logistics_cost', 
+                              'tax_rate', 'paid_amount'] as const;
         
         numericFields.forEach(field => {
-          if (field in validatedData) {
-            validatedData[field] = Number(validatedData[field]);
+          if (field in validatedData && validatedData[field] !== undefined) {
+            validatedData[field] = Number(validatedData[field]) || 0;
           }
         });
         
         console.log("Final validated data to update:", validatedData);
 
         // Execute the update
-        const { error } = await supabase
+        const { data: updateResult, error } = await supabase
           .from('purchase_orders')
           .update(validatedData)
-          .eq('id', params.id);
+          .eq('id', params.id)
+          .select('*')
+          .single();
 
         if (error) {
           console.error("Error updating purchase order:", error);
           throw error;
         }
 
-        // Rather than relying on the update returning data, always fetch the record directly
-        // This avoids the PGRST116 error when no rows are returned
-        const { data: fetchedData, error: fetchError } = await supabase
-          .from('purchase_orders')
-          .select('*, supplier:supplier_id(*), warehouse:warehouse_id(*)')
-          .eq('id', params.id)
-          .maybeSingle();
-            
-        if (fetchError) {
-          console.error("Error fetching updated purchase order:", fetchError);
-          throw new Error("Failed to fetch updated purchase order");
-        }
+        console.log("Purchase order updated successfully:", updateResult);
+        return updateResult as PurchaseOrder;
         
-        // Even if we don't find the record, consider the update successful since there was no error
-        // Just return a basic object with the ID for consistency
-        if (!fetchedData) {
-          console.warn("Purchase order not found after update, returning basic success object");
-          return { 
-            id: params.id,
-            ...validatedData
-          } as PurchaseOrder;
-        }
-        
-        console.log("Purchase order updated successfully:", fetchedData);
-        return fetchedData as PurchaseOrder;
       } catch (err) {
         console.error("Update purchase order error:", err);
         throw err;
@@ -95,7 +84,7 @@ export function useUpdatePurchaseOrder() {
       // Force invalidate the specific purchase order and the list
       console.log("Update success! Invalidating queries for ID:", data.id);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['purchase', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-with-items', data.id] });
       
       // Add a success toast
       toast.success("Bon de commande mis à jour avec succès");

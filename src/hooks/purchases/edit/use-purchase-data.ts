@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PurchaseOrder, PurchaseOrderItem } from '@/types/purchase-order';
@@ -69,16 +69,16 @@ export function usePurchaseData(orderId?: string) {
         supplier_id: purchaseData.supplier_id,
         expected_delivery_date: purchaseData.expected_delivery_date,
         notes: purchaseData.notes,
-        logistics_cost: purchaseData.logistics_cost || 0,
-        transit_cost: purchaseData.transit_cost || 0,
-        tax_rate: purchaseData.tax_rate || 0,
-        shipping_cost: purchaseData.shipping_cost || 0,
-        discount: purchaseData.discount || 0,
-        subtotal: purchaseData.subtotal || 0,
-        tax_amount: purchaseData.tax_amount || 0,
-        total_ttc: purchaseData.total_ttc || 0,
-        total_amount: purchaseData.total_amount || 0,
-        paid_amount: purchaseData.paid_amount || 0,
+        logistics_cost: Number(purchaseData.logistics_cost || 0),
+        transit_cost: Number(purchaseData.transit_cost || 0),
+        tax_rate: Number(purchaseData.tax_rate || 0),
+        shipping_cost: Number(purchaseData.shipping_cost || 0),
+        discount: Number(purchaseData.discount || 0),
+        subtotal: Number(purchaseData.subtotal || 0),
+        tax_amount: Number(purchaseData.tax_amount || 0),
+        total_ttc: Number(purchaseData.total_ttc || 0),
+        total_amount: Number(purchaseData.total_amount || 0),
+        paid_amount: Number(purchaseData.paid_amount || 0),
         status: validateStatus(purchaseData.status || "pending"),
         payment_status: validatePaymentStatus(purchaseData.payment_status || "pending"),
         warehouse_id: purchaseData.warehouse_id,
@@ -115,13 +115,13 @@ export function usePurchaseData(orderId?: string) {
   }, [purchaseData]);
 
   // Function to update form data field
-  const updateFormField = (field: keyof PurchaseOrder, value: any) => {
+  const updateFormField = useCallback((field: keyof PurchaseOrder, value: any) => {
     console.log(`Updating ${String(field)} to:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   // Function to calculate totals based on current items and form data
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     console.log('Calculating totals with items:', orderItems);
     
     // Calculate subtotal from items
@@ -163,7 +163,7 @@ export function usePurchaseData(orderId?: string) {
     }));
     
     return newTotals;
-  };
+  }, [orderItems, formData.shipping_cost, formData.transit_cost, formData.logistics_cost, formData.discount, formData.tax_rate]);
 
   return {
     purchase: purchaseData,
