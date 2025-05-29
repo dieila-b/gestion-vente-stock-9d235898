@@ -26,10 +26,16 @@ export function useDeliveryNoteMutations() {
     }
   });
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<boolean> => {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de livraison?")) {
-      deleteDeliveryNote(id);
+      try {
+        deleteDeliveryNote(id);
+        return true;
+      } catch (error) {
+        return false;
+      }
     }
+    return false;
   };
 
   return {
