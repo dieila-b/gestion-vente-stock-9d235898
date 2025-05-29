@@ -91,6 +91,7 @@ export function useDeliveryNoteApprovalForm(
     setIsSubmitting(true);
     
     try {
+      console.log("Calling stockUpdateService.approveDeliveryNote...");
       await stockUpdateService.approveDeliveryNote(
         note,
         receivedQuantities,
@@ -99,7 +100,8 @@ export function useDeliveryNoteApprovalForm(
         posLocations
       );
 
-      toast.success("Bon de livraison approuvé, stocks mis à jour et facture d'achat créée");
+      console.log("Approval completed successfully");
+      toast.success("Bon de livraison approuvé avec succès");
       onApprovalComplete();
       onClose();
     } catch (error: any) {

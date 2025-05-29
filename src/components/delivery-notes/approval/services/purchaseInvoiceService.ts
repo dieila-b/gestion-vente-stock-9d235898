@@ -34,7 +34,7 @@ export const purchaseInvoiceService = {
         return null;
       }
 
-      // Create purchase invoice with proper field mapping
+      // Create purchase invoice with the exact structure expected by the database
       const invoiceData = {
         invoice_number: invoiceNumber,
         supplier_id: deliveryNote.supplier_id,
@@ -64,7 +64,6 @@ export const purchaseInvoiceService = {
     } catch (error: any) {
       console.error('Error in createPurchaseInvoice:', error);
       toast.error(`Erreur lors de la création de la facture d'achat: ${error.message}`);
-      // Re-throw the error to make sure the approval process is aware of the failure
       throw error;
     }
   }
