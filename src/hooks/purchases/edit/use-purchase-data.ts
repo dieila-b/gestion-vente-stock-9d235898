@@ -37,7 +37,7 @@ export function usePurchaseData(orderId?: string) {
         }
 
         console.log('Purchase order with items fetched:', data);
-        return data;
+        return data as PurchaseOrder;
       } catch (error) {
         console.error('Error in purchase order fetch:', error);
         throw error;
@@ -90,7 +90,7 @@ export function usePurchaseData(orderId?: string) {
       if (purchaseData.items && Array.isArray(purchaseData.items)) {
         console.log('Initializing order items from purchase data:', purchaseData.items);
         
-        const formattedItems = purchaseData.items.map(item => ({
+        const formattedItems = purchaseData.items.map((item: any) => ({
           id: item.id,
           purchase_order_id: item.purchase_order_id || purchaseData.id,
           product_id: item.product_id,
