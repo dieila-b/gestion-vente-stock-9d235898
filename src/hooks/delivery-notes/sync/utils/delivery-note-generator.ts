@@ -111,6 +111,18 @@ export async function createDeliveryNote(order: {
     }
     
     console.log(`[createDeliveryNote] Created delivery note for order ${order.id}:`, newNote);
+    
+    // Create delivery note items based on purchase order items
+    if (order.items && order.items.length > 0) {
+      const success = await createDeliveryNoteItems(deliveryNoteId, order.items);
+      if (!success) {
+        console.error(`[createDeliveryNote] Failed to create items for delivery note ${deliveryNoteId}`);
+        // Don't return null here - the delivery note was created successfully
+      }
+    } else {
+      console.warn(`[createDeliveryNote] No items found for order ${order.id}, delivery note created without items`);
+    }
+    
     return deliveryNoteId;
   } catch (error: any) {
     console.error(`[createDeliveryNote] Error creating delivery note for order ${order.id}:`, error);
