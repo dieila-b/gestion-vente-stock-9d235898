@@ -20,24 +20,35 @@ export function useDeliveryNoteApprovalForm(
   const { data: posLocations = [] } = useFetchPOSLocations();
 
   useEffect(() => {
-    if (note?.items) {
+    console.log("useDeliveryNoteApprovalForm - note changed:", note);
+    console.log("useDeliveryNoteApprovalForm - note items:", note?.items);
+    
+    if (note?.items && Array.isArray(note.items)) {
       const initialQuantities: Record<string, number> = {};
       note.items.forEach(item => {
+        console.log("Setting initial quantity for item:", item.id, "quantity:", item.quantity_ordered);
         initialQuantities[item.id] = item.quantity_ordered;
       });
+      console.log("Initial quantities set:", initialQuantities);
       setReceivedQuantities(initialQuantities);
+    } else {
+      console.log("No items found or items is not an array");
+      setReceivedQuantities({});
     }
+    
     setSelectedLocationId("");
     setErrors([]);
   }, [note]);
 
   const handleQuantityChange = (itemId: string, value: string) => {
     const numValue = Math.max(0, parseInt(value) || 0);
+    console.log("Quantity changed for item:", itemId, "new value:", numValue);
     setReceivedQuantities(prev => ({ ...prev, [itemId]: numValue }));
     setErrors([]);
   };
 
   const handleLocationChange = (locationId: string) => {
+    console.log("Location changed:", locationId);
     setSelectedLocationId(locationId);
     setErrors([]);
   };
@@ -49,8 +60,8 @@ export function useDeliveryNoteApprovalForm(
       newErrors.push("Veuillez sélectionner un emplacement de stockage");
     }
 
-    if (!note?.items) {
-      newErrors.push("Aucun article trouvé");
+    if (!note?.items || !Array.isArray(note.items) || note.items.length === 0) {
+      newErrors.push("Aucun article trouvé dans ce bon de livraison");
       setErrors(newErrors);
       return false;
     }
@@ -58,7 +69,7 @@ export function useDeliveryNoteApprovalForm(
     note.items.forEach(item => {
       const receivedQty = receivedQuantities[item.id] || 0;
       if (receivedQty > item.quantity_ordered) {
-        newErrors.push(`La quantité reçue pour ${item.product?.name} ne peut pas dépasser la quantité commandée (${item.quantity_ordered})`);
+        newErrors.push(`La quantité reçue pour ${item.product?.name || 'Article'} ne peut pas dépasser la quantité commandée (${item.quantity_ordered})`);
       }
     });
 
@@ -67,7 +78,15 @@ export function useDeliveryNoteApprovalForm(
   };
 
   const handleApprove = async () => {
-    if (!note || !validateForm()) return;
+    console.log("handleApprove called");
+    console.log("Current note:", note);
+    console.log("Current receivedQuantities:", receivedQuantities);
+    console.log("Current selectedLocationId:", selectedLocationId);
+    
+    if (!note || !validateForm()) {
+      console.log("Validation failed");
+      return;
+    }
     
     setIsSubmitting(true);
     
