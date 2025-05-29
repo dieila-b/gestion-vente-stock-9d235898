@@ -57,6 +57,11 @@ export function useUpdatePurchaseOrder() {
           }
         });
         
+        // Remove supplier and warehouse data from update payload as they are relations
+        delete validatedData.supplier;
+        delete validatedData.warehouse;
+        delete validatedData.items;
+        
         console.log("Final validated data to update:", validatedData);
 
         // Execute the update
@@ -73,7 +78,8 @@ export function useUpdatePurchaseOrder() {
         }
 
         console.log("Purchase order updated successfully:", updateResult);
-        return updateResult as PurchaseOrder;
+        // Cast the result properly since we know it contains the required fields
+        return updateResult as unknown as PurchaseOrder;
         
       } catch (err) {
         console.error("Update purchase order error:", err);
