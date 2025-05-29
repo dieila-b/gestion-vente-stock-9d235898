@@ -37,7 +37,7 @@ export function usePurchaseData(orderId?: string) {
         }
 
         console.log('Purchase order with items fetched:', data);
-        return data as PurchaseOrder;
+        return data as unknown as PurchaseOrder;
       } catch (error) {
         console.error('Error in purchase order fetch:', error);
         throw error;
