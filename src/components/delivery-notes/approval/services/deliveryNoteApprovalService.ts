@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
 import { stockOperationsService } from "./stockOperationsService";
-import { purchaseInvoiceService } from "./purchaseInvoiceService";
 import { toast } from "sonner";
 
 interface ReceivedQuantity {
@@ -60,6 +59,7 @@ export const deliveryNoteApprovalService = {
       }
 
       // 3. Update delivery note status to 'received'
+      // Le déclencheur de base de données créera automatiquement la facture d'achat
       console.log('Updating delivery note status to received...');
       const { error: noteError } = await supabase
         .from('delivery_notes')
@@ -75,18 +75,8 @@ export const deliveryNoteApprovalService = {
         throw noteError;
       }
 
-      // 4. Create purchase invoice from approved delivery note
-      console.log('Creating purchase invoice...');
-      try {
-        const invoice = await purchaseInvoiceService.createPurchaseInvoice(note, updates);
-        console.log('Purchase invoice created:', invoice);
-      } catch (invoiceError) {
-        console.error('Error creating purchase invoice (continuing anyway):', invoiceError);
-        toast.error('Bon de livraison approuvé mais erreur lors de la création de la facture');
-        // Don't throw here to avoid rolling back the entire approval
-      }
-
       console.log('Delivery note approval process completed successfully');
+      toast.success('Bon de livraison approuvé avec succès. Une facture d\'achat sera automatiquement générée.');
     } catch (error: any) {
       console.error('Error in delivery note approval process:', error);
       throw error;
