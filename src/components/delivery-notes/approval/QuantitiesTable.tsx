@@ -14,25 +14,6 @@ export function QuantitiesTable({
   receivedQuantities,
   onQuantityChange
 }: QuantitiesTableProps) {
-  console.log("QuantitiesTable - note:", note);
-  console.log("QuantitiesTable - items:", note.items);
-  console.log("QuantitiesTable - items count:", note.items?.length || 0);
-
-  if (!note.items || note.items.length === 0) {
-    return (
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Quantités reçues par article</h3>
-        <div className="p-4 text-center text-gray-500 border rounded-md">
-          Aucun article trouvé dans ce bon de livraison.
-          <br />
-          <span className="text-sm">
-            Bon de livraison ID: {note.id} | Items: {note.items?.length || 0}
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-semibold">Quantités reçues par article</h3>
@@ -56,12 +37,10 @@ export function QuantitiesTable({
             const receivedQty = receivedQuantities[item.id] || 0;
             const total = receivedQty * item.unit_price;
             
-            console.log("Rendering item:", item);
-            
             return (
               <TableRow key={item.id}>
-                <TableCell>{item.product?.name || 'Produit inconnu'}</TableCell>
-                <TableCell>{item.product?.reference || 'N/A'}</TableCell>
+                <TableCell>{item.product?.name}</TableCell>
+                <TableCell>{item.product?.reference}</TableCell>
                 <TableCell>{item.quantity_ordered}</TableCell>
                 <TableCell>
                   <Input
