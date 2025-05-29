@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { DeliveryNote } from "@/types/delivery-note";
 import { useFetchWarehouses } from "@/hooks/delivery-notes/use-fetch-warehouses";
 import { useFetchPOSLocations } from "@/hooks/use-pos-locations";
-import { stockUpdateService } from "./stockUpdateService";
+import { deliveryNoteApprovalService } from "./services/deliveryNoteApprovalService";
 import { toast } from "sonner";
 
 export function useDeliveryNoteApprovalForm(
@@ -91,8 +91,8 @@ export function useDeliveryNoteApprovalForm(
     setIsSubmitting(true);
     
     try {
-      console.log("Calling stockUpdateService.approveDeliveryNote...");
-      await stockUpdateService.approveDeliveryNote(
+      console.log("Calling deliveryNoteApprovalService.approveDeliveryNote...");
+      await deliveryNoteApprovalService.approveDeliveryNote(
         note,
         receivedQuantities,
         selectedLocationId,
