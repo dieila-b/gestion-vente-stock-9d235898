@@ -10,16 +10,33 @@ export function useFetchDeliveryNotes() {
   return useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
-      console.log("Fetching delivery notes...");
-      
+      console.log("Fetching delivery notes with items...");
       try {
-        // First, get basic delivery notes data
+        // Get the delivery notes with their relationships
         const { data: deliveryNotesData, error } = await supabase
           .from('delivery_notes')
           .select(`
-            *,
-            supplier:suppliers(id, name, email, phone),
-            purchase_order:purchase_orders(id, order_number, total_amount)
+            id,
+            delivery_number,
+            created_at,
+            updated_at,
+            status,
+            notes,
+            purchase_order_id,
+            supplier_id,
+            warehouse_id,
+            deleted,
+            supplier:suppliers (
+              id,
+              name,
+              email,
+              phone
+            ),
+            purchase_order:purchase_orders (
+              id,
+              order_number,
+              total_amount
+            )
           `)
           .eq('deleted', false)
           .order('created_at', { ascending: false });
@@ -29,105 +46,82 @@ export function useFetchDeliveryNotes() {
           throw error;
         }
 
-        console.log("Raw delivery notes data:", deliveryNotesData);
+        console.log("Fetched delivery notes:", deliveryNotesData);
         
-        if (!deliveryNotesData || deliveryNotesData.length === 0) {
-          console.log("No delivery notes found");
-          return [];
-        }
+        // Then fetch items for each delivery note
+        const deliveryNotesWithItems: DeliveryNote[] = [];
         
-        // Then fetch all items for these delivery notes
-        const deliveryNoteIds = deliveryNotesData.map(note => note.id);
-        console.log("Fetching items for delivery note IDs:", deliveryNoteIds);
-        
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('delivery_note_items')
-          .select(`
-            *,
-            product:catalog(id, name, reference)
-          `)
-          .in('delivery_note_id', deliveryNoteIds);
+        for (const noteData of deliveryNotesData || []) {
+          // Fetch items for this delivery note
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('delivery_note_items')
+            .select(`
+              id,
+              delivery_note_id,
+              product_id,
+              quantity_ordered,
+              quantity_received,
+              unit_price,
+              product:catalog(
+                id,
+                name,
+                reference
+              )
+            `)
+            .eq('delivery_note_id', noteData.id);
+            
+          if (itemsError) {
+            console.error("Error fetching delivery note items:", itemsError);
+            // Continue with empty items array instead of throwing
+          }
           
-        if (itemsError) {
-          console.error("Error fetching delivery note items:", itemsError);
-        }
-        
-        console.log("Fetched items data:", itemsData);
-        
-        // Group items by delivery note ID
-        const itemsByDeliveryNote = {};
-        if (itemsData) {
-          itemsData.forEach(item => {
-            if (!itemsByDeliveryNote[item.delivery_note_id]) {
-              itemsByDeliveryNote[item.delivery_note_id] = [];
-            }
-            itemsByDeliveryNote[item.delivery_note_id].push(item);
-          });
-        }
-        
-        console.log("Items grouped by delivery note:", itemsByDeliveryNote);
-        
-        // Transform to match our interface
-        const transformedNotes = deliveryNotesData.map(note => {
-          const items = itemsByDeliveryNote[note.id] || [];
-          
-          return {
-            id: note.id,
-            delivery_number: note.delivery_number || `BL-${note.id.slice(0, 8)}`,
-            created_at: note.created_at,
-            updated_at: note.updated_at,
-            status: note.status || 'pending',
-            notes: note.notes || '',
-            purchase_order_id: note.purchase_order_id,
-            supplier_id: note.supplier_id,
-            warehouse_id: note.warehouse_id,
-            deleted: note.deleted || false,
-            supplier: note.supplier ? {
-              id: note.supplier.id,
-              name: note.supplier.name || 'Fournisseur inconnu',
-              email: note.supplier.email,
-              phone: note.supplier.phone
-            } : {
-              id: '',
-              name: 'Fournisseur inconnu',
-              email: '',
-              phone: ''
-            },
-            purchase_order: note.purchase_order ? {
-              id: note.purchase_order.id,
-              order_number: note.purchase_order.order_number || 'N/A',
-              total_amount: note.purchase_order.total_amount || 0
-            } : {
-              id: '',
-              order_number: 'N/A',
-              total_amount: 0
-            },
-            items: items.map(item => ({
+          // Transform the data to match our TypeScript interfaces
+          const transformedNote: DeliveryNote = {
+            id: noteData.id,
+            delivery_number: noteData.delivery_number,
+            created_at: noteData.created_at,
+            updated_at: noteData.updated_at,
+            status: noteData.status,
+            notes: noteData.notes,
+            purchase_order_id: noteData.purchase_order_id,
+            supplier_id: noteData.supplier_id,
+            warehouse_id: noteData.warehouse_id,
+            deleted: noteData.deleted,
+            supplier: noteData.supplier ? {
+              id: noteData.supplier.id,
+              name: noteData.supplier.name,
+              email: noteData.supplier.email,
+              phone: noteData.supplier.phone
+            } : undefined,
+            purchase_order: noteData.purchase_order ? {
+              id: noteData.purchase_order.id,
+              order_number: noteData.purchase_order.order_number,
+              total_amount: noteData.purchase_order.total_amount
+            } : undefined,
+            items: itemsData?.map(item => ({
               id: item.id,
               delivery_note_id: item.delivery_note_id,
               product_id: item.product_id,
-              quantity_ordered: item.quantity_ordered || 0,
-              quantity_received: item.quantity_received || 0,
-              unit_price: item.unit_price || 0,
+              quantity_ordered: item.quantity_ordered,
+              quantity_received: item.quantity_received,
+              unit_price: item.unit_price,
               product: item.product ? {
                 id: item.product.id,
-                name: item.product.name || 'Produit inconnu',
-                reference: item.product.reference || ''
-              } : {
-                id: item.product_id,
-                name: 'Produit inconnu',
-                reference: ''
-              }
-            }))
+                name: item.product.name,
+                reference: item.product.reference
+              } : undefined
+            })) || []
           };
-        });
+          
+          console.log(`Delivery note ${noteData.delivery_number} has ${transformedNote.items.length} items`);
+          deliveryNotesWithItems.push(transformedNote);
+        }
         
-        console.log("Final transformed notes:", transformedNotes);
-        return transformedNotes;
-        
+        console.log("Transformed delivery notes with items:", deliveryNotesWithItems);
+        return deliveryNotesWithItems;
       } catch (error) {
-        console.error("Error in delivery notes query:", error);
-        throw error; // Re-throw to show error in UI
+        console.error("Error fetching delivery notes:", error);
+        return [];
       }
     },
     staleTime: 1000 * 30, // 30 secondes
