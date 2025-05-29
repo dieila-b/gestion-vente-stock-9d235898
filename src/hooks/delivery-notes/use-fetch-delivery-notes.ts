@@ -12,34 +12,9 @@ export function useFetchDeliveryNotes() {
     queryFn: async () => {
       console.log("Fetching delivery notes with items...");
       try {
-        // Get the delivery notes with their relationships
+        // First get the delivery notes
         const { data: deliveryNotesData, error } = await supabase
-          .from('delivery_notes')
-          .select(`
-            id,
-            delivery_number,
-            created_at,
-            updated_at,
-            status,
-            notes,
-            purchase_order_id,
-            supplier_id,
-            warehouse_id,
-            deleted,
-            supplier:suppliers (
-              id,
-              name,
-              email,
-              phone
-            ),
-            purchase_order:purchase_orders (
-              id,
-              order_number,
-              total_amount
-            )
-          `)
-          .eq('deleted', false)
-          .order('created_at', { ascending: false });
+          .rpc('bypass_select_delivery_notes');
 
         if (error) {
           console.error("Error fetching delivery notes:", error);
@@ -52,6 +27,9 @@ export function useFetchDeliveryNotes() {
         const deliveryNotesWithItems: DeliveryNote[] = [];
         
         for (const noteData of deliveryNotesData || []) {
+          // Cast the Json data to a proper object
+          const note = noteData as any;
+          
           // Fetch items for this delivery note
           const { data: itemsData, error: itemsError } = await supabase
             .from('delivery_note_items')
@@ -68,7 +46,7 @@ export function useFetchDeliveryNotes() {
                 reference
               )
             `)
-            .eq('delivery_note_id', noteData.id);
+            .eq('delivery_note_id', note.id);
             
           if (itemsError) {
             console.error("Error fetching delivery note items:", itemsError);
@@ -77,27 +55,18 @@ export function useFetchDeliveryNotes() {
           
           // Transform the data to match our TypeScript interfaces
           const transformedNote: DeliveryNote = {
-            id: noteData.id,
-            delivery_number: noteData.delivery_number,
-            created_at: noteData.created_at,
-            updated_at: noteData.updated_at,
-            status: noteData.status,
-            notes: noteData.notes,
-            purchase_order_id: noteData.purchase_order_id,
-            supplier_id: noteData.supplier_id,
-            warehouse_id: noteData.warehouse_id,
-            deleted: noteData.deleted,
-            supplier: noteData.supplier ? {
-              id: noteData.supplier.id,
-              name: noteData.supplier.name,
-              email: noteData.supplier.email,
-              phone: noteData.supplier.phone
-            } : undefined,
-            purchase_order: noteData.purchase_order ? {
-              id: noteData.purchase_order.id,
-              order_number: noteData.purchase_order.order_number,
-              total_amount: noteData.purchase_order.total_amount
-            } : undefined,
+            id: note.id,
+            delivery_number: note.delivery_number,
+            created_at: note.created_at,
+            updated_at: note.updated_at,
+            status: note.status,
+            notes: note.notes,
+            purchase_order_id: note.purchase_order_id,
+            supplier_id: note.supplier_id,
+            warehouse_id: note.warehouse_id,
+            deleted: note.deleted,
+            supplier: note.supplier,
+            purchase_order: note.purchase_order,
             items: itemsData?.map(item => ({
               id: item.id,
               delivery_note_id: item.delivery_note_id,
@@ -113,7 +82,7 @@ export function useFetchDeliveryNotes() {
             })) || []
           };
           
-          console.log(`Delivery note ${noteData.delivery_number} has ${transformedNote.items.length} items`);
+          console.log(`Delivery note ${note.delivery_number} has ${transformedNote.items.length} items`);
           deliveryNotesWithItems.push(transformedNote);
         }
         
