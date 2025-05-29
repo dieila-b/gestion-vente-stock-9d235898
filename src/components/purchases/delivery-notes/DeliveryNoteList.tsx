@@ -25,9 +25,12 @@ export function DeliveryNoteList({
   onApprove,
   onPrint
 }: DeliveryNoteListProps) {
-  console.log("DeliveryNoteList received:", deliveryNotes?.length || 0, "delivery notes");
+  console.log("DeliveryNoteList render - isLoading:", isLoading);
+  console.log("DeliveryNoteList render - deliveryNotes:", deliveryNotes);
+  console.log("DeliveryNoteList render - deliveryNotes length:", deliveryNotes?.length || 0);
   
   if (isLoading) {
+    console.log("Showing loading skeleton");
     return (
       <div className="space-y-3">
         <Skeleton className="h-12 w-full" />
@@ -38,6 +41,7 @@ export function DeliveryNoteList({
   }
 
   if (!deliveryNotes || deliveryNotes.length === 0) {
+    console.log("No delivery notes to display");
     return (
       <div className="text-center py-8 text-muted-foreground">
         <p>Aucun bon de livraison trouvé</p>
@@ -45,6 +49,8 @@ export function DeliveryNoteList({
       </div>
     );
   }
+
+  console.log("Rendering delivery notes table with", deliveryNotes.length, "notes");
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -70,6 +76,7 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
+    console.log("formatArticles called with items:", items);
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
@@ -90,68 +97,73 @@ export function DeliveryNoteList({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {deliveryNotes.map((note) => (
-          <TableRow key={note.id}>
-            <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
-            <TableCell>
-              {formatDisplayDate(note.created_at)}
-            </TableCell>
-            <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
-            <TableCell>
-              <div className="text-sm">
-                {formatArticles(note.items)}
-              </div>
-            </TableCell>
-            <TableCell>{getStatusBadge(note.status)}</TableCell>
-            <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end space-x-2">
-                {onEdit && note.status === 'pending' && (
+        {deliveryNotes.map((note, index) => {
+          console.log(`Rendering note ${index}:`, note);
+          console.log(`Note ${index} items:`, note.items);
+          
+          return (
+            <TableRow key={note.id}>
+              <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
+              <TableCell>
+                {formatDisplayDate(note.created_at)}
+              </TableCell>
+              <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {formatArticles(note.items)}
+                </div>
+              </TableCell>
+              <TableCell>{getStatusBadge(note.status)}</TableCell>
+              <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end space-x-2">
+                  {onEdit && note.status === 'pending' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(note.id)}
+                      title="Modifier"
+                      className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onApprove && note.status === 'pending' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onApprove(note.id)}
+                      title="Approuver"
+                      className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onEdit(note.id)}
-                    title="Modifier"
-                    className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                    onClick={() => onDelete(note.id)}
+                    title="Supprimer"
+                    className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
-                {onApprove && note.status === 'pending' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onApprove(note.id)}
-                    title="Approuver"
-                    className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(note.id)}
-                  title="Supprimer"
-                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                {onPrint && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPrint(note.id)}
-                    title="Imprimer"
-                    className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+                  {onPrint && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onPrint(note.id)}
+                      title="Imprimer"
+                      className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

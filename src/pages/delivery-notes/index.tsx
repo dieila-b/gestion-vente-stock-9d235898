@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -22,8 +23,12 @@ export default function DeliveryNotesPage() {
     onApprovalComplete
   } = useDeliveryNotes();
   
+  console.log("DeliveryNotesPage render - isLoading:", isLoading);
+  console.log("DeliveryNotesPage render - deliveryNotes:", deliveryNotes);
+  console.log("DeliveryNotesPage render - deliveryNotes length:", deliveryNotes?.length || 0);
+  
   // Filter delivery notes based on search query
-  const filteredDeliveryNotes = deliveryNotes.filter(note => {
+  const filteredDeliveryNotes = deliveryNotes?.filter(note => {
     // Safely access properties to handle SelectQueryError
     const deliveryNumber = note.delivery_number || '';
     const supplierName = isSelectQueryError(note.supplier) 
@@ -32,7 +37,9 @@ export default function DeliveryNotesPage() {
     
     return deliveryNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
            supplierName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  }) || [];
+
+  console.log("Filtered delivery notes:", filteredDeliveryNotes);
 
   return (
     <DashboardLayout>
