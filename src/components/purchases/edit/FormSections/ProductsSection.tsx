@@ -30,12 +30,9 @@ export function ProductsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
   
-  // Log pour debugging
+  // Debug logging
   useEffect(() => {
-    console.log("ProductsSection received items:", items?.length || 0);
-    if (items && items.length > 0) {
-      console.log("First item:", items[0]);
-    }
+    console.log("ProductsSection - Items received:", items?.length || 0, items);
   }, [items]);
   
   // Fetch available products
@@ -59,7 +56,6 @@ export function ProductsSection({
     staleTime: 60000, // 1 minute
   });
 
-  // Handle product addition
   const handleAddProduct = async (product: CatalogProduct) => {
     console.log("Adding product:", product);
     try {
@@ -73,7 +69,6 @@ export function ProductsSection({
     }
   };
 
-  // Handle item removal
   const handleRemoveItem = async (itemId: string) => {
     setLoadingItems(prev => new Set(prev).add(itemId));
     try {
@@ -87,7 +82,6 @@ export function ProductsSection({
     }
   };
 
-  // Handle quantity change
   const handleQuantityChange = async (itemId: string, value: string) => {
     const quantity = parseInt(value);
     if (!isNaN(quantity) && quantity > 0) {
@@ -104,7 +98,6 @@ export function ProductsSection({
     }
   };
 
-  // Handle price change
   const handlePriceChange = async (itemId: string, value: string) => {
     const price = parseFloat(value);
     if (!isNaN(price) && price >= 0) {
@@ -121,21 +114,10 @@ export function ProductsSection({
     }
   };
 
-  // Show loading state during initial load
-  if (!items) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-center items-center py-8">
-          <Loader className="h-6 w-6 animate-spin mr-2" />
-          <span className="text-white/60">Chargement des produits...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-white">Produits</h3>
         <Button 
           onClick={() => setIsProductModalOpen(true)}
           variant="outline"
@@ -150,25 +132,33 @@ export function ProductsSection({
       {/* Products List */}
       {items && items.length > 0 ? (
         <div className="space-y-3">
+          {/* Header row */}
+          <div className="grid grid-cols-5 gap-4 p-4 rounded-lg bg-black/20 border border-white/20">
+            <div className="text-white/80 font-medium">Produit</div>
+            <div className="text-white/80 font-medium text-center">Quantité</div>
+            <div className="text-white/80 font-medium text-center">Prix unitaire</div>
+            <div className="text-white/80 font-medium text-center">Total</div>
+            <div className="text-white/80 font-medium text-center">Actions</div>
+          </div>
+          
           {items.map((item) => {
             const itemTotal = Number(item.quantity || 0) * Number(item.unit_price || 0);
             const isLoading = loadingItems.has(item.id);
             
             return (
-              <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg border border-white/10 bg-black/40 neo-blur">
-                {/* Product Selection */}
+              <div key={item.id} className="grid grid-cols-5 gap-4 p-4 rounded-lg border border-white/10 bg-black/40 neo-blur items-center">
+                {/* Product Name */}
                 <div className="flex-1">
-                  <Select value={item.product_id} disabled>
-                    <SelectTrigger className="neo-blur">
-                      <SelectValue>
-                        {item.product?.name || "Produit inconnu"}
-                      </SelectValue>
-                    </SelectTrigger>
-                  </Select>
+                  <div className="text-white font-medium">
+                    {item.product?.name || "Produit inconnu"}
+                  </div>
+                  <div className="text-white/60 text-sm">
+                    Réf: {item.product?.reference || "N/A"}
+                  </div>
                 </div>
                 
                 {/* Quantity */}
-                <div className="w-24">
+                <div className="w-full">
                   <Input
                     type="number"
                     value={item.quantity || 0}
@@ -180,7 +170,7 @@ export function ProductsSection({
                 </div>
                 
                 {/* Unit Price */}
-                <div className="w-32">
+                <div className="w-full">
                   <Input
                     type="number"
                     value={item.unit_price || 0}
@@ -193,7 +183,7 @@ export function ProductsSection({
                 </div>
                 
                 {/* Total */}
-                <div className="w-32">
+                <div className="w-full">
                   <Input
                     value={formatGNF(itemTotal)}
                     readOnly
@@ -202,19 +192,21 @@ export function ProductsSection({
                 </div>
                 
                 {/* Remove Button */}
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4" />
-                  )}
-                </Button>
+                <div className="flex justify-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             );
           })}

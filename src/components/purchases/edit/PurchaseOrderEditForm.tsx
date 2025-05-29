@@ -42,12 +42,15 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     refreshTotals
   } = usePurchaseEdit(orderId);
   
-  // Log pour debugging
+  // Debug logging
   useEffect(() => {
-    console.log("Form render - Purchase data:", purchase ? "loaded" : "not loaded");
-    console.log("Form render - Order items count:", orderItems?.length || 0);
-    console.log("Form render - Form data:", formData);
-    console.log("Form render - Is loading:", isLoading);
+    console.log("=== PurchaseOrderEditForm Debug ===");
+    console.log("Purchase data:", purchase ? "loaded" : "not loaded");
+    console.log("Order items count:", orderItems?.length || 0);
+    console.log("Order items data:", orderItems);
+    console.log("Form data:", formData);
+    console.log("Is loading:", isLoading);
+    console.log("=====================================");
   }, [purchase, orderItems, formData, isLoading]);
 
   // Refresh totals when items change
@@ -68,7 +71,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
       
       if (success) {
         await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-        await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
+        await queryClient.invalidateQueries({ queryKey: ['purchase-with-items', orderId] });
         toast.success("Bon de commande mis à jour avec succès");
       }
       
@@ -82,7 +85,6 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     }
   };
 
-  // Calculate remaining amount
   const remainingAmount = (formData.total_amount || 0) - (formData.paid_amount || 0);
   
   if (isLoading) {
@@ -164,17 +166,14 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
         </div>
       </div>
 
-      {/* Products Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">Produits</h3>
-        <ProductsSection 
-          items={orderItems || []}
-          updateItemQuantity={updateItemQuantity}
-          updateItemPrice={updateItemPrice}
-          removeItem={removeItem}
-          addItem={addItem}
-        />
-      </div>
+      {/* Products Section - Now properly receiving the order items */}
+      <ProductsSection 
+        items={orderItems || []}
+        updateItemQuantity={updateItemQuantity}
+        updateItemPrice={updateItemPrice}
+        removeItem={removeItem}
+        addItem={addItem}
+      />
 
       {/* Coûts additionnels */}
       <div className="grid grid-cols-3 gap-4">
