@@ -28,7 +28,8 @@ export function DeliveryNoteList({
   onPrint
 }: DeliveryNoteListProps) {
   console.log("DeliveryNoteList rendering with:", deliveryNotes?.length || 0, "notes");
-  console.log("Delivery notes data:", deliveryNotes);
+  console.log("DeliveryNoteList - isLoading:", isLoading);
+  console.log("DeliveryNoteList - deliveryNotes data:", deliveryNotes);
 
   if (isLoading) {
     return (
@@ -42,11 +43,20 @@ export function DeliveryNoteList({
 
   if (!deliveryNotes || deliveryNotes.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>Aucun bon de livraison trouvé</p>
-        <p className="text-sm mt-2">
-          Les bons de livraison créés à partir de commandes approuvées apparaîtront ici.
-        </p>
+      <div className="text-center py-8">
+        <div className="max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Aucun bon de livraison trouvé
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Les bons de livraison créés à partir de commandes approuvées apparaîtront ici.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              💡 Pour créer un bon de livraison, approuvez d'abord une commande d'achat depuis la section "Achats".
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -79,11 +89,7 @@ export function DeliveryNoteList({
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
-    
-    if (count === 1) {
-      return `1 article`;
-    }
-    return `${count} articles`;
+    return count === 1 ? `1 article` : `${count} articles`;
   };
 
   return (
@@ -106,6 +112,11 @@ export function DeliveryNoteList({
         </TableHeader>
         <TableBody>
           {deliveryNotes.map((note) => {
+            if (!note || !note.id) {
+              console.warn("Invalid note data:", note);
+              return null;
+            }
+            
             console.log(`Rendering note ${note.id}:`, note);
             return (
               <TableRow key={note.id}>
@@ -169,7 +180,7 @@ export function DeliveryNoteList({
                 </TableCell>
               </TableRow>
             );
-          })}
+          }).filter(Boolean)}
         </TableBody>
       </Table>
     </div>

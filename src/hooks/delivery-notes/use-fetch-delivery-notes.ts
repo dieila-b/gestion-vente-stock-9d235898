@@ -12,7 +12,7 @@ export function useFetchDeliveryNotes() {
     queryFn: async () => {
       console.log("Fetching delivery notes with items...");
       try {
-        // Fetch delivery notes with all related data including items
+        // First, fetch delivery notes with basic relations
         const { data: deliveryNotesData, error } = await supabase
           .from('delivery_notes')
           .select(`
@@ -53,8 +53,10 @@ export function useFetchDeliveryNotes() {
           return [];
         }
 
-        // Fetch items for all delivery notes in one query
+        // Fetch items for all delivery notes
         const deliveryNoteIds = deliveryNotesData.map(note => note.id);
+        console.log("Fetching items for delivery note IDs:", deliveryNoteIds);
+        
         const { data: itemsData, error: itemsError } = await supabase
           .from('delivery_note_items')
           .select(`
@@ -74,7 +76,6 @@ export function useFetchDeliveryNotes() {
           
         if (itemsError) {
           console.error("Error fetching delivery note items:", itemsError);
-          // Continue with empty items instead of throwing
         }
 
         console.log("Fetched items data:", itemsData);
@@ -140,10 +141,7 @@ export function useFetchDeliveryNotes() {
         }));
         
         console.log("Final transformed delivery notes:", transformedNotes);
-        console.log("Total delivery notes:", transformedNotes.length);
-        transformedNotes.forEach(note => {
-          console.log(`Note ${note.delivery_number} has ${note.items.length} items`);
-        });
+        console.log("Total delivery notes returned:", transformedNotes.length);
         
         return transformedNotes;
       } catch (error) {

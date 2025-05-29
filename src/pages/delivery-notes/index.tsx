@@ -27,7 +27,9 @@ export default function DeliveryNotesPage() {
   console.log("DeliveryNotesPage - deliveryNotes count:", deliveryNotes?.length || 0);
   
   // Filter delivery notes based on search query
-  const filteredDeliveryNotes = deliveryNotes.filter(note => {
+  const filteredDeliveryNotes = (deliveryNotes || []).filter(note => {
+    if (!note) return false;
+    
     const deliveryNumber = note.delivery_number || '';
     const supplierName = note.supplier?.name || '';
     
