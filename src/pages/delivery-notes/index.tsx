@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -5,7 +6,6 @@ import { DeliveryNoteHeader } from "@/components/purchases/delivery-notes/Delive
 import { DeliveryNoteList } from "@/components/purchases/delivery-notes/DeliveryNoteList";
 import { DeliveryNoteApprovalDialog } from "@/components/delivery-notes/approval";
 import { useDeliveryNotes } from "@/hooks/use-delivery-notes";
-import { isSelectQueryError, safeSupplier } from "@/utils/supabase-safe-query";
 
 export default function DeliveryNotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,18 +21,23 @@ export default function DeliveryNotesPage() {
     closeApprovalDialog,
     onApprovalComplete
   } = useDeliveryNotes();
+
+  console.log("DeliveryNotesPage - deliveryNotes:", deliveryNotes);
+  console.log("DeliveryNotesPage - isLoading:", isLoading);
+  console.log("DeliveryNotesPage - deliveryNotes count:", deliveryNotes?.length || 0);
   
   // Filter delivery notes based on search query
   const filteredDeliveryNotes = deliveryNotes.filter(note => {
-    // Safely access properties to handle SelectQueryError
     const deliveryNumber = note.delivery_number || '';
-    const supplierName = isSelectQueryError(note.supplier) 
-      ? '' 
-      : (note.supplier?.name || '');
+    const supplierName = note.supplier?.name || '';
     
-    return deliveryNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           supplierName.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    return deliveryNumber.toLowerCase().includes(searchLower) ||
+           supplierName.toLowerCase().includes(searchLower);
   });
+
+  console.log("DeliveryNotesPage - filteredDeliveryNotes:", filteredDeliveryNotes);
+  console.log("DeliveryNotesPage - filteredDeliveryNotes count:", filteredDeliveryNotes.length);
 
   return (
     <DashboardLayout>
