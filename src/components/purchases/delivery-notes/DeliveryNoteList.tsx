@@ -134,6 +134,7 @@ export function DeliveryNoteList({
                 <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
+                    {/* Show Edit button only for pending status */}
                     {onEdit && note.status === 'pending' && (
                       <Button
                         variant="ghost"
@@ -145,6 +146,7 @@ export function DeliveryNoteList({
                         <Edit className="h-4 w-4" />
                       </Button>
                     )}
+                    {/* Show Approve button only for pending status */}
                     {onApprove && note.status === 'pending' && (
                       <Button
                         variant="ghost"
@@ -156,15 +158,19 @@ export function DeliveryNoteList({
                         <Check className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(note.id)}
-                      title="Supprimer"
-                      className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {/* Show Delete button only for pending status */}
+                    {note.status === 'pending' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(note.id)}
+                        title="Supprimer"
+                        className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {/* Print button is always visible */}
                     {onPrint && (
                       <Button
                         variant="ghost"

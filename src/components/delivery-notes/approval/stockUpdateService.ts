@@ -193,8 +193,8 @@ export const stockUpdateService = {
 
   async createPurchaseInvoice(deliveryNote: DeliveryNote, receivedItems: ReceivedQuantity[]) {
     try {
-      // Generate invoice number
-      const invoiceNumber = `FA-${Date.now()}`;
+      // Generate invoice number based on delivery number
+      const invoiceNumber = `FA-${deliveryNote.delivery_number?.replace('BL-', '') || Date.now()}`;
       
       // Calculate total amount based on received quantities
       let totalAmount = 0;
@@ -213,18 +213,22 @@ export const stockUpdateService = {
           supplier_id: deliveryNote.supplier_id,
           total_amount: totalAmount,
           status: 'pending',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
 
       if (invoiceError) throw invoiceError;
 
-      console.log('Purchase invoice created:', invoice);
+      console.log('Purchase invoice created successfully:', invoice);
+      toast.success(`Facture d'achat ${invoiceNumber} créée automatiquement`);
+      
+      return invoice;
     } catch (error: any) {
       console.error('Error creating purchase invoice:', error);
       // Don't throw here to avoid blocking the approval process
-      toast.warning("Bon de livraison approuvé mais erreur lors de la création de la facture");
+      toast.warning("Bon de livraison approuvé mais erreur lors de la création de la facture d'achat");
     }
   }
 };
