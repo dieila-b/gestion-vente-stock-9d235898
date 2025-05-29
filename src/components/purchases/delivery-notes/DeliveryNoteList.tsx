@@ -1,11 +1,10 @@
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2, Edit, Check, Printer } from "lucide-react";
-import { formatGNF } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { DeliveryNote } from "@/types/delivery-note";
-import { formatDate } from "@/lib/formatters";
 
 interface DeliveryNoteListProps {
   deliveryNotes: DeliveryNote[];
@@ -26,6 +25,8 @@ export function DeliveryNoteList({
   onApprove,
   onPrint
 }: DeliveryNoteListProps) {
+  console.log("DeliveryNoteList received:", deliveryNotes?.length || 0, "delivery notes");
+  
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -36,10 +37,11 @@ export function DeliveryNoteList({
     );
   }
 
-  if (deliveryNotes.length === 0) {
+  if (!deliveryNotes || deliveryNotes.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        Aucun bon de livraison trouvé
+        <p>Aucun bon de livraison trouvé</p>
+        <p className="text-sm mt-2">Les bons de livraison apparaîtront ici une fois créés depuis les bons de commande approuvés.</p>
       </div>
     );
   }
@@ -71,11 +73,7 @@ export function DeliveryNoteList({
     if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
-    
-    if (count === 1) {
-      return `1 article`;
-    }
-    return `${count} articles`;
+    return count === 1 ? "1 article" : `${count} articles`;
   };
 
   return (
