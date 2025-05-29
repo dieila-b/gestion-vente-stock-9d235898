@@ -120,6 +120,51 @@ export function usePurchaseData(orderId?: string) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Function to calculate totals based on current items and form data
+  const calculateTotals = () => {
+    console.log('Calculating totals with items:', orderItems);
+    
+    // Calculate subtotal from items
+    const itemsSubtotal = orderItems.reduce((sum, item) => {
+      return sum + (Number(item.quantity || 0) * Number(item.unit_price || 0));
+    }, 0);
+    
+    console.log('Items subtotal:', itemsSubtotal);
+    
+    // Get additional costs
+    const shippingCost = Number(formData.shipping_cost || 0);
+    const transitCost = Number(formData.transit_cost || 0);
+    const logisticsCost = Number(formData.logistics_cost || 0);
+    const discount = Number(formData.discount || 0);
+    const taxRate = Number(formData.tax_rate || 0);
+    
+    // Calculate subtotal (items + additional costs - discount)
+    const subtotal = itemsSubtotal + shippingCost + transitCost + logisticsCost - discount;
+    
+    // Calculate tax
+    const taxAmount = subtotal * (taxRate / 100);
+    
+    // Calculate total TTC
+    const totalTTC = subtotal + taxAmount;
+    
+    const newTotals = {
+      subtotal: itemsSubtotal,
+      tax_amount: taxAmount,
+      total_ttc: totalTTC,
+      total_amount: totalTTC
+    };
+    
+    console.log('Calculated totals:', newTotals);
+    
+    // Update form data with calculated totals
+    setFormData(prev => ({
+      ...prev,
+      ...newTotals
+    }));
+    
+    return newTotals;
+  };
+
   return {
     purchase: purchaseData,
     formData,
@@ -128,6 +173,7 @@ export function usePurchaseData(orderId?: string) {
     updateFormField,
     isPurchaseLoading,
     refetch,
-    setFormData
+    setFormData,
+    calculateTotals
   };
 }

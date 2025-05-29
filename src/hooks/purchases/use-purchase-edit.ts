@@ -28,7 +28,8 @@ export function usePurchaseEdit(orderId?: string) {
     updateFormField, 
     isPurchaseLoading, 
     refetch,
-    setFormData
+    setFormData,
+    calculateTotals
   } = usePurchaseData(orderId);
 
   console.log("usePurchaseEdit initialized with orderItems:", orderItems?.length || 0);
@@ -63,7 +64,8 @@ export function usePurchaseEdit(orderId?: string) {
     orderId,
     orderItems,
     setOrderItems,
-    refetch
+    refetch,
+    calculateTotals
   );
 
   // Get status management functions
@@ -98,17 +100,17 @@ export function usePurchaseEdit(orderId?: string) {
     }
   }, [orderId, formData, setFormData]);
 
-  // Auto-refresh totals when items change
+  // Auto-refresh totals when items change or form data changes
   useEffect(() => {
-    if (orderId && orderItems && orderItems.length >= 0) {
-      console.log("Items changed, auto-refreshing totals...");
+    if (orderId && (orderItems.length >= 0 || formData.tax_rate !== undefined)) {
+      console.log("Items or form data changed, auto-calculating totals...");
       const timeoutId = setTimeout(() => {
-        refreshTotals();
-      }, 500); // Debounce for 500ms
+        calculateTotals();
+      }, 300); // Debounce for 300ms
       
       return () => clearTimeout(timeoutId);
     }
-  }, [orderItems, refreshTotals, orderId]);
+  }, [orderItems, formData.tax_rate, formData.shipping_cost, formData.transit_cost, formData.logistics_cost, formData.discount, calculateTotals, orderId]);
 
   // Save all form data
   const saveChanges = async () => {
@@ -122,26 +124,14 @@ export function usePurchaseEdit(orderId?: string) {
     setIsLoading(true);
     
     try {
-      // First refresh totals to make sure we have the latest calculated values
-      let latestTotals;
-      try {
-        latestTotals = await refreshTotals();
-        console.log("Refreshed totals before save:", latestTotals);
-      } catch (totalError) {
-        console.error("Error refreshing totals before save:", totalError);
-      }
+      // Calculate latest totals before saving
+      const latestTotals = calculateTotals();
       
       // Ensure formData has updated_at set to current timestamp
       const dataWithTimestamp = {
         ...formData,
-        updated_at: new Date().toISOString(),
-        // Make sure we include the latest totals
-        ...(latestTotals && {
-          subtotal: latestTotals.subtotal,
-          tax_amount: latestTotals.taxAmount,
-          total_ttc: latestTotals.totalTTC,
-          total_amount: latestTotals.totalAmount,
-        })
+        ...latestTotals,
+        updated_at: new Date().toISOString()
       };
       
       console.log("Data being sent to update:", dataWithTimestamp);
@@ -160,7 +150,7 @@ export function usePurchaseEdit(orderId?: string) {
       
       // Force invalidate and refetch to ensure we have latest data
       await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      await queryClient.invalidateQueries({ queryKey: ['purchase', orderId] });
+      await queryClient.invalidateQueries({ queryKey: ['purchase-with-items', orderId] });
       
       toast.success("Bon de commande mis à jour avec succès");
       

@@ -7,7 +7,8 @@ import { PurchaseOrderItem } from '@/types/purchase-order';
 export function useItemMutations(
   orderId: string | undefined,
   orderItems: PurchaseOrderItem[],
-  setOrderItems: (items: PurchaseOrderItem[]) => void
+  setOrderItems: (items: PurchaseOrderItem[]) => void,
+  calculateTotals?: () => void
 ) {
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -43,12 +44,20 @@ export function useItemMutations(
       }
 
       // Update local state
-      setOrderItems(orderItems.map(item => 
+      const updatedItems = orderItems.map(item => 
         item.id === itemId 
           ? { ...item, quantity, total_price: newTotalPrice }
           : item
-      ));
+      );
+      
+      setOrderItems(updatedItems);
+      
+      // Recalculate totals after updating items
+      if (calculateTotals) {
+        setTimeout(calculateTotals, 100);
+      }
 
+      console.log("Item quantity updated successfully");
       return true;
 
     } catch (error) {
@@ -92,12 +101,20 @@ export function useItemMutations(
       }
 
       // Update local state
-      setOrderItems(orderItems.map(item => 
+      const updatedItems = orderItems.map(item => 
         item.id === itemId 
           ? { ...item, unit_price: price, total_price: newTotalPrice }
           : item
-      ));
+      );
+      
+      setOrderItems(updatedItems);
+      
+      // Recalculate totals after updating items
+      if (calculateTotals) {
+        setTimeout(calculateTotals, 100);
+      }
 
+      console.log("Item price updated successfully");
       return true;
 
     } catch (error) {

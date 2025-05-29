@@ -53,20 +53,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     console.log("=====================================");
   }, [purchase, orderItems, formData, isLoading]);
 
-  // Refresh totals when items change
-  useEffect(() => {
-    if (orderId && orderItems && orderItems.length > 0) {
-      console.log("Items changed, refreshing totals...");
-      refreshTotals();
-    }
-  }, [orderItems, refreshTotals, orderId]);
-
   const handleSave = async () => {
     if (isSaving) return;
     
     setIsSaving(true);
     try {
-      await refreshTotals();
       const success = await saveChanges();
       
       if (success) {
@@ -83,6 +74,11 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handle form field changes that affect totals
+  const handleCostFieldChange = (field: keyof PurchaseOrder, value: number) => {
+    updateFormField(field, value);
   };
 
   const remainingAmount = (formData.total_amount || 0) - (formData.paid_amount || 0);
@@ -182,7 +178,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <Input 
             type="number"
             value={formData.shipping_cost || 0}
-            onChange={(e) => updateFormField('shipping_cost', Number(e.target.value))}
+            onChange={(e) => handleCostFieldChange('shipping_cost', Number(e.target.value))}
             className="neo-blur"
           />
         </div>
@@ -192,7 +188,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <Input 
             type="number"
             value={formData.transit_cost || 0}
-            onChange={(e) => updateFormField('transit_cost', Number(e.target.value))}
+            onChange={(e) => handleCostFieldChange('transit_cost', Number(e.target.value))}
             className="neo-blur"
           />
         </div>
@@ -202,7 +198,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <Input 
             type="number"
             value={formData.logistics_cost || 0}
-            onChange={(e) => updateFormField('logistics_cost', Number(e.target.value))}
+            onChange={(e) => handleCostFieldChange('logistics_cost', Number(e.target.value))}
             className="neo-blur"
           />
         </div>
@@ -212,7 +208,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <Input 
             type="number"
             value={formData.discount || 0}
-            onChange={(e) => updateFormField('discount', Number(e.target.value))}
+            onChange={(e) => handleCostFieldChange('discount', Number(e.target.value))}
             className="neo-blur"
           />
         </div>
@@ -222,7 +218,7 @@ export function PurchaseOrderEditForm({ orderId, onClose }: PurchaseOrderEditFor
           <Input 
             type="number"
             value={formData.tax_rate || 0}
-            onChange={(e) => updateFormField('tax_rate', Number(e.target.value))}
+            onChange={(e) => handleCostFieldChange('tax_rate', Number(e.target.value))}
             className="neo-blur"
           />
         </div>
