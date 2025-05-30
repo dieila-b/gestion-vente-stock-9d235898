@@ -154,7 +154,7 @@ export function useDeliveryNoteApprovalForm(
       );
 
       console.log("=== APPROVAL COMPLETED SUCCESSFULLY ===");
-      toast.success("Bon de livraison approuvé avec succès");
+      toast.success("Bon de livraison approuvé avec succès. La facture d'achat a été générée automatiquement.");
       onApprovalComplete();
       onClose();
     } catch (error: any) {
