@@ -31,9 +31,9 @@ export function CartItem({
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const [isEditing, setIsEditing] = useState(false);
 
-  // Synchroniser SEULEMENT quand on n'est pas en train d'éditer
+  // Synchroniser SEULEMENT quand on n'est pas en train d'éditer ET que la quantité a changé via les boutons
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && quantityInput !== item.quantity.toString()) {
       setQuantityInput(item.quantity.toString());
     }
   }, [item.quantity, isEditing]);
@@ -50,7 +50,7 @@ export function CartItem({
 
   const handleQuantityFocus = () => {
     setIsEditing(true);
-    // Sélectionner tout le texte pour faciliter la saisie
+    // Sélectionner tout le texte pour faciliter la remplacement
     setTimeout(() => {
       const input = document.activeElement as HTMLInputElement;
       if (input) input.select();
@@ -60,7 +60,7 @@ export function CartItem({
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Permettre uniquement les chiffres pendant la frappe
+    // Permettre seulement les chiffres ou une chaîne vide
     if (value === "" || /^\d+$/.test(value)) {
       setQuantityInput(value);
     }
@@ -69,7 +69,7 @@ export function CartItem({
   const validateAndSetQuantity = () => {
     const value = quantityInput.trim();
     
-    // Si vide, restaurer la quantité actuelle
+    // Si vide ou zéro, restaurer la quantité actuelle
     if (value === "" || value === "0") {
       setQuantityInput(item.quantity.toString());
       setIsEditing(false);
