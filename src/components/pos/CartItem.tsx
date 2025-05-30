@@ -3,7 +3,7 @@ import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 interface CartItemProps {
@@ -31,6 +31,13 @@ export function CartItem({
   // État local pour contrôler complètement l'input pendant la frappe
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const [isEditing, setIsEditing] = useState(false);
+
+  // Synchroniser SEULEMENT quand on n'est pas en train d'éditer
+  useEffect(() => {
+    if (!isEditing) {
+      setQuantityInput(item.quantity.toString());
+    }
+  }, [item.quantity, isEditing]);
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -119,25 +126,12 @@ export function CartItem({
       return;
     }
     onUpdateQuantity(1);
-    // Mettre à jour l'input seulement si on n'est pas en train d'éditer
-    if (!isEditing) {
-      setQuantityInput((item.quantity + 1).toString());
-    }
   };
 
   const handleQuantityDecrease = () => {
     if (item.quantity <= 1) return;
     onUpdateQuantity(-1);
-    // Mettre à jour l'input seulement si on n'est pas en train d'éditer
-    if (!isEditing) {
-      setQuantityInput((item.quantity - 1).toString());
-    }
   };
-
-  // Synchroniser l'input avec la quantité réelle SEULEMENT quand on n'édite pas
-  if (!isEditing && quantityInput !== item.quantity.toString()) {
-    setQuantityInput(item.quantity.toString());
-  }
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
   const itemTotal = unitPriceAfterDiscount * item.quantity;
