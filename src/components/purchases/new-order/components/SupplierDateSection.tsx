@@ -28,11 +28,17 @@ export const SupplierDateSection = ({
             <SelectValue placeholder="Sélectionner un fournisseur" />
           </SelectTrigger>
           <SelectContent className="bg-black/80 backdrop-blur-md border-white/10">
-            {suppliers?.map((supplier) => (
-              <SelectItem key={supplier.id} value={supplier.id}>
-                {supplier.contact || 'Contact non spécifié'}
+            {suppliers?.length ? (
+              suppliers.map((supplier) => (
+                <SelectItem key={supplier.id} value={supplier.id}>
+                  {supplier.name || supplier.contact || 'Fournisseur sans nom'}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                Aucun fournisseur disponible
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>
