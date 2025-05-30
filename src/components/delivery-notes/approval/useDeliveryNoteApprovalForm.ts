@@ -117,6 +117,7 @@ export function useDeliveryNoteApprovalForm(
 
   const handleApprove = async () => {
     console.log("=== APPROVAL PROCESS START ===");
+    console.log("Button clicked - starting approval process");
     console.log("Current note:", note);
     console.log("Current receivedQuantities:", receivedQuantities);
     console.log("Current selectedLocationId:", selectedLocationId);
@@ -140,6 +141,7 @@ export function useDeliveryNoteApprovalForm(
     }
     
     setIsSubmitting(true);
+    console.log("Form is submitting - button should be disabled");
     
     try {
       console.log("=== CALLING APPROVAL SERVICE ===");
@@ -152,7 +154,7 @@ export function useDeliveryNoteApprovalForm(
       );
 
       console.log("=== APPROVAL COMPLETED SUCCESSFULLY ===");
-      toast.success("Bon de livraison approuvé avec succès. La facture d'achat sera générée automatiquement.");
+      toast.success("Bon de livraison approuvé avec succès");
       onApprovalComplete();
       onClose();
     } catch (error: any) {
