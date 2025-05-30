@@ -17,19 +17,30 @@ export const deliveryNoteApprovalService = {
     warehouses: any[],
     posLocations: any[]
   ) {
+    console.log('=== DELIVERY NOTE APPROVAL SERVICE ===');
     console.log('Starting delivery note approval process for:', note.delivery_number);
+    console.log('Note ID:', note.id);
+    console.log('Received quantities:', receivedQuantities);
+    console.log('Selected location ID:', selectedLocationId);
     
+    if (!note.items || note.items.length === 0) {
+      throw new Error('Aucun article trouvé dans le bon de livraison');
+    }
+
     try {
       // 1. Update delivery note items with received quantities
+      console.log('=== STEP 1: Updating delivery note items ===');
       const updates = note.items.map(item => ({
         id: item.id,
         quantity_received: receivedQuantities[item.id] || 0
       }));
 
-      console.log('Updating delivery note items with received quantities:', updates);
+      console.log('Items to update:', updates);
 
       // Update each delivery note item
       for (const update of updates) {
+        console.log(`Updating item ${update.id} with quantity ${update.quantity_received}`);
+        
         const { error } = await supabase
           .from('delivery_note_items')
           .update({ quantity_received: update.quantity_received })
@@ -37,15 +48,20 @@ export const deliveryNoteApprovalService = {
         
         if (error) {
           console.error('Error updating delivery note item:', error);
-          throw error;
+          throw new Error(`Erreur lors de la mise à jour de l'article ${update.id}: ${error.message}`);
         }
+        
+        console.log(`Successfully updated item ${update.id}`);
       }
 
       // 2. Update stocks for each received item
-      console.log('Updating stocks for received items...');
+      console.log('=== STEP 2: Updating stocks ===');
       for (const item of note.items) {
         const receivedQty = receivedQuantities[item.id] || 0;
+        console.log(`Processing item ${item.id}: received quantity = ${receivedQty}`);
+        
         if (receivedQty > 0) {
+          console.log(`Updating stock for product ${item.product_id} with quantity ${receivedQty}`);
           await stockOperationsService.updateStockForLocation(
             item.product_id,
             receivedQty,
@@ -55,12 +71,16 @@ export const deliveryNoteApprovalService = {
             posLocations,
             note.delivery_number
           );
+          console.log(`Stock updated successfully for product ${item.product_id}`);
+        } else {
+          console.log(`Skipping stock update for item ${item.id} (quantity = 0)`);
         }
       }
 
       // 3. Update delivery note status to 'received'
-      // Le déclencheur de base de données créera automatiquement la facture d'achat
+      console.log('=== STEP 3: Updating delivery note status ===');
       console.log('Updating delivery note status to received...');
+      
       const { error: noteError } = await supabase
         .from('delivery_notes')
         .update({ 
@@ -72,12 +92,13 @@ export const deliveryNoteApprovalService = {
       
       if (noteError) {
         console.error('Error updating delivery note status:', noteError);
-        throw noteError;
+        throw new Error(`Erreur lors de la mise à jour du statut: ${noteError.message}`);
       }
 
+      console.log('=== APPROVAL PROCESS COMPLETED SUCCESSFULLY ===');
       console.log('Delivery note approval process completed successfully');
-      toast.success('Bon de livraison approuvé avec succès. Une facture d\'achat sera automatiquement générée.');
     } catch (error: any) {
+      console.error('=== APPROVAL PROCESS FAILED ===');
       console.error('Error in delivery note approval process:', error);
       throw error;
     }
