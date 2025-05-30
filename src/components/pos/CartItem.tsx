@@ -28,7 +28,6 @@ export function CartItem({
   const [discountValue, setDiscountValue] = useState<string>(
     item.discount ? item.discount.toString() : "0"
   );
-  // État local pour contrôler complètement l'input pendant la frappe
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const [isEditing, setIsEditing] = useState(false);
 
