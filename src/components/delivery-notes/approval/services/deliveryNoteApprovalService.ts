@@ -111,59 +111,60 @@ export const deliveryNoteApprovalService = {
 
       console.log('Delivery note updated successfully:', updatedNote);
 
-      // 4. Vérifier si la facture d'achat a été créée par le déclencheur
-      console.log('=== STEP 4: Checking if purchase invoice was created ===');
+      // 4. Créer la facture d'achat manuellement (pour garantir la création)
+      console.log('=== STEP 4: Creating purchase invoice manually ===');
       
-      // Attendre un peu pour laisser le temps au déclencheur de s'exécuter
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const { data: purchaseInvoices, error: invoiceError } = await supabase
-        .from('purchase_invoices')
-        .select('*')
-        .eq('supplier_id', note.supplier_id)
-        .ilike('invoice_number', `FA-${note.delivery_number.replace('BL-', '')}%`)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Calculer le montant total basé sur les quantités reçues
+      const totalAmount = note.items.reduce((sum, item) => {
+        const receivedQty = receivedQuantities[item.id] || 0;
+        return sum + (receivedQty * item.unit_price);
+      }, 0);
 
-      if (invoiceError) {
-        console.error('Error checking for purchase invoice:', invoiceError);
-      } else {
-        console.log('Purchase invoices found:', purchaseInvoices);
-        if (purchaseInvoices && purchaseInvoices.length > 0) {
-          console.log('✅ Purchase invoice created successfully:', purchaseInvoices[0]);
-          toast.success(`Facture d'achat ${purchaseInvoices[0].invoice_number} créée automatiquement`);
-        } else {
-          console.warn('⚠️ No purchase invoice found - trigger may not have executed');
-          
-          // Essayer de créer manuellement la facture si le déclencheur a échoué
-          console.log('=== FALLBACK: Creating purchase invoice manually ===');
-          const totalAmount = note.items.reduce((sum, item) => {
-            const receivedQty = receivedQuantities[item.id] || 0;
-            return sum + (receivedQty * item.unit_price);
-          }, 0);
+      console.log('Calculated total amount:', totalAmount);
 
-          if (totalAmount > 0) {
-            const invoiceNumber = `FA-${note.delivery_number.replace('BL-', '')}-${Date.now()}`;
-            
-            const { data: manualInvoice, error: manualError } = await supabase
-              .from('purchase_invoices')
-              .insert({
-                invoice_number: invoiceNumber,
-                supplier_id: note.supplier_id,
-                total_amount: totalAmount,
-                status: 'pending'
-              })
-              .select();
+      if (totalAmount > 0) {
+        // Vérifier si une facture existe déjà
+        const deliveryNumberPart = note.delivery_number.replace('BL-', '');
+        const { data: existingInvoices, error: checkError } = await supabase
+          .from('purchase_invoices')
+          .select('*')
+          .eq('supplier_id', note.supplier_id)
+          .ilike('invoice_number', `FA-${deliveryNumberPart}%`);
 
-            if (manualError) {
-              console.error('Error creating manual purchase invoice:', manualError);
-              toast.error('Erreur lors de la création manuelle de la facture d\'achat');
-            } else {
-              console.log('✅ Manual purchase invoice created:', manualInvoice);
-              toast.success(`Facture d'achat ${invoiceNumber} créée manuellement`);
-            }
-          }
+        if (checkError) {
+          console.error('Error checking existing invoices:', checkError);
         }
+
+        if (!existingInvoices || existingInvoices.length === 0) {
+          const invoiceNumber = `FA-${deliveryNumberPart}-${Date.now()}`;
+          
+          console.log('Creating purchase invoice:', invoiceNumber);
+          
+          const { data: newInvoice, error: invoiceError } = await supabase
+            .from('purchase_invoices')
+            .insert({
+              invoice_number: invoiceNumber,
+              supplier_id: note.supplier_id,
+              total_amount: totalAmount,
+              status: 'pending',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select();
+
+          if (invoiceError) {
+            console.error('Error creating purchase invoice:', invoiceError);
+            toast.error('Erreur lors de la création de la facture d\'achat');
+          } else {
+            console.log('✅ Purchase invoice created successfully:', newInvoice);
+            toast.success(`Facture d'achat ${invoiceNumber} créée avec succès`);
+          }
+        } else {
+          console.log('Purchase invoice already exists:', existingInvoices[0]);
+          toast.success('Facture d\'achat déjà existante');
+        }
+      } else {
+        console.log('No amount to invoice (total = 0)');
       }
 
       console.log('=== APPROVAL PROCESS COMPLETED SUCCESSFULLY ===');
