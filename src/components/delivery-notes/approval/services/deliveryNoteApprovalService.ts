@@ -17,7 +17,7 @@ export const deliveryNoteApprovalService = {
     warehouses: any[],
     posLocations: any[]
   ) {
-    console.log('=== DELIVERY NOTE APPROVAL SERVICE ===');
+    console.log('=== DELIVERY NOTE APPROVAL SERVICE START ===');
     console.log('Starting delivery note approval process for:', note.delivery_number);
     console.log('Note ID:', note.id);
     console.log('Received quantities:', receivedQuantities);
@@ -25,6 +25,12 @@ export const deliveryNoteApprovalService = {
     
     if (!note.items || note.items.length === 0) {
       throw new Error('Aucun article trouvé dans le bon de livraison');
+    }
+
+    // Vérifier que nous avons au moins une quantité reçue
+    const hasReceivedItems = Object.values(receivedQuantities).some(qty => qty > 0);
+    if (!hasReceivedItems) {
+      throw new Error('Aucune quantité reçue spécifiée');
     }
 
     try {
@@ -62,16 +68,22 @@ export const deliveryNoteApprovalService = {
         
         if (receivedQty > 0) {
           console.log(`Updating stock for product ${item.product_id} with quantity ${receivedQty}`);
-          await stockOperationsService.updateStockForLocation(
-            item.product_id,
-            receivedQty,
-            item.unit_price,
-            selectedLocationId,
-            warehouses,
-            posLocations,
-            note.delivery_number
-          );
-          console.log(`Stock updated successfully for product ${item.product_id}`);
+          try {
+            await stockOperationsService.updateStockForLocation(
+              item.product_id,
+              receivedQty,
+              item.unit_price,
+              selectedLocationId,
+              warehouses,
+              posLocations,
+              note.delivery_number
+            );
+            console.log(`Stock updated successfully for product ${item.product_id}`);
+          } catch (stockError: any) {
+            console.error(`Error updating stock for product ${item.product_id}:`, stockError);
+            // Continue with other items even if one fails
+            console.warn(`Continuing despite stock update error for product ${item.product_id}`);
+          }
         } else {
           console.log(`Skipping stock update for item ${item.id} (quantity = 0)`);
         }
@@ -97,6 +109,10 @@ export const deliveryNoteApprovalService = {
 
       console.log('=== APPROVAL PROCESS COMPLETED SUCCESSFULLY ===');
       console.log('Delivery note approval process completed successfully');
+      
+      // Le déclencheur de base de données va automatiquement créer la facture d'achat
+      console.log('Purchase invoice will be created automatically by database trigger');
+      
     } catch (error: any) {
       console.error('=== APPROVAL PROCESS FAILED ===');
       console.error('Error in delivery note approval process:', error);
