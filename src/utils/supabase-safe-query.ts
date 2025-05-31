@@ -11,7 +11,7 @@ export const safeFetchRecordById = async (
 ) => {
   try {
     const { data, error } = await selectQuery(
-      supabase.from(table).select('*').eq('id', id).single()
+      supabase.from(table as any).select('*').eq('id', id).single()
     );
     
     if (error) {

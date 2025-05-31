@@ -13,6 +13,7 @@ export interface InvoiceFormData {
   invoiceNumber: string;
   clientName: string;
   clientEmail: string;
+  clientId?: string;
   amount: string;
   description: string;
   vatRate: string;
