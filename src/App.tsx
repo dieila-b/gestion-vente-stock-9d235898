@@ -1,129 +1,571 @@
-
-import { Routes, Route } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import Dashboard from "@/pages/Dashboard";
-import Catalog from "@/pages/Catalog";
-import POS from "@/pages/POS";
-import Sales from "@/pages/Sales";
-import Payments from "@/pages/Payments";
-import Preorders from "@/pages/Preorders";
-import Clients from "@/pages/Clients";
-import Suppliers from "@/pages/Suppliers";
-import Orders from "@/pages/Orders";
-import Settings from "@/pages/Settings";
-import Login from "@/pages/Login";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { Dashboard } from "@/pages/Dashboard";
+import { POS } from "@/pages/POS";
+import { Products } from "@/pages/Products";
+import { Categories } from "@/pages/Categories";
+import { Clients } from "@/pages/Clients";
+import { Suppliers } from "@/pages/Suppliers";
+import { Purchases } from "@/pages/Purchases";
+import { Sales } from "@/pages/Sales";
+import { Transactions } from "@/pages/Transactions";
+import { Users } from "@/pages/Users";
+import { Settings } from "@/pages/Settings";
+import { Login } from "@/pages/Login";
+import { Register } from "@/pages/Register";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import RequireAuth from "@/components/auth/RequireAuth";
-import Products from "@/pages/Products";
-import PriceRequests from "@/pages/PriceRequests";
-import StockStatus from "@/pages/StockStatus";
-import Warehouses from "@/pages/Warehouses";
-import Transfers from "@/pages/Transfers";
-import PreorderInvoices from "@/pages/PreorderInvoices";
-import NewPurchaseOrder from "@/pages/NewPurchaseOrder";
-import InternalUsers from "@/pages/InternalUsers"; 
-import StockLocation from "@/pages/StockLocation"; 
-import POSLocations from "@/pages/POSLocations"; 
-import Index from "@/pages/Index";
-
-// Reports imports
-import DailyReport from "@/pages/reports/DailyReport";
-import MonthlyReport from "@/pages/reports/MonthlyReport";
-import YearlyReport from "@/pages/reports/YearlyReport";
-import CustomReport from "@/pages/reports/CustomReport";
-import ClientsReport from "@/pages/reports/ClientsReport";
-import UnpaidReport from "./pages/reports/UnpaidReport";
-
-// Stock pages imports
-import MainStock from "@/pages/stocks/MainStock";
-import POSStock from "@/pages/stocks/POSStock";
-import StockIn from "@/pages/stocks/StockIn";
-import StockOut from "@/pages/stocks/StockOut";
-
-// Purchase pages imports
-import PurchaseOrdersPage from "@/pages/purchase-orders";
-import DeliveryNotesPage from "@/pages/delivery-notes";
-import PurchaseInvoicesPage from "@/pages/purchase-invoices";
-import SupplierReturns from "@/pages/SupplierReturns";
-
-// Sales & Billing pages imports
-import SalesInvoices from "@/pages/SalesInvoices";
-import Quotes from "@/pages/Quotes";
-import CustomerReturns from "@/pages/CustomerReturns";
-
-// Accounting pages imports
-import CashRegisters from "@/pages/CashRegisters";
-import BankAccounts from "@/pages/BankAccounts";
-import Expenses from "@/pages/Expenses";
+import { Home } from "@/pages/Home";
+import { CreateProduct } from "@/pages/CreateProduct";
+import { EditProduct } from "@/pages/EditProduct";
+import { CreateCategory } from "@/pages/CreateCategory";
+import { EditCategory } from "@/pages/EditCategory";
+import { CreateClient } from "@/pages/CreateClient";
+import { EditClient } from "@/pages/EditClient";
+import { CreateSupplier } from "@/pages/CreateSupplier";
+import { EditSupplier } from "@/pages/EditSupplier";
+import { CreatePurchaseOrder } from "@/pages/CreatePurchaseOrder";
+import { EditPurchaseOrder } from "@/pages/EditPurchaseOrder";
+import { DeliveryNotes } from "@/pages/DeliveryNotes";
+import { CreateDeliveryNote } from "@/pages/CreateDeliveryNote";
+import { EditDeliveryNote } from "@/pages/EditDeliveryNote";
+import { SupplierOrders } from "@/pages/SupplierOrders";
+import { CreateSupplierOrder } from "@/pages/CreateSupplierOrder";
+import { EditSupplierOrder } from "@/pages/EditSupplierOrder";
+import { StockAdjustments } from "@/pages/StockAdjustments";
+import { CreateStockAdjustment } from "@/pages/CreateStockAdjustment";
+import { EditStockAdjustment } from "@/pages/EditStockAdjustment";
+import { StockTransfers } from "@/pages/StockTransfers";
+import { CreateStockTransfer } from "@/pages/CreateStockTransfer";
+import { EditStockTransfer } from "@/pages/EditStockTransfer";
+import { StockCounts } from "@/pages/StockCounts";
+import { CreateStockCount } from "@/pages/CreateStockCount";
+import { EditStockCount } from "@/pages/EditStockCount";
+import { DamagedProducts } from "@/pages/DamagedProducts";
+import { CreateDamagedProduct } from "@/pages/CreateDamagedProduct";
+import { EditDamagedProduct } from "@/pages/EditDamagedProduct";
+import { ExpiredProducts } from "@/pages/ExpiredProducts";
+import { CreateExpiredProduct } from "@/pages/CreateExpiredProduct";
+import { EditExpiredProduct } from "@/pages/EditExpiredProduct";
+import { LowStockProducts } from "@/pages/LowStockProducts";
+import { CreateUser } from "@/pages/CreateUser";
+import { EditUser } from "@/pages/EditUser";
+import { ViewPurchaseOrder } from "@/pages/ViewPurchaseOrder";
+import { ViewSupplierOrder } from "@/pages/ViewSupplierOrder";
+import { ViewDeliveryNote } from "@/pages/ViewDeliveryNote";
+import { ViewStockAdjustment } from "@/pages/ViewStockAdjustment";
+import { ViewStockTransfer } from "@/pages/ViewStockTransfer";
+import { ViewStockCount } from "@/pages/ViewStockCount";
+import { ViewDamagedProduct } from "@/pages/ViewDamagedProduct";
+import { ViewExpiredProduct } from "@/pages/ViewExpiredProduct";
+import { ViewLowStockProduct } from "@/pages/ViewLowStockProduct";
+import { ViewTransaction } from "@/pages/ViewTransaction";
+import { ViewClient } from "@/pages/ViewClient";
+import { ViewSupplier } from "@/pages/ViewSupplier";
+import { ViewProduct } from "@/pages/ViewProduct";
+import { ViewCategory } from "@/pages/ViewCategory";
+import { ViewUser } from "@/pages/ViewUser";
+import SalesInvoices from "./pages/SalesInvoices";
 
 function App() {
   return (
-    <AuthProvider>
+    <Router>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Index />} />
-        <Route path="/*" element={
-          <RequireAuth>
-            <DashboardLayout>
-              <Routes>
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="catalog" element={<Catalog />} />
-                <Route path="pos" element={<POS />} />
-                <Route path="sales" element={<Sales />} />
-                <Route path="preorders" element={<Preorders />} />
-                <Route path="preorder-invoices" element={<PreorderInvoices />} />
-                <Route path="payments" element={<Payments />} />
-                <Route path="clients" element={<Clients />} />
-                <Route path="suppliers" element={<Suppliers />} />
-                <Route path="orders" element={<Orders />} />
-                <Route path="price-requests" element={<PriceRequests />} />
-                <Route path="products" element={<Products />} />
-                <Route path="settings" element={<Settings />} />
-                
-                {/* Stock Management Routes */}
-                <Route path="stock-status" element={<StockStatus />} />
-                <Route path="stocks/main" element={<MainStock />} />
-                <Route path="stocks/pos" element={<POSStock />} />
-                <Route path="stocks/in" element={<StockIn />} />
-                <Route path="stocks/out" element={<StockOut />} />
-                <Route path="warehouses" element={<Warehouses />} />
-                <Route path="pos-locations" element={<POSLocations />} />
-                <Route path="transfers" element={<Transfers />} />
-                
-                {/* Reports Routes */}
-                <Route path="reports/daily" element={<DailyReport />} />
-                <Route path="reports/monthly" element={<MonthlyReport />} />
-                <Route path="reports/yearly" element={<YearlyReport />} />
-                <Route path="reports/custom" element={<CustomReport />} />
-                <Route path="reports/clients" element={<ClientsReport />} />
-                <Route path="reports/unpaid" element={<UnpaidReport />} />
-                
-                {/* Purchase Routes */}
-                <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
-                <Route path="purchase-orders/new" element={<NewPurchaseOrder />} />
-                <Route path="delivery-note" element={<DeliveryNotesPage />} />
-                <Route path="purchase-invoice" element={<PurchaseInvoicesPage />} />
-                <Route path="supplier-returns" element={<SupplierReturns />} />
-                
-                {/* Sales & Billing Routes */}
-                <Route path="sales-invoices" element={<SalesInvoices />} />
-                <Route path="quotes" element={<Quotes />} />
-                <Route path="customer-returns" element={<CustomerReturns />} />
-                
-                {/* Accounting Routes */}
-                <Route path="cash-registers" element={<CashRegisters />} />
-                <Route path="bank-accounts" element={<BankAccounts />} />
-                <Route path="expenses" element={<Expenses />} />
-                
-                {/* Settings Routes */}
-                <Route path="stock-location" element={<StockLocation />} />
-                <Route path="internal-users" element={<InternalUsers />} />
-              </Routes>
-            </DashboardLayout>
-          </RequireAuth>
-        } />
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pos"
+          element={
+            <RequireAuth>
+              <POS />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/products"
+          element={
+            <RequireAuth>
+              <Products />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/products/create"
+          element={
+            <RequireAuth>
+              <CreateProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/products/:id/edit"
+          element={
+            <RequireAuth>
+              <EditProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/products/:id/view"
+          element={
+            <RequireAuth>
+              <ViewProduct />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/categories"
+          element={
+            <RequireAuth>
+              <Categories />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/categories/create"
+          element={
+            <RequireAuth>
+              <CreateCategory />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/categories/:id/edit"
+          element={
+            <RequireAuth>
+              <EditCategory />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/categories/:id/view"
+          element={
+            <RequireAuth>
+              <ViewCategory />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/clients"
+          element={
+            <RequireAuth>
+              <Clients />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/clients/create"
+          element={
+            <RequireAuth>
+              <CreateClient />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/clients/:id/edit"
+          element={
+            <RequireAuth>
+              <EditClient />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/clients/:id/view"
+          element={
+            <RequireAuth>
+              <ViewClient />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/suppliers"
+          element={
+            <RequireAuth>
+              <Suppliers />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/suppliers/create"
+          element={
+            <RequireAuth>
+              <CreateSupplier />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/suppliers/:id/edit"
+          element={
+            <RequireAuth>
+              <EditSupplier />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/suppliers/:id/view"
+          element={
+            <RequireAuth>
+              <ViewSupplier />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/purchases"
+          element={
+            <RequireAuth>
+              <Purchases />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/purchases/create"
+          element={
+            <RequireAuth>
+              <CreatePurchaseOrder />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/purchases/:id/edit"
+          element={
+            <RequireAuth>
+              <EditPurchaseOrder />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/purchases/:id/view"
+          element={
+            <RequireAuth>
+              <ViewPurchaseOrder />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/delivery-notes"
+          element={
+            <RequireAuth>
+              <DeliveryNotes />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/delivery-notes/create"
+          element={
+            <RequireAuth>
+              <CreateDeliveryNote />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/delivery-notes/:id/edit"
+          element={
+            <RequireAuth>
+              <EditDeliveryNote />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/delivery-notes/:id/view"
+          element={
+            <RequireAuth>
+              <ViewDeliveryNote />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/supplier-orders"
+          element={
+            <RequireAuth>
+              <SupplierOrders />
+            </RequireAuth>
+          }
+        />
+         <Route
+          path="/supplier-orders/create"
+          element={
+            <RequireAuth>
+              <CreateSupplierOrder />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/supplier-orders/:id/edit"
+          element={
+            <RequireAuth>
+              <EditSupplierOrder />
+            </RequireAuth>
+          }
+        />
+         <Route
+          path="/supplier-orders/:id/view"
+          element={
+            <RequireAuth>
+              <ViewSupplierOrder />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/stock-adjustments"
+          element={
+            <RequireAuth>
+              <StockAdjustments />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-adjustments/create"
+          element={
+            <RequireAuth>
+              <CreateStockAdjustment />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-adjustments/:id/edit"
+          element={
+            <RequireAuth>
+              <EditStockAdjustment />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-adjustments/:id/view"
+          element={
+            <RequireAuth>
+              <ViewStockAdjustment />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/stock-transfers"
+          element={
+            <RequireAuth>
+              <StockTransfers />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-transfers/create"
+          element={
+            <RequireAuth>
+              <CreateStockTransfer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-transfers/:id/edit"
+          element={
+            <RequireAuth>
+              <EditStockTransfer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-transfers/:id/view"
+          element={
+            <RequireAuth>
+              <ViewStockTransfer />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/stock-counts"
+          element={
+            <RequireAuth>
+              <StockCounts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-counts/create"
+          element={
+            <RequireAuth>
+              <CreateStockCount />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-counts/:id/edit"
+          element={
+            <RequireAuth>
+              <EditStockCount />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stock-counts/:id/view"
+          element={
+            <RequireAuth>
+              <ViewStockCount />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/damaged-products"
+          element={
+            <RequireAuth>
+              <DamagedProducts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/damaged-products/create"
+          element={
+            <RequireAuth>
+              <CreateDamagedProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/damaged-products/:id/edit"
+          element={
+            <RequireAuth>
+              <EditDamagedProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/damaged-products/:id/view"
+          element={
+            <RequireAuth>
+              <ViewDamagedProduct />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/expired-products"
+          element={
+            <RequireAuth>
+              <ExpiredProducts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/expired-products/create"
+          element={
+            <RequireAuth>
+              <CreateExpiredProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/expired-products/:id/edit"
+          element={
+            <RequireAuth>
+              <EditExpiredProduct />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/expired-products/:id/view"
+          element={
+            <RequireAuth>
+              <ViewExpiredProduct />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/low-stock-products"
+          element={
+            <RequireAuth>
+              <LowStockProducts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/low-stock-products/:id/view"
+          element={
+            <RequireAuth>
+              <ViewLowStockProduct />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/transactions"
+          element={
+            <RequireAuth>
+              <Transactions />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/transactions/:id/view"
+          element={
+            <RequireAuth>
+              <ViewTransaction />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/users"
+          element={
+            <RequireAuth>
+              <Users />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/create"
+          element={
+            <RequireAuth>
+              <CreateUser />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/:id/edit"
+          element={
+            <RequireAuth>
+              <EditUser />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/:id/view"
+          element={
+            <RequireAuth>
+              <ViewUser />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <Settings />
+            </RequireAuth>
+          }
+        />
+        <Route path="/sales-invoices" element={<SalesInvoices />} />
       </Routes>
-    </AuthProvider>
+    </Router>
   );
 }
 
