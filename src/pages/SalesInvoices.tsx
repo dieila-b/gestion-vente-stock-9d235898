@@ -11,13 +11,38 @@ import { formatDateTime } from "@/lib/formatters";
 import { Search, Eye, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+interface SalesInvoice {
+  id: string;
+  invoice_number: string;
+  order_id: string;
+  client_id: string;
+  total_amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  payment_status: 'paid' | 'partial' | 'pending';
+  delivery_status: 'delivered' | 'partial' | 'awaiting' | 'pending';
+  created_at: string;
+  updated_at: string;
+  clients?: {
+    company_name?: string;
+    contact_name?: string;
+    phone?: string;
+    email?: string;
+  };
+  orders?: {
+    id: string;
+    status: string;
+  };
+}
+
 export default function SalesInvoices() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['sales-invoices'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Use any type to bypass TypeScript errors while the types sync
+      const { data, error } = await (supabase as any)
         .from('sales_invoices')
         .select(`
           *,
@@ -31,7 +56,7 @@ export default function SalesInvoices() {
     }
   });
 
-  const filteredInvoices = invoices.filter(invoice =>
+  const filteredInvoices = invoices.filter((invoice: SalesInvoice) =>
     invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.clients?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.clients?.contact_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -126,7 +151,7 @@ export default function SalesInvoices() {
                     </td>
                   </tr>
                 ) : (
-                  filteredInvoices.map((invoice) => (
+                  filteredInvoices.map((invoice: SalesInvoice) => (
                     <tr key={invoice.id} className="border-b hover:bg-muted/50">
                       <td className="p-4 font-medium">{invoice.invoice_number}</td>
                       <td className="p-4">

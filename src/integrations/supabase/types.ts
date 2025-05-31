@@ -1347,6 +1347,114 @@ export type Database = {
           },
         ]
       }
+      sales_invoice_items: {
+        Row: {
+          created_at: string | null
+          delivered_quantity: number | null
+          discount: number | null
+          id: string
+          product_id: string | null
+          quantity: number | null
+          sales_invoice_id: string | null
+          total_price: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivered_quantity?: number | null
+          discount?: number | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+          sales_invoice_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          delivered_quantity?: number | null
+          discount?: number | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+          sales_invoice_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_invoice_items_sales_invoice_id_fkey"
+            columns: ["sales_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_invoices: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          delivery_status: string | null
+          id: string
+          invoice_number: string
+          order_id: string | null
+          paid_amount: number | null
+          payment_status: string | null
+          remaining_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          delivery_status?: string | null
+          id?: string
+          invoice_number: string
+          order_id?: string | null
+          paid_amount?: number | null
+          payment_status?: string | null
+          remaining_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          delivery_status?: string | null
+          id?: string
+          invoice_number?: string
+          order_id?: string | null
+          paid_amount?: number | null
+          payment_status?: string | null
+          remaining_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           created_at: string | null
