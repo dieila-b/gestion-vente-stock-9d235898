@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
 import POS from "@/pages/POS";
 import Products from "@/pages/Products";
@@ -17,92 +17,90 @@ import Sales from "./pages/Sales";
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <RequireAuth>
-                <Dashboard />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/pos"
-            element={
-              <RequireAuth>
-                <POS />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pos"
+          element={
+            <RequireAuth>
+              <POS />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/products"
-            element={
-              <RequireAuth>
-                <Products />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/products"
+          element={
+            <RequireAuth>
+              <Products />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/clients"
-            element={
-              <RequireAuth>
-                <Clients />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/clients"
+          element={
+            <RequireAuth>
+              <Clients />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/suppliers"
-            element={
-              <RequireAuth>
-                <Suppliers />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/suppliers"
+          element={
+            <RequireAuth>
+              <Suppliers />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/sales"
-            element={
-              <RequireAuth>
-                <Sales />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/sales"
+          element={
+            <RequireAuth>
+              <Sales />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/delivery-notes/:id/edit"
-            element={
-              <RequireAuth>
-                <EditDeliveryNote />
-              </RequireAuth>
-            }
-          />
+        <Route
+          path="/delivery-notes/:id/edit"
+          element={
+            <RequireAuth>
+              <EditDeliveryNote />
+            </RequireAuth>
+          }
+        />
 
-          <Route
-            path="/settings"
-            element={
-              <RequireAuth>
-                <Settings />
-              </RequireAuth>
-            }
-          />
-          
-          <Route 
-            path="/sales-invoices" 
-            element={
-              <RequireAuth>
-                <SalesInvoices />
-              </RequireAuth>
-            } 
-          />
-        </Routes>
-      </Router>
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <Settings />
+            </RequireAuth>
+          }
+        />
+        
+        <Route 
+          path="/sales-invoices" 
+          element={
+            <RequireAuth>
+              <SalesInvoices />
+            </RequireAuth>
+          } 
+        />
+      </Routes>
     </AuthProvider>
   );
 }

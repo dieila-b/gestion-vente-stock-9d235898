@@ -36,10 +36,7 @@ export const useDashboardStats = () => {
         return [];
       }
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("Erreur dans useQuery orders:", error);
-    }
+    retry: 1
   });
 
   // Fetch catalog for product purchase prices
@@ -60,10 +57,7 @@ export const useDashboardStats = () => {
         return [];
       }
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("Erreur dans useQuery catalog:", error);
-    }
+    retry: 1
   });
 
   // Fetch unpaid invoices 
@@ -84,10 +78,7 @@ export const useDashboardStats = () => {
         return [];
       }
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("Erreur dans useQuery invoices:", error);
-    }
+    retry: 1
   });
 
   // Fetch monthly outcome entries
@@ -112,10 +103,7 @@ export const useDashboardStats = () => {
         return [];
       }
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("Erreur dans useQuery expenses:", error);
-    }
+    retry: 1
   });
 
   // Log des erreurs s'il y en a

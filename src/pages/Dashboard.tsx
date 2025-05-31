@@ -88,10 +88,7 @@ export default function Dashboard() {
         throw error;
       }
     },
-    retry: 1,
-    onError: (error) => {
-      console.error("Erreur financière attrapée:", error);
-    }
+    retry: 1
   });
 
   // Affichage d'erreur si problème avec les données financières
