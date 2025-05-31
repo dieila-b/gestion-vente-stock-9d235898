@@ -1,10 +1,10 @@
 
 import { CartItem as CartItemType } from "@/types/pos";
-import { formatGNF } from "@/lib/currency";
-import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useQuantityManagement } from "./cart-item/useQuantityManagement";
+import { useDiscountManagement } from "./cart-item/useDiscountManagement";
+import { QuantityControls } from "./cart-item/QuantityControls";
+import { DiscountInput } from "./cart-item/DiscountInput";
+import { ItemDisplay } from "./cart-item/ItemDisplay";
 
 interface CartItemProps {
   item: CartItemType;
@@ -25,112 +25,20 @@ export function CartItem({
   availableStock = 0,
   onValidationError,
 }: CartItemProps) {
-  const [discountValue, setDiscountValue] = useState<string>(
-    item.discount ? item.discount.toString() : "0"
-  );
-  const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
-  const [isEditing, setIsEditing] = useState(false);
+  const quantityManagement = useQuantityManagement({
+    itemId: item.id,
+    initialQuantity: item.quantity,
+    availableStock,
+    onUpdateQuantity,
+    onSetQuantity,
+    onValidationError,
+  });
 
-  // Synchroniser SEULEMENT quand on n'est pas en train d'éditer ET que la quantité a changé via les boutons
-  useEffect(() => {
-    if (!isEditing && quantityInput !== item.quantity.toString()) {
-      setQuantityInput(item.quantity.toString());
-    }
-  }, [item.quantity, isEditing]);
-
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setDiscountValue(newValue);
-    
-    if (onUpdateDiscount) {
-      const numericValue = newValue === "" ? 0 : parseFloat(newValue);
-      onUpdateDiscount(item.id, numericValue);
-    }
-  };
-
-  const handleQuantityFocus = () => {
-    setIsEditing(true);
-    // Sélectionner tout le texte pour faciliter la remplacement
-    setTimeout(() => {
-      const input = document.activeElement as HTMLInputElement;
-      if (input) input.select();
-    }, 0);
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // Permettre seulement les chiffres ou une chaîne vide
-    if (value === "" || /^\d+$/.test(value)) {
-      setQuantityInput(value);
-    }
-  };
-
-  const validateAndSetQuantity = () => {
-    const value = quantityInput.trim();
-    
-    // Si vide ou zéro, restaurer la quantité actuelle
-    if (value === "" || value === "0") {
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      return;
-    }
-
-    const numericValue = parseInt(value, 10);
-
-    // Si invalide, restaurer la quantité actuelle
-    if (isNaN(numericValue) || numericValue < 1) {
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      return;
-    }
-
-    // Vérifier le stock disponible
-    if (numericValue > availableStock) {
-      toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      if (onValidationError) onValidationError(true);
-      return;
-    }
-
-    if (onValidationError) onValidationError(false);
-
-    // Appliquer la nouvelle quantité seulement si elle est différente
-    if (numericValue !== item.quantity && onSetQuantity) {
-      onSetQuantity(numericValue);
-    }
-    
-    setIsEditing(false);
-  };
-
-  const handleQuantityBlur = () => {
-    validateAndSetQuantity();
-  };
-
-  const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    }
-    if (e.key === 'Escape') {
-      setQuantityInput(item.quantity.toString());
-      setIsEditing(false);
-      e.currentTarget.blur();
-    }
-  };
-
-  const handleQuantityIncrease = () => {
-    if (item.quantity >= availableStock) {
-      toast.error("Stock insuffisant pour augmenter la quantité.");
-      return;
-    }
-    onUpdateQuantity(1);
-  };
-
-  const handleQuantityDecrease = () => {
-    if (item.quantity <= 1) return;
-    onUpdateQuantity(-1);
-  };
+  const discountManagement = useDiscountManagement({
+    itemId: item.id,
+    initialDiscount: item.discount,
+    onUpdateDiscount,
+  });
 
   const unitPriceAfterDiscount = Math.max(0, item.price - (item.discount || 0));
   const itemTotal = unitPriceAfterDiscount * item.quantity;
@@ -139,65 +47,30 @@ export function CartItem({
     <div className="space-y-2">
       <div className="flex items-center space-x-2 p-2 bg-primary/5 rounded-md">
         <div className="grid grid-cols-12 gap-2 w-full items-center">
-          <div className="col-span-4 truncate text-left" title={item.name}>
-            {item.name}
-          </div>
+          <ItemDisplay
+            name={item.name}
+            unitPriceAfterDiscount={unitPriceAfterDiscount}
+            itemTotal={itemTotal}
+            onRemove={onRemove}
+          />
           
-          <div className="col-span-2 flex items-center text-left space-x-1">
-            <button
-              className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
-              onClick={handleQuantityDecrease}
-              disabled={item.quantity <= 1}
-            >
-              -
-            </button>
-            <Input
-              type="text"
-              className="h-7 w-16 text-center text-sm"
-              value={quantityInput}
-              onChange={handleQuantityChange}
-              onFocus={handleQuantityFocus}
-              onBlur={handleQuantityBlur}
-              onKeyDown={handleQuantityKeyDown}
-              inputMode="numeric"
-            />
-            <button
-              className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
-              onClick={handleQuantityIncrease}
-              disabled={item.quantity >= availableStock}
-            >
-              +
-            </button>
-          </div>
+          <QuantityControls
+            quantity={item.quantity}
+            quantityInput={quantityManagement.quantityInput}
+            availableStock={availableStock}
+            onQuantityFocus={quantityManagement.handleQuantityFocus}
+            onQuantityChange={quantityManagement.handleQuantityChange}
+            onQuantityBlur={quantityManagement.handleQuantityBlur}
+            onQuantityKeyDown={quantityManagement.handleQuantityKeyDown}
+            onQuantityIncrease={quantityManagement.handleQuantityIncrease}
+            onQuantityDecrease={quantityManagement.handleQuantityDecrease}
+          />
           
-          <div className="col-span-2 text-left">
-            {onUpdateDiscount && (
-              <Input
-                type="number"
-                min="0"
-                className="h-7 w-28 text-left"
-                value={discountValue}
-                onChange={handleDiscountChange}
-              />
-            )}
-          </div>
-          
-          <div className="col-span-2 text-left">
-            {formatGNF(unitPriceAfterDiscount)}
-          </div>
-          
-          <div className="col-span-1 text-left">
-            {formatGNF(itemTotal)}
-          </div>
-          
-          <div className="col-span-1 flex justify-end">
-            <button
-              onClick={onRemove}
-              className="text-destructive hover:text-destructive/80"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
+          <DiscountInput
+            discountValue={discountManagement.discountValue}
+            onDiscountChange={discountManagement.handleDiscountChange}
+            showDiscount={!!onUpdateDiscount}
+          />
         </div>
       </div>
     </div>
