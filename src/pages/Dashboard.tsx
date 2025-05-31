@@ -15,47 +15,89 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  
+  // Ajout de logs pour diagnostiquer les problèmes
+  console.log("Dashboard: Début du rendu");
+
   const { todayOrderData, catalogProducts, unpaidInvoices, monthlyExpenses } = useDashboardStats();
   const { catalog, totalStock, totalStockPurchaseValue, totalStockSaleValue, globalStockMargin, marginPercentage } = useStockStats();
   const { clientsCount, supplierPayments } = useClientStats();
 
-  // Fetch financial data
-  const { data: financialData } = useQuery({
+  console.log("Dashboard: Données récupérées", {
+    todayOrderData: todayOrderData?.length || 0,
+    catalogProducts: catalogProducts?.length || 0,
+    unpaidInvoices: unpaidInvoices?.length || 0,
+    monthlyExpenses: monthlyExpenses?.length || 0,
+    catalog: catalog?.length || 0,
+    clientsCount,
+    supplierPayments
+  });
+
+  // Fetch financial data avec gestion d'erreur améliorée
+  const { data: financialData, error: financialError, isLoading: financialLoading } = useQuery({
     queryKey: ['financial-situation'],
     queryFn: async () => {
-      // Get credit balance (Avoir) - sum of paid amounts
-      const { data: creditData, error: creditError } = await supabase
-        .from('orders')
-        .select('paid_amount')
-        .eq('payment_status', 'paid');
-
-      if (creditError) throw creditError;
-
-      // Get debit balance (Devoir) - sum of remaining amounts from unpaid invoices
-      const { data: debitData, error: debitError } = await supabase
-        .from('orders')
-        .select('remaining_amount')
-        .in('payment_status', ['pending', 'partial']);
-
-      if (debitError) throw debitError;
-
-      const creditBalance = Array.isArray(creditData) 
-        ? creditData.reduce((sum, order) => sum + (order.paid_amount || 0), 0)
-        : 0;
+      try {
+        console.log("Dashboard: Récupération des données financières");
         
-      const debitBalance = Array.isArray(debitData)
-        ? debitData.reduce((sum, order) => sum + (order.remaining_amount || 0), 0)
-        : 0;
-        
-      const netBalance = creditBalance - debitBalance;
+        // Get credit balance (Avoir) - sum of paid amounts
+        const { data: creditData, error: creditError } = await supabase
+          .from('orders')
+          .select('paid_amount')
+          .eq('payment_status', 'paid');
 
-      return {
-        creditBalance,
-        debitBalance,
-        netBalance
-      };
+        if (creditError) {
+          console.error("Erreur lors de la récupération des crédits:", creditError);
+          throw creditError;
+        }
+
+        // Get debit balance (Devoir) - sum of remaining amounts from unpaid invoices
+        const { data: debitData, error: debitError } = await supabase
+          .from('orders')
+          .select('remaining_amount')
+          .in('payment_status', ['pending', 'partial']);
+
+        if (debitError) {
+          console.error("Erreur lors de la récupération des débits:", debitError);
+          throw debitError;
+        }
+
+        const creditBalance = Array.isArray(creditData) 
+          ? creditData.reduce((sum, order) => sum + (order.paid_amount || 0), 0)
+          : 0;
+          
+        const debitBalance = Array.isArray(debitData)
+          ? debitData.reduce((sum, order) => sum + (order.remaining_amount || 0), 0)
+          : 0;
+          
+        const netBalance = creditBalance - debitBalance;
+
+        console.log("Dashboard: Données financières calculées", {
+          creditBalance,
+          debitBalance,
+          netBalance
+        });
+
+        return {
+          creditBalance,
+          debitBalance,
+          netBalance
+        };
+      } catch (error) {
+        console.error("Erreur dans la requête financière:", error);
+        throw error;
+      }
+    },
+    retry: 1,
+    onError: (error) => {
+      console.error("Erreur financière attrapée:", error);
     }
   });
+
+  // Affichage d'erreur si problème avec les données financières
+  if (financialError) {
+    console.error("Erreur financière:", financialError);
+  }
 
   // Calculate daily margin based on actual sales
   const calculateDailyMargin = () => {
@@ -100,49 +142,74 @@ export default function Dashboard() {
     navigate('/sales-invoices?filter=unpaid');
   };
 
+  console.log("Dashboard: Calculs terminés", {
+    todaySales,
+    todayMargin,
+    unpaidAmount,
+    monthlyExpensesTotal
+  });
+
+  // Afficher un état de chargement si les données financières sont en cours de chargement
+  if (financialLoading) {
+    console.log("Dashboard: Chargement des données financières");
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-muted-foreground">Chargement du tableau de bord...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  console.log("Dashboard: Rendu final");
+
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl md:text-3xl font-bold text-gradient animate-fade-in">
-          Tableau de Bord
-        </h1>
-        <p className="text-muted-foreground animate-fade-in delay-100">
-          Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA
-        </p>
+    <DashboardLayout>
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-gradient animate-fade-in">
+            Tableau de Bord
+          </h1>
+          <p className="text-muted-foreground animate-fade-in delay-100">
+            Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA
+          </p>
+        </div>
+
+        <DashboardMetrics
+          todaySales={todaySales}
+          todayMargin={todayMargin}
+          unpaidAmount={unpaidAmount}
+          monthlyExpensesTotal={monthlyExpensesTotal}
+          catalogLength={Array.isArray(catalog) ? catalog.length : 0}
+          totalStock={totalStock}
+          totalStockPurchaseValue={totalStockPurchaseValue}
+          totalStockSaleValue={totalStockSaleValue}
+          globalStockMargin={globalStockMargin}
+          marginPercentage={marginPercentage}
+          clientsCount={clientsCount || 0}
+          supplierPayments={supplierPayments || 0}
+          onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
+        />
+
+        <FinancialSituation
+          creditBalance={financialData?.creditBalance || 0}
+          debitBalance={financialData?.debitBalance || 0}
+          netBalance={financialData?.netBalance || 0}
+        />
+
+        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-500">
+          <SalesChart />
+          <ProductsChart />
+        </div>
+
+        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-600">
+          <CategoryChart />
+          <RecentActivity />
+        </div>
       </div>
-
-      <DashboardMetrics
-        todaySales={todaySales}
-        todayMargin={todayMargin}
-        unpaidAmount={unpaidAmount}
-        monthlyExpensesTotal={monthlyExpensesTotal}
-        catalogLength={Array.isArray(catalog) ? catalog.length : 0}
-        totalStock={totalStock}
-        totalStockPurchaseValue={totalStockPurchaseValue}
-        totalStockSaleValue={totalStockSaleValue}
-        globalStockMargin={globalStockMargin}
-        marginPercentage={marginPercentage}
-        clientsCount={clientsCount || 0}
-        supplierPayments={supplierPayments || 0}
-        onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
-      />
-
-      <FinancialSituation
-        creditBalance={financialData?.creditBalance || 0}
-        debitBalance={financialData?.debitBalance || 0}
-        netBalance={financialData?.netBalance || 0}
-      />
-
-      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-500">
-        <SalesChart />
-        <ProductsChart />
-      </div>
-
-      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-600">
-        <CategoryChart />
-        <RecentActivity />
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
-
