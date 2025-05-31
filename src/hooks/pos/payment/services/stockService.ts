@@ -102,14 +102,14 @@ export const updateStockLevels = async (
               });
           }
           
-          return { success: false, error: new Error("Données du produit non trouvées") };
+          return { success: false, error };
         });
       
       updatePromises.push(updateCatalogPromise);
       
     } catch (err) {
       console.error(`Erreur non gérée lors de la mise à jour du stock pour l'article ${item.id}:`, err);
-      errors.push(`Erreur non gérée pour l'article ${item.name} (${item.id}): ${err.message || err}`);
+      errors.push(`Erreur non gérée pour l'article ${item.name} (${item.id}): ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   
