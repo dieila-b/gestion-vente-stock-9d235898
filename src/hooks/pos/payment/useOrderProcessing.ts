@@ -1,7 +1,10 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
+import { createOrder, updateOrder } from "./services/orderService";
+import { createOrderItems, deleteExistingOrderItems } from "./services/orderItemsService";
+import { updateStockLevels } from "./services/stockService";
+import { createSalesInvoice } from "./services/salesInvoiceService";
 
 export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
   // Process the order (create or update)
@@ -21,63 +24,34 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     
     // If we're editing an existing order, update it
     if (editOrderId) {
-      const { data: updatedOrder, error: updateError } = await supabase
-        .from('orders')
-        .update({
-          client_id: selectedClient?.id,
-          total: subtotal,
-          discount: totalDiscount,
-          final_total: total,
-          status: 'completed',
-          delivery_status: deliveryStatus,
-          payment_status: paidAmount >= total ? 'paid' : 'partial',
-          paid_amount: paidAmount,
-          remaining_amount: total - paidAmount,
-          comment: notes
-        })
-        .eq('id', editOrderId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      order = updatedOrder;
+      order = await updateOrder(
+        editOrderId,
+        selectedClient,
+        subtotal,
+        totalDiscount,
+        total,
+        deliveryStatus,
+        paidAmount,
+        notes
+      );
       
       // Delete existing order items to replace them with new ones
-      const { error: deleteItemsError } = await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', editOrderId);
-        
-      if (deleteItemsError) throw deleteItemsError;
+      await deleteExistingOrderItems(editOrderId);
     } else {
       // Create a new order
-      const { data: newOrder, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          client_id: selectedClient?.id,
-          total: subtotal,
-          discount: totalDiscount,
-          final_total: total,
-          status: 'completed',
-          delivery_status: deliveryStatus,
-          payment_status: paidAmount >= total ? 'paid' : 'partial',
-          paid_amount: paidAmount,
-          remaining_amount: total - paidAmount,
-          comment: notes
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      order = newOrder;
+      order = await createOrder(
+        selectedClient,
+        subtotal,
+        totalDiscount,
+        total,
+        deliveryStatus,
+        paidAmount,
+        notes
+      );
     }
 
-    // Calculate whether items are delivered or partially delivered
-    const delivered = deliveryStatus === 'delivered';
-    const partiallyDelivered = deliveryStatus === 'partial';
-
     // Create order items
-    await createOrderItems(order.id, cart, deliveryStatus, delivered, partiallyDelivered, deliveredItems);
+    await createOrderItems(order.id, cart, deliveryStatus, deliveredItems);
     
     // Update stock levels
     await updateStockLevels(cart, stockItems, selectedPDV);
@@ -98,137 +72,6 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       paid_amount: paidAmount,
       remaining_amount: order.remaining_amount,
     };
-  };
-
-  // Helper to create sales invoice
-  const createSalesInvoice = async (
-    order: any,
-    client: Client | null,
-    cart: CartItem[],
-    deliveryStatus: string,
-    deliveredItems?: Record<string, { delivered: boolean, quantity: number }>
-  ) => {
-    try {
-      // Generate invoice number
-      const invoiceNumber = `FAV-${Date.now().toString().slice(-8)}`;
-      
-      // Create the sales invoice - use any type to bypass TypeScript errors
-      const { data: invoice, error: invoiceError } = await (supabase as any)
-        .from('sales_invoices')
-        .insert({
-          invoice_number: invoiceNumber,
-          order_id: order.id,
-          client_id: client?.id,
-          total_amount: order.final_total,
-          paid_amount: order.paid_amount,
-          remaining_amount: order.remaining_amount,
-          payment_status: order.payment_status,
-          delivery_status: deliveryStatus,
-        })
-        .select()
-        .single();
-
-      if (invoiceError) {
-        console.error('Error creating sales invoice:', invoiceError);
-        return;
-      }
-
-      // Create invoice items
-      const invoiceItems = cart.map(item => {
-        let deliveredQuantity = 0;
-        
-        if (deliveryStatus === 'delivered') {
-          deliveredQuantity = item.quantity;
-        } else if (deliveryStatus === 'partial' && deliveredItems && deliveredItems[item.id]) {
-          deliveredQuantity = deliveredItems[item.id].quantity;
-        }
-
-        return {
-          sales_invoice_id: invoice.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          discount: item.discount || 0,
-          total_price: (item.price * item.quantity) - ((item.discount || 0) * item.quantity),
-          delivered_quantity: deliveredQuantity
-        };
-      });
-
-      const { error: itemsError } = await (supabase as any)
-        .from('sales_invoice_items')
-        .insert(invoiceItems);
-
-      if (itemsError) {
-        console.error('Error creating sales invoice items:', itemsError);
-      }
-
-      console.log(`Sales invoice ${invoiceNumber} created successfully for order ${order.id}`);
-    } catch (error) {
-      console.error('Error in createSalesInvoice:', error);
-    }
-  };
-
-  // Helper to create order items
-  const createOrderItems = async (
-    orderId: string, 
-    cart: CartItem[], 
-    deliveryStatus: string,
-    delivered: boolean,
-    partiallyDelivered: boolean,
-    deliveredItems?: Record<string, { delivered: boolean, quantity: number }>
-  ) => {
-    const orderItems = cart.map(item => {
-      let deliveredQuantity = 0;
-      
-      if (delivered) {
-        deliveredQuantity = item.quantity;
-      } else if (partiallyDelivered && deliveredItems && deliveredItems[item.id]) {
-        deliveredQuantity = deliveredItems[item.id].quantity;
-      }
-        
-      return {
-        order_id: orderId,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount || 0,
-        total: (item.price * item.quantity) - ((item.discount || 0) * item.quantity),
-        delivered_quantity: deliveredQuantity
-      };
-    });
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
-    if (itemsError) throw itemsError;
-  };
-
-  // Helper to update stock levels
-  const updateStockLevels = async (cart: CartItem[], stockItems: any[], selectedPDV: string) => {
-    for (const item of cart) {
-      const stockItem = stockItems.find(stock => stock.product_id === item.id && 
-        (selectedPDV === "_all" || stock.pos_location_id === selectedPDV));
-      
-      if (stockItem) {
-        const newQuantity = Math.max(0, stockItem.quantity - item.quantity);
-        
-        const { error: stockError } = await supabase
-          .from('warehouse_stock')
-          .update({
-            quantity: newQuantity,
-            total_value: newQuantity * stockItem.unit_price,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', stockItem.id);
-        
-        if (stockError) {
-          console.error('Error updating stock:', stockError);
-        }
-      } else {
-        console.warn(`Stock not found for product ${item.id} at POS location ${selectedPDV}`);
-      }
-    }
   };
 
   return { processOrder };
