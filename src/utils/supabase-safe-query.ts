@@ -1,5 +1,4 @@
 
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Fonction utilitaire pour récupérer un enregistrement par ID de manière sécurisée
@@ -34,7 +33,7 @@ export const safeFetchFromTable = async (
   defaultValue: any = []
 ) => {
   try {
-    let queryBuilder = supabase.from(tableName).select('*');
+    let queryBuilder = supabase.from(tableName as any).select('*');
     
     if (query) {
       queryBuilder = query(queryBuilder);
@@ -224,4 +223,3 @@ export const safeGet = async (queryFunction: () => Promise<any>, defaultValue: a
     return defaultValue;
   }
 };
-

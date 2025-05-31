@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatGNF } from "@/lib/currency";
 import { useState } from "react";
 import { toast } from "sonner";
-import { safeFetchRecordById, safeFetchFromTable } from "@/utils/supabase-safe-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InvoicePaymentDialogProps {
   isOpen: boolean;
@@ -47,43 +47,42 @@ export function InvoicePaymentDialog({
     try {
       const paymentAmount = parseFloat(amount);
 
-      // Insert payment record - use safe function in case the table doesn't exist yet
-      await safeFetchFromTable(
-        'invoice_payments',
-        query => query.insert({
+      // Insert payment record
+      const { error: paymentError } = await supabase
+        .from('invoice_payments')
+        .insert({
           invoice_id: invoiceId,
           amount: paymentAmount,
           payment_method: paymentMethod,
           notes,
-        }),
-        [],
-        "Erreur lors de l'enregistrement du paiement"
-      );
+        });
+
+      if (paymentError) throw paymentError;
 
       // Fetch current invoice data
-      const invoice = await safeFetchRecordById(
-        'invoices',
-        invoiceId,
-        q => q,
-        { paid_amount: 0, remaining_amount: remainingAmount },
-        "Erreur lors de la récupération de la facture"
-      );
+      const { data: invoice, error: fetchError } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       const newPaidAmount = (invoice?.paid_amount || 0) + paymentAmount;
-      const newRemainingAmount = (invoice?.remaining_amount || remainingAmount) - paymentAmount;
+      const newRemainingAmount = (invoice?.total_amount || 0) - newPaidAmount;
       const newPaymentStatus = newRemainingAmount === 0 ? 'paid' : 'partial';
 
       // Update the invoice
-      await safeFetchFromTable(
-        'invoices',
-        query => query.update({
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
           paid_amount: newPaidAmount,
           remaining_amount: newRemainingAmount,
           payment_status: newPaymentStatus
-        }).eq('id', invoiceId),
-        [],
-        "Erreur lors de la mise à jour de la facture"
-      );
+        })
+        .eq('id', invoiceId);
+
+      if (updateError) throw updateError;
 
       toast.success("Paiement enregistré avec succès");
       onPaymentComplete();

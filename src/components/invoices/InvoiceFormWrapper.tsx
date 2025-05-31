@@ -1,5 +1,4 @@
 
-
 import { Card } from "@/components/ui/card";
 import { InvoiceForm } from "./InvoiceForm";
 import { useInvoiceForm } from "@/hooks/use-invoice-form";
@@ -57,7 +56,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     try {
       const invoiceData = {
         invoice_number: formData.invoiceNumber,
-        client_id: formData.client?.id || null,
+        client_id: formData.clientId || null,
         total_amount: finalTotal,
         status: 'pending'
       };
@@ -118,7 +117,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           paidAmount={invoiceData.paid_amount}
           remainingAmount={invoiceData.remaining_amount}
           onAddPayment={handleAddPayment}
-          clientName={formData.client?.company_name || formData.client?.contact_name || ''}
+          clientName={formData.clientName || ''}
         />
       )}
 
@@ -134,4 +133,3 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     </div>
   );
 };
-
