@@ -3,7 +3,7 @@ import { CartItem as CartItemType } from "@/types/pos";
 import { formatGNF } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 interface CartItemProps {
@@ -30,6 +30,7 @@ export function CartItem({
   );
   const [quantityInput, setQuantityInput] = useState<string>(item.quantity.toString());
   const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Synchroniser SEULEMENT quand on n'est pas en train d'éditer
   useEffect(() => {
@@ -52,8 +53,9 @@ export function CartItem({
     setIsEditing(true);
     // Sélectionner tout le texte pour faciliter la saisie
     setTimeout(() => {
-      const input = document.activeElement as HTMLInputElement;
-      if (input) input.select();
+      if (inputRef.current) {
+        inputRef.current.select();
+      }
     }, 0);
   };
 
@@ -152,6 +154,7 @@ export function CartItem({
               -
             </button>
             <Input
+              ref={inputRef}
               type="text"
               className="h-7 w-16 text-center text-sm"
               value={quantityInput}

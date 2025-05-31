@@ -25,7 +25,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       cartLength: cart.length,
       total,
       paidAmount,
-      deliveryStatus
+      deliveryStatus,
+      selectedPDV
     });
 
     let order;
@@ -67,9 +68,23 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       console.log('processOrder: Création des articles de commande');
       await createOrderItems(order.id, cart, deliveryStatus, deliveredItems);
       
-      // Update stock levels
-      console.log('processOrder: Mise à jour des niveaux de stock');
-      await updateStockLevels(cart, stockItems, selectedPDV);
+      // Update stock levels - Nous vérifions ici qu'un PDV valide est sélectionné
+      if (selectedPDV && selectedPDV !== "_all" && cart.length > 0) {
+        console.log('processOrder: Mise à jour des niveaux de stock pour le PDV', selectedPDV);
+        try {
+          await updateStockLevels(cart, stockItems, selectedPDV);
+          console.log('processOrder: Niveaux de stock mis à jour avec succès');
+        } catch (stockError) {
+          console.error('processOrder: Erreur lors de la mise à jour des stocks:', stockError);
+          // Nous continuons le traitement malgré l'erreur de stock
+          // mais nous conservons l'erreur pour informer l'utilisateur plus tard
+        }
+      } else {
+        console.warn('processOrder: Impossible de mettre à jour les stocks, PDV non sélectionné ou panier vide', {
+          selectedPDV,
+          cartLength: cart.length
+        });
+      }
 
       // Create sales invoice automatically
       console.log('processOrder: Création de la facture de vente');
