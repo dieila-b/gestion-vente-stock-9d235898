@@ -12,7 +12,7 @@ import { useStockStats } from "@/hooks/dashboard/useStockStats";
 import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/utils/db-core";
+import { supabase } from "@/integrations/supabase/client";
 import { safeArray, safeNumber, safeOrder, safeOrderItem, safeCatalogProduct } from "@/utils/data-safe/safe-access";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,26 +35,24 @@ export default function Dashboard() {
         console.log("Dashboard: Récupération des données financières ultra-sécurisées");
         
         // Récupération des commandes payées
-        const paidOrders = await db.query(
-          'orders',
-          q => q.select('paid_amount').eq('payment_status', 'paid'),
-          []
-        );
+        const { data: paidOrders, error: paidError } = await supabase
+          .from('orders')
+          .select('paid_amount')
+          .eq('payment_status', 'paid');
 
         // Récupération des commandes impayées
-        const unpaidOrders = await db.query(
-          'orders',
-          q => q.select('remaining_amount').in('payment_status', ['pending', 'partial']),
-          []
-        );
+        const { data: unpaidOrders, error: unpaidError } = await supabase
+          .from('orders')
+          .select('remaining_amount')
+          .in('payment_status', ['pending', 'partial']);
 
         // Calculs sécurisés
-        const creditBalance = safeArray(paidOrders).reduce((sum, item) => {
-          return sum + safeNumber(item?.paid_amount, 0);
+        const creditBalance = safeArray(paidOrders || []).reduce((sum, item) => {
+          return sum + safeNumber(item?.paid_amount || 0);
         }, 0);
           
-        const debitBalance = safeArray(unpaidOrders).reduce((sum, item) => {
-          return sum + safeNumber(item?.remaining_amount, 0);
+        const debitBalance = safeArray(unpaidOrders || []).reduce((sum, item) => {
+          return sum + safeNumber(item?.remaining_amount || 0);
         }, 0);
           
         const netBalance = creditBalance - debitBalance;
@@ -107,9 +105,9 @@ export default function Dashboard() {
           const catalogProduct = safeCatalogProduct(catalogProductData);
           if (!catalogProduct) return;
           
-          const salesPrice = catalogProduct.price;
-          const purchasePrice = catalogProduct.purchase_price;
-          const quantity = item.quantity;
+          const salesPrice = safeNumber(catalogProduct.price);
+          const purchasePrice = safeNumber(catalogProduct.purchase_price);
+          const quantity = safeNumber(item.quantity);
           
           totalMargin += (salesPrice - purchasePrice) * quantity;
         });
@@ -125,17 +123,17 @@ export default function Dashboard() {
   // Calculs sécurisés avec vérifications
   const todaySales = safeArray(todayOrderData).reduce((sum, orderData) => {
     const order = safeOrder(orderData);
-    return sum + (order ? order.final_total : 0);
+    return sum + safeNumber(order?.final_total || 0);
   }, 0);
     
   const todayMargin = calculateDailyMargin();
   
   const unpaidAmount = safeArray(unpaidInvoices).reduce((sum, invoice) => {
-    return sum + safeNumber(invoice?.remaining_amount, 0);
+    return sum + safeNumber(invoice?.remaining_amount || 0);
   }, 0);
     
   const monthlyExpensesTotal = safeArray(monthlyExpenses).reduce((sum, expense) => {
-    return sum + safeNumber(expense?.amount, 0);
+    return sum + safeNumber(expense?.amount || 0);
   }, 0);
 
   const handleUnpaidInvoicesClick = () => {

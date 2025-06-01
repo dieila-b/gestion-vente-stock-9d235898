@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { Supplier } from "@/types/supplier";
 import type { SupplierOrderProduct } from "@/types/supplierOrder";
 import { SupplierFormHeader } from "./forms/SupplierFormHeader";
 import { ProductListForm } from "./forms/ProductListForm";
 import { FormNotes } from "./forms/FormNotes";
 import { FormActions } from "./forms/FormActions";
-import { db } from "@/utils/db-adapter";
 
 interface PriceRequestFormProps {
   supplier: Supplier;
@@ -62,32 +62,42 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
     setIsSubmitting(true);
     
     try {
-      // Using DatabaseAdapter to create the order
-      const orderData = await db.insert('supplier_orders', {
-        supplier_id: supplier.id,
-        order_number: `PRQ-${Date.now()}`,
-        status: "price_request",
-        notes,
-        is_price_request: true,
-        delivery_address: supplier.address,
-      });
+      // Create the supplier order using Supabase directly
+      const { data: orderData, error: orderError } = await supabase
+        .from('supplier_orders')
+        .insert({
+          supplier_id: supplier.id,
+          order_number: `PRQ-${Date.now()}`,
+          status: "price_request",
+          notes,
+          is_price_request: true,
+          delivery_address: supplier.address,
+        })
+        .select()
+        .single();
 
-      if (!orderData) throw new Error("Failed to create supplier order");
+      if (orderError || !orderData) {
+        throw new Error("Failed to create supplier order");
+      }
 
-      // Using DatabaseAdapter to add products
-      const productsResult = await db.insert('supplier_order_products', 
-        products.map(product => ({
-          order_id: orderData.id as string, // Add type assertion here
-          name: product.name,
-          quantity: product.quantity,
-          category: product.category,
-          reference: product.reference,
-          price_requested: true,
-          status: "pending",
-        }))
-      );
+      // Add products using Supabase directly
+      const { error: productsError } = await supabase
+        .from('supplier_order_products')
+        .insert(
+          products.map(product => ({
+            order_id: orderData.id,
+            name: product.name,
+            quantity: product.quantity,
+            category: product.category,
+            reference: product.reference,
+            price_requested: true,
+            status: "pending",
+          }))
+        );
 
-      if (!productsResult) throw new Error("Failed to add products to order");
+      if (productsError) {
+        throw new Error("Failed to add products to order");
+      }
 
       toast({
         title: "Demande envoyée",

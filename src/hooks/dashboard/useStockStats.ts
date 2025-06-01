@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/utils/db-core";
+import { supabase } from "@/integrations/supabase/client";
 import { safeArray, safeNumber, safeCatalogProduct } from "@/utils/data-safe/safe-access";
 
 interface CatalogProduct {
@@ -19,7 +19,16 @@ export function useStockStats() {
     queryKey: ['stock-catalog-safe'],
     queryFn: async () => {
       try {
-        return await db.query<CatalogProduct>('catalog', q => q.select('*'), []);
+        const { data, error } = await supabase
+          .from('catalog')
+          .select('*');
+        
+        if (error) {
+          console.error("Erreur dans catalog:", error);
+          return [];
+        }
+        
+        return data || [];
       } catch (error) {
         console.error("Erreur dans catalog:", error);
         return [];
@@ -34,19 +43,19 @@ export function useStockStats() {
   
   const totalStock = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
-    return sum + (safeProduct ? safeProduct.stock : 0);
+    return sum + safeNumber(safeProduct?.stock || 0);
   }, 0);
   
   const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
-    return sum + (safeProduct.stock * safeProduct.purchase_price);
+    return sum + (safeNumber(safeProduct.stock) * safeNumber(safeProduct.purchase_price));
   }, 0);
   
   const totalStockSaleValue = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
-    return sum + (safeProduct.stock * safeProduct.price);
+    return sum + (safeNumber(safeProduct.stock) * safeNumber(safeProduct.price));
   }, 0);
   
   const globalStockMargin = totalStockSaleValue - totalStockPurchaseValue;
