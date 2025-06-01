@@ -97,7 +97,7 @@ export function useDeliveryNoteCreation() {
         return false;
       }
       
-      console.log(`[createDeliveryNoteFromPO] Order ${order.order_number} has ${order.items?.length || 0} items`);
+      console.log(`[createDeliveryNoteFromPO] Order ${order.order_number} loaded with ${order.items?.length || 0} items`);
       
       // Vérifier que la commande a des articles
       if (!order.items || order.items.length === 0) {

@@ -28,6 +28,48 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
   }
 
   try {
+    // First, get the order details to check if it has items
+    console.log("[approvePurchaseOrderService] Loading order details first...");
+    const { data: orderData, error: orderError } = await supabase
+      .from('purchase_orders')
+      .select(`
+        id, 
+        order_number, 
+        status, 
+        warehouse_id,
+        items:purchase_order_items(
+          id,
+          product_id,
+          quantity,
+          unit_price
+        )
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (orderError) {
+      console.error("[approvePurchaseOrderService] Error loading order:", orderError);
+      throw new Error(`Erreur lors du chargement de la commande: ${orderError.message}`);
+    }
+    
+    if (!orderData) {
+      throw new Error("Commande introuvable");
+    }
+    
+    console.log("[approvePurchaseOrderService] Order loaded:", {
+      id: orderData.id,
+      order_number: orderData.order_number,
+      status: orderData.status,
+      warehouse_id: orderData.warehouse_id,
+      items_count: orderData.items?.length || 0
+    });
+    
+    // Check if order has items
+    if (!orderData.items || orderData.items.length === 0) {
+      console.warn("[approvePurchaseOrderService] Order has no items, but proceeding with approval");
+      toast.warning(`La commande ${orderData.order_number} n'a pas d'articles, mais l'approbation va continuer`);
+    }
+    
     // Use RPC function to securely approve the purchase order
     console.log("[approvePurchaseOrderService] Calling RPC function approve_purchase_order");
     const { data: result, error } = await supabase.rpc('approve_purchase_order', { 
@@ -49,7 +91,6 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
     console.log("[approvePurchaseOrderService] RPC result:", result);
     
     // Type assertion to convert Json type to our ApprovalResult interface
-    // First cast to unknown, then to our interface to satisfy TypeScript
     const approvalResult = result as unknown as ApprovalResult;
     
     // Check if order was already approved
@@ -59,10 +100,49 @@ export async function approvePurchaseOrderService(id: string, queryClient: Query
       return { id, alreadyApproved: true, success: true };
     }
     
+    // If a delivery note was created but has no items, we need to create them manually
+    if (approvalResult.delivery_note_created && approvalResult.delivery_note_id && orderData.items && orderData.items.length > 0) {
+      console.log("[approvePurchaseOrderService] Checking if delivery note items were created...");
+      
+      const { data: existingItems, error: itemsCheckError } = await supabase
+        .from('delivery_note_items')
+        .select('id')
+        .eq('delivery_note_id', approvalResult.delivery_note_id);
+      
+      if (itemsCheckError) {
+        console.error("[approvePurchaseOrderService] Error checking delivery note items:", itemsCheckError);
+      } else if (!existingItems || existingItems.length === 0) {
+        console.log("[approvePurchaseOrderService] No items found for delivery note, creating them...");
+        
+        // Create the delivery note items manually
+        const itemsData = orderData.items.map((item: any) => ({
+          delivery_note_id: approvalResult.delivery_note_id,
+          product_id: item.product_id,
+          quantity_ordered: item.quantity,
+          quantity_received: 0,
+          unit_price: item.unit_price
+        }));
+        
+        const { error: createItemsError } = await supabase
+          .from('delivery_note_items')
+          .insert(itemsData);
+        
+        if (createItemsError) {
+          console.error("[approvePurchaseOrderService] Error creating delivery note items:", createItemsError);
+          toast.warning(`Bon de commande approuvé mais erreur lors de la création des articles du bon de livraison: ${createItemsError.message}`);
+        } else {
+          console.log(`[approvePurchaseOrderService] Successfully created ${itemsData.length} delivery note items`);
+          toast.success(`Bon de commande approuvé et bon de livraison ${approvalResult.delivery_number} créé avec ${itemsData.length} articles`);
+        }
+      } else {
+        console.log(`[approvePurchaseOrderService] Delivery note already has ${existingItems.length} items`);
+      }
+    }
+    
     // Show success message based on result
-    if (approvalResult.delivery_note_created) {
+    if (approvalResult.delivery_note_created && !approvalResult.delivery_note_id) {
       toast.success(`Bon de commande approuvé et bon de livraison ${approvalResult.delivery_number} créé automatiquement`);
-    } else {
+    } else if (!approvalResult.delivery_note_created) {
       toast.success("Bon de commande approuvé");
       if (!approvalResult.has_warehouse) {
         toast.warning("Aucun bon de livraison créé - entrepôt manquant");

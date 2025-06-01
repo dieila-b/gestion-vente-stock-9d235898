@@ -134,7 +134,13 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     console.log(`[createDeliveryNoteItems] Creating items for delivery note ${deliveryNoteId} from ${orderItems.length} order items`);
     
     // Ensure we have all required data for each item
-    const validItems = orderItems.filter(item => item.product_id && item.quantity && item.unit_price);
+    const validItems = orderItems.filter(item => {
+      const isValid = item.product_id && item.quantity && typeof item.unit_price !== 'undefined';
+      if (!isValid) {
+        console.warn(`[createDeliveryNoteItems] Invalid item found:`, item);
+      }
+      return isValid;
+    });
     
     if (validItems.length === 0) {
       console.error(`[createDeliveryNoteItems] No valid items found for delivery note ${deliveryNoteId}`);
