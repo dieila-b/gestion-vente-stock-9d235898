@@ -13,7 +13,7 @@ import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-core";
-import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
+import { safeArray, safeNumber, safeOrder, safeOrderItem, safeCatalogProduct } from "@/utils/data-safe/safe-access";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -93,16 +93,23 @@ export default function Dashboard() {
       
       let totalMargin = 0;
       
-      safeOrders.forEach(order => {
-        const orderItems = safeArray(order?.order_items);
+      safeOrders.forEach(orderData => {
+        const order = safeOrder(orderData);
+        if (!order) return;
         
-        orderItems.forEach(item => {
-          const catalogProduct = safeProducts.find(p => p?.id === item?.product_id);
+        const orderItems = safeArray(order.order_items);
+        
+        orderItems.forEach(itemData => {
+          const item = safeOrderItem(itemData);
+          if (!item) return;
+          
+          const catalogProductData = safeProducts.find(p => p?.id === item.product_id);
+          const catalogProduct = safeCatalogProduct(catalogProductData);
           if (!catalogProduct) return;
           
-          const salesPrice = safeNumber(catalogProduct?.price, 0);
-          const purchasePrice = safeNumber(catalogProduct?.purchase_price, 0);
-          const quantity = safeNumber(item?.quantity, 0);
+          const salesPrice = catalogProduct.price;
+          const purchasePrice = catalogProduct.purchase_price;
+          const quantity = item.quantity;
           
           totalMargin += (salesPrice - purchasePrice) * quantity;
         });
@@ -116,8 +123,9 @@ export default function Dashboard() {
   };
 
   // Calculs sécurisés avec vérifications
-  const todaySales = safeArray(todayOrderData).reduce((sum, order) => {
-    return sum + safeNumber(order?.final_total, 0);
+  const todaySales = safeArray(todayOrderData).reduce((sum, orderData) => {
+    const order = safeOrder(orderData);
+    return sum + (order ? order.final_total : 0);
   }, 0);
     
   const todayMargin = calculateDailyMargin();

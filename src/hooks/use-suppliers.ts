@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-core";
-import { safeGet } from "@/utils/data-safe/safe-access";
+import { safeSupplier } from "@/utils/data-safe/safe-access";
 
 interface SupplierData {
   id: string;
@@ -22,17 +22,19 @@ export function useSuppliers() {
       try {
         const data = await db.query<SupplierData>('suppliers', q => q.select('*'));
         
-        return data.map(supplier => ({
-          id: safeGet(supplier, 'id', ''),
-          name: safeGet(supplier, 'name', 'Fournisseur inconnu'),
-          contact: safeGet(supplier, 'contact', ''),
-          email: safeGet(supplier, 'email', ''),
-          phone: safeGet(supplier, 'phone', ''),
-          address: safeGet(supplier, 'address', ''),
-          website: safeGet(supplier, 'website', ''),
-          status: safeGet(supplier, 'status', 'pending'),
-          ...supplier
-        }));
+        return data.map(supplier => {
+          const safeSupplierData = safeSupplier(supplier);
+          return safeSupplierData || {
+            id: '',
+            name: 'Fournisseur inconnu',
+            contact: '',
+            email: '',
+            phone: '',
+            address: '',
+            website: '',
+            status: 'pending'
+          };
+        });
       } catch (error) {
         console.error('Error fetching suppliers:', error);
         return [];

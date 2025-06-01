@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-core";
-import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
+import { safeArray, safeNumber, safeCatalogProduct } from "@/utils/data-safe/safe-access";
 
 interface CatalogProduct {
   id: string;
@@ -33,19 +33,20 @@ export function useStockStats() {
   const safeCatalog = safeArray(catalog);
   
   const totalStock = safeCatalog.reduce((sum, product) => {
-    return sum + safeNumber(product?.stock, 0);
+    const safeProduct = safeCatalogProduct(product);
+    return sum + (safeProduct ? safeProduct.stock : 0);
   }, 0);
   
   const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
-    const stock = safeNumber(product?.stock, 0);
-    const purchasePrice = safeNumber(product?.purchase_price, 0);
-    return sum + (stock * purchasePrice);
+    const safeProduct = safeCatalogProduct(product);
+    if (!safeProduct) return sum;
+    return sum + (safeProduct.stock * safeProduct.purchase_price);
   }, 0);
   
   const totalStockSaleValue = safeCatalog.reduce((sum, product) => {
-    const stock = safeNumber(product?.stock, 0);
-    const price = safeNumber(product?.price, 0);
-    return sum + (stock * price);
+    const safeProduct = safeCatalogProduct(product);
+    if (!safeProduct) return sum;
+    return sum + (safeProduct.stock * safeProduct.price);
   }, 0);
   
   const globalStockMargin = totalStockSaleValue - totalStockPurchaseValue;

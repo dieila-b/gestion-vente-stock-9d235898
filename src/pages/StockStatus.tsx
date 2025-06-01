@@ -15,6 +15,7 @@ import { StockStatisticsCards } from "@/components/stocks/StockStatisticsCards";
 import { StockLocationStats } from "@/components/stocks/StockLocationStats";
 import { useStockLocations } from "@/hooks/useStockLocations";
 import { useQueryClient } from "@tanstack/react-query";
+import { safeNumber } from "@/utils/data-safe/safe-access";
 
 export default function StockStatus() {
   const [activeTab, setActiveTab] = useState("apercu");
@@ -41,9 +42,9 @@ export default function StockStatus() {
     refetchLocations();
   }, [queryClient, refetchCategories, refetchAlerts, refetchLocations]);
 
-  // Statistiques des stocks
+  // Statistiques des stocks avec conversion sécurisée
   const stockStats = {
-    inStock: totalStock,
+    inStock: safeNumber(totalStock, 0),
     lowStock: stockAlerts?.filter(alert => alert.alert_type === 'low_stock').length || 0,
     outOfStock: stockAlerts?.filter(alert => alert.alert_type === 'out_of_stock').length || 0
   };
@@ -127,7 +128,7 @@ export default function StockStatus() {
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalStock.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{safeNumber(totalStock, 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
                   Articles en stock
                 </p>
@@ -142,7 +143,7 @@ export default function StockStatus() {
                 <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatGNF(totalStockPurchaseValue)}</div>
+                <div className="text-2xl font-bold">{formatGNF(safeNumber(totalStockPurchaseValue, 0))}</div>
                 <p className="text-xs text-muted-foreground">
                   Coût total des stocks
                 </p>
@@ -157,7 +158,7 @@ export default function StockStatus() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatGNF(totalStockSaleValue)}</div>
+                <div className="text-2xl font-bold">{formatGNF(safeNumber(totalStockSaleValue, 0))}</div>
                 <p className="text-xs text-muted-foreground">
                   Valeur potentielle de vente
                 </p>
@@ -173,9 +174,9 @@ export default function StockStatus() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold flex items-baseline">
-                  {formatGNF(globalStockMargin)}
+                  {formatGNF(safeNumber(globalStockMargin, 0))}
                   <span className="text-sm text-muted-foreground ml-2">
-                    ({marginPercentage.toFixed(2)}%)
+                    ({safeNumber(marginPercentage, 0).toFixed(2)}%)
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
