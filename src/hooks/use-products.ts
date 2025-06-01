@@ -8,10 +8,12 @@ import { useCatalogAuth } from "@/hooks/use-catalog-auth";
 export function useProducts(locationId?: string) {
   const { isAuthenticated } = useCatalogAuth();
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['catalog-products'],
     queryFn: async () => {
       try {
+        console.log('Fetching products from catalog table...');
+        
         const { data: catalogData, error: catalogError } = await supabase
           .from('catalog')
           .select(`
@@ -29,22 +31,32 @@ export function useProducts(locationId?: string) {
 
         if (catalogError) {
           console.error('Erreur catalogue:', catalogError);
-          toast.error("Erreur lors du chargement des produits");
+          // Ne pas afficher de toast d'erreur pour éviter de spammer l'utilisateur
           throw catalogError;
         }
 
-        if (!catalogData) return [];
+        if (!catalogData) {
+          console.log('No catalog data returned');
+          return [];
+        }
 
-        console.log('Catalog data from Supabase:', catalogData); // Log pour déboguer
+        console.log('Catalog data loaded successfully:', catalogData.length, 'products');
         return catalogData as CatalogProduct[];
       } catch (error) {
         console.error("Error fetching products:", error);
-        throw error;
+        // Retourner un tableau vide au lieu de throw pour éviter de casser l'interface
+        return [];
       }
     },
-    // Ne pas dépendre de isAuthenticated pour exécuter la requête
     enabled: true,
+    retry: 3,
+    retryDelay: 1000,
   });
 
-  return { products, isLoading };
+  // Log des erreurs pour déboguer
+  if (error) {
+    console.error("Products query error:", error);
+  }
+
+  return { products, isLoading, error };
 }

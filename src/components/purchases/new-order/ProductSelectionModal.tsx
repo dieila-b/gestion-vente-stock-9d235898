@@ -25,7 +25,11 @@ export const ProductSelectionModal = ({
   onAddProduct,
 }: ProductSelectionModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { products } = useProducts();
+  const { products, isLoading, error } = useProducts();
+  
+  console.log("ProductSelectionModal - products:", products?.length || 0);
+  console.log("ProductSelectionModal - isLoading:", isLoading);
+  console.log("ProductSelectionModal - error:", error);
   
   const filteredProducts = products.filter(product => 
     product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -42,7 +46,7 @@ export const ProductSelectionModal = ({
       selling_price: product.price || 0,
       total_price: product.purchase_price || 0,
       product: {
-        id: product.id, // Include the id property to match the updated type
+        id: product.id,
         name: product.name,
         reference: product.reference
       }
@@ -53,7 +57,6 @@ export const ProductSelectionModal = ({
   };
 
   const handleAddEmptyProduct = () => {
-    // Create a unique ID for the empty product
     const emptyProductId = crypto.randomUUID();
     
     const newItem: PurchaseOrderItem = {
@@ -65,7 +68,7 @@ export const ProductSelectionModal = ({
       selling_price: 0,
       total_price: 0,
       product: {
-        id: emptyProductId, // Add a generated ID for the empty product
+        id: emptyProductId,
         name: "Produit manuel",
         reference: ""
       }
@@ -96,9 +99,27 @@ export const ProductSelectionModal = ({
           </div>
 
           <div className="h-[300px] overflow-y-auto border border-white/10 rounded-md p-2 bg-black/20">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <div className="h-full flex items-center justify-center text-white/60">
+                <p>Chargement des produits...</p>
+              </div>
+            ) : error ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-4">Aucun produit correspondant trouvé</p>
+                <p className="mb-2">Erreur de chargement des produits</p>
+                <p className="text-sm text-red-400 mb-4">Vous pouvez ajouter un produit manuel</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddEmptyProduct}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Ajouter un produit manuel
+                </Button>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-white/60">
+                <p className="mb-4">
+                  {products.length === 0 ? "Aucun produit disponible" : "Aucun produit correspondant trouvé"}
+                </p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}

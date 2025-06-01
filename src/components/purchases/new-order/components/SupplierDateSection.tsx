@@ -19,6 +19,9 @@ export const SupplierDateSection = ({
   setDeliveryDate,
   suppliers,
 }: SupplierDateSectionProps) => {
+  console.log("SupplierDateSection - suppliers data:", suppliers);
+  console.log("SupplierDateSection - suppliers count:", suppliers?.length || 0);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
@@ -28,16 +31,20 @@ export const SupplierDateSection = ({
             <SelectValue placeholder="Sélectionner un fournisseur" />
           </SelectTrigger>
           <SelectContent className="bg-black/80 backdrop-blur-md border-white/10">
-            {suppliers?.length ? (
-              suppliers.map((supplier) => (
-                <SelectItem key={supplier.id} value={supplier.id}>
-                  {supplier.name || supplier.contact || 'Fournisseur sans nom'}
-                </SelectItem>
-              ))
-            ) : (
+            {!suppliers ? (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                Chargement des fournisseurs...
+              </div>
+            ) : suppliers.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
                 Aucun fournisseur disponible
               </div>
+            ) : (
+              suppliers.map((supplier) => (
+                <SelectItem key={supplier.id} value={supplier.id}>
+                  {supplier.name || supplier.contact || `Fournisseur #${supplier.id.slice(0, 8)}`}
+                </SelectItem>
+              ))
             )}
           </SelectContent>
         </Select>
