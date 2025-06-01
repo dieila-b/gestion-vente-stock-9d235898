@@ -173,6 +173,19 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     }
     
     console.log(`[createDeliveryNoteItems] Successfully created ${itemsData.length} items for delivery note ${deliveryNoteId}`);
+    
+    // Verify the items were created by fetching them back
+    const { data: verificationData, error: verificationError } = await supabase
+      .from('delivery_note_items')
+      .select('id, product_id, quantity_ordered')
+      .eq('delivery_note_id', deliveryNoteId);
+    
+    if (verificationError) {
+      console.warn(`[createDeliveryNoteItems] Error verifying items:`, verificationError);
+    } else {
+      console.log(`[createDeliveryNoteItems] Verification: Found ${verificationData?.length || 0} items in database for delivery note ${deliveryNoteId}`);
+    }
+    
     return true;
   } catch (error: any) {
     console.error(`[createDeliveryNoteItems] Error creating items:`, error);
