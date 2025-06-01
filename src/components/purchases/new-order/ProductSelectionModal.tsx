@@ -33,15 +33,20 @@ export const ProductSelectionModal = ({
   console.log("ProductSelectionModal - products data:", products);
   console.log("ProductSelectionModal - search query:", searchQuery);
   
-  // Améliorer la logique de filtrage avec une meilleure gestion des valeurs nulles/undefined
+  // Logique de filtrage corrigée et simplifiée
   const filteredProducts = products.filter(product => {
-    // Vérifier que le produit a au moins un nom ou une référence
-    if (!product.name && !product.reference) {
-      console.log("Produit ignoré - aucun nom ni référence:", product);
+    // Vérifier que le produit a au moins un nom
+    if (!product.name) {
+      console.log("Produit ignoré - aucun nom:", product);
       return false;
     }
 
-    const productName = (product.name || "").toLowerCase();
+    // Si pas de recherche, afficher tous les produits valides
+    if (!searchQuery.trim()) {
+      return true;
+    }
+
+    const productName = product.name.toLowerCase();
     const productReference = (product.reference || "").toLowerCase();
     const query = searchQuery.toLowerCase().trim();
     
@@ -49,14 +54,11 @@ export const ProductSelectionModal = ({
       id: product.id,
       name: product.name,
       reference: product.reference,
+      query: query,
       nameMatch: productName.includes(query),
-      refMatch: productReference.includes(query)
+      refMatch: productReference.includes(query),
+      finalResult: productName.includes(query) || productReference.includes(query)
     });
-    
-    // Si pas de recherche, afficher tous les produits valides
-    if (!query) {
-      return true;
-    }
     
     return productName.includes(query) || productReference.includes(query);
   });
@@ -76,7 +78,7 @@ export const ProductSelectionModal = ({
       total_price: product.purchase_price || 0,
       product: {
         id: product.id,
-        name: product.name || "Produit sans nom",
+        name: product.name,
         reference: product.reference || ""
       }
     };
@@ -172,12 +174,6 @@ export const ProductSelectionModal = ({
                 {filteredProducts.map(product => {
                   console.log("Rendering product:", product);
                   
-                  // Assurer l'affichage correct du nom et de la référence
-                  const displayName = product.name || "Produit sans nom";
-                  const displayReference = product.reference || "Sans référence";
-                  const displayPrice = product.purchase_price || 0;
-                  const displayStock = product.stock || 0;
-                  
                   return (
                     <div 
                       key={product.id} 
@@ -185,9 +181,9 @@ export const ProductSelectionModal = ({
                       onClick={() => handleAddProduct(product)}
                     >
                       <div>
-                        <p className="font-medium">{displayName}</p>
+                        <p className="font-medium">{product.name}</p>
                         <p className="text-xs text-white/60">
-                          Ref: {displayReference}
+                          Ref: {product.reference || "Sans référence"}
                         </p>
                         {product.category && (
                           <p className="text-xs text-white/40">
@@ -196,8 +192,8 @@ export const ProductSelectionModal = ({
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm">{displayPrice} GNF</p>
-                        <p className="text-xs text-white/60">Stock: {displayStock}</p>
+                        <p className="text-sm">{product.purchase_price || 0} GNF</p>
+                        <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
                       </div>
                     </div>
                   );
