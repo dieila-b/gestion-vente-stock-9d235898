@@ -21,11 +21,12 @@ export const SupplierDateSection = ({
 }: SupplierDateSectionProps) => {
   console.log("SupplierDateSection - suppliers data:", suppliers);
   console.log("SupplierDateSection - suppliers count:", suppliers?.length || 0);
+  console.log("SupplierDateSection - current supplier:", supplier);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <Label className="text-white/80">Fournisseur</Label>
+        <Label className="text-white/80">Fournisseur *</Label>
         <Select value={supplier} onValueChange={setSupplier}>
           <SelectTrigger className="neo-blur border-white/10">
             <SelectValue placeholder="Sélectionner un fournisseur" />
@@ -40,11 +41,14 @@ export const SupplierDateSection = ({
                 Aucun fournisseur disponible
               </div>
             ) : (
-              suppliers.map((supplier) => (
-                <SelectItem key={supplier.id} value={supplier.id}>
-                  {supplier.name || supplier.contact || `Fournisseur #${supplier.id.slice(0, 8)}`}
-                </SelectItem>
-              ))
+              suppliers.map((supplierItem) => {
+                console.log("Rendering supplier:", supplierItem);
+                return (
+                  <SelectItem key={supplierItem.id} value={supplierItem.id}>
+                    {supplierItem.name || supplierItem.contact || `Fournisseur #${supplierItem.id.slice(0, 8)}`}
+                  </SelectItem>
+                );
+              })
             )}
           </SelectContent>
         </Select>

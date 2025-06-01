@@ -22,8 +22,13 @@ import { FormActions } from "./components/FormActions";
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { suppliers, isLoading: suppliersLoading } = useSuppliers();
+  const { suppliers, isLoading: suppliersLoading, error: suppliersError } = useSuppliers();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Log suppliers data for debugging
+  console.log("PurchaseOrderForm - suppliers:", suppliers);
+  console.log("PurchaseOrderForm - suppliersLoading:", suppliersLoading);
+  console.log("PurchaseOrderForm - suppliersError:", suppliersError);
 
   // Product selection logic
   const {
@@ -130,6 +135,16 @@ const PurchaseOrderForm = () => {
   // Check if form is valid
   const isFormValid = supplier && orderItems.length > 0;
 
+  // Show error message if suppliers failed to load
+  if (suppliersError) {
+    console.error("Error loading suppliers:", suppliersError);
+    toast({
+      title: "Erreur",
+      description: "Impossible de charger les fournisseurs. Vérifiez votre connexion.",
+      variant: "destructive"
+    });
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-white/10 bg-black/20 text-white">
@@ -140,6 +155,12 @@ const PurchaseOrderForm = () => {
               Nouvelle Commande Fournisseur
             </CardTitle>
             <p className="text-white/60">Créez une nouvelle commande pour Ender</p>
+            {suppliersLoading && (
+              <p className="text-blue-400 text-sm">Chargement des fournisseurs...</p>
+            )}
+            {suppliersError && (
+              <p className="text-red-400 text-sm">Erreur de chargement des fournisseurs</p>
+            )}
           </div>
         </CardHeader>
         <CardContent>

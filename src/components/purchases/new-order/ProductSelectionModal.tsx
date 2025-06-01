@@ -30,13 +30,17 @@ export const ProductSelectionModal = ({
   console.log("ProductSelectionModal - products:", products?.length || 0);
   console.log("ProductSelectionModal - isLoading:", isLoading);
   console.log("ProductSelectionModal - error:", error);
+  console.log("ProductSelectionModal - products data:", products);
   
   const filteredProducts = products.filter(product => 
     product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
     product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  console.log("ProductSelectionModal - filtered products:", filteredProducts?.length || 0);
+
   const handleAddProduct = (product: CatalogProduct) => {
+    console.log("Adding product:", product);
     const newItem: PurchaseOrderItem = {
       id: crypto.randomUUID(),
       purchase_order_id: "",
@@ -57,6 +61,7 @@ export const ProductSelectionModal = ({
   };
 
   const handleAddEmptyProduct = () => {
+    console.log("Adding empty product");
     const emptyProductId = crypto.randomUUID();
     
     const newItem: PurchaseOrderItem = {
@@ -106,7 +111,18 @@ export const ProductSelectionModal = ({
             ) : error ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
                 <p className="mb-2">Erreur de chargement des produits</p>
-                <p className="text-sm text-red-400 mb-4">Vous pouvez ajouter un produit manuel</p>
+                <p className="text-sm text-red-400 mb-4">Erreur: {error.message}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddEmptyProduct}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Ajouter un produit manuel
+                </Button>
+              </div>
+            ) : !products || products.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-white/60">
+                <p className="mb-4">Aucun produit disponible dans le catalogue</p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -117,9 +133,7 @@ export const ProductSelectionModal = ({
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-4">
-                  {products.length === 0 ? "Aucun produit disponible" : "Aucun produit correspondant trouvé"}
-                </p>
+                <p className="mb-4">Aucun produit correspondant trouvé</p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -130,24 +144,27 @@ export const ProductSelectionModal = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredProducts.map(product => (
-                  <div 
-                    key={product.id} 
-                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
-                    onClick={() => handleAddProduct(product)}
-                  >
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-xs text-white/60">
-                        {product.reference ? `Ref: ${product.reference}` : "Sans référence"}
-                      </p>
+                {filteredProducts.map(product => {
+                  console.log("Rendering product:", product);
+                  return (
+                    <div 
+                      key={product.id} 
+                      className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
+                      onClick={() => handleAddProduct(product)}
+                    >
+                      <div>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-xs text-white/60">
+                          {product.reference ? `Ref: ${product.reference}` : "Sans référence"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm">{product.purchase_price ? `${product.purchase_price} GNF` : "Sans prix"}</p>
+                        <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm">{product.purchase_price ? `${product.purchase_price} GNF` : "Sans prix"}</p>
-                      <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
