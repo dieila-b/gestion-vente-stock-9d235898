@@ -1,26 +1,18 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
+import { safeNumber } from "@/utils/data-safe/safe-access";
 
 export function useClientStats() {
-  console.log("useClientStats: Démarrage de la récupération");
+  console.log("useClientStats: Démarrage avec gestion d'erreur renforcée");
 
   const { data: clientsCount = 0 } = useQuery({
-    queryKey: ['clients-count'],
+    queryKey: ['clients-count-safe'],
     queryFn: async () => {
       try {
-        const { count, error } = await supabase
-          .from('clients')
-          .select('*', { count: 'exact', head: true });
-        
-        if (error) {
-          console.error("Erreur clients count:", error);
-          return 0;
-        }
-        
-        return count || 0;
-      } catch (err) {
-        console.error("Erreur dans clientsCount:", err);
+        return await db.count('clients');
+      } catch (error) {
+        console.error("Erreur clients count:", error);
         return 0;
       }
     },
@@ -29,21 +21,20 @@ export function useClientStats() {
   });
 
   const { data: supplierPayments = 0 } = useQuery({
-    queryKey: ['supplier-payments'],
+    queryKey: ['supplier-payments-safe'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('purchase_invoice_payments')
-          .select('amount');
+        const payments = await db.query(
+          'purchase_invoice_payments',
+          q => q.select('amount'),
+          []
+        );
         
-        if (error) {
-          console.error("Erreur supplier payments:", error);
-          return 0;
-        }
-        
-        return (data || []).reduce((sum, payment) => sum + (payment.amount || 0), 0);
-      } catch (err) {
-        console.error("Erreur dans supplierPayments:", err);
+        return payments.reduce((sum, payment) => {
+          return sum + safeNumber(payment?.amount, 0);
+        }, 0);
+      } catch (error) {
+        console.error("Erreur supplier payments:", error);
         return 0;
       }
     },
@@ -52,12 +43,12 @@ export function useClientStats() {
   });
 
   console.log("useClientStats: Données récupérées", {
-    clientsCount,
-    supplierPayments
+    clientsCount: safeNumber(clientsCount, 0),
+    supplierPayments: safeNumber(supplierPayments, 0)
   });
 
   return {
-    clientsCount,
-    supplierPayments
+    clientsCount: safeNumber(clientsCount, 0),
+    supplierPayments: safeNumber(supplierPayments, 0)
   };
 }

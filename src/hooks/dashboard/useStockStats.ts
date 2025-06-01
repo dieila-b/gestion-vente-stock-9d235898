@@ -1,26 +1,18 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
+import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
 
 export function useStockStats() {
-  console.log("useStockStats: Démarrage de la récupération");
+  console.log("useStockStats: Démarrage avec gestion d'erreur renforcée");
 
   const { data: catalog = [] } = useQuery({
-    queryKey: ['stock-catalog'],
+    queryKey: ['stock-catalog-safe'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('catalog')
-          .select('*');
-        
-        if (error) {
-          console.error("Erreur stock catalog:", error);
-          return [];
-        }
-        
-        return data || [];
-      } catch (err) {
-        console.error("Erreur dans catalog:", err);
+        return await db.query('catalog', q => q.select('*'), []);
+      } catch (error) {
+        console.error("Erreur dans catalog:", error);
         return [];
       }
     },
@@ -28,19 +20,32 @@ export function useStockStats() {
     staleTime: 30000
   });
 
-  // Calculs basés sur le catalogue
-  const totalStock = catalog.reduce((sum, product) => sum + (product.stock || 0), 0);
-  const totalStockPurchaseValue = catalog.reduce((sum, product) => 
-    sum + ((product.stock || 0) * (product.purchase_price || 0)), 0);
-  const totalStockSaleValue = catalog.reduce((sum, product) => 
-    sum + ((product.stock || 0) * (product.price || 0)), 0);
+  // Calculs sécurisés basés sur le catalogue
+  const safeCatalog = safeArray(catalog);
+  
+  const totalStock = safeCatalog.reduce((sum, product) => {
+    return sum + safeNumber(product?.stock, 0);
+  }, 0);
+  
+  const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
+    const stock = safeNumber(product?.stock, 0);
+    const purchasePrice = safeNumber(product?.purchase_price, 0);
+    return sum + (stock * purchasePrice);
+  }, 0);
+  
+  const totalStockSaleValue = safeCatalog.reduce((sum, product) => {
+    const stock = safeNumber(product?.stock, 0);
+    const price = safeNumber(product?.price, 0);
+    return sum + (stock * price);
+  }, 0);
+  
   const globalStockMargin = totalStockSaleValue - totalStockPurchaseValue;
   const marginPercentage = totalStockPurchaseValue > 0 
     ? (globalStockMargin / totalStockPurchaseValue) * 100 
     : 0;
 
   console.log("useStockStats: Calculs terminés", {
-    catalogLength: catalog.length,
+    catalogLength: safeCatalog.length,
     totalStock,
     totalStockPurchaseValue,
     totalStockSaleValue,
@@ -49,7 +54,7 @@ export function useStockStats() {
   });
 
   return {
-    catalog,
+    catalog: safeCatalog,
     totalStock,
     totalStockPurchaseValue,
     totalStockSaleValue,

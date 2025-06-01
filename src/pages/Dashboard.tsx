@@ -12,63 +12,54 @@ import { useStockStats } from "@/hooks/dashboard/useStockStats";
 import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/utils/db-core";
+import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   
-  console.log("Dashboard: Début du rendu avec gestion d'erreur améliorée");
+  console.log("Dashboard: Début du rendu avec gestion d'erreur ultra-robuste");
 
+  // Utilisation des hooks sécurisés
   const { todayOrderData, catalogProducts, unpaidInvoices, monthlyExpenses } = useDashboardStatsUpdated();
   const { catalog, totalStock, totalStockPurchaseValue, totalStockSaleValue, globalStockMargin, marginPercentage } = useStockStats();
   const { clientsCount, supplierPayments } = useClientStats();
 
-  console.log("Dashboard: Données récupérées", {
-    todayOrderData: todayOrderData?.length || 0,
-    catalogProducts: catalogProducts?.length || 0,
-    unpaidInvoices: unpaidInvoices?.length || 0,
-    monthlyExpenses: monthlyExpenses?.length || 0,
-    catalog: catalog?.length || 0,
-    clientsCount,
-    supplierPayments
-  });
-
-  // Fetch financial data avec gestion d'erreur robuste
+  // Données financières avec gestion d'erreur ultra-robuste
   const { data: financialData, error: financialError, isLoading: financialLoading } = useQuery({
-    queryKey: ['financial-situation-safe'],
+    queryKey: ['financial-situation-ultra-safe'],
     queryFn: async () => {
       try {
-        console.log("Dashboard: Récupération des données financières sécurisées");
+        console.log("Dashboard: Récupération des données financières ultra-sécurisées");
         
-        // Get credit balance from orders
-        const { data: paidOrders, error: creditError1 } = await supabase
-          .from('orders')
-          .select('paid_amount')
-          .eq('payment_status', 'paid');
+        // Récupération des commandes payées
+        const paidOrders = await db.query(
+          'orders',
+          q => q.select('paid_amount').eq('payment_status', 'paid'),
+          []
+        );
 
-        // Get debit balance from orders
-        const { data: unpaidOrders, error: debitError1 } = await supabase
-          .from('orders')
-          .select('remaining_amount')
-          .in('payment_status', ['pending', 'partial']);
+        // Récupération des commandes impayées
+        const unpaidOrders = await db.query(
+          'orders',
+          q => q.select('remaining_amount').in('payment_status', ['pending', 'partial']),
+          []
+        );
 
-        if (creditError1) console.error("Erreur orders payées:", creditError1);
-        if (debitError1) console.error("Erreur orders impayées:", debitError1);
-
-        // Calculate totals with safe fallbacks
-        const creditBalance = Array.isArray(paidOrders) 
-          ? paidOrders.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
-          : 0;
+        // Calculs sécurisés
+        const creditBalance = safeArray(paidOrders).reduce((sum, item) => {
+          return sum + safeNumber(item?.paid_amount, 0);
+        }, 0);
           
-        const debitBalance = Array.isArray(unpaidOrders)
-          ? unpaidOrders.reduce((sum, item) => sum + (item.remaining_amount || 0), 0)
-          : 0;
+        const debitBalance = safeArray(unpaidOrders).reduce((sum, item) => {
+          return sum + safeNumber(item?.remaining_amount, 0);
+        }, 0);
           
         const netBalance = creditBalance - debitBalance;
 
-        console.log("Dashboard: Données financières calculées", {
+        console.log("Dashboard: Données financières calculées en sécurité", {
           creditBalance,
           debitBalance,
           netBalance
@@ -92,60 +83,58 @@ export default function Dashboard() {
     staleTime: 30000
   });
 
-  if (financialError) {
-    console.error("Erreur financière:", financialError);
-  }
-
-  // Calculate daily margin based on actual sales
+  // Calcul de la marge quotidienne sécurisée
   const calculateDailyMargin = () => {
-    if (!Array.isArray(todayOrderData) || !Array.isArray(catalogProducts)) return 0;
-    
-    let totalMargin = 0;
-    
-    todayOrderData.forEach(order => {
-      if (!order.order_items || !Array.isArray(order.order_items)) return;
+    try {
+      const safeOrders = safeArray(todayOrderData);
+      const safeProducts = safeArray(catalogProducts);
       
-      order.order_items.forEach(item => {
-        const catalogProduct = catalogProducts.find(p => p.id === item.product_id);
-        if (!catalogProduct) return;
+      if (safeOrders.length === 0 || safeProducts.length === 0) return 0;
+      
+      let totalMargin = 0;
+      
+      safeOrders.forEach(order => {
+        const orderItems = safeArray(order?.order_items);
         
-        const salesPrice = catalogProduct.price || 0;
-        const purchasePrice = catalogProduct.purchase_price || 0;
-        const quantity = item.quantity || 0;
-        
-        totalMargin += (salesPrice - purchasePrice) * quantity;
+        orderItems.forEach(item => {
+          const catalogProduct = safeProducts.find(p => p?.id === item?.product_id);
+          if (!catalogProduct) return;
+          
+          const salesPrice = safeNumber(catalogProduct?.price, 0);
+          const purchasePrice = safeNumber(catalogProduct?.purchase_price, 0);
+          const quantity = safeNumber(item?.quantity, 0);
+          
+          totalMargin += (salesPrice - purchasePrice) * quantity;
+        });
       });
-    });
-    
-    return totalMargin;
+      
+      return totalMargin;
+    } catch (error) {
+      console.error("Erreur dans calculateDailyMargin:", error);
+      return 0;
+    }
   };
 
-  // Calculate totals with proper array checks and safe fallbacks
-  const todaySales = Array.isArray(todayOrderData) 
-    ? todayOrderData.reduce((sum, order) => sum + (order.final_total || 0), 0) 
-    : 0;
+  // Calculs sécurisés avec vérifications
+  const todaySales = safeArray(todayOrderData).reduce((sum, order) => {
+    return sum + safeNumber(order?.final_total, 0);
+  }, 0);
     
   const todayMargin = calculateDailyMargin();
   
-  const unpaidAmount = Array.isArray(unpaidInvoices)
-    ? unpaidInvoices.reduce((sum, invoice) => sum + (invoice.remaining_amount || 0), 0) 
-    : 0;
+  const unpaidAmount = safeArray(unpaidInvoices).reduce((sum, invoice) => {
+    return sum + safeNumber(invoice?.remaining_amount, 0);
+  }, 0);
     
-  const monthlyExpensesTotal = Array.isArray(monthlyExpenses)
-    ? monthlyExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0) 
-    : 0;
+  const monthlyExpensesTotal = safeArray(monthlyExpenses).reduce((sum, expense) => {
+    return sum + safeNumber(expense?.amount, 0);
+  }, 0);
 
   const handleUnpaidInvoicesClick = () => {
     navigate('/sales-invoices?filter=unpaid');
   };
 
-  console.log("Dashboard: Calculs terminés", {
-    todaySales,
-    todayMargin,
-    unpaidAmount,
-    monthlyExpensesTotal
-  });
-
+  // Affichage de chargement sécurisé
   if (financialLoading) {
     console.log("Dashboard: Chargement des données financières");
     return (
@@ -160,7 +149,7 @@ export default function Dashboard() {
     );
   }
 
-  console.log("Dashboard: Rendu final");
+  console.log("Dashboard: Rendu final avec tous les calculs sécurisés");
 
   return (
     <DashboardLayout>
@@ -193,23 +182,23 @@ export default function Dashboard() {
               todayMargin={todayMargin}
               unpaidAmount={unpaidAmount}
               monthlyExpensesTotal={monthlyExpensesTotal}
-              catalogLength={Array.isArray(catalog) ? catalog.length : 0}
+              catalogLength={safeArray(catalog).length}
               totalStock={totalStock}
               totalStockPurchaseValue={totalStockPurchaseValue}
               totalStockSaleValue={totalStockSaleValue}
               globalStockMargin={globalStockMargin}
               marginPercentage={marginPercentage}
-              clientsCount={clientsCount || 0}
-              supplierPayments={supplierPayments || 0}
+              clientsCount={safeNumber(clientsCount, 0)}
+              supplierPayments={safeNumber(supplierPayments, 0)}
               onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
             />
           </ErrorBoundary>
 
           <ErrorBoundary>
             <FinancialSituation
-              creditBalance={financialData?.creditBalance || 0}
-              debitBalance={financialData?.debitBalance || 0}
-              netBalance={financialData?.netBalance || 0}
+              creditBalance={safeNumber(financialData?.creditBalance, 0)}
+              debitBalance={safeNumber(financialData?.debitBalance, 0)}
+              netBalance={safeNumber(financialData?.netBalance, 0)}
             />
           </ErrorBoundary>
 
