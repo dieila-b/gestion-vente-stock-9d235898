@@ -3,6 +3,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Type definition for the approve_purchase_order RPC result
+type ApprovalResult = {
+  success: boolean;
+  already_approved?: boolean;
+  delivery_note_created?: boolean;
+  delivery_number?: string;
+  message?: string;
+};
+
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
 
@@ -25,17 +34,20 @@ export function useApprovePurchaseOrder() {
 
         console.log("[useApprovePurchaseOrder] RPC result:", result);
         
-        if (!result?.success) {
-          throw new Error(result?.message || 'Échec de l\'approbation');
+        // Type assertion to properly handle the result
+        const typedResult = result as ApprovalResult;
+        
+        if (!typedResult?.success) {
+          throw new Error(typedResult?.message || 'Échec de l\'approbation');
         }
 
-        return result;
+        return typedResult;
       } catch (error: any) {
         console.error("[useApprovePurchaseOrder] Error:", error);
         throw error;
       }
     },
-    onSuccess: (result) => {
+    onSuccess: (result: ApprovalResult) => {
       console.log("[useApprovePurchaseOrder] Success:", result);
       
       if (result.already_approved) {
