@@ -6,7 +6,7 @@ export { safeBankAccount } from './entities/bank-account';
 export { safeClient } from './entities/client';
 export { safeDeliveryNote } from './entities/delivery-note';
 export { safeInvoice } from './entities/invoice';
-export { safePosLocation } from './entities/pos-location';
+export { safePOSLocation } from './entities/pos-location';
 export { safeProduct } from './entities/product';
 export { safeWarehouse } from './entities/warehouse';
 export * from './safe-query';

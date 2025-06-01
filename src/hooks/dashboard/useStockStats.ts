@@ -44,24 +44,29 @@ export function useStockStats() {
   const totalStock = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
-    return sum + safeNumber(safeProduct.stock);
+    const stock = safeNumber(safeProduct.stock);
+    return sum + stock;
   }, 0);
   
   const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
-    return sum + (safeNumber(safeProduct.stock) * safeNumber(safeProduct.purchase_price));
+    const stock = safeNumber(safeProduct.stock);
+    const purchasePrice = safeNumber(safeProduct.purchase_price);
+    return sum + (stock * purchasePrice);
   }, 0);
   
   const totalStockSaleValue = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
-    return sum + (safeNumber(safeProduct.stock) * safeNumber(safeProduct.price));
+    const stock = safeNumber(safeProduct.stock);
+    const price = safeNumber(safeProduct.price);
+    return sum + (stock * price);
   }, 0);
   
-  const globalStockMargin = totalStockSaleValue - totalStockPurchaseValue;
-  const marginPercentage = totalStockPurchaseValue > 0 
-    ? (globalStockMargin / totalStockPurchaseValue) * 100 
+  const globalStockMargin = safeNumber(totalStockSaleValue) - safeNumber(totalStockPurchaseValue);
+  const marginPercentage = safeNumber(totalStockPurchaseValue) > 0 
+    ? (safeNumber(globalStockMargin) / safeNumber(totalStockPurchaseValue)) * 100 
     : 0;
 
   console.log("useStockStats: Calculs terminés", {
