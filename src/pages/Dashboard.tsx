@@ -101,7 +101,10 @@ export default function Dashboard() {
           const item = safeOrderItem(itemData);
           if (!item) return;
           
-          const catalogProductData = safeProducts.find(p => p?.id === item.product_id);
+          const catalogProductData = safeProducts.find(p => {
+            const product = safeCatalogProduct(p);
+            return product && product.id === item.product_id;
+          });
           const catalogProduct = safeCatalogProduct(catalogProductData);
           if (!catalogProduct) return;
           
@@ -184,16 +187,16 @@ export default function Dashboard() {
 
           <ErrorBoundary>
             <DashboardMetrics
-              todaySales={todaySales}
-              todayMargin={todayMargin}
-              unpaidAmount={unpaidAmount}
-              monthlyExpensesTotal={monthlyExpensesTotal}
+              todaySales={safeNumber(todaySales)}
+              todayMargin={safeNumber(todayMargin)}
+              unpaidAmount={safeNumber(unpaidAmount)}
+              monthlyExpensesTotal={safeNumber(monthlyExpensesTotal)}
               catalogLength={safeArray(catalog).length}
-              totalStock={totalStock}
-              totalStockPurchaseValue={totalStockPurchaseValue}
-              totalStockSaleValue={totalStockSaleValue}
-              globalStockMargin={globalStockMargin}
-              marginPercentage={marginPercentage}
+              totalStock={safeNumber(totalStock)}
+              totalStockPurchaseValue={safeNumber(totalStockPurchaseValue)}
+              totalStockSaleValue={safeNumber(totalStockSaleValue)}
+              globalStockMargin={safeNumber(globalStockMargin)}
+              marginPercentage={safeNumber(marginPercentage)}
               clientsCount={safeNumber(clientsCount, 0)}
               supplierPayments={safeNumber(supplierPayments, 0)}
               onUnpaidInvoicesClick={handleUnpaidInvoicesClick}

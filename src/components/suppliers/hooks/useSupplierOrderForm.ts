@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Supplier } from "@/types/supplier";
 import type { SupplierOrderProduct } from "@/types/supplierOrder";
 import type { Toast } from "@/components/ui/use-toast";
+import { safeSupplier } from "@/utils/data-safe/safe-access";
 
 interface UseSupplierOrderFormProps {
   supplier: Supplier;
@@ -90,22 +91,20 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
       const subtotal = calculateSubTotal();
       const tax = calculateTax();
       const total = calculateTotal();
+      const safeSupplierData = safeSupplier(supplier);
 
-      // Using Supabase directly to insert the order
+      // Using existing purchase_orders table instead of supplier_orders
       const { data: orderData, error: orderError } = await supabase
-        .from('supplier_orders')
+        .from('purchase_orders')
         .insert({
-          supplier_id: supplier.id,
+          supplier_id: safeSupplierData.id,
           order_number: `PO-${Date.now()}`,
-          status: "draft",
+          status: "pending",
           payment_status: paymentStatus,
-          order_status: orderStatus,
           expected_delivery_date: deliveryDate,
           total_amount: total,
           paid_amount: paidAmount,
-          remaining_amount: remainingAmount,
           notes,
-          delivery_address: supplier.address,
           discount,
           shipping_cost: shippingCost,
           logistics_cost: logisticsCost,
@@ -114,7 +113,6 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
           subtotal: subtotal,
           tax_amount: tax,
           total_ttc: total,
-          quality_check_required: true,
         })
         .select()
         .single();
@@ -123,20 +121,16 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
         throw new Error("Failed to create supplier order");
       }
 
-      // Using Supabase directly to insert order products
+      // Using existing purchase_order_items table instead of supplier_order_products
       const { error: productsError } = await supabase
-        .from('supplier_order_products')
+        .from('purchase_order_items')
         .insert(
           selectedProducts.map(product => ({
-            order_id: orderData.id,
-            name: product.name,
+            purchase_order_id: orderData.id,
+            product_id: null, // Will be linked when product is identified
             quantity: product.quantity,
             unit_price: product.unitPrice,
             total_price: product.totalPrice,
-            category: product.category,
-            reference: product.reference,
-            status: product.status,
-            quality_check: product.qualityCheck,
           }))
         );
 

@@ -9,6 +9,7 @@ import { SupplierFormHeader } from "./forms/SupplierFormHeader";
 import { ProductListForm } from "./forms/ProductListForm";
 import { FormNotes } from "./forms/FormNotes";
 import { FormActions } from "./forms/FormActions";
+import { safeSupplier } from "@/utils/data-safe/safe-access";
 
 interface PriceRequestFormProps {
   supplier: Supplier;
@@ -62,16 +63,18 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
     setIsSubmitting(true);
     
     try {
-      // Create the supplier order using Supabase directly
+      const safeSupplierData = safeSupplier(supplier);
+      
+      // Create the supplier order using existing purchase_orders table
       const { data: orderData, error: orderError } = await supabase
-        .from('supplier_orders')
+        .from('purchase_orders')
         .insert({
-          supplier_id: supplier.id,
+          supplier_id: safeSupplierData.id,
           order_number: `PRQ-${Date.now()}`,
-          status: "price_request",
+          status: "pending",
           notes,
-          is_price_request: true,
-          delivery_address: supplier.address,
+          expected_delivery_date: null,
+          total_amount: 0,
         })
         .select()
         .single();
@@ -80,18 +83,16 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
         throw new Error("Failed to create supplier order");
       }
 
-      // Add products using Supabase directly
+      // Add products using existing purchase_order_items table
       const { error: productsError } = await supabase
-        .from('supplier_order_products')
+        .from('purchase_order_items')
         .insert(
           products.map(product => ({
-            order_id: orderData.id,
-            name: product.name,
-            quantity: product.quantity,
-            category: product.category,
-            reference: product.reference,
-            price_requested: true,
-            status: "pending",
+            purchase_order_id: orderData.id,
+            product_id: null, // Will be set when product is identified
+            quantity: product.quantity || 1,
+            unit_price: 0,
+            total_price: 0,
           }))
         );
 

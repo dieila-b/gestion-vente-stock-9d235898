@@ -10,3 +10,5 @@ export { safePosLocation } from './entities/pos-location';
 export { safeProduct } from './entities/product';
 export { safeWarehouse } from './entities/warehouse';
 export * from './safe-query';
+
+// Note: safeSupplier is already exported from safe-access, so we don't re-export it here

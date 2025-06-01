@@ -43,7 +43,8 @@ export function useStockStats() {
   
   const totalStock = safeCatalog.reduce((sum, product) => {
     const safeProduct = safeCatalogProduct(product);
-    return sum + safeNumber(safeProduct?.stock || 0);
+    if (!safeProduct) return sum;
+    return sum + safeNumber(safeProduct.stock);
   }, 0);
   
   const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
