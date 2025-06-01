@@ -31,13 +31,31 @@ export const ProductSelectionModal = ({
   console.log("ProductSelectionModal - isLoading:", isLoading);
   console.log("ProductSelectionModal - error:", error);
   console.log("ProductSelectionModal - products data:", products);
+  console.log("ProductSelectionModal - search query:", searchQuery);
   
-  const filteredProducts = products.filter(product => 
-    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    product.reference?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fix the filtering logic - handle null/undefined values properly
+  const filteredProducts = products.filter(product => {
+    const productName = product.name?.toLowerCase() || "";
+    const productReference = product.reference?.toLowerCase() || "";
+    const query = searchQuery.toLowerCase();
+    
+    console.log("Filtering product:", {
+      name: product.name,
+      reference: product.reference,
+      nameMatch: productName.includes(query),
+      refMatch: productReference.includes(query)
+    });
+    
+    // If no search query, show all products
+    if (!query.trim()) {
+      return true;
+    }
+    
+    return productName.includes(query) || productReference.includes(query);
+  });
 
   console.log("ProductSelectionModal - filtered products:", filteredProducts?.length || 0);
+  console.log("ProductSelectionModal - filtered products data:", filteredProducts);
 
   const handleAddProduct = (product: CatalogProduct) => {
     console.log("Adding product:", product);
@@ -51,8 +69,8 @@ export const ProductSelectionModal = ({
       total_price: product.purchase_price || 0,
       product: {
         id: product.id,
-        name: product.name,
-        reference: product.reference
+        name: product.name || "Produit sans nom",
+        reference: product.reference || ""
       }
     };
     
@@ -131,9 +149,9 @@ export const ProductSelectionModal = ({
                   Ajouter un produit manuel
                 </Button>
               </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : filteredProducts.length === 0 && searchQuery.trim() !== "" ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-4">Aucun produit correspondant trouvé</p>
+                <p className="mb-4">Aucun produit correspondant à "{searchQuery}"</p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -153,7 +171,7 @@ export const ProductSelectionModal = ({
                       onClick={() => handleAddProduct(product)}
                     >
                       <div>
-                        <p className="font-medium">{product.name}</p>
+                        <p className="font-medium">{product.name || "Produit sans nom"}</p>
                         <p className="text-xs text-white/60">
                           {product.reference ? `Ref: ${product.reference}` : "Sans référence"}
                         </p>

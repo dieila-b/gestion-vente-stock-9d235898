@@ -35,7 +35,19 @@ export function useProducts(locationId?: string) {
       }
 
       console.log('Catalog data loaded successfully:', catalogData.length, 'products');
-      console.log('Products data:', catalogData);
+      console.log('Products data details:', catalogData);
+      
+      // Log individual product details to debug filtering
+      catalogData.forEach((product, index) => {
+        console.log(`Product ${index}:`, {
+          id: product.id,
+          name: product.name,
+          reference: product.reference,
+          price: product.price,
+          purchase_price: product.purchase_price
+        });
+      });
+      
       return catalogData as CatalogProduct[];
     },
     enabled: true,

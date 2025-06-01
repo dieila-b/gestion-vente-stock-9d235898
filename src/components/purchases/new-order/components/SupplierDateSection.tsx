@@ -43,9 +43,15 @@ export const SupplierDateSection = ({
             ) : (
               suppliers.map((supplierItem) => {
                 console.log("Rendering supplier:", supplierItem);
+                const displayName = supplierItem.name || 
+                                   supplierItem.contact || 
+                                   `Fournisseur #${supplierItem.id.slice(0, 8)}`;
+                
+                console.log("Supplier display name:", displayName);
+                
                 return (
                   <SelectItem key={supplierItem.id} value={supplierItem.id}>
-                    {supplierItem.name || supplierItem.contact || `Fournisseur #${supplierItem.id.slice(0, 8)}`}
+                    {displayName}
                   </SelectItem>
                 );
               })
