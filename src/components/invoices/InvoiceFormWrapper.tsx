@@ -95,6 +95,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   // Transformer les produits pour qu'ils soient compatibles avec InvoiceProduct
   const transformedProducts = selectedProducts.map(product => ({
     ...product,
+    discount: product.discount || 0, // Ensure discount is always defined
     description: '',
     purchase_price: 0,
     category: '',
