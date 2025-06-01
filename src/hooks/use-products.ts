@@ -11,18 +11,7 @@ export function useProducts(locationId?: string) {
       
       const { data: catalogData, error: catalogError } = await supabase
         .from('catalog')
-        .select(`
-          id,
-          name,
-          description,
-          price,
-          purchase_price,
-          category,
-          stock,
-          reference,
-          image_url,
-          created_at
-        `);
+        .select('*');  // Sélectionner tous les champs au lieu de spécifier manuellement
 
       if (catalogError) {
         console.error('Erreur catalogue:', catalogError);
@@ -37,14 +26,17 @@ export function useProducts(locationId?: string) {
       console.log('Catalog data loaded successfully:', catalogData.length, 'products');
       console.log('Products data details:', catalogData);
       
-      // Log individual product details to debug filtering
+      // Log individual product details to debug field mapping
       catalogData.forEach((product, index) => {
         console.log(`Product ${index}:`, {
           id: product.id,
           name: product.name,
           reference: product.reference,
           price: product.price,
-          purchase_price: product.purchase_price
+          purchase_price: product.purchase_price,
+          stock: product.stock,
+          category: product.category,
+          description: product.description
         });
       });
       
