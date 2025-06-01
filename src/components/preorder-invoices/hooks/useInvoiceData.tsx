@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SortColumn, SortDirection } from "./useSorting";
-import { safeFetchFromTable } from "@/utils/supabase-safe-query";
+import { safeFetchFromTable, safeProduct } from "@/utils/supabase-safe-query";
 
 export function useInvoiceData(
   sortColumn: SortColumn, 
@@ -41,7 +41,8 @@ export function useInvoiceData(
 
           return q;
         },
-        []
+        [],
+        "Erreur lors de la récupération des précommandes"
       );
       
       // Enrich the preorders with product data
@@ -60,7 +61,8 @@ export function useInvoiceData(
           'catalog',
           (query) => query.select('id, name, image')
             .in('id', productIds),
-          []
+          [],
+          "Erreur lors de la récupération des produits"
         );
         
         const enrichedItems = (preorder.items || []).map((item: any) => {

@@ -11,7 +11,7 @@ export const safeFetchRecordById = async (
 ) => {
   try {
     const { data, error } = await selectQuery(
-      supabase.from(table as any).select('*').eq('id', id).single()
+      supabase.from(table).select('*').eq('id', id).single()
     );
     
     if (error) {
@@ -24,128 +24,6 @@ export const safeFetchRecordById = async (
     console.error(`${errorMessage}:`, err);
     return defaultValue;
   }
-};
-
-// Fonction générique pour récupérer depuis une table
-export const safeFetchFromTable = async (
-  tableName: string,
-  query?: (q: any) => any,
-  defaultValue: any = []
-) => {
-  try {
-    let queryBuilder = supabase.from(tableName as any).select('*');
-    
-    if (query) {
-      queryBuilder = query(queryBuilder);
-    }
-    
-    const { data, error } = await queryBuilder;
-    
-    if (error) {
-      console.error(`Erreur lors de la récupération de ${tableName}:`, error);
-      return defaultValue;
-    }
-    
-    return data || defaultValue;
-  } catch (err) {
-    console.error(`Erreur lors de la récupération de ${tableName}:`, err);
-    return defaultValue;
-  }
-};
-
-// Fonction pour créer un objet produit sécurisé
-export const safeProduct = (product: any) => {
-  if (!product) {
-    return {
-      id: '',
-      name: 'Produit inconnu',
-      price: 0,
-      purchase_price: 0,
-      reference: '',
-      image: null,
-      stock: 0,
-      category: '',
-      description: ''
-    };
-  }
-  
-  return {
-    ...product,
-    name: product.name || 'Produit inconnu',
-    price: product.price || 0,
-    purchase_price: product.purchase_price || 0,
-    reference: product.reference || '',
-    stock: product.stock || 0,
-    category: product.category || '',
-    description: product.description || ''
-  };
-};
-
-// Fonction pour créer un objet fournisseur sécurisé
-export const safeSupplier = (supplier: any) => {
-  if (!supplier) {
-    return {
-      id: '',
-      name: 'Fournisseur inconnu',
-      email: '',
-      phone: '',
-      address: '',
-      status: 'pending'
-    };
-  }
-  
-  return {
-    ...supplier,
-    name: supplier.name || 'Fournisseur inconnu',
-    email: supplier.email || '',
-    phone: supplier.phone || '',
-    address: supplier.address || '',
-    status: supplier.status || 'pending'
-  };
-};
-
-// Fonction pour créer un objet client sécurisé
-export const safeClient = (client: any) => {
-  if (!client) {
-    return {
-      id: '',
-      company_name: 'Client inconnu',
-      contact_name: '',
-      email: '',
-      phone: '',
-      address: ''
-    };
-  }
-  
-  return {
-    ...client,
-    company_name: client.company_name || 'Client inconnu',
-    contact_name: client.contact_name || '',
-    email: client.email || '',
-    phone: client.phone || '',
-    address: client.address || ''
-  };
-};
-
-// Fonction pour créer un objet POS Location sécurisé
-export const safePOSLocation = (location: any) => {
-  if (!location) {
-    return {
-      id: '',
-      name: 'Emplacement inconnu',
-      address: '',
-      phone: '',
-      manager: ''
-    };
-  }
-  
-  return {
-    ...location,
-    name: location.name || 'Emplacement inconnu',
-    address: location.address || '',
-    phone: location.phone || '',
-    manager: location.manager || ''
-  };
 };
 
 // Fonction pour créer un objet facture sécurisé avec toutes les propriétés requises
@@ -206,20 +84,4 @@ export const safePurchaseInvoice = (invoice: any) => {
     discount: invoice.discount || 0,
     shipping_cost: invoice.shipping_cost || 0
   };
-};
-
-// Fonction pour vérifier les erreurs de requête
-export const isSelectQueryError = (error: any) => {
-  return error && error.code;
-};
-
-// Fonction générique pour récupérer des données avec gestion d'erreur
-export const safeGet = async (queryFunction: () => Promise<any>, defaultValue: any = null) => {
-  try {
-    const result = await queryFunction();
-    return result;
-  } catch (error) {
-    console.error('Erreur lors de la récupération des données:', error);
-    return defaultValue;
-  }
 };

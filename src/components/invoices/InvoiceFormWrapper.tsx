@@ -56,7 +56,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     try {
       const invoiceData = {
         invoice_number: formData.invoiceNumber,
-        client_id: formData.clientId || null,
+        client_id: formData.clientId,
         total_amount: finalTotal,
         status: 'pending'
       };
@@ -101,6 +101,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           onUpdateQuantity={handleUpdateQuantity}
           onUpdateDiscount={handleUpdateDiscount}
           onPreviewToggle={handlePreviewToggle}
+          isLoading={isCreating}
         />
       </Card>
 
@@ -117,7 +118,7 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           paidAmount={invoiceData.paid_amount}
           remainingAmount={invoiceData.remaining_amount}
           onAddPayment={handleAddPayment}
-          clientName={formData.clientName || ''}
+          clientName={formData.clientName}
         />
       )}
 
