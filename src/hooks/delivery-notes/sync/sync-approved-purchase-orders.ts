@@ -22,6 +22,7 @@ export async function syncApprovedPurchaseOrders(specificOrderId?: string) {
     // Step 1: Fetch all approved purchase orders
     const approvedOrders = await fetchApprovedPurchaseOrders(specificOrderId);
     if (approvedOrders.length === 0) {
+      console.log("[syncApprovedPurchaseOrders] No approved orders found");
       return false;
     }
     
@@ -31,12 +32,20 @@ export async function syncApprovedPurchaseOrders(specificOrderId?: string) {
     // Step 3: Filter for orders without delivery notes
     const ordersWithoutNotes = filterOrdersWithoutDeliveryNotes(approvedOrders, existingNotes);
     
-    // Step 4: Process orders and create delivery notes
+    // Step 4: Process orders and create delivery notes ONLY if none exist
     if (ordersWithoutNotes && ordersWithoutNotes.length > 0) {
       // If we have a specific order ID, process just that one
       if (specificOrderId) {
         const order = ordersWithoutNotes.find(o => o.id === specificOrderId);
         if (order) {
+          // Vérification supplémentaire pour éviter la duplication
+          const hasExistingNote = existingNotes.some(note => note.purchase_order_id === specificOrderId);
+          if (hasExistingNote) {
+            console.log("[syncApprovedPurchaseOrders] Delivery note already exists for order", specificOrderId);
+            toast.info("Un bon de livraison existe déjà pour cette commande");
+            return false;
+          }
+          
           const success = await processOrderForDeliveryNote(order);
           if (success) {
             toast.success("Bon de livraison créé avec succès");

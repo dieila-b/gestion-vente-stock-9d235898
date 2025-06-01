@@ -1,60 +1,58 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { approvePurchaseOrderService } from "./services/purchase-order-approval-service";
+import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Hook for approving purchase orders with improved error handling
- * @returns Mutation object with mutateAsync function
- */
 export function useApprovePurchaseOrder() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (id: string) => {
-      console.log("[useApprovePurchaseOrder] Starting approval for order:", id);
+    mutationFn: async (orderId: string) => {
+      console.log("[useApprovePurchaseOrder] Starting approval for order:", orderId);
       
-      if (!id) {
-        throw new Error("ID du bon de commande manquant");
-      }
-      
-      const result = await approvePurchaseOrderService(id, queryClient);
-      console.log("[useApprovePurchaseOrder] Service result:", result);
-      
-      return result;
-    },
-    onSuccess: (data, variables) => {
-      console.log("[useApprovePurchaseOrder] Mutation successful:", data);
-      
-      if (!data?.alreadyApproved) {
-        // Force immediate UI update
-        queryClient.setQueryData(['purchase-orders'], (oldData: any) => {
-          if (!oldData) return oldData;
-          
-          return oldData.map((order: any) => {
-            if (order.id === variables) {
-              console.log("[useApprovePurchaseOrder] Updating order status in cache:", variables);
-              return { ...order, status: 'approved' };
-            }
-            return order;
-          });
-        });
+      try {
+        // Utiliser la fonction RPC qui gère déjà la création du bon de livraison
+        // pour éviter la duplication
+        const { data: result, error } = await supabase.rpc(
+          'approve_purchase_order',
+          { order_id: orderId }
+        );
+
+        if (error) {
+          console.error("[useApprovePurchaseOrder] RPC error:", error);
+          throw error;
+        }
+
+        console.log("[useApprovePurchaseOrder] RPC result:", result);
         
-        // Force refresh to get latest data from server after a short delay
-        setTimeout(() => {
-          console.log("[useApprovePurchaseOrder] Triggering delayed refresh");
-          queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
-          queryClient.refetchQueries({ queryKey: ['delivery-notes'] });
-        }, 500);
+        if (!result?.success) {
+          throw new Error(result?.message || 'Échec de l\'approbation');
+        }
+
+        return result;
+      } catch (error: any) {
+        console.error("[useApprovePurchaseOrder] Error:", error);
+        throw error;
       }
     },
-    onError: (error: any, variables) => {
-      console.error("[useApprovePurchaseOrder] Mutation failed:", error);
-      const errorMessage = error?.message || 'Erreur inconnue lors de l\'approbation';
-      toast.error(`Erreur: ${errorMessage}`);
+    onSuccess: (result) => {
+      console.log("[useApprovePurchaseOrder] Success:", result);
       
-      // Force refresh to ensure UI state is correct
-      queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
-    }
+      if (result.already_approved) {
+        toast.info("Ce bon de commande était déjà approuvé");
+      } else if (result.delivery_note_created) {
+        toast.success(`Bon de commande approuvé avec succès. Bon de livraison ${result.delivery_number} créé automatiquement.`);
+      } else {
+        toast.success("Bon de commande approuvé avec succès");
+      }
+      
+      // Invalider les caches pour rafraîchir les données
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
+    },
+    onError: (error: any) => {
+      console.error("[useApprovePurchaseOrder] Mutation error:", error);
+      toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
+    },
   });
 }
