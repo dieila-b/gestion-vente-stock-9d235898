@@ -5,8 +5,8 @@ import { useInvoiceForm } from "@/hooks/use-invoice-form";
 import { DynamicInvoice } from "./dynamic/DynamicInvoice";
 import { useState } from "react";
 import { InvoicePaymentDialog } from "./payments/InvoicePaymentDialog";
-import { useInvoiceOperations } from "@/hooks/invoices/useInvoiceOperations";
-import { safeInvoice } from "@/utils/supabase-safe-query";
+import { useQuery } from "@tanstack/react-query";
+import { safeFetchRecordById, safeInvoice } from "@/utils/supabase-safe-query";
 
 export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   const {
@@ -20,11 +20,28 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     handleSubmitInvoice,
   } = useInvoiceForm();
 
-  const { createInvoice, isCreating } = useInvoiceOperations();
   const [showPreview, setShowPreview] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
-  const [currentInvoice, setCurrentInvoice] = useState<any>(null);
+
+  const { data: invoice, refetch: refetchInvoice } = useQuery({
+    queryKey: ['invoice', currentInvoiceId],
+    queryFn: async () => {
+      if (!currentInvoiceId) return null;
+      
+      // Use safe fetch for tables that might not exist in the schema yet
+      const invoiceData = await safeFetchRecordById(
+        'invoices',
+        currentInvoiceId,
+        q => q,
+        null,
+        "Erreur lors de la récupération de la facture"
+      );
+      
+      return safeInvoice(invoiceData);
+    },
+    enabled: !!currentInvoiceId
+  });
 
   // Calcul du sous-total des produits
   const subtotal = selectedProducts.reduce((total, product) => {
@@ -48,41 +65,19 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
   };
 
   const handlePaymentComplete = () => {
-    // Rafraîchir les données de la facture après paiement
-    setShowPaymentDialog(false);
+    refetchInvoice();
   };
 
   const handleSubmit = async () => {
-    try {
-      const invoiceData = {
-        invoice_number: formData.invoiceNumber,
-        client_id: formData.clientId,
-        total_amount: finalTotal,
-        status: 'pending'
-      };
-
-      const items = selectedProducts.map(product => ({
-        product_id: product.id,
-        quantity: product.quantity,
-        unit_price: product.price,
-        discount: product.discount || 0,
-        total_price: (product.price * product.quantity) - (product.discount || 0)
-      }));
-
-      createInvoice({ invoice: invoiceData, items }, {
-        onSuccess: (newInvoice) => {
-          setCurrentInvoiceId(newInvoice.id);
-          setCurrentInvoice(newInvoice);
-          setShowPreview(true);
-        }
-      });
-    } catch (error) {
-      console.error("Erreur lors de la création de la facture:", error);
+    const newInvoice = await handleSubmitInvoice();
+    if (newInvoice?.id) {
+      setCurrentInvoiceId(newInvoice.id);
+      setShowPreview(true);
     }
   };
 
   // Make sure invoice object has all required properties
-  const invoiceData = safeInvoice(currentInvoice);
+  const invoiceData = safeInvoice(invoice);
   
   // Ensure payment_status is one of the allowed values
   const paymentStatus = invoiceData.payment_status as 'paid' | 'partial' | 'pending';
@@ -101,11 +96,10 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
           onUpdateQuantity={handleUpdateQuantity}
           onUpdateDiscount={handleUpdateDiscount}
           onPreviewToggle={handlePreviewToggle}
-          isLoading={isCreating}
         />
       </Card>
 
-      {showPreview && currentInvoice && (
+      {showPreview && (
         <DynamicInvoice
           invoiceNumber={formData.invoiceNumber}
           items={selectedProducts}

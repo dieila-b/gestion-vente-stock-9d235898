@@ -6,7 +6,7 @@ import { ProductsChart } from "@/components/dashboard/ProductsChart";
 import { CategoryChart } from "@/components/dashboard/CategoryChart";
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { FinancialSituation } from "@/components/dashboard/FinancialSituation";
-import { useDashboardStatsUpdated } from "@/hooks/dashboard/useDashboardStatsUpdated";
+import { useDashboardStats } from "@/hooks/dashboard/useDashboardStats";
 import { useStockStats } from "@/hooks/dashboard/useStockStats";
 import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { useNavigate } from "react-router-dom";
@@ -16,13 +16,14 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Dashboard() {
   const navigate = useNavigate();
   
-  console.log("Dashboard: Début du rendu avec nouvelle synchronisation");
+  // Ajout de logs pour diagnostiquer les problèmes
+  console.log("Dashboard: Début du rendu");
 
-  const { todayOrderData, catalogProducts, unpaidInvoices, monthlyExpenses } = useDashboardStatsUpdated();
+  const { todayOrderData, catalogProducts, unpaidInvoices, monthlyExpenses } = useDashboardStats();
   const { catalog, totalStock, totalStockPurchaseValue, totalStockSaleValue, globalStockMargin, marginPercentage } = useStockStats();
   const { clientsCount, supplierPayments } = useClientStats();
 
-  console.log("Dashboard: Données récupérées avec synchronisation mise à jour", {
+  console.log("Dashboard: Données récupérées", {
     todayOrderData: todayOrderData?.length || 0,
     catalogProducts: catalogProducts?.length || 0,
     unpaidInvoices: unpaidInvoices?.length || 0,
@@ -32,69 +33,46 @@ export default function Dashboard() {
     supplierPayments
   });
 
-  // Fetch financial data avec la nouvelle structure des tables
+  // Fetch financial data avec gestion d'erreur améliorée
   const { data: financialData, error: financialError, isLoading: financialLoading } = useQuery({
-    queryKey: ['financial-situation-updated'],
+    queryKey: ['financial-situation'],
     queryFn: async () => {
       try {
-        console.log("Dashboard: Récupération des données financières mises à jour");
+        console.log("Dashboard: Récupération des données financières");
         
-        // Get credit balance from multiple sources
-        const { data: paidOrders, error: creditError1 } = await supabase
+        // Get credit balance (Avoir) - sum of paid amounts
+        const { data: creditData, error: creditError } = await supabase
           .from('orders')
           .select('paid_amount')
           .eq('payment_status', 'paid');
 
-        const { data: paidInvoices, error: creditError2 } = await supabase
-          .from('invoices')
-          .select('paid_amount')
-          .eq('payment_status', 'paid');
+        if (creditError) {
+          console.error("Erreur lors de la récupération des crédits:", creditError);
+          throw creditError;
+        }
 
-        const { data: paidSalesInvoices, error: creditError3 } = await supabase
-          .from('sales_invoices')
-          .select('paid_amount')
-          .eq('payment_status', 'paid');
-
-        if (creditError1) console.error("Erreur orders:", creditError1);
-        if (creditError2) console.error("Erreur invoices:", creditError2);
-        if (creditError3) console.error("Erreur sales_invoices:", creditError3);
-
-        // Get debit balance from multiple sources
-        const { data: unpaidOrders, error: debitError1 } = await supabase
+        // Get debit balance (Devoir) - sum of remaining amounts from unpaid invoices
+        const { data: debitData, error: debitError } = await supabase
           .from('orders')
           .select('remaining_amount')
           .in('payment_status', ['pending', 'partial']);
 
-        const { data: unpaidInvoicesData, error: debitError2 } = await supabase
-          .from('invoices')
-          .select('remaining_amount')
-          .in('payment_status', ['pending', 'partial']);
+        if (debitError) {
+          console.error("Erreur lors de la récupération des débits:", debitError);
+          throw debitError;
+        }
 
-        const { data: unpaidSalesInvoicesData, error: debitError3 } = await supabase
-          .from('sales_invoices')
-          .select('remaining_amount')
-          .in('payment_status', ['pending', 'partial']);
-
-        if (debitError1) console.error("Erreur unpaid orders:", debitError1);
-        if (debitError2) console.error("Erreur unpaid invoices:", debitError2);
-        if (debitError3) console.error("Erreur unpaid sales_invoices:", debitError3);
-
-        // Calculate totals
-        const creditBalance = [
-          ...(Array.isArray(paidOrders) ? paidOrders : []),
-          ...(Array.isArray(paidInvoices) ? paidInvoices : []),
-          ...(Array.isArray(paidSalesInvoices) ? paidSalesInvoices : [])
-        ].reduce((sum, item) => sum + (item.paid_amount || 0), 0);
+        const creditBalance = Array.isArray(creditData) 
+          ? creditData.reduce((sum, order) => sum + (order.paid_amount || 0), 0)
+          : 0;
           
-        const debitBalance = [
-          ...(Array.isArray(unpaidOrders) ? unpaidOrders : []),
-          ...(Array.isArray(unpaidInvoicesData) ? unpaidInvoicesData : []),
-          ...(Array.isArray(unpaidSalesInvoicesData) ? unpaidSalesInvoicesData : [])
-        ].reduce((sum, item) => sum + (item.remaining_amount || 0), 0);
+        const debitBalance = Array.isArray(debitData)
+          ? debitData.reduce((sum, order) => sum + (order.remaining_amount || 0), 0)
+          : 0;
           
         const netBalance = creditBalance - debitBalance;
 
-        console.log("Dashboard: Données financières calculées avec nouvelle structure", {
+        console.log("Dashboard: Données financières calculées", {
           creditBalance,
           debitBalance,
           netBalance
@@ -106,15 +84,16 @@ export default function Dashboard() {
           netBalance
         };
       } catch (error) {
-        console.error("Erreur dans la requête financière mise à jour:", error);
+        console.error("Erreur dans la requête financière:", error);
         throw error;
       }
     },
     retry: 1
   });
 
+  // Affichage d'erreur si problème avec les données financières
   if (financialError) {
-    console.error("Erreur financière mise à jour:", financialError);
+    console.error("Erreur financière:", financialError);
   }
 
   // Calculate daily margin based on actual sales
@@ -160,28 +139,29 @@ export default function Dashboard() {
     navigate('/sales-invoices?filter=unpaid');
   };
 
-  console.log("Dashboard: Calculs terminés avec nouvelle synchronisation", {
+  console.log("Dashboard: Calculs terminés", {
     todaySales,
     todayMargin,
     unpaidAmount,
     monthlyExpensesTotal
   });
 
+  // Afficher un état de chargement si les données financières sont en cours de chargement
   if (financialLoading) {
-    console.log("Dashboard: Chargement des données financières mises à jour");
+    console.log("Dashboard: Chargement des données financières");
     return (
       <DashboardLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-muted-foreground">Chargement du tableau de bord synchronisé...</p>
+            <p className="text-muted-foreground">Chargement du tableau de bord...</p>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  console.log("Dashboard: Rendu final avec synchronisation complète");
+  console.log("Dashboard: Rendu final");
 
   return (
     <DashboardLayout>
@@ -191,7 +171,7 @@ export default function Dashboard() {
             Tableau de Bord
           </h1>
           <p className="text-muted-foreground animate-fade-in delay-100">
-            Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA (Synchronisé ✓)
+            Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA
           </p>
         </div>
 
