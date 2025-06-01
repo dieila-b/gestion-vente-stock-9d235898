@@ -47,12 +47,12 @@ export default function Dashboard() {
           .in('payment_status', ['pending', 'partial']);
 
         // Calculs sécurisés
-        const creditBalance = safeArray(paidOrders || []).reduce((sum, item) => {
+        const creditBalance = safeArray(paidOrders || []).reduce((sum: number, item) => {
           const paidAmount = safeNumber((item as any)?.paid_amount || 0);
           return sum + paidAmount;
         }, 0);
           
-        const debitBalance = safeArray(unpaidOrders || []).reduce((sum, item) => {
+        const debitBalance = safeArray(unpaidOrders || []).reduce((sum: number, item) => {
           const remainingAmount = safeNumber((item as any)?.remaining_amount || 0);
           return sum + remainingAmount;
         }, 0);
@@ -126,7 +126,7 @@ export default function Dashboard() {
   };
 
   // Calculs sécurisés avec vérifications
-  const todaySales = safeArray(todayOrderData).reduce((sum, orderData) => {
+  const todaySales = safeArray(todayOrderData).reduce((sum: number, orderData) => {
     const order = safeOrder(orderData);
     const finalTotal = safeNumber(order?.final_total || 0);
     return sum + finalTotal;
@@ -134,12 +134,12 @@ export default function Dashboard() {
     
   const todayMargin = calculateDailyMargin();
   
-  const unpaidAmount = safeArray(unpaidInvoices).reduce((sum, invoice) => {
+  const unpaidAmount = safeArray(unpaidInvoices).reduce((sum: number, invoice) => {
     const remainingAmount = safeNumber((invoice as any)?.remaining_amount || 0);
     return sum + remainingAmount;
   }, 0);
     
-  const monthlyExpensesTotal = safeArray(monthlyExpenses).reduce((sum, expense) => {
+  const monthlyExpensesTotal = safeArray(monthlyExpenses).reduce((sum: number, expense) => {
     const amount = safeNumber((expense as any)?.amount || 0);
     return sum + amount;
   }, 0);

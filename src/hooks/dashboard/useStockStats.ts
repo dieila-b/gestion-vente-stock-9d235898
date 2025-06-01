@@ -41,14 +41,14 @@ export function useStockStats() {
   // Calculs sécurisés basés sur le catalogue
   const safeCatalog = safeArray(catalog);
   
-  const totalStock = safeCatalog.reduce((sum, product) => {
+  const totalStock = safeCatalog.reduce((sum: number, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
     const stock = safeNumber(safeProduct.stock);
     return sum + stock;
   }, 0);
   
-  const totalStockPurchaseValue = safeCatalog.reduce((sum, product) => {
+  const totalStockPurchaseValue = safeCatalog.reduce((sum: number, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
     const stock = safeNumber(safeProduct.stock);
@@ -56,7 +56,7 @@ export function useStockStats() {
     return sum + (stock * purchasePrice);
   }, 0);
   
-  const totalStockSaleValue = safeCatalog.reduce((sum, product) => {
+  const totalStockSaleValue = safeCatalog.reduce((sum: number, product) => {
     const safeProduct = safeCatalogProduct(product);
     if (!safeProduct) return sum;
     const stock = safeNumber(safeProduct.stock);
