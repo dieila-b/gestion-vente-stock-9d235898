@@ -5,6 +5,13 @@ export interface InvoiceFormData {
   invoiceNumber: string;
   clientId: string | null;
   clientName: string;
+  clientEmail: string;
+  amount: string;
+  description: string;
+  vatRate: string;
+  signature: string;
+  discount: string;
+  posLocationId?: string;
 }
 
 interface Product {
@@ -19,7 +26,14 @@ export function useInvoiceForm() {
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoiceNumber: `INV-${Date.now()}`,
     clientId: null,
-    clientName: ''
+    clientName: '',
+    clientEmail: '',
+    amount: '',
+    description: '',
+    vatRate: '20',
+    signature: '',
+    discount: '0',
+    posLocationId: undefined
   });
 
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);

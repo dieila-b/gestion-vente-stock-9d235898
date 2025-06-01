@@ -81,6 +81,30 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
+  // Adapter la fonction handleInputChange pour qu'elle soit compatible avec InvoiceForm
+  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    handleInputChange(name as keyof typeof formData, value);
+  };
+
+  // Adapter la fonction pour gérer les changements de POS location
+  const handlePosLocationChange = (value: string) => {
+    handleInputChange('posLocationId', value);
+  };
+
+  // Transformer les produits pour qu'ils soient compatibles avec InvoiceProduct
+  const transformedProducts = selectedProducts.map(product => ({
+    ...product,
+    description: '',
+    purchase_price: 0,
+    category: '',
+    stock: 0,
+    reference: '',
+    image_url: null,
+    created_at: '',
+    updated_at: ''
+  }));
+
   // Make sure invoice object has all required properties
   const invoiceData = safeInvoice(currentInvoice);
   
@@ -93,21 +117,22 @@ export const InvoiceFormWrapper = ({ onClose }: { onClose: () => void }) => {
         <InvoiceForm
           formData={formData}
           onClose={onClose}
-          onInputChange={handleInputChange}
+          onInputChange={handleFormInputChange}
           onSubmit={handleSubmit}
-          selectedProducts={selectedProducts}
+          selectedProducts={transformedProducts}
           onAddProduct={handleAddProduct}
           onRemoveProduct={handleRemoveProduct}
           onUpdateQuantity={handleUpdateQuantity}
           onUpdateDiscount={handleUpdateDiscount}
           onPreviewToggle={handlePreviewToggle}
+          onPosLocationChange={handlePosLocationChange}
         />
       </Card>
 
       {showPreview && currentInvoice && (
         <DynamicInvoice
           invoiceNumber={formData.invoiceNumber}
-          items={selectedProducts}
+          items={transformedProducts}
           date={new Date().toLocaleDateString()}
           subtotal={subtotal}
           discount={totalDiscount}

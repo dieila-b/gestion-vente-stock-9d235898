@@ -6,39 +6,7 @@ import { safePOSLocation, safeClient } from "@/utils/supabase-safe-query";
 
 // Safe transformer for POS locations
 export function transformPOSLocation(item: any): POSLocation {
-  if (!item || typeof item !== 'object') {
-    return {
-      id: '',
-      name: 'Location non disponible',
-      phone: '',
-      email: '',
-      address: '',
-      status: 'inactive',
-      is_active: false,
-      manager: '',
-      capacity: 0,
-      occupied: 0,
-      surface: 0,
-      created_at: '',
-      updated_at: null
-    };
-  }
-  
-  return {
-    id: safeGet(item, 'id', ''),
-    name: safeGet(item, 'name', 'Location non disponible'),
-    phone: safeGet(item, 'phone', ''),
-    email: safeGet(item, 'email', ''),
-    address: safeGet(item, 'address', ''),
-    status: safeGet(item, 'status', 'inactive'),
-    is_active: safeGet(item, 'is_active', false),
-    manager: safeGet(item, 'manager', ''),
-    capacity: safeGet(item, 'capacity', 0),
-    occupied: safeGet(item, 'occupied', 0),
-    surface: safeGet(item, 'surface', 0),
-    created_at: safeGet(item, 'created_at', ''),
-    updated_at: safeGet(item, 'updated_at', null)
-  };
+  return safePOSLocation(item);
 }
 
 // Map an array of POS locations safely

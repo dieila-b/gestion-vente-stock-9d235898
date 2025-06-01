@@ -129,6 +129,43 @@ export const safeClient = (client: any) => {
   };
 };
 
+// Fonction pour créer un objet point de vente sécurisé
+export const safePOSLocation = (posLocation: any) => {
+  if (!posLocation) {
+    return {
+      id: '',
+      name: 'Point de vente inconnu',
+      phone: '',
+      email: '',
+      address: '',
+      status: 'inactive',
+      is_active: false,
+      manager: '',
+      capacity: 0,
+      occupied: 0,
+      surface: 0,
+      created_at: '',
+      updated_at: null
+    };
+  }
+  
+  return {
+    ...posLocation,
+    name: posLocation.name || 'Point de vente inconnu',
+    phone: posLocation.phone || '',
+    email: posLocation.email || '',
+    address: posLocation.address || '',
+    status: posLocation.status || 'inactive',
+    is_active: posLocation.is_active || false,
+    manager: posLocation.manager || '',
+    capacity: posLocation.capacity || 0,
+    occupied: posLocation.occupied || 0,
+    surface: posLocation.surface || 0,
+    created_at: posLocation.created_at || '',
+    updated_at: posLocation.updated_at || null
+  };
+};
+
 // Fonction pour créer un objet facture sécurisé avec toutes les propriétés requises
 export const safeInvoice = (invoice: any) => {
   if (!invoice) {
