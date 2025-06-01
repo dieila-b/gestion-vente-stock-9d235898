@@ -43,6 +43,14 @@ export function DashboardContent({
   financialData,
   onUnpaidInvoicesClick
 }: DashboardContentProps) {
+  
+  console.log("DashboardContent: Rendu avec les données:", {
+    todaySales,
+    todayMargin,
+    catalogLength: catalog?.length,
+    financialData
+  });
+
   return (
     <ErrorBoundary fallback={
       <div className="min-h-screen flex items-center justify-center">
