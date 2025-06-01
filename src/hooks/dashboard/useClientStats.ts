@@ -1,68 +1,63 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/utils/db-adapter";
+import { supabase } from "@/integrations/supabase/client";
 
-export const useClientStats = () => {
-  // Fetch clients count from the clients table
-  const { data: clientsCount } = useQuery({
+export function useClientStats() {
+  console.log("useClientStats: Démarrage de la récupération");
+
+  const { data: clientsCount = 0 } = useQuery({
     queryKey: ['clients-count'],
     queryFn: async () => {
       try {
-        // Use our safe db-adapter
-        const result = await db.query(
-          'clients',
-          query => query.select('id', { count: 'exact', head: true })
-        );
+        const { count, error } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true });
         
-        // The result might be an object with count property or an array
-        if (Array.isArray(result) && result.length > 0 && 'count' in result[0]) {
-          return result[0].count || 0;
+        if (error) {
+          console.error("Erreur clients count:", error);
+          return 0;
         }
         
-        // If it's directly an object with count property
-        if (result && typeof result === 'object' && 'count' in result) {
-          return result.count || 0;
-        }
-        
-        // Fallback: return the length of the array
-        return Array.isArray(result) ? result.length : 0;
-      } catch (error) {
-        console.error("Error fetching clients count:", error);
+        return count || 0;
+      } catch (err) {
+        console.error("Erreur dans clientsCount:", err);
         return 0;
       }
-    }
+    },
+    retry: 1,
+    staleTime: 30000
   });
 
-  // Fetch supplier payments
-  const { data: supplierPayments } = useQuery({
+  const { data: supplierPayments = 0 } = useQuery({
     queryKey: ['supplier-payments'],
     queryFn: async () => {
       try {
-        // Use our safe db-adapter for the supplier_orders table
-        const payments = await db.query(
-          'purchase_orders',
-          query => query.select('paid_amount').eq('payment_status', 'paid'),
-          []
-        );
+        const { data, error } = await supabase
+          .from('purchase_invoice_payments')
+          .select('amount');
         
-        // If payments is an array, calculate the sum
-        if (Array.isArray(payments)) {
-          return payments.reduce((sum, order) => {
-            // Use type assertion to handle potential undefined values
-            const paidAmount = (order as any).paid_amount || 0;
-            return sum + paidAmount;
-          }, 0);
+        if (error) {
+          console.error("Erreur supplier payments:", error);
+          return 0;
         }
-        return 0;
-      } catch (error) {
-        console.error("Error fetching supplier payments:", error);
+        
+        return (data || []).reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      } catch (err) {
+        console.error("Erreur dans supplierPayments:", err);
         return 0;
       }
-    }
+    },
+    retry: 1,
+    staleTime: 30000
+  });
+
+  console.log("useClientStats: Données récupérées", {
+    clientsCount,
+    supplierPayments
   });
 
   return {
     clientsCount,
     supplierPayments
   };
-};
+}

@@ -5,14 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const safeFetchRecordById = async (
   table: string,
   id: string,
-  selectQuery: (query: any) => any = (q) => q,
+  selectQuery: string = '*',
   defaultValue: any = null,
   errorMessage: string = "Erreur lors de la récupération"
 ) => {
   try {
-    const { data, error } = await selectQuery(
-      supabase.from(table as any).select('*').eq('id', id).single()
-    );
+    const { data, error } = await supabase
+      .from(table as any)
+      .select(selectQuery)
+      .eq('id', id)
+      .single();
     
     if (error) {
       console.error(`${errorMessage}:`, error);
@@ -62,7 +64,7 @@ export const safeProduct = (product: any) => {
       price: 0,
       purchase_price: 0,
       reference: '',
-      image: null,
+      image_url: null,
       stock: 0,
       category: '',
       description: ''
@@ -124,27 +126,6 @@ export const safeClient = (client: any) => {
     email: client.email || '',
     phone: client.phone || '',
     address: client.address || ''
-  };
-};
-
-// Fonction pour créer un objet POS Location sécurisé
-export const safePOSLocation = (location: any) => {
-  if (!location) {
-    return {
-      id: '',
-      name: 'Emplacement inconnu',
-      address: '',
-      phone: '',
-      manager: ''
-    };
-  }
-  
-  return {
-    ...location,
-    name: location.name || 'Emplacement inconnu',
-    address: location.address || '',
-    phone: location.phone || '',
-    manager: location.manager || ''
   };
 };
 
