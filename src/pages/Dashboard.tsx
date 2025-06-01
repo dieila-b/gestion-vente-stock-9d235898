@@ -217,12 +217,12 @@ export default function Dashboard() {
           netBalance={financialData?.netBalance || 0}
         />
 
-        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-500">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 xl:grid-cols-2 w-full animate-fade-in delay-500">
           <SalesChart />
           <ProductsChart />
         </div>
 
-        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-fade-in delay-600">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 xl:grid-cols-2 w-full animate-fade-in delay-600">
           <CategoryChart />
           <RecentActivity />
         </div>

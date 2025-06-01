@@ -1,3 +1,4 @@
+
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Package, Wallet, Receipt, TrendingUp, Users, CreditCard, ShoppingBag, LineChart, Boxes, PiggyBank, BaggageClaim, ArrowUpCircle, ArrowDownCircle, ScaleIcon } from "lucide-react";
 import { formatGNF } from "@/lib/currency";
@@ -38,7 +39,8 @@ export function DashboardMetrics({
 
   return (
     <>
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 animate-fade-in delay-200">
+      {/* Métriques principales - 4 colonnes sur grand écran, responsive */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full animate-fade-in delay-200">
         <StatsCard
           title="Ventes du Jour"
           value={formatGNF(todaySales)}
@@ -73,34 +75,35 @@ export function DashboardMetrics({
         />
       </div>
 
-      <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6 animate-fade-in delay-300">
+      {/* Métriques secondaires - 6 colonnes sur très grand écran, adaptive */}
+      <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full animate-fade-in delay-300">
         <StatsCard
           title="Articles en Catalogue"
           value={catalogLength?.toString() || "0"}
           icon={Package}
           onClick={() => navigate('/catalog')}
-          className="bg-gradient-to-br from-green-500/10 to-green-600/10 py-1 h-[80px] max-w-[180px]"
+          className="bg-gradient-to-br from-green-500/10 to-green-600/10 py-3"
         />
         <StatsCard
           title="Stock Global"
           value={totalStock.toString()}
           icon={Boxes}
           onClick={() => navigate('/inventory')}
-          className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 py-1 h-[80px] max-w-[180px]"
+          className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 py-3"
         />
         <StatsCard
           title="Valeur Stock (Achat)"
           value={formatGNF(totalStockPurchaseValue)}
           icon={ShoppingBag}
           onClick={() => navigate('/purchase-order')}
-          className="bg-gradient-to-br from-pink-500/10 to-pink-600/10 py-1 h-[80px]"
+          className="bg-gradient-to-br from-pink-500/10 to-pink-600/10 py-3"
         />
         <StatsCard
           title="Valeur Stock (Vente)"
           value={formatGNF(totalStockSaleValue)}
           icon={BaggageClaim}
           onClick={() => navigate('/stock-status')}
-          className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 py-1 h-[80px]"
+          className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 py-3"
         />
         <StatsCard
           title="Marge Globale Stock"
@@ -108,14 +111,14 @@ export function DashboardMetrics({
           icon={PiggyBank}
           trend={{ value: marginPercentage, isPositive: marginPercentage > 0 }}
           onClick={() => navigate('/stock-status')}
-          className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 py-1 h-[80px]"
+          className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 py-3"
         />
         <StatsCard
           title="Règlements Fournisseurs"
           value={formatGNF(supplierPayments)}
           icon={LineChart}
           onClick={() => navigate('/suppliers')}
-          className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 py-1 h-[80px]"
+          className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 py-3"
         />
       </div>
     </>
