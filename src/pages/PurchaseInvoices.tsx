@@ -1,12 +1,12 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { PreordersList } from "@/components/preorders/PreordersList";
+import { PurchaseInvoicesList } from "@/components/purchase-invoices/PurchaseInvoicesList";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-export default function PreorderInvoices() {
+export default function PurchaseInvoices() {
   const [showForm, setShowForm] = useState(false);
 
   return (
@@ -15,19 +15,19 @@ export default function PreorderInvoices() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gradient">
-              Précommandes
+              Factures d'Achat
             </h1>
             <p className="text-muted-foreground">
-              Gérez vos précommandes clients
+              Gérez vos factures fournisseurs
             </p>
           </div>
           <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Nouvelle Précommande
+            Nouvelle Facture
           </Button>
         </div>
 
-        <PreordersList />
+        <PurchaseInvoicesList />
       </div>
     </DashboardLayout>
   );

@@ -13,6 +13,12 @@ import Index from "@/pages/Index";
 import EditDeliveryNote from "@/pages/EditDeliveryNote";
 import SalesInvoices from "./pages/SalesInvoices";
 import Sales from "./pages/Sales";
+import DeliveryNotes from "./pages/DeliveryNotes";
+import PurchaseOrders from "./pages/PurchaseOrders";
+import PurchaseInvoices from "./pages/PurchaseInvoices";
+import PreorderInvoices from "./pages/PreorderInvoices";
+import StockTransfers from "./pages/StockTransfers";
+import Warehouse from "./pages/Warehouse";
 
 function App() {
   return (
@@ -75,10 +81,64 @@ function App() {
         />
 
         <Route
+          path="/delivery-notes"
+          element={
+            <RequireAuth>
+              <DeliveryNotes />
+            </RequireAuth>
+          }
+        />
+
+        <Route
           path="/delivery-notes/:id/edit"
           element={
             <RequireAuth>
               <EditDeliveryNote />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/purchase-orders"
+          element={
+            <RequireAuth>
+              <PurchaseOrders />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/purchase-invoices"
+          element={
+            <RequireAuth>
+              <PurchaseInvoices />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/preorder-invoices"
+          element={
+            <RequireAuth>
+              <PreorderInvoices />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/stock-transfers"
+          element={
+            <RequireAuth>
+              <StockTransfers />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/warehouse"
+          element={
+            <RequireAuth>
+              <Warehouse />
             </RequireAuth>
           }
         />

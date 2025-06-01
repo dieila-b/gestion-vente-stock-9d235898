@@ -1,113 +1,135 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/utils/db-core";
-import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
+import { supabase } from "@/integrations/supabase/client";
+import { safeArray } from "@/utils/data-safe/safe-access";
 
 export function useDashboardStatsUpdated() {
   console.log("useDashboardStatsUpdated: Démarrage avec gestion d'erreur renforcée");
 
-  // Orders d'aujourd'hui avec gestion d'erreur robuste
+  // Requête pour les commandes du jour avec gestion d'erreur robuste
   const { data: todayOrderData = [] } = useQuery({
     queryKey: ['dashboard-today-orders-safe'],
     queryFn: async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
-        return await db.query(
-          'orders',
-          q => q.select(`
+        
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
             *,
-            order_items (
+            order_items(
               *,
-              product_id
+              product:catalog(*)
             )
           `)
           .gte('created_at', `${today}T00:00:00`)
-          .lte('created_at', `${today}T23:59:59`),
-          []
-        );
+          .lte('created_at', `${today}T23:59:59`)
+          .eq('status', 'completed');
+        
+        if (error) {
+          console.error("Erreur dans todayOrderData:", error);
+          return [];
+        }
+        
+        return data || [];
       } catch (error) {
-        console.error("Erreur dans todayOrderData:", error);
+        console.error("Exception dans todayOrderData:", error);
         return [];
       }
     },
-    retry: 1,
-    staleTime: 30000
+    retry: 2,
+    staleTime: 60000 // 1 minute
   });
 
-  // Produits du catalogue avec fallback
+  // Requête pour le catalogue avec gestion d'erreur
   const { data: catalogProducts = [] } = useQuery({
-    queryKey: ['dashboard-catalog-products-safe'],
+    queryKey: ['dashboard-catalog-safe'],
     queryFn: async () => {
       try {
-        return await db.query('catalog', q => q.select('*'), []);
+        const { data, error } = await supabase
+          .from('catalog')
+          .select('*');
+        
+        if (error) {
+          console.error("Erreur dans catalog:", error);
+          return [];
+        }
+        
+        return data || [];
       } catch (error) {
-        console.error("Erreur dans catalogProducts:", error);
+        console.error("Exception dans catalog:", error);
         return [];
       }
     },
-    retry: 1,
-    staleTime: 30000
+    retry: 2,
+    staleTime: 300000 // 5 minutes
   });
 
-  // Factures impayées avec gestion d'erreur
+  // Requête pour les factures impayées
   const { data: unpaidInvoices = [] } = useQuery({
     queryKey: ['dashboard-unpaid-invoices-safe'],
     queryFn: async () => {
       try {
-        return await db.query(
-          'orders',
-          q => q.select('*').in('payment_status', ['pending', 'partial']),
-          []
-        );
+        const { data, error } = await supabase
+          .from('orders')
+          .select('remaining_amount')
+          .in('payment_status', ['pending', 'partial'])
+          .gt('remaining_amount', 0);
+        
+        if (error) {
+          console.error("Erreur dans unpaidInvoices:", error);
+          return [];
+        }
+        
+        return data || [];
       } catch (error) {
-        console.error("Erreur dans unpaidInvoices:", error);
+        console.error("Exception dans unpaidInvoices:", error);
         return [];
       }
     },
-    retry: 1,
-    staleTime: 30000
+    retry: 2,
+    staleTime: 120000 // 2 minutes
   });
 
-  // Dépenses du mois avec gestion d'erreur
+  // Requête pour les dépenses mensuelles
   const { data: monthlyExpenses = [] } = useQuery({
     queryKey: ['dashboard-monthly-expenses-safe'],
     queryFn: async () => {
       try {
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
         
-        return await db.query(
-          'expense_entries',
-          q => q.select('*').gte('created_at', startOfMonth.toISOString()),
-          []
-        );
+        const { data, error } = await supabase
+          .from('outcome_entries')
+          .select('amount')
+          .gte('created_at', `${currentMonth}-01T00:00:00`)
+          .lt('created_at', `${currentMonth}-32T00:00:00`);
+        
+        if (error) {
+          console.error("Erreur dans monthlyExpenses:", error);
+          return [];
+        }
+        
+        return data || [];
       } catch (error) {
-        console.error("Erreur dans monthlyExpenses:", error);
+        console.error("Exception dans monthlyExpenses:", error);
         return [];
       }
     },
-    retry: 1,
-    staleTime: 30000
+    retry: 2,
+    staleTime: 300000 // 5 minutes
   });
 
-  // Transformation sécurisée des données
-  const safeOrderData = safeArray(todayOrderData);
-  const safeCatalogProducts = safeArray(catalogProducts);
-  const safeUnpaidInvoices = safeArray(unpaidInvoices);
-  const safeMonthlyExpenses = safeArray(monthlyExpenses);
-
-  console.log("useDashboardStatsUpdated: Données transformées", {
-    todayOrderData: safeOrderData.length,
-    catalogProducts: safeCatalogProducts.length,
-    unpaidInvoices: safeUnpaidInvoices.length,
-    monthlyExpenses: safeMonthlyExpenses.length
+  console.log("useDashboardStatsUpdated: Retour des données", {
+    todayOrderDataLength: safeArray(todayOrderData).length,
+    catalogProductsLength: safeArray(catalogProducts).length,
+    unpaidInvoicesLength: safeArray(unpaidInvoices).length,
+    monthlyExpensesLength: safeArray(monthlyExpenses).length
   });
 
   return {
-    todayOrderData: safeOrderData,
-    catalogProducts: safeCatalogProducts,
-    unpaidInvoices: safeUnpaidInvoices,
-    monthlyExpenses: safeMonthlyExpenses
+    todayOrderData: safeArray(todayOrderData),
+    catalogProducts: safeArray(catalogProducts),
+    unpaidInvoices: safeArray(unpaidInvoices),
+    monthlyExpenses: safeArray(monthlyExpenses)
   };
 }
