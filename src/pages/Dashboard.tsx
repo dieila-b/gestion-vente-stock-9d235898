@@ -8,6 +8,7 @@ import { useClientStats } from "@/hooks/dashboard/useClientStats";
 import { useFinancialData } from "@/hooks/dashboard/useFinancialData";
 import { useDashboardCalculations } from "@/hooks/dashboard/useDashboardCalculations";
 import { useNavigate } from "react-router-dom";
+import { safeNumber } from "@/utils/data-safe/safe-access";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const { clientsCount, supplierPayments } = useClientStats();
   const { financialData, financialLoading } = useFinancialData();
 
-  // Calculs des métriques du dashboard
+  // Calculs des métriques du dashboard avec conversion sécurisée
   const { todaySales, todayMargin, unpaidAmount, monthlyExpensesTotal } = useDashboardCalculations(
     todayOrderData,
     catalogProducts,
@@ -42,18 +43,18 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <DashboardContent
-        todaySales={todaySales}
-        todayMargin={todayMargin}
-        unpaidAmount={unpaidAmount}
-        monthlyExpensesTotal={monthlyExpensesTotal}
+        todaySales={safeNumber(todaySales)}
+        todayMargin={safeNumber(todayMargin)}
+        unpaidAmount={safeNumber(unpaidAmount)}
+        monthlyExpensesTotal={safeNumber(monthlyExpensesTotal)}
         catalog={catalog}
-        totalStock={totalStock}
-        totalStockPurchaseValue={totalStockPurchaseValue}
-        totalStockSaleValue={totalStockSaleValue}
-        globalStockMargin={globalStockMargin}
-        marginPercentage={marginPercentage}
-        clientsCount={clientsCount}
-        supplierPayments={supplierPayments}
+        totalStock={safeNumber(totalStock)}
+        totalStockPurchaseValue={safeNumber(totalStockPurchaseValue)}
+        totalStockSaleValue={safeNumber(totalStockSaleValue)}
+        globalStockMargin={safeNumber(globalStockMargin)}
+        marginPercentage={safeNumber(marginPercentage)}
+        clientsCount={safeNumber(clientsCount)}
+        supplierPayments={safeNumber(supplierPayments)}
         financialData={financialData}
         onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
       />
