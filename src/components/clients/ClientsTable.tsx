@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { db } from "@/utils/db-core";
+import { db } from "@/utils/db-adapter";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface ClientsTableProps {

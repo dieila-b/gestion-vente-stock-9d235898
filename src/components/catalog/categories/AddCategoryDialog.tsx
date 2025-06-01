@@ -33,7 +33,7 @@ export function AddCategoryDialog({ isOpen, onClose, onSuccess }: AddCategoryDia
     try {
       setIsLoading(true);
       
-      // Using the db core instead of db-adapter
+      // Using the db adapter instead of direct supabase call
       const result = await db.insert('catalog', { 
         name: `Produit ${categoryInput}`,
         category: categoryInput,

@@ -13,28 +13,16 @@ export function ApprovalDialogFooter({
   onClose,
   onApprove
 }: ApprovalDialogFooterProps) {
-  console.log("=== APPROVAL DIALOG FOOTER RENDER ===");
   console.log("ApprovalDialogFooter - isSubmitting:", isSubmitting);
   
   const handleApproveClick = () => {
-    console.log("=== APPROVE BUTTON CLICKED ===");
-    console.log("Approve button clicked! Calling onApprove...");
+    console.log("Approve button clicked!");
     onApprove();
-  };
-
-  const handleCancelClick = () => {
-    console.log("=== CANCEL BUTTON CLICKED ===");
-    console.log("Cancel button clicked! Calling onClose...");
-    onClose();
   };
 
   return (
     <DialogFooter className="gap-2">
-      <Button 
-        variant="outline" 
-        onClick={handleCancelClick} 
-        disabled={isSubmitting}
-      >
+      <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
         Annuler
       </Button>
       <Button 

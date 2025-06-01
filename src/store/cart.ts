@@ -17,7 +17,7 @@ interface CartStore {
   cart: CartState;
   addItem: (product: any, stock?: number) => void;
   removeItem: (id: string) => void;
-  updateQuantity: (id: string, delta: number) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   setQuantity: (id: string, quantity: number) => void;
   updateDiscount: (id: string, discount: number) => void;
   addClient: (client: Client) => void;
@@ -131,7 +131,6 @@ export const useCartStore = create<CartStore>()(
         const { cart } = get();
         const updatedItems = cart.items.map(item => {
           if (item.id === id) {
-            // Créer un nouvel objet pour s'assurer que React détecte le changement
             return { ...item, quantity: Math.max(1, quantity) };
           }
           return item;

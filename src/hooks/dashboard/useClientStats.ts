@@ -1,54 +1,68 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/utils/db-core";
-import { safeNumber } from "@/utils/data-safe/safe-access";
+import { db } from "@/utils/db-adapter";
 
-export function useClientStats() {
-  console.log("useClientStats: Démarrage avec gestion d'erreur renforcée");
-
-  const { data: clientsCount = 0 } = useQuery({
-    queryKey: ['clients-count-safe'],
+export const useClientStats = () => {
+  // Fetch clients count from the clients table
+  const { data: clientsCount } = useQuery({
+    queryKey: ['clients-count'],
     queryFn: async () => {
       try {
-        return await db.count('clients');
+        // Use our safe db-adapter
+        const result = await db.query(
+          'clients',
+          query => query.select('id', { count: 'exact', head: true })
+        );
+        
+        // The result might be an object with count property or an array
+        if (Array.isArray(result) && result.length > 0 && 'count' in result[0]) {
+          return result[0].count || 0;
+        }
+        
+        // If it's directly an object with count property
+        if (result && typeof result === 'object' && 'count' in result) {
+          return result.count || 0;
+        }
+        
+        // Fallback: return the length of the array
+        return Array.isArray(result) ? result.length : 0;
       } catch (error) {
-        console.error("Erreur clients count:", error);
+        console.error("Error fetching clients count:", error);
         return 0;
       }
-    },
-    retry: 1,
-    staleTime: 30000
+    }
   });
 
-  const { data: supplierPayments = 0 } = useQuery({
-    queryKey: ['supplier-payments-safe'],
+  // Fetch supplier payments
+  const { data: supplierPayments } = useQuery({
+    queryKey: ['supplier-payments'],
     queryFn: async () => {
       try {
+        // Use our safe db-adapter for the supplier_orders table
         const payments = await db.query(
-          'purchase_invoice_payments',
-          q => q.select('amount'),
+          'purchase_orders',
+          query => query.select('paid_amount').eq('payment_status', 'paid'),
           []
         );
         
-        return payments.reduce((sum, payment) => {
-          return sum + safeNumber(payment?.amount, 0);
-        }, 0);
+        // If payments is an array, calculate the sum
+        if (Array.isArray(payments)) {
+          return payments.reduce((sum, order) => {
+            // Use type assertion to handle potential undefined values
+            const paidAmount = (order as any).paid_amount || 0;
+            return sum + paidAmount;
+          }, 0);
+        }
+        return 0;
       } catch (error) {
-        console.error("Erreur supplier payments:", error);
+        console.error("Error fetching supplier payments:", error);
         return 0;
       }
-    },
-    retry: 1,
-    staleTime: 30000
-  });
-
-  console.log("useClientStats: Données récupérées", {
-    clientsCount: safeNumber(clientsCount, 0),
-    supplierPayments: safeNumber(supplierPayments, 0)
+    }
   });
 
   return {
-    clientsCount: safeNumber(clientsCount, 0),
-    supplierPayments: safeNumber(supplierPayments, 0)
+    clientsCount,
+    supplierPayments
   };
-}
+};

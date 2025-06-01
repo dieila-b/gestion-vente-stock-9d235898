@@ -20,7 +20,6 @@ export function useDeliveryNoteApprovalForm(
   const { data: posLocations = [] } = useFetchPOSLocations();
 
   useEffect(() => {
-    console.log("=== FORM INITIALIZATION ===");
     console.log("useDeliveryNoteApprovalForm - note changed:", note);
     console.log("useDeliveryNoteApprovalForm - note items:", note?.items);
     
@@ -47,21 +46,19 @@ export function useDeliveryNoteApprovalForm(
 
   const handleQuantityChange = (itemId: string, value: string) => {
     const numValue = Math.max(0, parseInt(value) || 0);
-    console.log("=== QUANTITY CHANGE ===");
     console.log("Quantity changed for item:", itemId, "new value:", numValue);
     setReceivedQuantities(prev => ({ ...prev, [itemId]: numValue }));
     setErrors([]);
   };
 
   const handleLocationChange = (locationId: string) => {
-    console.log("=== LOCATION CHANGE ===");
     console.log("Location changed:", locationId);
     setSelectedLocationId(locationId);
     setErrors([]);
   };
 
   const validateForm = () => {
-    console.log("=== FORM VALIDATION START ===");
+    console.log("Starting form validation...");
     const newErrors: string[] = [];
 
     if (!selectedLocationId) {
@@ -79,8 +76,6 @@ export function useDeliveryNoteApprovalForm(
     }
 
     console.log("Validating items...");
-    let hasReceivedQuantity = false;
-    
     note.items.forEach((item, index) => {
       if (!item || !item.id) {
         newErrors.push(`Article ${index + 1} invalide (ID manquant)`);
@@ -93,10 +88,6 @@ export function useDeliveryNoteApprovalForm(
       
       console.log(`Item ${item.id}: received=${receivedQty}, ordered=${orderedQty}`);
       
-      if (receivedQty > 0) {
-        hasReceivedQuantity = true;
-      }
-      
       if (receivedQty > orderedQty) {
         const productName = item.product?.name || `Article ${item.id}`;
         newErrors.push(`La quantité reçue pour ${productName} ne peut pas dépasser la quantité commandée (${orderedQty})`);
@@ -104,20 +95,13 @@ export function useDeliveryNoteApprovalForm(
       }
     });
 
-    if (!hasReceivedQuantity) {
-      newErrors.push("Veuillez spécifier au moins une quantité reçue supérieure à 0");
-      console.log("Validation error: No received quantities");
-    }
-
-    console.log("=== VALIDATION RESULT ===");
-    console.log("Errors found:", newErrors);
+    console.log("Validation completed. Errors:", newErrors);
     setErrors(newErrors);
     return newErrors.length === 0;
   };
 
   const handleApprove = async () => {
-    console.log("=== APPROVAL PROCESS START ===");
-    console.log("Button clicked - starting approval process");
+    console.log("=== STARTING APPROVAL PROCESS ===");
     console.log("Current note:", note);
     console.log("Current receivedQuantities:", receivedQuantities);
     console.log("Current selectedLocationId:", selectedLocationId);
@@ -141,7 +125,6 @@ export function useDeliveryNoteApprovalForm(
     }
     
     setIsSubmitting(true);
-    console.log("Form is submitting - button should be disabled");
     
     try {
       console.log("=== CALLING APPROVAL SERVICE ===");
@@ -154,7 +137,7 @@ export function useDeliveryNoteApprovalForm(
       );
 
       console.log("=== APPROVAL COMPLETED SUCCESSFULLY ===");
-      toast.success("Bon de livraison approuvé avec succès. La facture d'achat a été générée automatiquement.");
+      toast.success("Bon de livraison approuvé avec succès. La facture d'achat sera générée automatiquement.");
       onApprovalComplete();
       onClose();
     } catch (error: any) {

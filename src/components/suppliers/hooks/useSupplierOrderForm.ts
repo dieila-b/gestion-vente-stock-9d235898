@@ -1,10 +1,9 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import type { Supplier } from "@/types/supplier";
 import type { SupplierOrderProduct } from "@/types/supplierOrder";
 import type { Toast } from "@/components/ui/use-toast";
-import { safeSupplier } from "@/utils/data-safe/safe-access";
+import { db } from "@/utils/db-adapter";
 
 interface UseSupplierOrderFormProps {
   supplier: Supplier;
@@ -91,52 +90,49 @@ export const useSupplierOrderForm = ({ supplier, onClose, toast }: UseSupplierOr
       const subtotal = calculateSubTotal();
       const tax = calculateTax();
       const total = calculateTotal();
-      const safeSupplierData = safeSupplier(supplier);
 
-      // Using existing purchase_orders table instead of supplier_orders
-      const { data: orderData, error: orderError } = await supabase
-        .from('purchase_orders')
-        .insert({
-          supplier_id: safeSupplierData.id,
-          order_number: `PO-${Date.now()}`,
-          status: "pending",
-          payment_status: paymentStatus,
-          expected_delivery_date: deliveryDate,
-          total_amount: total,
-          paid_amount: paidAmount,
-          notes,
-          discount,
-          shipping_cost: shippingCost,
-          logistics_cost: logisticsCost,
-          transit_cost: transitCost,
-          tax_rate: taxRate,
-          subtotal: subtotal,
-          tax_amount: tax,
-          total_ttc: total,
-        })
-        .select()
-        .single();
+      // Using DatabaseAdapter to insert the order
+      const orderData = await db.insert('supplier_orders', {
+        supplier_id: supplier.id,
+        order_number: `PO-${Date.now()}`,
+        status: "draft",
+        payment_status: paymentStatus,
+        order_status: orderStatus,
+        expected_delivery_date: deliveryDate,
+        total_amount: total,
+        paid_amount: paidAmount,
+        remaining_amount: remainingAmount,
+        notes,
+        delivery_address: supplier.address,
+        discount,
+        shipping_cost: shippingCost,
+        logistics_cost: logisticsCost,
+        transit_cost: transitCost,
+        tax_rate: taxRate,
+        subtotal: subtotal,
+        tax_amount: tax,
+        total_ttc: total,
+        quality_check_required: true,
+      });
 
-      if (orderError || !orderData) {
-        throw new Error("Failed to create supplier order");
-      }
+      if (!orderData) throw new Error("Failed to create supplier order");
 
-      // Using existing purchase_order_items table instead of supplier_order_products
-      const { error: productsError } = await supabase
-        .from('purchase_order_items')
-        .insert(
-          selectedProducts.map(product => ({
-            purchase_order_id: orderData.id,
-            product_id: null, // Will be linked when product is identified
-            quantity: product.quantity,
-            unit_price: product.unitPrice,
-            total_price: product.totalPrice,
-          }))
-        );
+      // Using DatabaseAdapter to insert order products
+      const productsResult = await db.insert('supplier_order_products',
+        selectedProducts.map(product => ({
+          order_id: orderData.id as string, // Add type assertion here
+          name: product.name,
+          quantity: product.quantity,
+          unit_price: product.unitPrice,
+          total_price: product.totalPrice,
+          category: product.category,
+          reference: product.reference,
+          status: product.status,
+          quality_check: product.qualityCheck,
+        }))
+      );
 
-      if (productsError) {
-        throw new Error("Failed to add products to order");
-      }
+      if (!productsResult) throw new Error("Failed to add products to order");
 
       toast.toast({
         title: "Commande créée",

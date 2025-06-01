@@ -1,34 +1,97 @@
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { PreordersList } from "@/components/preorders/PreordersList";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { PaymentDialog } from "@/components/pos/PaymentDialog";
+import { PreorderInvoiceHeader } from "@/components/preorder-invoices/PreorderInvoiceHeader";
+import { PreorderInvoiceTable } from "@/components/preorder-invoices/PreorderInvoiceTable";
+import { PreorderInvoiceDialog } from "@/components/preorder-invoices/PreorderInvoiceDialog";
+import { usePreorderInvoices } from "@/components/preorder-invoices/usePreorderInvoices";
 
 export default function PreorderInvoices() {
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  const {
+    invoices,
+    isLoading,
+    sortColumn,
+    sortDirection,
+    searchTerm,
+    setSearchTerm,
+    handleSort,
+    selectedInvoice,
+    setSelectedInvoice,
+    showInvoiceDialog,
+    setShowInvoiceDialog,
+    isPaymentDialogOpen,
+    setIsPaymentDialogOpen,
+    handleSubmitPayment,
+    handlePrint,
+    showUnpaidOnly
+  } = usePreorderInvoices();
+
+  const handlePayment = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setIsPaymentDialogOpen(true);
+  };
+
+  const handleViewInvoice = (invoice: any) => {
+    console.log('Preorder Invoice data:', invoice);
+    setSelectedInvoice(invoice);
+    setShowInvoiceDialog(true);
+  };
+
+  const handleEditInvoice = (invoice: any) => {
+    console.log('Editing preorder invoice:', invoice.id);
+    navigate(`/preorders?edit=${invoice.id}`);
+  };
+
+  const navigateToNewPreorder = () => {
+    navigate('/preorders');
+  };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gradient">
-              Précommandes
-            </h1>
-            <p className="text-muted-foreground">
-              Gérez vos précommandes clients
-            </p>
-          </div>
-          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Nouvelle Précommande
-          </Button>
-        </div>
+    <div className="p-6 space-y-6">
+      <PreorderInvoiceHeader 
+        showUnpaidOnly={showUnpaidOnly}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        navigateToNewPreorder={navigateToNewPreorder}
+      />
 
-        <PreordersList />
-      </div>
-    </DashboardLayout>
+      <PreorderInvoiceTable
+        invoices={invoices}
+        isLoading={isLoading}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        handleSort={handleSort}
+        handleViewInvoice={handleViewInvoice}
+        handleEditInvoice={handleEditInvoice}
+        handlePayment={handlePayment}
+      />
+
+      {selectedInvoice && (
+        <>
+          <PaymentDialog
+            isOpen={isPaymentDialogOpen}
+            onClose={() => {
+              setIsPaymentDialogOpen(false);
+              setSelectedInvoice(null);
+            }}
+            totalAmount={selectedInvoice.remaining_amount}
+            onSubmitPayment={handleSubmitPayment}
+            items={selectedInvoice.items?.map(item => ({
+              id: item.id,
+              name: item.product?.name || `Produit #${item.product_id}`,
+              quantity: item.quantity
+            }))}
+          />
+
+          <PreorderInvoiceDialog
+            showInvoiceDialog={showInvoiceDialog}
+            setShowInvoiceDialog={setShowInvoiceDialog}
+            selectedInvoice={selectedInvoice}
+            handlePrint={handlePrint}
+          />
+        </>
+      )}
+    </div>
   );
 }

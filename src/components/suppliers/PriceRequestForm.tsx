@@ -2,14 +2,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import type { Supplier } from "@/types/supplier";
 import type { SupplierOrderProduct } from "@/types/supplierOrder";
 import { SupplierFormHeader } from "./forms/SupplierFormHeader";
 import { ProductListForm } from "./forms/ProductListForm";
 import { FormNotes } from "./forms/FormNotes";
 import { FormActions } from "./forms/FormActions";
-import { safeSupplier } from "@/utils/data-safe/safe-access";
+import { db } from "@/utils/db-adapter";
 
 interface PriceRequestFormProps {
   supplier: Supplier;
@@ -63,42 +62,32 @@ export const PriceRequestForm = ({ supplier, onClose }: PriceRequestFormProps) =
     setIsSubmitting(true);
     
     try {
-      const safeSupplierData = safeSupplier(supplier);
-      
-      // Create the supplier order using existing purchase_orders table
-      const { data: orderData, error: orderError } = await supabase
-        .from('purchase_orders')
-        .insert({
-          supplier_id: safeSupplierData.id,
-          order_number: `PRQ-${Date.now()}`,
+      // Using DatabaseAdapter to create the order
+      const orderData = await db.insert('supplier_orders', {
+        supplier_id: supplier.id,
+        order_number: `PRQ-${Date.now()}`,
+        status: "price_request",
+        notes,
+        is_price_request: true,
+        delivery_address: supplier.address,
+      });
+
+      if (!orderData) throw new Error("Failed to create supplier order");
+
+      // Using DatabaseAdapter to add products
+      const productsResult = await db.insert('supplier_order_products', 
+        products.map(product => ({
+          order_id: orderData.id as string, // Add type assertion here
+          name: product.name,
+          quantity: product.quantity,
+          category: product.category,
+          reference: product.reference,
+          price_requested: true,
           status: "pending",
-          notes,
-          expected_delivery_date: null,
-          total_amount: 0,
-        })
-        .select()
-        .single();
+        }))
+      );
 
-      if (orderError || !orderData) {
-        throw new Error("Failed to create supplier order");
-      }
-
-      // Add products using existing purchase_order_items table
-      const { error: productsError } = await supabase
-        .from('purchase_order_items')
-        .insert(
-          products.map(product => ({
-            purchase_order_id: orderData.id,
-            product_id: null, // Will be set when product is identified
-            quantity: product.quantity || 1,
-            unit_price: 0,
-            total_price: 0,
-          }))
-        );
-
-      if (productsError) {
-        throw new Error("Failed to add products to order");
-      }
+      if (!productsResult) throw new Error("Failed to add products to order");
 
       toast({
         title: "Demande envoyée",

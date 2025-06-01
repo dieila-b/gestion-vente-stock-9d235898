@@ -2,7 +2,7 @@
 import { CartItem as CartItemType } from "@/types/pos";
 import { CartItem } from "@/components/pos/CartItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 interface CartItemsProps {
   items: CartItemType[];
@@ -28,25 +28,6 @@ export function CartItems({
   onValidationChange
 }: CartItemsProps) {
   const [itemErrors, setItemErrors] = useState<Record<string, boolean>>({});
-
-  // Vérifier si des articles ont des quantités supérieures au stock disponible
-  useEffect(() => {
-    const newErrors: Record<string, boolean> = {};
-    let hasAnyError = false;
-    
-    items.forEach(item => {
-      const stock = availableStock[item.id] || 0;
-      if (item.quantity > stock) {
-        newErrors[item.id] = true;
-        hasAnyError = true;
-      }
-    });
-    
-    setItemErrors(newErrors);
-    if (onValidationChange) {
-      onValidationChange(hasAnyError);
-    }
-  }, [items, availableStock, onValidationChange]);
 
   const handleItemValidationError = useCallback((itemId: string, hasError: boolean) => {
     setItemErrors(prev => {

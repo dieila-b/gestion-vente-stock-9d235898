@@ -22,7 +22,7 @@ import { FormActions } from "./components/FormActions";
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
+  const { suppliers, isLoading: suppliersLoading } = useSuppliers();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Product selection logic

@@ -14,7 +14,7 @@ import { SupplierCard } from "@/components/suppliers/SupplierCard";
 const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
-  const { data: suppliers, isLoading } = useSuppliers();
+  const { suppliers, isLoading } = useSuppliers();
   const { toast } = useToast();
 
   const filteredSuppliers = suppliers?.filter(supplier => {

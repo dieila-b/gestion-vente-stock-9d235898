@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ClientFormHeader } from "./forms/ClientFormHeader";
 import { ClientFormFields } from "./forms/ClientFormFields";
 import { ClientFormActions } from "./forms/ClientFormActions";
-import { db } from "@/utils/db-core";
+import { db } from "@/utils/db-adapter";
 
 interface AddClientFormProps {
   isOpen: boolean;
@@ -96,7 +96,7 @@ export const AddClientForm = ({ isOpen, onClose }: AddClientFormProps) => {
       
       console.log("Submitting client data:", clientDataWithCode);
       
-      // Utiliser le db core pour éviter les problèmes de RLS
+      // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
       const result = await db.insert('clients', clientDataWithCode);
 
       if (!result) {
