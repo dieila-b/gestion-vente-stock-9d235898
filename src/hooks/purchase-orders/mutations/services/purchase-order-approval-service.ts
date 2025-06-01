@@ -23,6 +23,10 @@ interface ApprovalResult {
 export async function approvePurchaseOrderService(id: string, queryClient: QueryClient) {
   console.log("[approvePurchaseOrderService] Starting approval for order:", id);
   
+  if (!id) {
+    throw new Error("ID du bon de commande manquant");
+  }
+
   try {
     // Use RPC function to securely approve the purchase order
     console.log("[approvePurchaseOrderService] Calling RPC function approve_purchase_order");

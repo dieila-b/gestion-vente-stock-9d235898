@@ -33,6 +33,8 @@ export function PurchaseOrderActions({
     e.preventDefault();
     e.stopPropagation();
     
+    console.log(`[PurchaseOrderActions] Approve button clicked for order: ${order.id}, current status: ${order.status}`);
+    
     if (isProcessing) {
       console.log("[PurchaseOrderActions] Already processing, ignoring click");
       return;
@@ -45,16 +47,17 @@ export function PurchaseOrderActions({
     }
     
     if (order.status === 'approved') {
+      console.log("[PurchaseOrderActions] Order already approved");
       toast.info("Ce bon de commande est déjà approuvé");
       return;
     }
     
     try {
-      console.log(`[PurchaseOrderActions] Starting approval for order: ${order.id}, ${order.order_number}`);
+      console.log(`[PurchaseOrderActions] Starting approval process for order: ${order.id}, ${order.order_number}`);
       setLocalProcessing(true);
       
       await onApprove(order.id);
-      console.log(`[PurchaseOrderActions] Approval completed for order: ${order.id}`);
+      console.log(`[PurchaseOrderActions] Approval completed successfully for order: ${order.id}`);
       
     } catch (error: any) {
       console.error("[PurchaseOrderActions] Error in approve handler:", error);
