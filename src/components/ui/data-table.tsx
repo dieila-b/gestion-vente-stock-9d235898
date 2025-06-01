@@ -25,14 +25,14 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   searchPlaceholder?: string;
-  searchColumn?: string;
+  searchKey?: string;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   searchPlaceholder = "Rechercher...",
-  searchColumn,
+  searchKey,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -50,7 +50,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      {searchColumn && (
+      {searchKey && (
         <div className="flex items-center py-4">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
