@@ -52,8 +52,7 @@ export const OrderInfoForm = ({
         const fetchedSuppliers = await safeFetchFromTable(
           'suppliers',
           (query) => query.select('id, name').order('name'),
-          [],
-          "Erreur lors de la récupération des fournisseurs"
+          []
         );
         
         setSuppliers(fetchedSuppliers || []);

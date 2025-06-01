@@ -1,165 +1,225 @@
 
-import type { PostgrestError } from "@supabase/supabase-js";
-import { SelectQueryError, isSelectQueryError } from "./select-query-helper";
-import { safeGet, safeArray } from "./data-safe/safe-access";
+import { supabase } from "@/integrations/supabase/client";
 
-// Re-export the isSelectQueryError function
-export { isSelectQueryError } from "./select-query-helper";
-export { safeGet, safeArray } from "./data-safe/safe-access";
+// Fonction utilitaire pour récupérer un enregistrement par ID de manière sécurisée
+export const safeFetchRecordById = async (
+  table: string,
+  id: string,
+  selectQuery: (query: any) => any = (q) => q,
+  defaultValue: any = null,
+  errorMessage: string = "Erreur lors de la récupération"
+) => {
+  try {
+    const { data, error } = await selectQuery(
+      supabase.from(table as any).select('*').eq('id', id).single()
+    );
+    
+    if (error) {
+      console.error(`${errorMessage}:`, error);
+      return defaultValue;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error(`${errorMessage}:`, err);
+    return defaultValue;
+  }
+};
 
-export function safeProduct(product: any) {
-  // Guard against product being undefined or null
+// Fonction générique pour récupérer depuis une table
+export const safeFetchFromTable = async (
+  tableName: string,
+  query?: (q: any) => any,
+  defaultValue: any = []
+) => {
+  try {
+    let queryBuilder = supabase.from(tableName as any).select('*');
+    
+    if (query) {
+      queryBuilder = query(queryBuilder);
+    }
+    
+    const { data, error } = await queryBuilder;
+    
+    if (error) {
+      console.error(`Erreur lors de la récupération de ${tableName}:`, error);
+      return defaultValue;
+    }
+    
+    return data || defaultValue;
+  } catch (err) {
+    console.error(`Erreur lors de la récupération de ${tableName}:`, err);
+    return defaultValue;
+  }
+};
+
+// Fonction pour créer un objet produit sécurisé
+export const safeProduct = (product: any) => {
   if (!product) {
-    return { 
-      id: '',
-      name: 'Produit inconnu',
-      reference: '',
-      category: '',
-      price: 0
-    };
-  }
-  
-  // Check if product is an error object from Supabase
-  if (isSelectQueryError(product)) {
-    return { 
-      id: '',
-      name: 'Erreur de chargement',
-      reference: '',
-      category: '',
-      price: 0
-    };
-  }
-  
-  // Return the product if it's valid
-  return product;
-}
-
-export function safePOSLocation(location: any) {
-  if (!location) {
-    return { 
-      id: '',
-      name: 'Emplacement inconnu'
-    };
-  }
-  
-  if (isSelectQueryError(location)) {
-    return { 
-      id: '',
-      name: 'Erreur de chargement'
-    };
-  }
-  
-  return location;
-}
-
-export function safeClient(client: any) {
-  if (!client || isSelectQueryError(client)) {
     return {
       id: '',
-      company_name: 'Client inconnu',
-      status: 'inactive'
+      name: 'Produit inconnu',
+      price: 0,
+      purchase_price: 0,
+      reference: '',
+      image: null,
+      stock: 0,
+      category: '',
+      description: ''
     };
   }
-  return client;
-}
+  
+  return {
+    ...product,
+    name: product.name || 'Produit inconnu',
+    price: product.price || 0,
+    purchase_price: product.purchase_price || 0,
+    reference: product.reference || '',
+    stock: product.stock || 0,
+    category: product.category || '',
+    description: product.description || ''
+  };
+};
 
-// Add the missing utility functions
-export function safeSupplier(supplier: any) {
-  if (!supplier || isSelectQueryError(supplier)) {
+// Fonction pour créer un objet fournisseur sécurisé
+export const safeSupplier = (supplier: any) => {
+  if (!supplier) {
     return {
       id: '',
       name: 'Fournisseur inconnu',
       email: '',
-      phone: ''
+      phone: '',
+      address: '',
+      status: 'pending'
     };
   }
-  return supplier;
-}
+  
+  return {
+    ...supplier,
+    name: supplier.name || 'Fournisseur inconnu',
+    email: supplier.email || '',
+    phone: supplier.phone || '',
+    address: supplier.address || '',
+    status: supplier.status || 'pending'
+  };
+};
 
-export function safeWarehouse(warehouse: any) {
-  if (!warehouse || isSelectQueryError(warehouse)) {
+// Fonction pour créer un objet client sécurisé
+export const safeClient = (client: any) => {
+  if (!client) {
     return {
       id: '',
-      name: 'Entrepôt inconnu'
+      company_name: 'Client inconnu',
+      contact_name: '',
+      email: '',
+      phone: '',
+      address: ''
     };
   }
-  return warehouse;
-}
+  
+  return {
+    ...client,
+    company_name: client.company_name || 'Client inconnu',
+    contact_name: client.contact_name || '',
+    email: client.email || '',
+    phone: client.phone || '',
+    address: client.address || ''
+  };
+};
 
-export function safeInvoice(invoice: any) {
-  if (!invoice || isSelectQueryError(invoice)) {
+// Fonction pour créer un objet POS Location sécurisé
+export const safePOSLocation = (location: any) => {
+  if (!location) {
     return {
       id: '',
-      invoice_number: 'Inconnu',
-      client_id: '',
+      name: 'Emplacement inconnu',
+      address: '',
+      phone: '',
+      manager: ''
+    };
+  }
+  
+  return {
+    ...location,
+    name: location.name || 'Emplacement inconnu',
+    address: location.address || '',
+    phone: location.phone || '',
+    manager: location.manager || ''
+  };
+};
+
+// Fonction pour créer un objet facture sécurisé avec toutes les propriétés requises
+export const safeInvoice = (invoice: any) => {
+  if (!invoice) {
+    return {
+      id: '',
+      invoice_number: '',
+      client_id: null,
       total_amount: 0,
       paid_amount: 0,
       remaining_amount: 0,
-      payment_status: 'pending'
+      payment_status: 'pending' as const,
+      delivery_status: 'pending' as const,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
   }
-  return invoice;
-}
 
-export function castToTransfers(data: any[]) {
-  if (!Array.isArray(data)) return [];
-  
-  return data.map(item => ({
-    ...item,
-    source_warehouse: safeWarehouse(item.source_warehouse),
-    destination_warehouse: safeWarehouse(item.destination_warehouse),
-    source_pos: safePOSLocation(item.source_pos),
-    destination_pos: safePOSLocation(item.destination_pos),
-    items: Array.isArray(item.items) ? item.items : []
-  }));
-}
+  return {
+    ...invoice,
+    paid_amount: invoice.paid_amount || 0,
+    remaining_amount: invoice.remaining_amount || (invoice.total_amount - (invoice.paid_amount || 0)),
+    payment_status: invoice.payment_status || 'pending',
+    delivery_status: invoice.delivery_status || 'pending'
+  };
+};
 
-// Safe query functions from data-safe/safe-query.ts
-export async function safeFetchFromTable(
-  tableName: string,
-  queryBuilder: (query: any) => any = q => q,
-  fallbackData: any[] = [],
-  errorMessage?: string
-): Promise<any[]> {
+// Fonction pour créer un objet facture d'achat sécurisé
+export const safePurchaseInvoice = (invoice: any) => {
+  if (!invoice) {
+    return {
+      id: '',
+      invoice_number: '',
+      supplier_id: null,
+      total_amount: 0,
+      paid_amount: 0,
+      remaining_amount: 0,
+      payment_status: 'pending',
+      tax_amount: 0,
+      due_date: new Date().toISOString(),
+      discount: 0,
+      notes: '',
+      shipping_cost: 0,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  return {
+    ...invoice,
+    paid_amount: invoice.paid_amount || 0,
+    remaining_amount: invoice.remaining_amount || (invoice.total_amount - (invoice.paid_amount || 0)),
+    payment_status: invoice.payment_status || 'pending',
+    tax_amount: invoice.tax_amount || 0,
+    discount: invoice.discount || 0,
+    shipping_cost: invoice.shipping_cost || 0
+  };
+};
+
+// Fonction pour vérifier les erreurs de requête
+export const isSelectQueryError = (error: any) => {
+  return error && error.code;
+};
+
+// Fonction générique pour récupérer des données avec gestion d'erreur
+export const safeGet = async (queryFunction: () => Promise<any>, defaultValue: any = null) => {
   try {
-    // Import the db utility dynamically to avoid circular dependencies
-    const { db } = await import('../utils/db-core');
-    return await db.query(tableName, queryBuilder, fallbackData);
-  } catch (err) {
-    console.error(`Unexpected error in safeFetchFromTable (${tableName}):`, err);
-    return fallbackData;
+    const result = await queryFunction();
+    return result;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données:', error);
+    return defaultValue;
   }
-}
-
-export async function safeFetchRecordById(
-  tableName: string,
-  id: string,
-  queryBuilder: (query: any) => any = q => q,
-  fallbackData: any = null,
-  errorMessage?: string
-): Promise<any> {
-  if (!id) {
-    console.warn(`Attempted to fetch record with empty ID from ${tableName}`);
-    return fallbackData;
-  }
-
-  try {
-    // Import the db utility dynamically to avoid circular dependencies
-    const { db } = await import('../utils/db-core');
-    
-    // Create a query that selects by ID and applies any additional filters
-    const baseQuery = (q: any) => q.select('*').eq('id', id);
-    const fullQuery = (q: any) => queryBuilder(baseQuery(q));
-    
-    // Use the database adapter to handle this query
-    const result = await db.query(tableName, fullQuery, []);
-    
-    // Return the first result or fallback
-    return (Array.isArray(result) && result.length > 0) 
-      ? result[0]
-      : fallbackData;
-  } catch (err) {
-    console.error(`Exception querying ${tableName} record by ID:`, err);
-    return fallbackData;
-  }
-}
+};
