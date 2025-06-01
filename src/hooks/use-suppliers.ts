@@ -1,68 +1,42 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { Supplier } from "@/types/supplier";
-import { db } from "@/utils/db-adapter";
-import { toast } from "sonner";
+import { db } from "@/utils/db-core";
+import { safeGet } from "@/utils/data-safe/safe-access";
+
+interface SupplierData {
+  id: string;
+  name: string;
+  contact: string;
+  email: string;
+  phone: string;
+  address: string;
+  website: string;
+  status: string;
+  [key: string]: any;
+}
 
 export function useSuppliers() {
-  const { data: suppliers = [], isLoading, error } = useQuery({
+  return useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
-        console.log('Fetching suppliers...');
+        const data = await db.query<SupplierData>('suppliers', q => q.select('*'));
         
-        // Use our safe db-adapter to fetch suppliers
-        const data = await db.query(
-          'suppliers',
-          query => query.select('*').order('name', { ascending: true })
-        );
-        
-        console.log('Raw suppliers data:', data);
-        
-        // Make sure we have a valid array of suppliers
-        if (Array.isArray(data)) {
-          const formattedSuppliers = data.map(supplier => ({
-            id: supplier.id || '',
-            name: supplier.name || 'Fournisseur sans nom',
-            contact: supplier.contact || '',
-            email: supplier.email || '',
-            phone: supplier.phone || '',
-            address: supplier.address || '',
-            website: supplier.website || '',
-            created_at: supplier.created_at || new Date().toISOString(),
-            // Add any other fields from the supplier type
-            contact_person: supplier.contact_person || '',
-            status: supplier.status || 'pending',
-            country: supplier.country || '',
-            city: supplier.city || '',
-            postal_box: supplier.postal_box || '',
-            landline: supplier.landline || '',
-            verified: supplier.verified || false,
-            rating: supplier.rating || 0,
-            performance_score: supplier.performance_score || 0,
-            quality_score: supplier.quality_score || 0,
-            delivery_score: supplier.delivery_score || 0,
-            products_count: supplier.products_count || 0,
-            orders_count: supplier.orders_count || 0,
-            pending_orders: supplier.pending_orders || 0,
-            total_revenue: supplier.total_revenue || 0,
-          })) as Supplier[];
-          
-          console.log('Formatted suppliers:', formattedSuppliers);
-          return formattedSuppliers;
-        }
-        
-        console.log('No suppliers data or invalid format');
-        return [] as Supplier[];
+        return data.map(supplier => ({
+          id: safeGet(supplier, 'id', ''),
+          name: safeGet(supplier, 'name', 'Fournisseur inconnu'),
+          contact: safeGet(supplier, 'contact', ''),
+          email: safeGet(supplier, 'email', ''),
+          phone: safeGet(supplier, 'phone', ''),
+          address: safeGet(supplier, 'address', ''),
+          website: safeGet(supplier, 'website', ''),
+          status: safeGet(supplier, 'status', 'pending'),
+          ...supplier
+        }));
       } catch (error) {
-        console.error("Error in suppliers hook:", error);
-        toast.error("Erreur lors du chargement des fournisseurs");
-        return [] as Supplier[];
+        console.error('Error fetching suppliers:', error);
+        return [];
       }
     }
   });
-
-  console.log('useSuppliers result:', { suppliers, isLoading, error });
-  
-  return { suppliers, isLoading, error };
 }

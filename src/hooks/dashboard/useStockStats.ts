@@ -3,6 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/db-core";
 import { safeArray, safeNumber } from "@/utils/data-safe/safe-access";
 
+interface CatalogProduct {
+  id: string;
+  name: string;
+  stock: number;
+  price: number;
+  purchase_price: number;
+  [key: string]: any;
+}
+
 export function useStockStats() {
   console.log("useStockStats: Démarrage avec gestion d'erreur renforcée");
 
@@ -10,7 +19,7 @@ export function useStockStats() {
     queryKey: ['stock-catalog-safe'],
     queryFn: async () => {
       try {
-        return await db.query('catalog', q => q.select('*'), []);
+        return await db.query<CatalogProduct>('catalog', q => q.select('*'), []);
       } catch (error) {
         console.error("Erreur dans catalog:", error);
         return [];

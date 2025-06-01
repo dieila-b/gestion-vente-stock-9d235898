@@ -65,5 +65,79 @@ export const db = {
       console.error(`Unexpected error counting ${tableName}:`, err);
       return 0;
     }
+  },
+
+  async insert<T>(tableName: string, data: any): Promise<T | null> {
+    try {
+      console.log(`db.insert: Inserting into ${tableName}:`, data);
+      
+      const { data: result, error } = await supabase
+        .from(tableName)
+        .insert(data)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Insert error for ${tableName}:`, error);
+        return null;
+      }
+      
+      console.log(`db.insert: Successfully inserted into ${tableName}:`, result);
+      return result as T;
+    } catch (err) {
+      console.error(`Unexpected error inserting into ${tableName}:`, err);
+      return null;
+    }
+  },
+
+  async update<T>(
+    tableName: string,
+    data: any,
+    matchColumn: string,
+    matchValue: any
+  ): Promise<T | null> {
+    try {
+      console.log(`db.update: Updating ${tableName} where ${matchColumn} = ${matchValue}:`, data);
+      
+      const { data: result, error } = await supabase
+        .from(tableName)
+        .update(data)
+        .eq(matchColumn, matchValue)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error(`Update error for ${tableName}:`, error);
+        return null;
+      }
+      
+      console.log(`db.update: Successfully updated ${tableName}:`, result);
+      return result as T;
+    } catch (err) {
+      console.error(`Unexpected error updating ${tableName}:`, err);
+      return null;
+    }
+  },
+
+  async delete(tableName: string, matchColumn: string, matchValue: any): Promise<boolean> {
+    try {
+      console.log(`db.delete: Deleting from ${tableName} where ${matchColumn} = ${matchValue}`);
+      
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq(matchColumn, matchValue);
+      
+      if (error) {
+        console.error(`Delete error for ${tableName}:`, error);
+        return false;
+      }
+      
+      console.log(`db.delete: Successfully deleted from ${tableName}`);
+      return true;
+    } catch (err) {
+      console.error(`Unexpected error deleting from ${tableName}:`, err);
+      return false;
+    }
   }
 };

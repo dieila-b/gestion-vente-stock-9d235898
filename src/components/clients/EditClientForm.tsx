@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ClientFormHeader } from "./forms/ClientFormHeader";
 import { ClientFormFields } from "./forms/ClientFormFields";
 import { ClientFormActions } from "./forms/ClientFormActions";
-import { db } from "@/utils/db-adapter";
+import { db } from "@/utils/db-core";
 
 interface EditClientFormProps {
   client: Client;
@@ -100,7 +100,7 @@ export const EditClientForm = ({ client, isOpen, onClose }: EditClientFormProps)
     try {
       console.log("Updating client data:", dataToUpdate);
       
-      // Utiliser l'adaptateur de base de données pour éviter les problèmes de RLS
+      // Utiliser le db core pour éviter les problèmes de RLS
       const result = await db.update('clients', dataToUpdate, 'id', id);
 
       if (!result) {

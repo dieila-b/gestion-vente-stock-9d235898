@@ -3,12 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { db } from "@/utils/db-core";
 
+interface CatalogItem {
+  category: string;
+  [key: string]: any;
+}
+
 export function useCategoriesData() {
   const { data: categories = [], refetch, isLoading } = useQuery({
     queryKey: ['product-categories'],
     queryFn: async () => {
       try {
-        const data = await db.query('catalog', 
+        const data = await db.query<CatalogItem>('catalog', 
           query => query
             .select('category')
             .not('category', 'is', null)
