@@ -1,21 +1,13 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { ProductsChart } from "@/components/dashboard/ProductsChart";
-import { CategoryChart } from "@/components/dashboard/CategoryChart";
-import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
-import { FinancialSituation } from "@/components/dashboard/FinancialSituation";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { DashboardContent } from "@/components/dashboard/DashboardContent";
+import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { useDashboardStatsUpdated } from "@/hooks/dashboard/useDashboardStatsUpdated";
 import { useStockStats } from "@/hooks/dashboard/useStockStats";
 import { useClientStats } from "@/hooks/dashboard/useClientStats";
+import { useFinancialData } from "@/hooks/dashboard/useFinancialData";
+import { useDashboardCalculations } from "@/hooks/dashboard/useDashboardCalculations";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { safeArray, safeNumber, safeOrder, safeOrderItem, safeCatalogProduct } from "@/utils/data-safe/safe-access";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -26,123 +18,15 @@ export default function Dashboard() {
   const { todayOrderData, catalogProducts, unpaidInvoices, monthlyExpenses } = useDashboardStatsUpdated();
   const { catalog, totalStock, totalStockPurchaseValue, totalStockSaleValue, globalStockMargin, marginPercentage } = useStockStats();
   const { clientsCount, supplierPayments } = useClientStats();
+  const { financialData, financialLoading } = useFinancialData();
 
-  // Données financières avec gestion d'erreur ultra-robuste
-  const { data: financialData, error: financialError, isLoading: financialLoading } = useQuery({
-    queryKey: ['financial-situation-ultra-safe'],
-    queryFn: async () => {
-      try {
-        console.log("Dashboard: Récupération des données financières ultra-sécurisées");
-        
-        // Récupération des commandes payées
-        const { data: paidOrders, error: paidError } = await supabase
-          .from('orders')
-          .select('paid_amount')
-          .eq('payment_status', 'paid');
-
-        // Récupération des commandes impayées
-        const { data: unpaidOrders, error: unpaidError } = await supabase
-          .from('orders')
-          .select('remaining_amount')
-          .in('payment_status', ['pending', 'partial']);
-
-        // Calculs sécurisés
-        const creditBalance = safeArray(paidOrders || []).reduce((sum: number, item) => {
-          const paidAmount = safeNumber((item as any)?.paid_amount || 0);
-          return sum + paidAmount;
-        }, 0);
-          
-        const debitBalance = safeArray(unpaidOrders || []).reduce((sum: number, item) => {
-          const remainingAmount = safeNumber((item as any)?.remaining_amount || 0);
-          return sum + remainingAmount;
-        }, 0);
-          
-        const netBalance = safeNumber(creditBalance) - safeNumber(debitBalance);
-
-        console.log("Dashboard: Données financières calculées en sécurité", {
-          creditBalance,
-          debitBalance,
-          netBalance
-        });
-
-        return {
-          creditBalance,
-          debitBalance,
-          netBalance
-        };
-      } catch (error) {
-        console.error("Erreur dans la requête financière:", error);
-        return {
-          creditBalance: 0,
-          debitBalance: 0,
-          netBalance: 0
-        };
-      }
-    },
-    retry: 2,
-    staleTime: 30000
-  });
-
-  // Calcul de la marge quotidienne sécurisée
-  const calculateDailyMargin = () => {
-    try {
-      const safeOrders = safeArray(todayOrderData);
-      const safeProducts = safeArray(catalogProducts);
-      
-      if (safeOrders.length === 0 || safeProducts.length === 0) return 0;
-      
-      let totalMargin = 0;
-      
-      safeOrders.forEach(orderData => {
-        const order = safeOrder(orderData);
-        if (!order) return;
-        
-        const orderItems = safeArray(order.order_items);
-        
-        orderItems.forEach(itemData => {
-          const item = safeOrderItem(itemData);
-          if (!item) return;
-          
-          const catalogProductData = safeProducts.find(p => {
-            const product = safeCatalogProduct(p);
-            return product && product.id === item.product_id;
-          });
-          const catalogProduct = safeCatalogProduct(catalogProductData);
-          if (!catalogProduct) return;
-          
-          const salesPrice = safeNumber(catalogProduct.price);
-          const purchasePrice = safeNumber(catalogProduct.purchase_price);
-          const quantity = safeNumber(item.quantity);
-          
-          totalMargin += (salesPrice - purchasePrice) * quantity;
-        });
-      });
-      
-      return totalMargin;
-    } catch (error) {
-      console.error("Erreur dans calculateDailyMargin:", error);
-      return 0;
-    }
-  };
-
-  // Calculs sécurisés avec vérifications
-  const todaySales = safeArray(todayOrderData).reduce((sum: number, orderData) => {
-    const order = safeOrder(orderData);
-    const finalTotal = safeNumber(order?.final_total || 0);
-    return sum + finalTotal;
-  }, 0);
-    
-  const todayMargin = calculateDailyMargin();
-  
-  const unpaidAmount = safeArray(unpaidInvoices).reduce((sum: number, invoice) => {
-    const remainingAmount = safeNumber((invoice as any)?.remaining_amount || 0);
-    return sum + remainingAmount;
-  }, 0);
-    
-  const monthlyExpensesTotal = safeArray(monthlyExpenses).reduce((sum: number, expense) => {
-    const amount = safeNumber((expense as any)?.amount || 0);
-    return sum + amount;
-  }, 0);
+  // Calculs des métriques du dashboard
+  const { todaySales, todayMargin, unpaidAmount, monthlyExpensesTotal } = useDashboardCalculations(
+    todayOrderData,
+    catalogProducts,
+    unpaidInvoices,
+    monthlyExpenses
+  );
 
   const handleUnpaidInvoicesClick = () => {
     navigate('/sales-invoices?filter=unpaid');
@@ -150,91 +34,29 @@ export default function Dashboard() {
 
   // Affichage de chargement sécurisé
   if (financialLoading) {
-    console.log("Dashboard: Chargement des données financières");
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-muted-foreground">Chargement du tableau de bord...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLoading />;
   }
 
   console.log("Dashboard: Rendu final avec tous les calculs sécurisés");
 
   return (
     <DashboardLayout>
-      <ErrorBoundary fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <h2 className="text-xl font-semibold">Erreur de chargement du tableau de bord</h2>
-            <p className="text-muted-foreground">Une erreur s'est produite lors du chargement des données</p>
-            <Button onClick={() => window.location.reload()} className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Actualiser
-            </Button>
-          </div>
-        </div>
-      }>
-        <div className="space-y-6 w-full">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl md:text-3xl font-bold text-gradient animate-fade-in">
-              Tableau de Bord
-            </h1>
-            <p className="text-muted-foreground animate-fade-in delay-100">
-              Bienvenue sur votre tableau de bord Ets AICHA BUSINESS ALPHAYA
-            </p>
-          </div>
-
-          <ErrorBoundary>
-            <DashboardMetrics
-              todaySales={safeNumber(todaySales)}
-              todayMargin={safeNumber(todayMargin)}
-              unpaidAmount={safeNumber(unpaidAmount)}
-              monthlyExpensesTotal={safeNumber(monthlyExpensesTotal)}
-              catalogLength={safeArray(catalog).length}
-              totalStock={safeNumber(totalStock)}
-              totalStockPurchaseValue={safeNumber(totalStockPurchaseValue)}
-              totalStockSaleValue={safeNumber(totalStockSaleValue)}
-              globalStockMargin={safeNumber(globalStockMargin)}
-              marginPercentage={safeNumber(marginPercentage)}
-              clientsCount={safeNumber(clientsCount, 0)}
-              supplierPayments={safeNumber(supplierPayments, 0)}
-              onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
-            />
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <FinancialSituation
-              creditBalance={safeNumber(financialData?.creditBalance, 0)}
-              debitBalance={safeNumber(financialData?.debitBalance, 0)}
-              netBalance={safeNumber(financialData?.netBalance, 0)}
-            />
-          </ErrorBoundary>
-
-          <div className="grid gap-4 md:gap-6 grid-cols-1 xl:grid-cols-2 w-full animate-fade-in delay-500">
-            <ErrorBoundary>
-              <SalesChart />
-            </ErrorBoundary>
-            <ErrorBoundary>
-              <ProductsChart />
-            </ErrorBoundary>
-          </div>
-
-          <div className="grid gap-4 md:gap-6 grid-cols-1 xl:grid-cols-2 w-full animate-fade-in delay-600">
-            <ErrorBoundary>
-              <CategoryChart />
-            </ErrorBoundary>
-            <ErrorBoundary>
-              <RecentActivity />
-            </ErrorBoundary>
-          </div>
-        </div>
-      </ErrorBoundary>
+      <DashboardContent
+        todaySales={todaySales}
+        todayMargin={todayMargin}
+        unpaidAmount={unpaidAmount}
+        monthlyExpensesTotal={monthlyExpensesTotal}
+        catalog={catalog}
+        totalStock={totalStock}
+        totalStockPurchaseValue={totalStockPurchaseValue}
+        totalStockSaleValue={totalStockSaleValue}
+        globalStockMargin={globalStockMargin}
+        marginPercentage={marginPercentage}
+        clientsCount={clientsCount}
+        supplierPayments={supplierPayments}
+        financialData={financialData}
+        onUnpaidInvoicesClick={handleUnpaidInvoicesClick}
+      />
     </DashboardLayout>
   );
 }
