@@ -38,7 +38,7 @@ export const SupplierDateSection = ({
               </div>
             ) : suppliers.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Aucun fournisseur disponible
+                Aucun fournisseur disponible. Ajoutez des fournisseurs dans le menu Fournisseurs.
               </div>
             ) : (
               suppliers.map((supplierItem) => {

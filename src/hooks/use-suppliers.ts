@@ -21,7 +21,7 @@ export function useSuppliers() {
         }
 
         console.log('✅ Suppliers loaded successfully:', data?.length || 0, 'suppliers');
-        console.log('📋 Suppliers data preview:', data?.slice(0, 3));
+        console.log('🔍 Suppliers data preview:', data?.slice(0, 3));
         
         // Transform data to ensure compatibility
         const transformedSuppliers = (data || []).map(supplier => ({
@@ -50,7 +50,8 @@ export function useSuppliers() {
           updated_at: supplier.updated_at
         })) as Supplier[];
 
-        console.log('🔄 Transformed suppliers:', transformedSuppliers.length);
+        console.log('✅ Transformed suppliers:', transformedSuppliers.length);
+        console.log('🔍 Sample supplier:', transformedSuppliers[0]);
         return transformedSuppliers;
       } catch (error) {
         console.error('💥 Exception in useSuppliers:', error);

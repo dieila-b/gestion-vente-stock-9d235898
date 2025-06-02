@@ -37,7 +37,6 @@ export const ProductSelectionModal = ({
   // Filtrage des produits basé sur le nom et la référence
   const filteredProducts = products.filter(product => {
     if (!product || !product.name) {
-      console.log("Produit ignoré (nom manquant):", product);
       return false;
     }
 
@@ -52,8 +51,6 @@ export const ProductSelectionModal = ({
     const matches = productName.includes(query) || productReference.includes(query);
     return matches;
   });
-
-  console.log("• Produits après filtrage:", filteredProducts.length);
 
   const handleAddProduct = (product: CatalogProduct) => {
     console.log("Ajout produit sélectionné:", product);
@@ -99,6 +96,8 @@ export const ProductSelectionModal = ({
     onAddProduct(newItem);
     onClose();
   };
+
+  if (!open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

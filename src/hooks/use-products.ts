@@ -7,7 +7,7 @@ export function useProducts(locationId?: string) {
   const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['catalog-products', locationId],
     queryFn: async () => {
-      console.log('Fetching products from catalog table...');
+      console.log('🔄 Fetching products from catalog table...');
       
       try {
         // Requête simple pour récupérer tous les produits du catalogue
@@ -19,20 +19,20 @@ export function useProducts(locationId?: string) {
         const { data: catalogData, error: catalogError } = await query;
 
         if (catalogError) {
-          console.error('Erreur catalogue:', catalogError);
+          console.error('❌ Error fetching catalog:', catalogError);
           throw catalogError;
         }
 
-        console.log('Données brutes du catalogue:', catalogData);
-        console.log('Nombre de produits trouvés:', catalogData?.length || 0);
+        console.log('✅ Raw catalog data:', catalogData);
+        console.log('📊 Number of products found:', catalogData?.length || 0);
         
         if (!catalogData || catalogData.length === 0) {
-          console.log('Aucune donnée retournée du catalogue');
+          console.log('⚠️ No data returned from catalog');
           return [];
         }
 
         // Vérifier la structure des données
-        console.log('Premier produit:', catalogData[0]);
+        console.log('🔍 First product structure:', catalogData[0]);
         
         // Transformer les données pour correspondre au type CatalogProduct
         const transformedProducts = catalogData.map(item => ({
@@ -48,23 +48,24 @@ export function useProducts(locationId?: string) {
           image_url: item.image_url || undefined
         })) as CatalogProduct[];
 
-        console.log('Produits transformés:', transformedProducts);
+        console.log('✅ Transformed products:', transformedProducts.length);
+        console.log('🔍 Sample transformed product:', transformedProducts[0]);
         return transformedProducts;
       } catch (error) {
-        console.error('Erreur dans useProducts:', error);
+        console.error('💥 Exception in useProducts:', error);
         throw error;
       }
     },
     enabled: true,
-    retry: 1,
+    retry: 3,
     retryDelay: 1000,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
 
-  console.log('useProducts hook - État final:');
-  console.log('- Nombre de produits:', products?.length || 0);
-  console.log('- Chargement:', isLoading);
-  console.log('- Erreur:', error?.message);
+  console.log('📊 useProducts hook - Final state:');
+  console.log('- Products count:', products?.length || 0);
+  console.log('- Loading:', isLoading);
+  console.log('- Error:', error?.message);
 
   return { products, isLoading, error };
 }
