@@ -86,6 +86,8 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
+    console.log("🔍 formatArticles called with items:", items);
+    
     if (!items || !Array.isArray(items)) {
       console.warn("⚠️ Items is not an array:", items);
       return "0 article";
@@ -97,6 +99,28 @@ export function DeliveryNoteList({
     if (count === 0) return "0 article";
     if (count === 1) return "1 article";
     return `${count} articles`;
+  };
+
+  const getItemsPreview = (items: any[]) => {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return null;
+    }
+    
+    const productNames = items
+      .map(item => item.product?.name)
+      .filter(Boolean)
+      .slice(0, 2);
+    
+    if (productNames.length === 0) {
+      return "Articles sans nom";
+    }
+    
+    let preview = productNames.join(', ');
+    if (items.length > 2) {
+      preview += '...';
+    }
+    
+    return preview;
   };
 
   return (
@@ -136,10 +160,9 @@ export function DeliveryNoteList({
                   <div className="text-sm font-medium">
                     {formatArticles(note.items)}
                   </div>
-                  {note.items && note.items.length > 0 && (
+                  {getItemsPreview(note.items) && (
                     <div className="text-xs text-gray-500 mt-1">
-                      {note.items.map(item => item.product?.name).filter(Boolean).slice(0, 2).join(', ')}
-                      {note.items.length > 2 && '...'}
+                      {getItemsPreview(note.items)}
                     </div>
                   )}
                 </TableCell>

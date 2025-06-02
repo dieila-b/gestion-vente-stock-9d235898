@@ -56,7 +56,7 @@ export function useFetchDeliveryNotes() {
       // Get delivery note IDs
       const deliveryNoteIds = deliveryNotesData.map(note => note.id);
       
-      // Fetch items for all delivery notes
+      // Fetch items for all delivery notes in a single query
       const { data: itemsData, error: itemsError } = await supabase
         .from('delivery_note_items')
         .select(`
@@ -76,6 +76,7 @@ export function useFetchDeliveryNotes() {
           
       if (itemsError) {
         console.error("❌ Error fetching delivery note items:", itemsError);
+        // Don't throw here, just log the error and continue with empty items
       }
 
       console.log("✅ Items fetched:", itemsData?.length || 0);
@@ -108,6 +109,8 @@ export function useFetchDeliveryNotes() {
       // Transform the data
       const transformedNotes: DeliveryNote[] = deliveryNotesData.map(note => {
         const noteItems = itemsByDeliveryNote[note.id] || [];
+        
+        console.log(`📦 Processing delivery note ${note.delivery_number}: ${noteItems.length} items found`);
         
         return {
           id: note.id,
