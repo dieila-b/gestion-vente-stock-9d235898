@@ -10,39 +10,61 @@ export function useProducts(locationId?: string) {
       console.log('Fetching products from catalog table...');
       
       try {
-        const { data: catalogData, error: catalogError } = await supabase
+        // Requête simple pour récupérer tous les produits du catalogue
+        let query = supabase
           .from('catalog')
           .select('*')
           .order('name');
+
+        const { data: catalogData, error: catalogError } = await query;
 
         if (catalogError) {
           console.error('Erreur catalogue:', catalogError);
           throw catalogError;
         }
 
+        console.log('Données brutes du catalogue:', catalogData);
+        console.log('Nombre de produits trouvés:', catalogData?.length || 0);
+        
         if (!catalogData || catalogData.length === 0) {
-          console.log('No catalog data returned');
+          console.log('Aucune donnée retournée du catalogue');
           return [];
         }
 
-        console.log('Catalog data loaded successfully:', catalogData.length, 'products');
-        console.log('Sample product:', catalogData[0]);
+        // Vérifier la structure des données
+        console.log('Premier produit:', catalogData[0]);
         
-        return catalogData as CatalogProduct[];
+        // Transformer les données pour correspondre au type CatalogProduct
+        const transformedProducts = catalogData.map(item => ({
+          id: item.id,
+          name: item.name || 'Produit sans nom',
+          description: item.description || '',
+          price: item.price || 0,
+          purchase_price: item.purchase_price || 0,
+          category: item.category || '',
+          stock: item.stock || 0,
+          reference: item.reference || '',
+          created_at: item.created_at,
+          image_url: item.image_url || undefined
+        })) as CatalogProduct[];
+
+        console.log('Produits transformés:', transformedProducts);
+        return transformedProducts;
       } catch (error) {
-        console.error('Error in useProducts:', error);
+        console.error('Erreur dans useProducts:', error);
         throw error;
       }
     },
     enabled: true,
-    retry: 3,
+    retry: 1,
     retryDelay: 1000,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute
   });
 
-  console.log('useProducts hook - products count:', products?.length || 0);
-  console.log('useProducts hook - isLoading:', isLoading);
-  console.log('useProducts hook - error:', error);
+  console.log('useProducts hook - État final:');
+  console.log('- Nombre de produits:', products?.length || 0);
+  console.log('- Chargement:', isLoading);
+  console.log('- Erreur:', error?.message);
 
   return { products, isLoading, error };
 }

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, AlertCircle, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,17 +27,17 @@ export const ProductSelectionModal = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { products, isLoading, error } = useProducts();
   
-  console.log("ProductSelectionModal - Render state:", {
-    productsCount: products?.length || 0,
-    isLoading,
-    error: error?.message,
-    searchQuery,
-    open
-  });
+  console.log("=== ProductSelectionModal - État rendu ===");
+  console.log("• Modal ouverte:", open);
+  console.log("• Produits reçus:", products?.length || 0);
+  console.log("• Chargement:", isLoading);
+  console.log("• Erreur:", error?.message);
+  console.log("• Recherche:", searchQuery);
   
-  // Filtrage des produits
+  // Filtrage des produits basé sur le nom et la référence
   const filteredProducts = products.filter(product => {
-    if (!product.name) {
+    if (!product || !product.name) {
+      console.log("Produit ignoré (nom manquant):", product);
       return false;
     }
 
@@ -49,13 +49,15 @@ export const ProductSelectionModal = ({
     const productReference = (product.reference || "").toLowerCase();
     const query = searchQuery.toLowerCase().trim();
     
-    return productName.includes(query) || productReference.includes(query);
+    const matches = productName.includes(query) || productReference.includes(query);
+    return matches;
   });
 
-  console.log("ProductSelectionModal - Filtered products:", filteredProducts.length);
+  console.log("• Produits après filtrage:", filteredProducts.length);
 
   const handleAddProduct = (product: CatalogProduct) => {
-    console.log("Adding product:", product);
+    console.log("Ajout produit sélectionné:", product);
+    
     const newItem: PurchaseOrderItem = {
       id: crypto.randomUUID(),
       purchase_order_id: "",
@@ -76,7 +78,7 @@ export const ProductSelectionModal = ({
   };
 
   const handleAddEmptyProduct = () => {
-    console.log("Adding empty product");
+    console.log("Ajout produit manuel vide");
     const emptyProductId = crypto.randomUUID();
     
     const newItem: PurchaseOrderItem = {
@@ -104,13 +106,14 @@ export const ProductSelectionModal = ({
         <DialogHeader>
           <DialogTitle>Sélectionner un produit</DialogTitle>
         </DialogHeader>
+        
         <div className="space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher un produit..."
+                placeholder="Rechercher un produit par nom ou référence..."
                 className="pl-8 bg-black/50 border-white/10 text-white"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -121,12 +124,16 @@ export const ProductSelectionModal = ({
           <div className="h-[400px] overflow-y-auto border border-white/10 rounded-md p-2 bg-black/20">
             {isLoading ? (
               <div className="h-full flex items-center justify-center text-white/60">
-                <p>Chargement des produits...</p>
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <p>Chargement des produits du catalogue...</p>
               </div>
             ) : error ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-2">Erreur de chargement des produits</p>
-                <p className="text-sm text-red-400 mb-4">Erreur: {error.message}</p>
+                <AlertCircle className="h-8 w-8 text-red-400 mb-2" />
+                <p className="mb-2 text-center">Erreur de chargement des produits</p>
+                <p className="text-sm text-red-400 mb-4 text-center">
+                  {error.message}
+                </p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -137,8 +144,11 @@ export const ProductSelectionModal = ({
               </div>
             ) : !products || products.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-4">Aucun produit disponible dans le catalogue</p>
-                <p className="text-sm mb-4">Vérifiez que des produits sont bien créés dans le catalogue</p>
+                <AlertCircle className="h-8 w-8 text-yellow-400 mb-2" />
+                <p className="mb-2 text-center font-medium">Aucun produit disponible dans le catalogue</p>
+                <p className="text-sm mb-4 text-center text-white/40">
+                  Vérifiez que des produits sont bien créés dans le catalogue Supabase
+                </p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -149,7 +159,11 @@ export const ProductSelectionModal = ({
               </div>
             ) : filteredProducts.length === 0 && searchQuery.trim() !== "" ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
-                <p className="mb-4">Aucun produit correspondant à "{searchQuery}"</p>
+                <Search className="h-8 w-8 text-blue-400 mb-2" />
+                <p className="mb-2 text-center">Aucun produit trouvé pour "{searchQuery}"</p>
+                <p className="text-sm mb-4 text-center text-white/40">
+                  Essayez avec d'autres mots-clés ou ajoutez un produit manuel
+                </p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -160,28 +174,31 @@ export const ProductSelectionModal = ({
               </div>
             ) : (
               <div className="space-y-2">
+                <div className="text-xs text-white/60 mb-2">
+                  {filteredProducts.length} produit(s) trouvé(s)
+                </div>
                 {filteredProducts.map(product => (
                   <div 
                     key={product.id} 
-                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
+                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer transition-colors flex justify-between items-center"
                     onClick={() => handleAddProduct(product)}
                   >
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-xs text-white/60">
-                        Ref: {product.reference || "Sans référence"}
-                      </p>
-                      {product.category && (
-                        <p className="text-xs text-white/40">
-                          Catégorie: {product.category}
-                        </p>
-                      )}
+                    <div className="flex-1">
+                      <p className="font-medium text-white">{product.name}</p>
+                      <div className="flex gap-4 text-xs text-white/60 mt-1">
+                        <span>Ref: {product.reference || "Sans référence"}</span>
+                        {product.category && (
+                          <span>Catégorie: {product.category}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
+                    <div className="text-right ml-4">
+                      <p className="text-sm font-medium text-green-400">
                         {product.purchase_price ? `${product.purchase_price} GNF` : 'Prix à définir'}
                       </p>
-                      <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
+                      <p className="text-xs text-white/60">
+                        Stock: {product.stock || 0} • Vente: {product.price || 0} GNF
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -189,13 +206,18 @@ export const ProductSelectionModal = ({
             )}
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} className="border-white/20 text-white">
-              Annuler
-            </Button>
-            <Button onClick={handleAddEmptyProduct} className="bg-white/10 hover:bg-white/20 text-white">
-              Nouveau produit
-            </Button>
+          <div className="flex justify-between items-center">
+            <div className="text-xs text-white/60">
+              {products?.length || 0} produit(s) total dans le catalogue
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose} className="border-white/20 text-white">
+                Annuler
+              </Button>
+              <Button onClick={handleAddEmptyProduct} className="bg-white/10 hover:bg-white/20 text-white">
+                Nouveau produit
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
