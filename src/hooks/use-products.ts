@@ -5,42 +5,34 @@ import { CatalogProduct } from "@/types/catalog";
 
 export function useProducts(locationId?: string) {
   const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['catalog-products'],
+    queryKey: ['catalog-products', locationId],
     queryFn: async () => {
       console.log('Fetching products from catalog table...');
       
-      const { data: catalogData, error: catalogError } = await supabase
-        .from('catalog')
-        .select('*');  // Sélectionner tous les champs au lieu de spécifier manuellement
+      try {
+        const { data: catalogData, error: catalogError } = await supabase
+          .from('catalog')
+          .select('*')
+          .order('name');
 
-      if (catalogError) {
-        console.error('Erreur catalogue:', catalogError);
-        throw catalogError;
+        if (catalogError) {
+          console.error('Erreur catalogue:', catalogError);
+          throw catalogError;
+        }
+
+        if (!catalogData || catalogData.length === 0) {
+          console.log('No catalog data returned');
+          return [];
+        }
+
+        console.log('Catalog data loaded successfully:', catalogData.length, 'products');
+        console.log('Sample product:', catalogData[0]);
+        
+        return catalogData as CatalogProduct[];
+      } catch (error) {
+        console.error('Error in useProducts:', error);
+        throw error;
       }
-
-      if (!catalogData) {
-        console.log('No catalog data returned');
-        return [];
-      }
-
-      console.log('Catalog data loaded successfully:', catalogData.length, 'products');
-      console.log('Products data details:', catalogData);
-      
-      // Log individual product details to debug field mapping
-      catalogData.forEach((product, index) => {
-        console.log(`Product ${index}:`, {
-          id: product.id,
-          name: product.name,
-          reference: product.reference,
-          price: product.price,
-          purchase_price: product.purchase_price,
-          stock: product.stock,
-          category: product.category,
-          description: product.description
-        });
-      });
-      
-      return catalogData as CatalogProduct[];
     },
     enabled: true,
     retry: 3,
@@ -48,7 +40,7 @@ export function useProducts(locationId?: string) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  console.log('useProducts hook - products:', products?.length || 0);
+  console.log('useProducts hook - products count:', products?.length || 0);
   console.log('useProducts hook - isLoading:', isLoading);
   console.log('useProducts hook - error:', error);
 

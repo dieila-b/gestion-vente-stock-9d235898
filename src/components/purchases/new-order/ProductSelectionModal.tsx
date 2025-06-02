@@ -27,21 +27,20 @@ export const ProductSelectionModal = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { products, isLoading, error } = useProducts();
   
-  console.log("ProductSelectionModal - products:", products?.length || 0);
-  console.log("ProductSelectionModal - isLoading:", isLoading);
-  console.log("ProductSelectionModal - error:", error);
-  console.log("ProductSelectionModal - products data:", products);
-  console.log("ProductSelectionModal - search query:", searchQuery);
+  console.log("ProductSelectionModal - Render state:", {
+    productsCount: products?.length || 0,
+    isLoading,
+    error: error?.message,
+    searchQuery,
+    open
+  });
   
-  // Logique de filtrage corrigée et simplifiée
+  // Filtrage des produits
   const filteredProducts = products.filter(product => {
-    // Vérifier que le produit a au moins un nom
     if (!product.name) {
-      console.log("Produit ignoré - aucun nom:", product);
       return false;
     }
 
-    // Si pas de recherche, afficher tous les produits valides
     if (!searchQuery.trim()) {
       return true;
     }
@@ -50,21 +49,10 @@ export const ProductSelectionModal = ({
     const productReference = (product.reference || "").toLowerCase();
     const query = searchQuery.toLowerCase().trim();
     
-    console.log("Filtering product:", {
-      id: product.id,
-      name: product.name,
-      reference: product.reference,
-      query: query,
-      nameMatch: productName.includes(query),
-      refMatch: productReference.includes(query),
-      finalResult: productName.includes(query) || productReference.includes(query)
-    });
-    
     return productName.includes(query) || productReference.includes(query);
   });
 
-  console.log("ProductSelectionModal - filtered products:", filteredProducts?.length || 0);
-  console.log("ProductSelectionModal - filtered products data:", filteredProducts);
+  console.log("ProductSelectionModal - Filtered products:", filteredProducts.length);
 
   const handleAddProduct = (product: CatalogProduct) => {
     console.log("Adding product:", product);
@@ -112,7 +100,7 @@ export const ProductSelectionModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-black/90 border-white/10 text-white">
+      <DialogContent className="sm:max-w-4xl bg-black/90 border-white/10 text-white">
         <DialogHeader>
           <DialogTitle>Sélectionner un produit</DialogTitle>
         </DialogHeader>
@@ -130,7 +118,7 @@ export const ProductSelectionModal = ({
             </div>
           </div>
 
-          <div className="h-[300px] overflow-y-auto border border-white/10 rounded-md p-2 bg-black/20">
+          <div className="h-[400px] overflow-y-auto border border-white/10 rounded-md p-2 bg-black/20">
             {isLoading ? (
               <div className="h-full flex items-center justify-center text-white/60">
                 <p>Chargement des produits...</p>
@@ -150,6 +138,7 @@ export const ProductSelectionModal = ({
             ) : !products || products.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-white/60">
                 <p className="mb-4">Aucun produit disponible dans le catalogue</p>
+                <p className="text-sm mb-4">Vérifiez que des produits sont bien créés dans le catalogue</p>
                 <Button 
                   variant="outline" 
                   onClick={handleAddEmptyProduct}
@@ -171,33 +160,31 @@ export const ProductSelectionModal = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredProducts.map(product => {
-                  console.log("Rendering product:", product);
-                  
-                  return (
-                    <div 
-                      key={product.id} 
-                      className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
-                      onClick={() => handleAddProduct(product)}
-                    >
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-xs text-white/60">
-                          Ref: {product.reference || "Sans référence"}
+                {filteredProducts.map(product => (
+                  <div 
+                    key={product.id} 
+                    className="p-3 border border-white/10 rounded bg-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center"
+                    onClick={() => handleAddProduct(product)}
+                  >
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-white/60">
+                        Ref: {product.reference || "Sans référence"}
+                      </p>
+                      {product.category && (
+                        <p className="text-xs text-white/40">
+                          Catégorie: {product.category}
                         </p>
-                        {product.category && (
-                          <p className="text-xs text-white/40">
-                            Catégorie: {product.category}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm">{product.purchase_price || 0} GNF</p>
-                        <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
-                      </div>
+                      )}
                     </div>
-                  );
-                })}
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {product.purchase_price ? `${product.purchase_price} GNF` : 'Prix à définir'}
+                      </p>
+                      <p className="text-xs text-white/60">Stock: {product.stock || 0}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
