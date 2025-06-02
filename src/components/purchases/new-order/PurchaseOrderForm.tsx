@@ -1,20 +1,29 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { CatalogDebugInfo } from "./CatalogDebugInfo";
 import { useProductSelection } from "@/hooks/use-product-selection";
 import { usePurchaseOrderSubmit } from "@/hooks/use-purchase-order-submit";
-import { formatGNF } from "@/lib/currency";
+import { SupplierDateSection } from "./components/SupplierDateSection";
+import { StatusSection } from "./components/StatusSection";
+import { ProductsSection } from "./components/ProductsSection";
+import { AdditionalCostsSection } from "./components/AdditionalCostsSection";
+import { PaymentCounterSection } from "./components/PaymentCounterSection";
+import { NotesSection } from "./components/NotesSection";
+import { FormActions } from "./components/FormActions";
 
 export default function PurchaseOrderForm() {
   const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
+  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
+  const [paidAmount, setPaidAmount] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [logisticsCost, setLogisticsCost] = useState(0);
+  const [transitCost, setTransitCost] = useState(0);
+  const [taxRate, setTaxRate] = useState(0);
   const [notes, setNotes] = useState("");
   
   const {
@@ -29,6 +38,21 @@ export default function PurchaseOrderForm() {
   } = useProductSelection();
 
   const { submitPurchaseOrder, isSubmitting } = usePurchaseOrderSubmit();
+
+  // Calculate derived values
+  const subtotal = calculateTotal();
+  const tax = (subtotal * taxRate) / 100;
+  const total = subtotal + tax + shippingCost + logisticsCost + transitCost - discount;
+  const remainingAmount = total - paidAmount;
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'GNF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +69,24 @@ export default function PurchaseOrderForm() {
 
     const orderData = {
       supplier_id: selectedSupplier,
-      expected_delivery_date: expectedDeliveryDate || null,
+      expected_delivery_date: deliveryDate?.toISOString() || null,
       notes,
       items: orderItems,
-      total_amount: calculateTotal()
+      total_amount: total,
+      payment_status: paymentStatus,
+      order_status: orderStatus,
+      paid_amount: paidAmount,
+      logistics_cost: logisticsCost,
+      transit_cost: transitCost,
+      tax_rate: taxRate,
+      shipping_cost: shippingCost,
+      discount: discount
     };
 
     await submitPurchaseOrder(orderData);
   };
+
+  const isValid = selectedSupplier && orderItems.length > 0;
 
   return (
     <div className="space-y-6">
@@ -64,149 +98,65 @@ export default function PurchaseOrderForm() {
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Informations générales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-white/80">Fournisseur</Label>
-                <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-                  <SelectTrigger className="neo-blur">
-                    <SelectValue placeholder="Sélectionner un fournisseur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="supplier-1">Fournisseur Test 1</SelectItem>
-                    <SelectItem value="supplier-2">Fournisseur Test 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label className="text-white/80">Date de livraison attendue</Label>
-                <Input
-                  type="date"
-                  value={expectedDeliveryDate}
-                  onChange={(e) => setExpectedDeliveryDate(e.target.value)}
-                  className="neo-blur"
-                />
-              </div>
-            </div>
+            <SupplierDateSection
+              supplier={selectedSupplier}
+              setSupplier={setSelectedSupplier}
+              deliveryDate={deliveryDate}
+              setDeliveryDate={setDeliveryDate}
+              suppliers={undefined} // TODO: Add suppliers hook
+            />
 
-            {/* Section Produits */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-white/80">Produits</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowProductModal(true)}
-                  className="neo-blur"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter des produits
-                </Button>
-              </div>
+            <StatusSection
+              paymentStatus={paymentStatus}
+              setPaymentStatus={setPaymentStatus}
+              orderStatus={orderStatus}
+              setOrderStatus={setOrderStatus}
+            />
 
-              {/* Liste des produits */}
-              {orderItems.length === 0 ? (
-                <Card className="p-4 neo-blur border-white/10">
-                  <p className="text-white/60 text-center">
-                    Aucun produit ajouté. Cliquez sur "Ajouter des produits" pour commencer.
-                  </p>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {orderItems.map((item, index) => (
-                    <Card key={item.id} className="p-4 neo-blur border-white/10">
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                        <div>
-                          <p className="font-medium text-white">
-                            {item.product?.name || "Produit sans nom"}
-                          </p>
-                          <p className="text-sm text-white/60">
-                            Ref: {item.product?.reference || "N/A"}
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-white/60">Quantité</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateProductQuantity(index, parseInt(e.target.value) || 1)}
-                            className="neo-blur"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-white/60">Prix unitaire</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.unit_price}
-                            onChange={(e) => updateProductPrice(index, parseFloat(e.target.value) || 0)}
-                            className="neo-blur"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-white/60">Total</Label>
-                          <p className="text-white font-medium">
-                            {formatGNF(item.total_price)}
-                          </p>
-                        </div>
-                        <div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeProductFromOrder(index)}
-                          >
-                            Supprimer
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                  
-                  {/* Total */}
-                  <Card className="p-4 neo-blur border-white/10 bg-white/5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-medium text-white">Total:</span>
-                      <span className="text-xl font-bold text-white">
-                        {formatGNF(calculateTotal())}
-                      </span>
-                    </div>
-                  </Card>
-                </div>
-              )}
-            </div>
+            <ProductsSection
+              orderItems={orderItems}
+              removeProductFromOrder={removeProductFromOrder}
+              updateProductQuantity={updateProductQuantity}
+              updateProductPrice={updateProductPrice}
+              calculateTotal={calculateTotal}
+              setShowProductModal={setShowProductModal}
+            />
 
-            {/* Notes */}
-            <div>
-              <Label className="text-white/80">Notes</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes optionnelles..."
-                className="neo-blur"
-                rows={3}
-              />
-            </div>
+            <AdditionalCostsSection
+              discount={discount}
+              setDiscount={setDiscount}
+              shippingCost={shippingCost}
+              setShippingCost={setShippingCost}
+              logisticsCost={logisticsCost}
+              setLogisticsCost={setLogisticsCost}
+              transitCost={transitCost}
+              setTransitCost={setTransitCost}
+              taxRate={taxRate}
+              setTaxRate={setTaxRate}
+              subtotal={subtotal}
+              tax={tax}
+              total={total}
+              formatPrice={formatPrice}
+            />
 
-            {/* Actions */}
-            <div className="flex gap-4">
-              <Button
-                type="submit"
-                disabled={isSubmitting || orderItems.length === 0}
-                className="bg-white/10 hover:bg-white/20"
-              >
-                {isSubmitting ? "Création..." : "Créer le bon de commande"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="neo-blur"
-              >
-                Annuler
-              </Button>
-            </div>
+            <PaymentCounterSection
+              paidAmount={paidAmount}
+              setPaidAmount={setPaidAmount}
+              total={total}
+              remainingAmount={remainingAmount}
+              formatPrice={formatPrice}
+            />
+
+            <NotesSection
+              notes={notes}
+              setNotes={setNotes}
+            />
+
+            <FormActions
+              isSubmitting={isSubmitting}
+              isValid={isValid}
+              onCancel={() => window.history.back()}
+            />
           </form>
         </CardContent>
       </Card>
