@@ -10,7 +10,7 @@ export function useFetchDeliveryNotes() {
   return useQuery({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
-      console.log("Fetching delivery notes with items...");
+      console.log("🔄 Fetching delivery notes with items...");
       try {
         // Fetch delivery notes with basic relations
         const { data: deliveryNotesData, error } = await supabase
@@ -42,20 +42,21 @@ export function useFetchDeliveryNotes() {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error("Error fetching delivery notes:", error);
+          console.error("❌ Error fetching delivery notes:", error);
           throw error;
         }
 
-        console.log("Raw delivery notes data:", deliveryNotesData);
+        console.log("✅ Raw delivery notes data:", deliveryNotesData);
+        console.log("📊 Number of delivery notes found:", deliveryNotesData?.length || 0);
         
         if (!deliveryNotesData || deliveryNotesData.length === 0) {
-          console.log("No delivery notes found");
+          console.log("⚠️ No delivery notes found");
           return [];
         }
 
         // Fetch items for all delivery notes in one query
         const deliveryNoteIds = deliveryNotesData.map(note => note.id);
-        console.log("Fetching items for delivery note IDs:", deliveryNoteIds);
+        console.log("🔍 Fetching items for delivery note IDs:", deliveryNoteIds);
         
         const { data: itemsData, error: itemsError } = await supabase
           .from('delivery_note_items')
@@ -75,12 +76,12 @@ export function useFetchDeliveryNotes() {
           .in('delivery_note_id', deliveryNoteIds);
           
         if (itemsError) {
-          console.error("Error fetching delivery note items:", itemsError);
-          console.warn("Will proceed without items data");
+          console.error("❌ Error fetching delivery note items:", itemsError);
+          console.warn("⚠️ Will proceed without items data");
         }
 
-        console.log("Fetched items data:", itemsData);
-        console.log("Number of items found:", itemsData?.length || 0);
+        console.log("✅ Fetched items data:", itemsData);
+        console.log("📊 Number of items found:", itemsData?.length || 0);
         
         // Group items by delivery note ID
         const itemsByDeliveryNote = (itemsData || []).reduce((acc, item) => {
@@ -109,12 +110,12 @@ export function useFetchDeliveryNotes() {
           return acc;
         }, {} as Record<string, any[]>);
         
-        console.log("Items grouped by delivery note:", itemsByDeliveryNote);
+        console.log("🔗 Items grouped by delivery note:", itemsByDeliveryNote);
         
         // Transform the data to match our TypeScript interfaces
         const transformedNotes: DeliveryNote[] = deliveryNotesData.map(note => {
           const noteItems = itemsByDeliveryNote[note.id] || [];
-          console.log(`Note ${note.id} (${note.delivery_number}) has ${noteItems.length} items`);
+          console.log(`📦 Note ${note.delivery_number} (${note.id}) has ${noteItems.length} items`);
           
           return {
             id: note.id,
@@ -151,17 +152,16 @@ export function useFetchDeliveryNotes() {
           } as DeliveryNote;
         });
         
-        console.log("Final transformed delivery notes:", transformedNotes);
-        console.log("Total delivery notes returned:", transformedNotes.length);
+        console.log("✅ Final transformed delivery notes:", transformedNotes.length);
         
-        // Log items count for each note
+        // Log items count for each note for debugging
         transformedNotes.forEach(note => {
-          console.log(`Note ${note.delivery_number}: ${note.items.length} items`);
+          console.log(`📋 ${note.delivery_number}: ${note.items.length} article(s)`);
         });
         
         return transformedNotes;
       } catch (error) {
-        console.error("Error in delivery notes fetch:", error);
+        console.error("💥 Error in delivery notes fetch:", error);
         throw error;
       }
     },

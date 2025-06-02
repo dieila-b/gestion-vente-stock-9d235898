@@ -27,9 +27,9 @@ export function DeliveryNoteList({
   onView,
   onPrint,
 }: DeliveryNoteListProps) {
-  console.log("DeliveryNoteList rendering with:", deliveryNotes?.length || 0, "notes");
-  console.log("DeliveryNoteList - isLoading:", isLoading);
-  console.log("DeliveryNoteList - deliveryNotes data:", deliveryNotes);
+  console.log("📋 DeliveryNoteList rendering with:", deliveryNotes?.length || 0, "notes");
+  console.log("⏳ DeliveryNoteList - isLoading:", isLoading);
+  console.log("📄 DeliveryNoteList - deliveryNotes data:", deliveryNotes);
 
   if (isLoading) {
     return (
@@ -75,17 +75,17 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
-    if (!items || items.length === 0) return "0 article";
-    
-    const count = items.length;
-    const distinctCount = new Set(items.map(item => item.product_id)).size;
-    
-    // Show both total items and distinct products if different
-    if (count !== distinctCount) {
-      return `${distinctCount} article${distinctCount > 1 ? 's' : ''} distincts (${count} total)`;
+    if (!items || !Array.isArray(items)) {
+      console.warn("⚠️ Items is not an array:", items);
+      return "0 article";
     }
     
-    return `${count} article${count > 1 ? 's' : ''}`;
+    const count = items.length;
+    console.log(`📊 Counting ${count} items for delivery note`);
+    
+    if (count === 0) return "0 article";
+    if (count === 1) return "1 article";
+    return `${count} articles`;
   };
 
   return (
@@ -110,11 +110,11 @@ export function DeliveryNoteList({
         <TableBody>
           {deliveryNotes.map((note) => {
             if (!note || !note.id) {
-              console.warn("Invalid note data:", note);
+              console.warn("⚠️ Invalid note data:", note);
               return null;
             }
             
-            console.log(`Rendering note ${note.id}:`, note);
+            console.log(`🔍 Rendering note ${note.delivery_number} with ${note.items?.length || 0} items:`, note);
             return (
               <TableRow key={note.id}>
                 <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
@@ -124,9 +124,15 @@ export function DeliveryNoteList({
                 </TableCell>
                 <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
                 <TableCell>
-                  <div className="text-sm">
+                  <div className="text-sm font-medium">
                     {formatArticles(note.items)}
                   </div>
+                  {note.items && note.items.length > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {note.items.map(item => item.product?.name).filter(Boolean).slice(0, 2).join(', ')}
+                      {note.items.length > 2 && '...'}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(note.status)}
