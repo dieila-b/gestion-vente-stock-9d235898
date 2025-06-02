@@ -23,6 +23,10 @@ export function ApprovalDialogContent({
   onQuantityChange,
   onLocationChange
 }: ApprovalDialogContentProps) {
+  console.log("ApprovalDialogContent - note:", note);
+  console.log("ApprovalDialogContent - note.items:", note.items);
+  console.log("ApprovalDialogContent - receivedQuantities:", receivedQuantities);
+
   return (
     <>
       {errors.length > 0 && (
