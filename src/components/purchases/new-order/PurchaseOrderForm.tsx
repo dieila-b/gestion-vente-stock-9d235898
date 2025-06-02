@@ -1,10 +1,11 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { CatalogDebugInfo } from "./CatalogDebugInfo";
+import { SuppliersDebugInfo } from "./SuppliersDebugInfo";
 import { useProductSelection } from "@/hooks/use-product-selection";
 import { usePurchaseOrderSubmit } from "@/hooks/use-purchase-order-submit";
+import { useSuppliers } from "@/hooks/use-suppliers";
 import { SupplierDateSection } from "./components/SupplierDateSection";
 import { StatusSection } from "./components/StatusSection";
 import { ProductsSection } from "./components/ProductsSection";
@@ -25,6 +26,9 @@ export default function PurchaseOrderForm() {
   const [transitCost, setTransitCost] = useState(0);
   const [taxRate, setTaxRate] = useState(0);
   const [notes, setNotes] = useState("");
+  
+  // Load suppliers data
+  const { suppliers, isLoading: suppliersLoading, error: suppliersError } = useSuppliers();
   
   const {
     orderItems,
@@ -88,9 +92,14 @@ export default function PurchaseOrderForm() {
 
   const isValid = selectedSupplier && orderItems.length > 0;
 
+  console.log("PurchaseOrderForm - Suppliers loaded:", suppliers?.length || 0);
+  console.log("PurchaseOrderForm - Suppliers loading:", suppliersLoading);
+  console.log("PurchaseOrderForm - Suppliers error:", suppliersError?.message);
+
   return (
     <div className="space-y-6">
       <CatalogDebugInfo />
+      <SuppliersDebugInfo />
       
       <Card className="neo-blur border-white/10">
         <CardHeader>
@@ -103,7 +112,7 @@ export default function PurchaseOrderForm() {
               setSupplier={setSelectedSupplier}
               deliveryDate={deliveryDate}
               setDeliveryDate={setDeliveryDate}
-              suppliers={undefined} // TODO: Add suppliers hook
+              suppliers={suppliers}
             />
 
             <StatusSection
