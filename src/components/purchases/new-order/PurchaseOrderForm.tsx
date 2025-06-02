@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Plus } from "lucide-react";
 import { ProductSelectionModal } from "./ProductSelectionModal";
 import { CatalogDebugInfo } from "./CatalogDebugInfo";
 import { useProductSelection } from "@/hooks/use-product-selection";
-import { usePurchaseOrderSubmit } from "./usePurchaseOrderSubmit";
+import { usePurchaseOrderSubmit } from "@/hooks/use-purchase-order-submit";
 import { formatGNF } from "@/lib/currency";
 
 export default function PurchaseOrderForm() {
