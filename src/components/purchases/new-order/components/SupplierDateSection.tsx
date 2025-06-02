@@ -19,9 +19,7 @@ export const SupplierDateSection = ({
   setDeliveryDate,
   suppliers,
 }: SupplierDateSectionProps) => {
-  console.log("SupplierDateSection - suppliers data:", suppliers);
-  console.log("SupplierDateSection - suppliers count:", suppliers?.length || 0);
-  console.log("SupplierDateSection - current supplier:", supplier);
+  console.log("SupplierDateSection - Suppliers:", suppliers?.length || 0);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -34,27 +32,18 @@ export const SupplierDateSection = ({
           <SelectContent className="bg-black/80 backdrop-blur-md border-white/10">
             {!suppliers ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Chargement des fournisseurs...
+                Chargement...
               </div>
             ) : suppliers.length === 0 ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Aucun fournisseur disponible. Ajoutez des fournisseurs dans le menu Fournisseurs.
+                Aucun fournisseur disponible
               </div>
             ) : (
-              suppliers.map((supplierItem) => {
-                console.log("Rendering supplier:", supplierItem);
-                const displayName = supplierItem.name || 
-                                   supplierItem.contact || 
-                                   `Fournisseur #${supplierItem.id.slice(0, 8)}`;
-                
-                console.log("Supplier display name:", displayName);
-                
-                return (
-                  <SelectItem key={supplierItem.id} value={supplierItem.id}>
-                    {displayName}
-                  </SelectItem>
-                );
-              })
+              suppliers.map((supplierItem) => (
+                <SelectItem key={supplierItem.id} value={supplierItem.id}>
+                  {supplierItem.name}
+                </SelectItem>
+              ))
             )}
           </SelectContent>
         </Select>

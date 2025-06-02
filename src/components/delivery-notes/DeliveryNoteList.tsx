@@ -27,16 +27,14 @@ export function DeliveryNoteList({
   onView,
   onPrint,
 }: DeliveryNoteListProps) {
-  console.log("📋 DeliveryNoteList rendering with:", deliveryNotes?.length || 0, "notes");
-  console.log("⏳ DeliveryNoteList - isLoading:", isLoading);
-  console.log("📄 DeliveryNoteList - deliveryNotes data:", deliveryNotes);
+  console.log("📋 DeliveryNoteList - Notes:", deliveryNotes?.length || 0);
 
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
       </div>
     );
   }
@@ -53,7 +51,7 @@ export function DeliveryNoteList({
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              💡 Pour créer un bon de livraison, approuvez d'abord une commande d'achat depuis la section "Achats".
+              💡 Pour créer un bon de livraison, approuvez d'abord une commande d'achat.
             </p>
           </div>
         </div>
@@ -70,19 +68,16 @@ export function DeliveryNoteList({
       case 'rejected':
         return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status || 'Inconnu'}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
   const formatArticles = (items: any[]) => {
     if (!items || !Array.isArray(items)) {
-      console.warn("⚠️ Items is not an array:", items);
       return "0 article";
     }
     
     const count = items.length;
-    console.log(`📊 Counting ${count} items for delivery note`);
-    
     if (count === 0) return "0 article";
     if (count === 1) return "1 article";
     return `${count} articles`;
@@ -91,7 +86,7 @@ export function DeliveryNoteList({
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
-        {deliveryNotes.length} bon{deliveryNotes.length > 1 ? 's' : ''} de livraison trouvé{deliveryNotes.length > 1 ? 's' : ''}
+        {deliveryNotes.length} bon{deliveryNotes.length > 1 ? 's' : ''} de livraison
       </div>
       
       <Table>
@@ -108,91 +103,90 @@ export function DeliveryNoteList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {deliveryNotes.map((note) => {
-            if (!note || !note.id) {
-              console.warn("⚠️ Invalid note data:", note);
-              return null;
-            }
-            
-            console.log(`🔍 Rendering note ${note.delivery_number} with ${note.items?.length || 0} items:`, note);
-            return (
-              <TableRow key={note.id}>
-                <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
-                <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
-                <TableCell>
-                  {note.created_at ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: fr }) : '-'}
-                </TableCell>
-                <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
-                <TableCell>
-                  <div className="text-sm font-medium">
-                    {formatArticles(note.items)}
+          {deliveryNotes.map((note) => (
+            <TableRow key={note.id}>
+              <TableCell className="font-medium">
+                {note.delivery_number}
+              </TableCell>
+              <TableCell>{note.purchase_order?.order_number || 'N/A'}</TableCell>
+              <TableCell>
+                {note.created_at 
+                  ? format(new Date(note.created_at), "dd/MM/yyyy", { locale: fr }) 
+                  : '-'
+                }
+              </TableCell>
+              <TableCell>{note.supplier?.name || 'Fournisseur inconnu'}</TableCell>
+              <TableCell>
+                <div className="text-sm font-medium">
+                  {formatArticles(note.items)}
+                </div>
+                {note.items && note.items.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {note.items
+                      .slice(0, 2)
+                      .map(item => item.product?.name)
+                      .filter(Boolean)
+                      .join(', ')}
+                    {note.items.length > 2 && '...'}
                   </div>
-                  {note.items && note.items.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {note.items.map(item => item.product?.name).filter(Boolean).slice(0, 2).join(', ')}
-                      {note.items.length > 2 && '...'}
-                    </div>
+                )}
+              </TableCell>
+              <TableCell>
+                {getStatusBadge(note.status)}
+              </TableCell>
+              <TableCell>
+                {(note.purchase_order?.total_amount || 0).toLocaleString('fr-FR')} GNF
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  {onEdit && note.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEdit(note.id)}
+                      className="h-8 w-8 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                      title="Modifier"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   )}
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(note.status)}
-                </TableCell>
-                <TableCell>{note.purchase_order?.total_amount?.toLocaleString('fr-FR') || '0'} GNF</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    {/* Show Edit button only for pending status */}
-                    {onEdit && note.status === 'pending' && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onEdit(note.id)}
-                        className="h-10 w-10 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
-                        title="Modifier"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {/* Show Approve button only for pending status */}
-                    {onApprove && note.status === 'pending' && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onApprove(note.id)} 
-                        className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                        title="Approuver"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {/* Show Delete button only for pending status */}
-                    {note.status === 'pending' && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onDelete(note.id)} 
-                        className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {/* Print button is always visible */}
-                    {onPrint && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onPrint(note.id)} 
-                        className="h-10 w-10 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
-                        title="Imprimer"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          }).filter(Boolean)}
+                  {onApprove && note.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onApprove(note.id)} 
+                      className="h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                      title="Approuver"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {note.status === 'pending' && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDelete(note.id)} 
+                      className="h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onPrint && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onPrint(note.id)} 
+                      className="h-8 w-8 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                      title="Imprimer"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
