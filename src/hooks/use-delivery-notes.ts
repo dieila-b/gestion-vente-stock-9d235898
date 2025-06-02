@@ -21,8 +21,8 @@ export function useDeliveryNotes() {
     onApprovalComplete 
   } = useDeliveryNoteApproval();
   
-  // Mutations (including delete)
-  const { handleDelete, isDeleting } = useDeliveryNoteMutations();
+  // Mutations
+  const { handleDelete } = useDeliveryNoteMutations();
   
   // Creation
   const { createDeliveryNoteFromPO } = useDeliveryNoteCreation();
@@ -38,7 +38,6 @@ export function useDeliveryNotes() {
     handleApprove: (id: string) => handleApprove(id, deliveryNotes),
     handlePrint: (id: string) => handlePrint(id, deliveryNotes),
     handleDelete,
-    isDeleting,
     selectedNoteForApproval,
     closeApprovalDialog,
     onApprovalComplete: () => onApprovalComplete(refetch),

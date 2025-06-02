@@ -1,4 +1,3 @@
-
 import { usePurchaseOrdersQuery } from "./purchase-orders/queries/use-purchase-orders-query";
 import { usePurchaseOrderMutations } from "./purchase-orders/use-purchase-order-mutations";
 import { useEditPurchaseOrder } from "./purchase-orders/mutations/use-edit-purchase-order";
@@ -78,8 +77,8 @@ export function usePurchaseOrders() {
         
     } catch (error: any) {
       console.error("[usePurchaseOrders] Error in handleApprove:", error);
-      // Make sure we show the error to the user (if not already shown by the mutation)
-      if (!error.message?.includes('Erreur lors de l\'approbation:')) {
+      // Make sure we show the error to the user
+      if (!error.message?.includes('Erreur:')) {
         toast.error(`Erreur lors de l'approbation: ${error.message || 'Erreur inconnue'}`);
       }
     } finally {

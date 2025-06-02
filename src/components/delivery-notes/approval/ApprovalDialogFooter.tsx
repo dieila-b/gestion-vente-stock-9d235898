@@ -13,20 +13,13 @@ export function ApprovalDialogFooter({
   onClose,
   onApprove
 }: ApprovalDialogFooterProps) {
-  console.log("ApprovalDialogFooter - isSubmitting:", isSubmitting);
-  
-  const handleApproveClick = () => {
-    console.log("Approve button clicked!");
-    onApprove();
-  };
-
   return (
     <DialogFooter className="gap-2">
       <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
         Annuler
       </Button>
       <Button 
-        onClick={handleApproveClick} 
+        onClick={onApprove} 
         disabled={isSubmitting}
         className="bg-green-600 hover:bg-green-700"
       >

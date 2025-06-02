@@ -134,13 +134,7 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     console.log(`[createDeliveryNoteItems] Creating items for delivery note ${deliveryNoteId} from ${orderItems.length} order items`);
     
     // Ensure we have all required data for each item
-    const validItems = orderItems.filter(item => {
-      const isValid = item.product_id && item.quantity && typeof item.unit_price !== 'undefined';
-      if (!isValid) {
-        console.warn(`[createDeliveryNoteItems] Invalid item found:`, item);
-      }
-      return isValid;
-    });
+    const validItems = orderItems.filter(item => item.product_id && item.quantity && item.unit_price);
     
     if (validItems.length === 0) {
       console.error(`[createDeliveryNoteItems] No valid items found for delivery note ${deliveryNoteId}`);
@@ -173,19 +167,6 @@ export async function createDeliveryNoteItems(deliveryNoteId: string, orderItems
     }
     
     console.log(`[createDeliveryNoteItems] Successfully created ${itemsData.length} items for delivery note ${deliveryNoteId}`);
-    
-    // Verify the items were created by fetching them back
-    const { data: verificationData, error: verificationError } = await supabase
-      .from('delivery_note_items')
-      .select('id, product_id, quantity_ordered')
-      .eq('delivery_note_id', deliveryNoteId);
-    
-    if (verificationError) {
-      console.warn(`[createDeliveryNoteItems] Error verifying items:`, verificationError);
-    } else {
-      console.log(`[createDeliveryNoteItems] Verification: Found ${verificationData?.length || 0} items in database for delivery note ${deliveryNoteId}`);
-    }
-    
     return true;
   } catch (error: any) {
     console.error(`[createDeliveryNoteItems] Error creating items:`, error);

@@ -19,32 +19,20 @@ export const SupplierDateSection = ({
   setDeliveryDate,
   suppliers,
 }: SupplierDateSectionProps) => {
-  console.log("SupplierDateSection - Suppliers:", suppliers?.length || 0);
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <Label className="text-white/80">Fournisseur *</Label>
+        <Label className="text-white/80">Fournisseur</Label>
         <Select value={supplier} onValueChange={setSupplier}>
           <SelectTrigger className="neo-blur border-white/10">
             <SelectValue placeholder="Sélectionner un fournisseur" />
           </SelectTrigger>
           <SelectContent className="bg-black/80 backdrop-blur-md border-white/10">
-            {!suppliers ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Chargement...
-              </div>
-            ) : suppliers.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                Aucun fournisseur disponible
-              </div>
-            ) : (
-              suppliers.map((supplierItem) => (
-                <SelectItem key={supplierItem.id} value={supplierItem.id}>
-                  {supplierItem.name}
-                </SelectItem>
-              ))
-            )}
+            {suppliers?.map((supplier) => (
+              <SelectItem key={supplier.id} value={supplier.id}>
+                {supplier.contact || 'Contact non spécifié'}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

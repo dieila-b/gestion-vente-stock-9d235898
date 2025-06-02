@@ -1,10 +1,16 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProductSelectionModal } from "./ProductSelectionModal";
-import { useProductSelection } from "@/hooks/use-product-selection";
-import { usePurchaseOrderSubmit } from "@/hooks/use-purchase-order-submit";
+import { useToast } from "@/components/ui/use-toast";
+import { Package } from "lucide-react";
 import { useSuppliers } from "@/hooks/use-suppliers";
+import { usePurchaseOrderFormState } from "./usePurchaseOrderFormState";
+import { usePurchaseOrderSubmit } from "./usePurchaseOrderSubmit";
+import { useProductSelection } from "@/hooks/use-product-selection";
+import { ProductSelectionModal } from "./ProductSelectionModal";
+
+// Import the new component sections
 import { SupplierDateSection } from "./components/SupplierDateSection";
 import { StatusSection } from "./components/StatusSection";
 import { ProductsSection } from "./components/ProductsSection";
@@ -13,26 +19,21 @@ import { PaymentCounterSection } from "./components/PaymentCounterSection";
 import { NotesSection } from "./components/NotesSection";
 import { FormActions } from "./components/FormActions";
 
-export default function PurchaseOrderForm() {
-  const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "partial" | "paid">("pending");
-  const [orderStatus, setOrderStatus] = useState<"pending" | "delivered">("pending");
-  const [paidAmount, setPaidAmount] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [shippingCost, setShippingCost] = useState(0);
-  const [logisticsCost, setLogisticsCost] = useState(0);
-  const [transitCost, setTransitCost] = useState(0);
-  const [taxRate, setTaxRate] = useState(0);
-  const [notes, setNotes] = useState("");
-  
-  // Load suppliers data
-  const { suppliers, isLoading: suppliersLoading, error: suppliersError } = useSuppliers();
-  
+const PurchaseOrderForm = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { suppliers, isLoading: suppliersLoading } = useSuppliers();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Product selection logic
   const {
     orderItems,
+    setOrderItems,
     showProductModal,
     setShowProductModal,
+    searchQuery,
+    setSearchQuery,
+    filteredProducts,
     addProductToOrder,
     removeProductFromOrder,
     updateProductQuantity,
@@ -40,85 +41,128 @@ export default function PurchaseOrderForm() {
     calculateTotal
   } = useProductSelection();
 
-  const { submitPurchaseOrder, isSubmitting } = usePurchaseOrderSubmit();
+  // Form state from custom hook
+  const { 
+    supplier, setSupplier,
+    orderNumber, setOrderNumber,
+    deliveryDate, setDeliveryDate,
+    notes, setNotes,
+    taxRate, setTaxRate,
+    logisticsCost, setLogisticsCost,
+    transitCost, setTransitCost,
+    discount, setDiscount,
+    shippingCost, setShippingCost,
+    orderStatus, setOrderStatus,
+    paymentStatus, setPaymentStatus,
+    paidAmount, setPaidAmount,
+  } = usePurchaseOrderFormState();
+  
+  // Form submission handling with custom hook
+  const { 
+    handleSubmit: submitOrder,
+    calculateSubtotal,
+    calculateTax,
+    calculateTotalTTC,
+    calculateRemainingAmount,
+    formatPrice 
+  } = usePurchaseOrderSubmit({
+    supplier,
+    orderNumber,
+    deliveryDate,
+    notes,
+    orderStatus,
+    paymentStatus,
+    paidAmount,
+    logisticsCost,
+    transitCost,
+    taxRate,
+    shippingCost,
+    discount,
+    orderItems,
+    setIsSubmitting,
+    toast,
+    navigate
+  });
 
-  // Calculate derived values
-  const subtotal = calculateTotal();
-  const tax = (subtotal * taxRate) / 100;
-  const total = subtotal + tax + shippingCost + logisticsCost + transitCost - discount;
-  const remainingAmount = total - paidAmount;
+  // Calculate total values
+  const subtotal = calculateSubtotal();
+  const tax = calculateTax();
+  const total = calculateTotalTTC();
+  const remainingAmount = calculateRemainingAmount();
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'GNF',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submission initiated with:", {
+      supplier,
+      orderItems: orderItems.length,
+      orderNumber,
+      total
+    });
     
-    if (!selectedSupplier) {
-      alert("Veuillez sélectionner un fournisseur");
+    if (!supplier) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fournisseur",
+        variant: "destructive"
+      });
       return;
     }
-
+    
     if (orderItems.length === 0) {
-      alert("Veuillez ajouter au moins un produit");
+      toast({
+        title: "Erreur",
+        description: "Veuillez ajouter au moins un produit",
+        variant: "destructive"
+      });
       return;
     }
-
-    const orderData = {
-      supplier_id: selectedSupplier,
-      expected_delivery_date: deliveryDate?.toISOString() || null,
-      notes,
-      items: orderItems,
-      total_amount: total,
-      payment_status: paymentStatus,
-      order_status: orderStatus,
-      paid_amount: paidAmount,
-      logistics_cost: logisticsCost,
-      transit_cost: transitCost,
-      tax_rate: taxRate,
-      shipping_cost: shippingCost,
-      discount: discount
-    };
-
-    await submitPurchaseOrder(orderData);
+    
+    submitOrder(e);
   };
 
-  const isValid = selectedSupplier && orderItems.length > 0;
+  // Helper function to convert string date to Date object and vice versa
+  const handleDateChange = (date: Date | undefined) => {
+    setDeliveryDate(date ? date.toISOString().split('T')[0] : '');
+  };
 
-  console.log("PurchaseOrderForm - Suppliers loaded:", suppliers?.length || 0);
-  console.log("PurchaseOrderForm - Suppliers loading:", suppliersLoading);
-  console.log("PurchaseOrderForm - Suppliers error:", suppliersError?.message);
+  const currentDeliveryDate = deliveryDate ? new Date(deliveryDate) : undefined;
+
+  // Check if form is valid
+  const isFormValid = supplier && orderItems.length > 0;
 
   return (
     <div className="space-y-6">
-      <Card className="neo-blur border-white/10">
+      <Card className="border-white/10 bg-black/20 text-white">
         <CardHeader>
-          <CardTitle className="text-white">Nouveau Bon de Commande</CardTitle>
+          <div className="space-y-2">
+            <CardTitle className="text-gradient flex items-center gap-2">
+              <Package className="h-6 w-6" />
+              Nouvelle Commande Fournisseur
+            </CardTitle>
+            <p className="text-white/60">Créez une nouvelle commande pour Ender</p>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <SupplierDateSection
-              supplier={selectedSupplier}
-              setSupplier={setSelectedSupplier}
-              deliveryDate={deliveryDate}
-              setDeliveryDate={setDeliveryDate}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Supplier and delivery date */}
+            <SupplierDateSection 
+              supplier={supplier}
+              setSupplier={setSupplier}
+              deliveryDate={currentDeliveryDate}
+              setDeliveryDate={handleDateChange}
               suppliers={suppliers}
             />
 
-            <StatusSection
+            {/* Payment and order status */}
+            <StatusSection 
               paymentStatus={paymentStatus}
               setPaymentStatus={setPaymentStatus}
               orderStatus={orderStatus}
               setOrderStatus={setOrderStatus}
             />
 
-            <ProductsSection
+            {/* Products */}
+            <ProductsSection 
               orderItems={orderItems}
               removeProductFromOrder={removeProductFromOrder}
               updateProductQuantity={updateProductQuantity}
@@ -127,7 +171,8 @@ export default function PurchaseOrderForm() {
               setShowProductModal={setShowProductModal}
             />
 
-            <AdditionalCostsSection
+            {/* Additional costs */}
+            <AdditionalCostsSection 
               discount={discount}
               setDiscount={setDiscount}
               shippingCost={shippingCost}
@@ -144,7 +189,8 @@ export default function PurchaseOrderForm() {
               formatPrice={formatPrice}
             />
 
-            <PaymentCounterSection
+            {/* Payment counter */}
+            <PaymentCounterSection 
               paidAmount={paidAmount}
               setPaidAmount={setPaidAmount}
               total={total}
@@ -152,20 +198,23 @@ export default function PurchaseOrderForm() {
               formatPrice={formatPrice}
             />
 
-            <NotesSection
+            {/* Notes */}
+            <NotesSection 
               notes={notes}
               setNotes={setNotes}
             />
 
-            <FormActions
+            {/* Submit buttons */}
+            <FormActions 
               isSubmitting={isSubmitting}
-              isValid={isValid}
-              onCancel={() => window.history.back()}
+              isValid={isFormValid}
+              onCancel={() => navigate("/purchase-orders")}
             />
           </form>
         </CardContent>
       </Card>
 
+      {/* Product selection modal */}
       <ProductSelectionModal
         open={showProductModal}
         onClose={() => setShowProductModal(false)}
@@ -173,4 +222,6 @@ export default function PurchaseOrderForm() {
       />
     </div>
   );
-}
+};
+
+export default PurchaseOrderForm;

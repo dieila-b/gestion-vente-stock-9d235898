@@ -12,53 +12,28 @@ import { validateOrderForDeliveryNote } from "./order-filter";
 export async function processOrderForDeliveryNote(order: any): Promise<boolean> {
   try {
     console.log("[processOrderForDeliveryNote] Processing order:", order.id, order.order_number);
+    console.log("[processOrderForDeliveryNote] Order items count:", order.items?.length || 0);
     
     // Validate the order first
     if (!validateOrderForDeliveryNote(order)) {
       return false;
     }
     
-    // Load order items if not already loaded
-    let orderItems = order.items || [];
-    if (!orderItems || orderItems.length === 0) {
-      console.log("[processOrderForDeliveryNote] Loading items for order:", order.id);
-      
-      const { data: items, error: itemsError } = await supabase
-        .from('purchase_order_items')
-        .select('*')
-        .eq('purchase_order_id', order.id);
-      
-      if (itemsError) {
-        console.error(`[processOrderForDeliveryNote] Error loading items for order ${order.id}:`, itemsError);
-        toast.error(`Erreur lors du chargement des articles pour la commande ${order.order_number}`);
-        return false;
-      }
-      
-      orderItems = items || [];
-      console.log(`[processOrderForDeliveryNote] Loaded ${orderItems.length} items for order ${order.order_number}`);
-    }
-    
     // Ensure the order has items
-    if (!orderItems || orderItems.length === 0) {
+    if (!order.items || order.items.length === 0) {
       console.error(`[processOrderForDeliveryNote] Order ${order.order_number} has no items, cannot create delivery note`);
       toast.error(`Impossible de créer un bon de livraison pour la commande ${order.order_number} : aucun article trouvé`);
       return false;
     }
     
-    console.log(`[processOrderForDeliveryNote] Order ${order.order_number} has ${orderItems.length} items`);
-    
     // Create the delivery note
-    const deliveryNoteId = await createDeliveryNote({
-      ...order,
-      items: orderItems
-    });
-    
+    const deliveryNoteId = await createDeliveryNote(order);
     if (!deliveryNoteId) {
       return false;
     }
     
     // Create delivery note items with proper error handling
-    const itemsCreated = await createDeliveryNoteItems(deliveryNoteId, orderItems);
+    const itemsCreated = await createDeliveryNoteItems(deliveryNoteId, order.items);
     if (!itemsCreated) {
       console.error(`[processOrderForDeliveryNote] Failed to create items for delivery note ${deliveryNoteId}`);
       // Try to clean up the delivery note if items creation failed
@@ -70,8 +45,7 @@ export async function processOrderForDeliveryNote(order: any): Promise<boolean> 
     const updated = await markOrderHasDeliveryNote(order.id);
     
     if (updated) {
-      console.log(`[processOrderForDeliveryNote] Successfully processed order ${order.order_number} with ${orderItems.length} items`);
-      toast.success(`Bon de livraison créé pour la commande ${order.order_number} avec ${orderItems.length} articles`);
+      console.log(`[processOrderForDeliveryNote] Successfully processed order ${order.order_number} with ${order.items.length} items`);
     }
     
     return updated;

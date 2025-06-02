@@ -1,8 +1,69 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryNote } from "@/types/delivery-note";
+import { toast } from "sonner";
 
-export const stockOperationsService = {
+interface ReceivedQuantity {
+  id: string;
+  quantity_received: number;
+}
+
+export const stockUpdateService = {
+  async approveDeliveryNote(
+    note: DeliveryNote,
+    receivedQuantities: Record<string, number>,
+    selectedLocationId: string,
+    warehouses: any[],
+    posLocations: any[]
+  ) {
+    // 1. Update delivery note items with received quantities
+    const updates = note.items.map(item => ({
+      id: item.id,
+      quantity_received: receivedQuantities[item.id] || 0
+    }));
+
+    // Update each delivery note item
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('delivery_note_items')
+        .update({ quantity_received: update.quantity_received })
+        .eq('id', update.id);
+      
+      if (error) throw error;
+    }
+
+    // 2. Update stocks for each received item
+    for (const item of note.items) {
+      const receivedQty = receivedQuantities[item.id] || 0;
+      if (receivedQty > 0) {
+        await this.updateStockForLocation(
+          item.product_id,
+          receivedQty,
+          item.unit_price,
+          selectedLocationId,
+          warehouses,
+          posLocations,
+          note.delivery_number
+        );
+      }
+    }
+
+    // 3. Update delivery note status to 'received'
+    const { error: noteError } = await supabase
+      .from('delivery_notes')
+      .update({ 
+        status: 'received',
+        warehouse_id: selectedLocationId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', note.id);
+    
+    if (noteError) throw noteError;
+
+    // 4. Create purchase invoice from approved delivery note
+    await this.createPurchaseInvoice(note, updates);
+  },
+
   async updateStockForLocation(
     productId: string,
     quantity: number,
@@ -127,6 +188,43 @@ export const stockOperationsService = {
     } catch (error: any) {
       console.error('Stock update error:', error);
       throw new Error(`Erreur lors de la mise à jour du stock: ${error.message}`);
+    }
+  },
+
+  async createPurchaseInvoice(deliveryNote: DeliveryNote, receivedItems: ReceivedQuantity[]) {
+    try {
+      // Generate invoice number
+      const invoiceNumber = `FA-${Date.now()}`;
+      
+      // Calculate total amount based on received quantities
+      let totalAmount = 0;
+      receivedItems.forEach(receivedItem => {
+        const originalItem = deliveryNote.items.find(item => item.id === receivedItem.id);
+        if (originalItem) {
+          totalAmount += receivedItem.quantity_received * originalItem.unit_price;
+        }
+      });
+
+      // Create purchase invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('purchase_invoices')
+        .insert({
+          invoice_number: invoiceNumber,
+          supplier_id: deliveryNote.supplier_id,
+          total_amount: totalAmount,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      console.log('Purchase invoice created:', invoice);
+    } catch (error: any) {
+      console.error('Error creating purchase invoice:', error);
+      // Don't throw here to avoid blocking the approval process
+      toast.warning("Bon de livraison approuvé mais erreur lors de la création de la facture");
     }
   }
 };
