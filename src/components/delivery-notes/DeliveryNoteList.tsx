@@ -30,11 +30,13 @@ export function DeliveryNoteList({
   console.log("📋 DeliveryNoteList - Notes:", deliveryNotes?.length || 0);
   
   // Log items for debugging
-  deliveryNotes?.forEach(note => {
-    console.log(`🔍 Note ${note.delivery_number}:`, {
+  deliveryNotes?.forEach((note, index) => {
+    console.log(`🔍 Note ${index + 1} (${note.delivery_number}):`, {
       id: note.id,
       itemsCount: note.items?.length || 0,
-      items: note.items
+      items: note.items,
+      hasItems: !!note.items,
+      itemsIsArray: Array.isArray(note.items)
     });
   });
 
@@ -83,9 +85,16 @@ export function DeliveryNoteList({
 
   const formatArticles = (items: any[]) => {
     console.log("🔍 formatArticles called with:", items);
+    console.log("🔍 formatArticles - items type:", typeof items);
+    console.log("🔍 formatArticles - items isArray:", Array.isArray(items));
     
-    if (!items || !Array.isArray(items)) {
-      console.warn("⚠️ Items is not an array or is null/undefined:", items);
+    if (!items) {
+      console.warn("⚠️ Items is null or undefined");
+      return "0 article";
+    }
+    
+    if (!Array.isArray(items)) {
+      console.warn("⚠️ Items is not an array:", items);
       return "0 article";
     }
     
@@ -119,6 +128,18 @@ export function DeliveryNoteList({
     return preview;
   };
 
+  const handleDeleteClick = async (id: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log("🔄 Delete button clicked for:", id);
+    
+    try {
+      await onDelete(id);
+    } catch (error) {
+      console.error("❌ Error in delete handler:", error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
@@ -140,9 +161,12 @@ export function DeliveryNoteList({
         </TableHeader>
         <TableBody>
           {deliveryNotes.map((note) => {
+            const itemsCount = note.items?.length || 0;
             console.log(`🔍 Rendering row for note ${note.delivery_number}:`, {
-              itemsLength: note.items?.length,
-              items: note.items
+              itemsLength: itemsCount,
+              items: note.items,
+              hasItems: !!note.items,
+              itemsIsArray: Array.isArray(note.items)
             });
             
             return (
@@ -202,7 +226,7 @@ export function DeliveryNoteList({
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => onDelete(note.id)} 
+                        onClick={(e) => handleDeleteClick(note.id, e)}
                         className="h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white"
                         title="Supprimer"
                       >

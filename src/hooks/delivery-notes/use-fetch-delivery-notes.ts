@@ -53,8 +53,9 @@ export function useFetchDeliveryNotes() {
         return [];
       }
 
-      // Get delivery note IDs
+      // Get delivery note IDs for fetching items
       const deliveryNoteIds = deliveryNotesData.map(note => note.id);
+      console.log("📋 Fetching items for delivery note IDs:", deliveryNoteIds);
       
       // Fetch items for all delivery notes in a single query
       const { data: itemsData, error: itemsError } = await supabase
@@ -80,13 +81,15 @@ export function useFetchDeliveryNotes() {
       }
 
       console.log("✅ Items fetched:", itemsData?.length || 0);
+      console.log("📦 Raw items data:", itemsData);
       
       // Group items by delivery note ID
       const itemsByDeliveryNote = (itemsData || []).reduce((acc, item) => {
-        if (!acc[item.delivery_note_id]) {
-          acc[item.delivery_note_id] = [];
+        const deliveryNoteId = item.delivery_note_id;
+        if (!acc[deliveryNoteId]) {
+          acc[deliveryNoteId] = [];
         }
-        acc[item.delivery_note_id].push({
+        acc[deliveryNoteId].push({
           id: item.id,
           delivery_note_id: item.delivery_note_id,
           product_id: item.product_id,
@@ -105,6 +108,8 @@ export function useFetchDeliveryNotes() {
         });
         return acc;
       }, {} as Record<string, any[]>);
+      
+      console.log("🗂️ Items grouped by delivery note:", itemsByDeliveryNote);
       
       // Transform the data
       const transformedNotes: DeliveryNote[] = deliveryNotesData.map(note => {
@@ -149,7 +154,7 @@ export function useFetchDeliveryNotes() {
       
       console.log("✅ Final delivery notes processed:", transformedNotes.length);
       transformedNotes.forEach(note => {
-        console.log(`📋 ${note.delivery_number}: ${note.items.length} articles`);
+        console.log(`📋 ${note.delivery_number}: ${note.items?.length || 0} articles`);
       });
       
       return transformedNotes;
