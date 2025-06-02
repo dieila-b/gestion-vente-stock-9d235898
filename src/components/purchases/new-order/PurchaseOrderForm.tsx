@@ -1,8 +1,7 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductSelectionModal } from "./ProductSelectionModal";
-import { CatalogDebugInfo } from "./CatalogDebugInfo";
-import { SuppliersDebugInfo } from "./SuppliersDebugInfo";
 import { useProductSelection } from "@/hooks/use-product-selection";
 import { usePurchaseOrderSubmit } from "@/hooks/use-purchase-order-submit";
 import { useSuppliers } from "@/hooks/use-suppliers";
@@ -98,9 +97,6 @@ export default function PurchaseOrderForm() {
 
   return (
     <div className="space-y-6">
-      <CatalogDebugInfo />
-      <SuppliersDebugInfo />
-      
       <Card className="neo-blur border-white/10">
         <CardHeader>
           <CardTitle className="text-white">Nouveau Bon de Commande</CardTitle>
