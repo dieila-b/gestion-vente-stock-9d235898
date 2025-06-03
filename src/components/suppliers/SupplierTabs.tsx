@@ -42,7 +42,7 @@ export const SupplierTabs = ({
 
   return (
     <Card className="enhanced-glass h-full flex flex-col animate-fade-in" style={{ animationDelay: "0.4s" }}>
-      <div className="p-6 pb-0 flex-shrink-0">
+      <div className="p-4 pb-0 flex-shrink-0">
         <Tabs defaultValue="liste" className="h-full flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <TabsList className="glass-effect">

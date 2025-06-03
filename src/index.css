@@ -33,14 +33,13 @@
     @apply border-border;
   }
   html, body, #root {
-    @apply h-full w-full;
-  }
-  body {
-    @apply bg-background text-foreground antialiased h-full w-full;
-    background: linear-gradient(to bottom right, hsl(240 10% 3.9%), hsl(240 10% 2%));
+    @apply h-full w-full overflow-hidden;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background: linear-gradient(to bottom right, hsl(240 10% 3.9%), hsl(240 10% 2%));
   }
 }
 
@@ -95,46 +94,29 @@
            transition-all duration-300 ease-out;
   }
 
-  /* Responsive utilities */
-  .mobile-menu {
-    @apply fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden;
-  }
-
-  .mobile-menu-content {
-    @apply fixed inset-y-0 left-0 z-50 h-full w-3/4 border-r bg-background/95 shadow-lg animate-in slide-in-from-left duration-300;
-  }
-
-  .desktop-sidebar {
-    @apply hidden md:flex md:w-64 md:flex-col;
-  }
-
-  .responsive-grid {
-    @apply grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
-  }
-
-  .responsive-chart {
-    @apply h-[300px] md:h-[400px] w-full;
-  }
-
   /* Fullscreen utilities */
-  .fullscreen-tab {
-    @apply h-full w-full flex flex-col;
-  }
-
-  .fullscreen-content {
-    @apply flex-1 overflow-auto;
-  }
-
   .fullscreen-container {
     @apply h-screen w-screen overflow-hidden;
   }
 
-  /* Force full height/width for tabs */
-  [data-radix-tabs-content] {
-    @apply h-full w-full flex-1;
+  .fullscreen-layout {
+    @apply h-full w-full flex flex-col overflow-hidden;
   }
 
-  /* Ensure tables take full height */
+  .fullscreen-content {
+    @apply flex-1 overflow-hidden;
+  }
+
+  /* Force full height/width for all components */
+  [data-radix-tabs-content] {
+    @apply h-full w-full;
+  }
+
+  [data-radix-tabs-root] {
+    @apply h-full w-full;
+  }
+
+  /* Ensure tables and lists take full height */
   .data-table-container {
     @apply h-full flex flex-col;
   }

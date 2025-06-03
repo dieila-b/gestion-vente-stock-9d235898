@@ -43,17 +43,17 @@ export default function DeliveryNotesPage() {
 
   return (
     <DashboardLayout>
-      <div className="h-full w-full flex flex-col p-0 m-0">
-        <div className="flex-shrink-0 p-6 pb-0">
+      <div className="h-full w-full flex flex-col">
+        <div className="flex-shrink-0 p-4">
           <DeliveryNoteHeader 
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
           />
         </div>
 
-        <div className="flex-1 p-6 pt-6 overflow-hidden">
+        <div className="flex-1 px-4 pb-4 overflow-hidden">
           <Card className="h-full flex flex-col">
-            <CardContent className="flex-1 pt-6 p-6 overflow-hidden">
+            <CardContent className="flex-1 p-4 overflow-hidden">
               <div className="h-full">
                 <DeliveryNoteList 
                   deliveryNotes={filteredDeliveryNotes}

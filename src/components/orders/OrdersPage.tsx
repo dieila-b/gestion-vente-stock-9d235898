@@ -102,8 +102,8 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col p-0 m-0">
-      <div className="flex-shrink-0 p-6 pb-0">
+    <div className="h-full w-full flex flex-col">
+      <div className="flex-shrink-0 p-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">Gestion des Précommandes</h1>
           <p className="text-muted-foreground">
