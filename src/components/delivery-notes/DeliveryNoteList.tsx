@@ -75,30 +75,17 @@ export function DeliveryNoteList({
   };
 
   const formatArticles = (items: any[]) => {
-    console.log("formatArticles called with:", items);
-    
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      console.log("No items or empty array");
-      return "0 article";
-    }
+    if (!items || items.length === 0) return "0 article";
     
     const count = items.length;
-    console.log("Items count:", count);
+    const distinctCount = new Set(items.map(item => item.product_id)).size;
     
-    // Calculate total quantity ordered
-    const totalQuantity = items.reduce((sum, item) => {
-      const qty = item.quantity_ordered || 0;
-      console.log(`Item ${item.id}: quantity_ordered = ${qty}`);
-      return sum + qty;
-    }, 0);
-    
-    console.log("Total quantity:", totalQuantity);
-    
-    if (count === 1) {
-      return `1 article (${totalQuantity} unité${totalQuantity > 1 ? 's' : ''})`;
+    // Show both total items and distinct products if different
+    if (count !== distinctCount) {
+      return `${distinctCount} article${distinctCount > 1 ? 's' : ''} distincts (${count} total)`;
     }
     
-    return `${count} articles (${totalQuantity} unité${totalQuantity > 1 ? 's' : ''})`;
+    return `${count} article${count > 1 ? 's' : ''}`;
   };
 
   return (
@@ -128,8 +115,6 @@ export function DeliveryNoteList({
             }
             
             console.log(`Rendering note ${note.id}:`, note);
-            console.log(`Note ${note.id} items:`, note.items);
-            
             return (
               <TableRow key={note.id}>
                 <TableCell className="font-medium">{note.delivery_number || 'BL-XXXX'}</TableCell>
@@ -161,8 +146,8 @@ export function DeliveryNoteList({
                         <Edit className="h-4 w-4" />
                       </Button>
                     )}
-                    {/* Show Approve button only for pending status and if items exist */}
-                    {onApprove && note.status === 'pending' && note.items && note.items.length > 0 && (
+                    {/* Show Approve button only for pending status */}
+                    {onApprove && note.status === 'pending' && (
                       <Button 
                         variant="ghost" 
                         size="icon" 

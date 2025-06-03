@@ -18,7 +18,7 @@ export function QuantitiesTable({
   console.log("QuantitiesTable - items:", note.items);
   console.log("QuantitiesTable - items count:", note.items?.length || 0);
 
-  if (!note.items || !Array.isArray(note.items) || note.items.length === 0) {
+  if (!note.items || note.items.length === 0) {
     return (
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Quantités reçues par article</h3>
@@ -27,10 +27,6 @@ export function QuantitiesTable({
           <br />
           <span className="text-sm">
             Bon de livraison ID: {note.id} | Items: {note.items?.length || 0}
-          </span>
-          <br />
-          <span className="text-xs text-red-500">
-            Vérifiez que le bon de livraison a été créé correctement à partir d'une commande d'achat approuvée.
           </span>
         </div>
       </div>
@@ -58,7 +54,7 @@ export function QuantitiesTable({
         <TableBody>
           {note.items.map((item) => {
             const receivedQty = receivedQuantities[item.id] || 0;
-            const total = receivedQty * (item.unit_price || 0);
+            const total = receivedQty * item.unit_price;
             
             console.log("Rendering item:", item);
             
@@ -66,18 +62,18 @@ export function QuantitiesTable({
               <TableRow key={item.id}>
                 <TableCell>{item.product?.name || 'Produit inconnu'}</TableCell>
                 <TableCell>{item.product?.reference || 'N/A'}</TableCell>
-                <TableCell>{item.quantity_ordered || 0}</TableCell>
+                <TableCell>{item.quantity_ordered}</TableCell>
                 <TableCell>
                   <Input
                     type="number"
                     min="0"
-                    max={item.quantity_ordered || 0}
+                    max={item.quantity_ordered}
                     value={receivedQty}
                     onChange={(e) => onQuantityChange(item.id, e.target.value)}
                     className="w-24"
                   />
                 </TableCell>
-                <TableCell>{(item.unit_price || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                <TableCell>{item.unit_price.toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell className="font-medium">{total.toLocaleString('fr-FR')} GNF</TableCell>
               </TableRow>
             );

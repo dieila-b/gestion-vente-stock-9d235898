@@ -23,17 +23,16 @@ export function useDeliveryNoteApprovalForm(
     console.log("useDeliveryNoteApprovalForm - note changed:", note);
     console.log("useDeliveryNoteApprovalForm - note items:", note?.items);
     
-    if (note?.items && Array.isArray(note.items) && note.items.length > 0) {
+    if (note?.items && Array.isArray(note.items)) {
       const initialQuantities: Record<string, number> = {};
       note.items.forEach(item => {
-        const quantityOrdered = item.quantity_ordered || 0;
-        console.log("Setting initial quantity for item:", item.id, "quantity:", quantityOrdered);
-        initialQuantities[item.id] = quantityOrdered;
+        console.log("Setting initial quantity for item:", item.id, "quantity:", item.quantity_ordered);
+        initialQuantities[item.id] = item.quantity_ordered;
       });
       console.log("Initial quantities set:", initialQuantities);
       setReceivedQuantities(initialQuantities);
     } else {
-      console.log("No items found or items is not an array, items:", note?.items);
+      console.log("No items found or items is not an array");
       setReceivedQuantities({});
     }
     
@@ -67,23 +66,12 @@ export function useDeliveryNoteApprovalForm(
       return false;
     }
 
-    let hasValidItems = false;
     note.items.forEach(item => {
       const receivedQty = receivedQuantities[item.id] || 0;
-      const orderedQty = item.quantity_ordered || 0;
-      
-      if (receivedQty > 0) {
-        hasValidItems = true;
-      }
-      
-      if (receivedQty > orderedQty) {
-        newErrors.push(`La quantité reçue pour ${item.product?.name || 'Article'} ne peut pas dépasser la quantité commandée (${orderedQty})`);
+      if (receivedQty > item.quantity_ordered) {
+        newErrors.push(`La quantité reçue pour ${item.product?.name || 'Article'} ne peut pas dépasser la quantité commandée (${item.quantity_ordered})`);
       }
     });
-
-    if (!hasValidItems) {
-      newErrors.push("Au moins un article doit avoir une quantité reçue supérieure à 0");
-    }
 
     setErrors(newErrors);
     return newErrors.length === 0;
