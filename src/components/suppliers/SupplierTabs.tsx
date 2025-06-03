@@ -41,47 +41,51 @@ export const SupplierTabs = ({
   );
 
   return (
-    <Card className="enhanced-glass p-6 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-      <Tabs defaultValue="liste" className="space-y-6">
-        <div className="flex justify-between items-center mb-6">
-          <TabsList className="glass-effect">
-            <TabsTrigger value="liste">Liste des Fournisseurs</TabsTrigger>
-            <TabsTrigger value="validation">Validation</TabsTrigger>
-            <TabsTrigger value="performances">Performances</TabsTrigger>
-            <TabsTrigger value="commandes">Commandes</TabsTrigger>
-          </TabsList>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Rechercher un fournisseur..."
-              className="pl-10 glass-effect"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
+    <Card className="enhanced-glass h-full flex flex-col animate-fade-in" style={{ animationDelay: "0.4s" }}>
+      <div className="p-6 pb-0 flex-shrink-0">
+        <Tabs defaultValue="liste" className="h-full flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <TabsList className="glass-effect">
+              <TabsTrigger value="liste">Liste des Fournisseurs</TabsTrigger>
+              <TabsTrigger value="validation">Validation</TabsTrigger>
+              <TabsTrigger value="performances">Performances</TabsTrigger>
+              <TabsTrigger value="commandes">Commandes</TabsTrigger>
+            </TabsList>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Rechercher un fournisseur..."
+                className="pl-10 glass-effect"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
 
-        <TabsContent value="liste">
-          <SupplierList 
-            suppliers={filteredSuppliers} 
-            onCreateOrder={onCreateOrder}
-            onRequestPrice={onRequestPrice}
-            onDeleteSupplier={onDeleteSupplier}
-          />
-        </TabsContent>
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="liste" className="h-full mt-0">
+              <SupplierList 
+                suppliers={filteredSuppliers} 
+                onCreateOrder={onCreateOrder}
+                onRequestPrice={onRequestPrice}
+                onDeleteSupplier={onDeleteSupplier}
+              />
+            </TabsContent>
 
-        <TabsContent value="validation">
-          <SupplierValidationList
-            suppliers={filteredSuppliers.filter((s) => s.status === "En attente")}
-            onValidate={onVerifySupplier}
-            onReject={onRejectSupplier}
-          />
-        </TabsContent>
+            <TabsContent value="validation" className="h-full mt-0">
+              <SupplierValidationList
+                suppliers={filteredSuppliers.filter((s) => s.status === "En attente")}
+                onValidate={onVerifySupplier}
+                onReject={onRejectSupplier}
+              />
+            </TabsContent>
 
-        <TabsContent value="performances">
-          <SupplierPerformanceList suppliers={filteredSuppliers} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="performances" className="h-full mt-0">
+              <SupplierPerformanceList suppliers={filteredSuppliers} />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </Card>
   );
 };

@@ -43,25 +43,31 @@ export default function DeliveryNotesPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <DeliveryNoteHeader 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+      <div className="h-full w-full flex flex-col p-0 m-0">
+        <div className="flex-shrink-0 p-6 pb-0">
+          <DeliveryNoteHeader 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        </div>
 
-        <Card className="mt-6">
-          <CardContent className="pt-6">
-            <DeliveryNoteList 
-              deliveryNotes={filteredDeliveryNotes}
-              isLoading={isLoading}
-              onView={handleView}
-              onEdit={handleEdit}
-              onApprove={handleApprove}
-              onPrint={handlePrint}
-              onDelete={handleDelete}
-            />
-          </CardContent>
-        </Card>
+        <div className="flex-1 p-6 pt-6 overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 pt-6 p-6 overflow-hidden">
+              <div className="h-full">
+                <DeliveryNoteList 
+                  deliveryNotes={filteredDeliveryNotes}
+                  isLoading={isLoading}
+                  onView={handleView}
+                  onEdit={handleEdit}
+                  onApprove={handleApprove}
+                  onPrint={handlePrint}
+                  onDelete={handleDelete}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <DeliveryNoteApprovalDialog
           note={selectedNoteForApproval}

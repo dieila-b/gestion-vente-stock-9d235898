@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,10 +32,15 @@
   * {
     @apply border-border;
   }
+  html, body, #root {
+    @apply h-full w-full;
+  }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased h-full w-full;
     background: linear-gradient(to bottom right, hsl(240 10% 3.9%), hsl(240 10% 2%));
-    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 }
 
@@ -108,5 +114,18 @@
 
   .responsive-chart {
     @apply h-[300px] md:h-[400px] w-full;
+  }
+
+  /* Fullscreen utilities */
+  .fullscreen-tab {
+    @apply h-full w-full flex flex-col;
+  }
+
+  .fullscreen-content {
+    @apply flex-1 overflow-auto;
+  }
+
+  .fullscreen-container {
+    @apply h-screen w-screen overflow-hidden;
   }
 }
