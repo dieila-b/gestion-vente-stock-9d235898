@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { OrderCard } from "./OrderCard";
+import { CardContent } from "@/components/ui/card";
 
 export function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -101,50 +102,58 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Gestion des Précommandes</h1>
-        <p className="text-muted-foreground">
-          Suivez et gérez les précommandes clients
-        </p>
+    <div className="h-full w-full flex flex-col p-0 m-0">
+      <div className="flex-shrink-0 p-6 pb-0">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Gestion des Précommandes</h1>
+          <p className="text-muted-foreground">
+            Suivez et gérez les précommandes clients
+          </p>
+        </div>
+
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <TabsList className="mb-6">
+            <TabsTrigger value="pending">En attente</TabsTrigger>
+            <TabsTrigger value="partial">Paiement partiel</TabsTrigger>
+            <TabsTrigger value="paid">Payée</TabsTrigger>
+            <TabsTrigger value="delivered">Livrée</TabsTrigger>
+            <TabsTrigger value="canceled">Annulée</TabsTrigger>
+            <TabsTrigger value="all">Toutes</TabsTrigger>
+          </TabsList>
+
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value={activeTab} className="h-full mt-0">
+              <div className="h-full overflow-auto">
+                {preorders.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center p-8">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-medium mb-2">Aucune précommande</h3>
+                      <p className="text-center text-muted-foreground">
+                        Il n'y a pas de précommande avec ce statut actuellement.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {preorders.map((order: any) => (
+                      <OrderCard 
+                        key={order.id} 
+                        order={order} 
+                        isUpdating={isUpdating}
+                        setIsUpdating={setIsUpdating} 
+                        refetchPreorders={refetchPreorders}
+                        setSelectedOrder={setSelectedOrder}
+                        setShowPaymentDialog={setShowPaymentDialog}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="pending">En attente</TabsTrigger>
-          <TabsTrigger value="partial">Paiement partiel</TabsTrigger>
-          <TabsTrigger value="paid">Payée</TabsTrigger>
-          <TabsTrigger value="delivered">Livrée</TabsTrigger>
-          <TabsTrigger value="canceled">Annulée</TabsTrigger>
-          <TabsTrigger value="all">Toutes</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="space-y-4">
-          {preorders.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center p-8">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-2">Aucune précommande</h3>
-                <p className="text-center text-muted-foreground">
-                  Il n'y a pas de précommande avec ce statut actuellement.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            preorders.map((order: any) => (
-              <OrderCard 
-                key={order.id} 
-                order={order} 
-                isUpdating={isUpdating}
-                setIsUpdating={setIsUpdating} 
-                refetchPreorders={refetchPreorders}
-                setSelectedOrder={setSelectedOrder}
-                setShowPaymentDialog={setShowPaymentDialog}
-              />
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
 
       {showPaymentDialog && selectedOrder && (
         <PaymentDialog
@@ -162,6 +171,3 @@ export function OrdersPage() {
     </div>
   );
 }
-
-// Import the missing CardContent component
-import { CardContent } from "@/components/ui/card";

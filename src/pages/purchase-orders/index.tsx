@@ -104,25 +104,31 @@ export default function PurchaseOrdersPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <PurchaseOrderHeader 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+      <div className="h-full w-full flex flex-col p-0 m-0">
+        <div className="flex-shrink-0 p-6 pb-0">
+          <PurchaseOrderHeader 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        </div>
 
-        <Card className="mt-6">
-          <CardContent className="pt-6">
-            <PurchaseOrderList 
-              orders={filteredOrders}
-              isLoading={isLoading || !initialLoadDone}
-              onApprove={handleApprove}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onPrint={handlePrint}
-              processingOrderId={processingOrderId}
-            />
-          </CardContent>
-        </Card>
+        <div className="flex-1 p-6 pt-6 overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 pt-6 p-6 overflow-hidden">
+              <div className="h-full">
+                <PurchaseOrderList 
+                  orders={filteredOrders}
+                  isLoading={isLoading || !initialLoadDone}
+                  onApprove={handleApprove}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onPrint={handlePrint}
+                  processingOrderId={processingOrderId}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Render EditDialog component */}
         <EditDialog />

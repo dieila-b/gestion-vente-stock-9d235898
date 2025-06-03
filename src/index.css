@@ -128,4 +128,18 @@
   .fullscreen-container {
     @apply h-screen w-screen overflow-hidden;
   }
+
+  /* Force full height/width for tabs */
+  [data-radix-tabs-content] {
+    @apply h-full w-full flex-1;
+  }
+
+  /* Ensure tables take full height */
+  .data-table-container {
+    @apply h-full flex flex-col;
+  }
+
+  .data-table-wrapper {
+    @apply flex-1 overflow-auto;
+  }
 }
