@@ -34,12 +34,22 @@ export const purchaseInvoiceService = {
         return null;
       }
 
-      // Create purchase invoice with the exact structure expected by the database
+      // Create purchase invoice with all required fields
       const invoiceData = {
         invoice_number: invoiceNumber,
         supplier_id: deliveryNote.supplier_id,
         total_amount: totalAmount,
         status: 'pending',
+        payment_status: 'pending',
+        tax_amount: 0,
+        paid_amount: 0,
+        remaining_amount: totalAmount,
+        discount: 0,
+        shipping_cost: 0,
+        notes: `Généré automatiquement depuis le bon de livraison ${deliveryNote.delivery_number}`,
+        delivery_note_id: deliveryNote.id,
+        purchase_order_id: deliveryNote.purchase_order_id,
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

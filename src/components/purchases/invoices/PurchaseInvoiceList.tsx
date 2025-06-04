@@ -23,17 +23,18 @@ export function PurchaseInvoiceList({
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
       </div>
     );
   }
 
-  if (invoices.length === 0) {
+  if (!invoices || invoices.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        Aucune facture d'achat trouvée
+        <p>Aucune facture d'achat trouvée</p>
+        <p className="text-sm mt-2">Les factures d'achat apparaîtront ici après approbation des bons de livraison</p>
       </div>
     );
   }
@@ -47,7 +48,20 @@ export function PurchaseInvoiceList({
       case 'paid':
         return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Payé</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{status || 'Non défini'}</Badge>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/20">En attente</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approuvé</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">Rejeté</Badge>;
+      default:
+        return <Badge variant="outline">{status || 'Non défini'}</Badge>;
     }
   };
 
@@ -56,9 +70,10 @@ export function PurchaseInvoiceList({
       <TableHeader>
         <TableRow>
           <TableHead>N° Facture</TableHead>
-          <TableHead>Date</TableHead>
+          <TableHead>Date création</TableHead>
           <TableHead>Fournisseur</TableHead>
-          <TableHead>Montant</TableHead>
+          <TableHead>Montant total</TableHead>
+          <TableHead>Statut</TableHead>
           <TableHead>Statut paiement</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -66,11 +81,27 @@ export function PurchaseInvoiceList({
       <TableBody>
         {invoices.map((invoice) => (
           <TableRow key={invoice.id}>
-            <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-            <TableCell>{new Date(invoice.created_at).toLocaleDateString()}</TableCell>
-            <TableCell>{invoice.supplier?.name || 'N/A'}</TableCell>
-            <TableCell>{formatGNF(invoice.total_amount)}</TableCell>
-            <TableCell>{getPaymentStatusBadge(invoice.payment_status)}</TableCell>
+            <TableCell className="font-medium">
+              {invoice.invoice_number || `FA-${invoice.id?.substring(0, 8)}`}
+            </TableCell>
+            <TableCell>
+              {invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+            </TableCell>
+            <TableCell>
+              {invoice.supplier?.name || 'Fournisseur non défini'}
+              {invoice.supplier?.phone && (
+                <div className="text-xs text-gray-500">{invoice.supplier.phone}</div>
+              )}
+            </TableCell>
+            <TableCell className="font-medium">
+              {formatGNF(invoice.total_amount || 0)}
+            </TableCell>
+            <TableCell>
+              {getStatusBadge(invoice.status)}
+            </TableCell>
+            <TableCell>
+              {getPaymentStatusBadge(invoice.payment_status)}
+            </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end space-x-2">
                 <Button
