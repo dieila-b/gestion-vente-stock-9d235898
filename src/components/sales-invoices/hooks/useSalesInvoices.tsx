@@ -49,13 +49,18 @@ export function useSalesInvoices() {
     formatInvoiceItems
   } = useInvoiceDisplay();
 
-  // Filter invoices based on search term
-  const filteredInvoices = filterInvoices(allInvoices);
+  // Filter invoices based on search term - ensure we have valid data
+  const filteredInvoices = filterInvoices(allInvoices || []);
   
   // Apply pagination to filtered invoices
-  const totalPages = Math.ceil(filteredInvoices?.length / itemsPerPage);
+  const totalPages = Math.ceil((filteredInvoices?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedInvoices = filteredInvoices?.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedInvoices = filteredInvoices?.slice(startIndex, startIndex + itemsPerPage) || [];
+
+  // Reset to first page when filters change
+  useState(() => {
+    setCurrentPage(1);
+  });
 
   return {
     // Sorting
@@ -64,7 +69,7 @@ export function useSalesInvoices() {
     handleSort,
     
     // Data
-    invoices: filteredInvoices,
+    invoices: filteredInvoices || [],
     paginatedInvoices,
     isLoading,
     refetch,

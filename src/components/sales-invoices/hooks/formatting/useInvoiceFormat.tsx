@@ -1,36 +1,39 @@
 
 export function useInvoiceFormat() {
   const getItemsSummary = (invoice: any) => {
-    if (!invoice.items || invoice.items.length === 0) return "Aucun article";
+    if (!invoice.items || !Array.isArray(invoice.items)) {
+      return "Aucun article";
+    }
     
-    const firstItem = invoice.items[0];
-    const productName = firstItem.product?.name || "Produit inconnu";
+    const totalItems = invoice.items.length;
+    const totalQuantity = invoice.items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
     
-    if (invoice.items.length === 1) return productName;
+    if (totalItems === 0) {
+      return "Aucun article";
+    }
     
-    return `${productName} + ${invoice.items.length - 1} autres`;
+    if (totalItems === 1) {
+      return `1 article (Qté: ${totalQuantity})`;
+    }
+    
+    return `${totalItems} articles (Qté: ${totalQuantity})`;
   };
 
   const formatInvoiceItems = (invoice: any) => {
-    return invoice.items.map((item: any) => {
-      // Calculate total as price * quantity (before discount)
-      const totalPrice = item.price * item.quantity;
-      // Calculate total item discount
-      const totalDiscount = (item.discount || 0) * item.quantity;
-      
-      return {
-        id: item.id,
-        name: item.product?.name || 'Produit inconnu',
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount || 0,
-        image: item.product?.image,
-        delivered: item.delivered_quantity ? item.delivered_quantity > 0 : false,
-        deliveredQuantity: item.delivered_quantity || 0,
-        total: totalPrice,
-        totalDiscount: totalDiscount
-      };
-    });
+    if (!invoice.items || !Array.isArray(invoice.items)) {
+      return [];
+    }
+    
+    return invoice.items.map((item: any) => ({
+      id: item.id,
+      name: item.product?.name || `Produit #${item.product_id}`,
+      quantity: item.quantity || 0,
+      price: item.price || 0,
+      discount: item.discount || 0,
+      total: item.total || (item.quantity * item.price - (item.discount || 0)),
+      delivered_quantity: item.delivered_quantity || 0,
+      product_id: item.product_id
+    }));
   };
 
   return {
