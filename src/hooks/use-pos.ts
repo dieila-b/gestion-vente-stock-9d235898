@@ -6,7 +6,7 @@ import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePOSProducts } from "./pos/use-pos-products";
 import { usePOSPayment } from "./pos/payment";
-import { CartItem } from "@/types/pos"; // Unified type import
+import { CartItem } from "@/types/pos";
 
 export function usePOS(editOrderId?: string | null) {
   // Cart state from zustand store
@@ -19,7 +19,8 @@ export function usePOS(editOrderId?: string | null) {
     clearCart, 
     setCart: storeSetCart,
     addClient,
-    removeClient
+    removeClient,
+    setQuantity: storeSetQuantity
   } = useCartStore();
 
   // Client selection state
@@ -46,7 +47,7 @@ export function usePOS(editOrderId?: string | null) {
     }
   }, [posLocations, selectedPDV]);
 
-  // Get products with usePOSProducts hook - now passes selectedPDV
+  // Get products with usePOSProducts hook
   const productsData = usePOSProducts(selectedPDV);
   
   // Payment dialog state
@@ -143,14 +144,13 @@ export function usePOS(editOrderId?: string | null) {
     }
   };
 
-  // Set quantity manually
+  // Fonction setQuantity qui remplace directement la quantité
   const setQuantity = (productId: string, quantity: number) => {
-    updateQuantity(productId, quantity);
+    storeSetQuantity(productId, quantity);
   };
 
   // Custom wrapper for setCart to ensure types are consistent
   const setCart = (items: CartItem[]) => {
-    // Ensure all items have required properties for CartItem type
     const completeItems = items.map(item => ({
       ...item,
       product_id: item.product_id || item.id,
@@ -170,7 +170,7 @@ export function usePOS(editOrderId?: string | null) {
     clearCart,
     stockItems,
     selectedPDV,
-    activeRegister: null, // This would come from a hook or context
+    activeRegister: null,
     refetchStock,
     editOrderId
   });

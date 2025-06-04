@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CartItem } from '@/types/pos';
@@ -17,7 +16,7 @@ interface CartStore {
   cart: CartState;
   addItem: (product: any, stock?: number) => void;
   removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  updateQuantity: (id: string, delta: number) => void;
   setQuantity: (id: string, quantity: number) => void;
   updateDiscount: (id: string, discount: number) => void;
   addClient: (client: Client) => void;
@@ -44,7 +43,6 @@ export const useCartStore = create<CartStore>()(
         const existingItem = cart.items.find(item => item.id === product.id);
         
         if (existingItem) {
-          // Update quantity if item exists
           const updatedItems = cart.items.map(item => 
             item.id === product.id 
               ? { ...item, quantity: item.quantity + 1 } 
@@ -61,7 +59,6 @@ export const useCartStore = create<CartStore>()(
             }
           }));
         } else {
-          // Add new item
           const newItem: CartItem = {
             id: product.id,
             product_id: product.id,
