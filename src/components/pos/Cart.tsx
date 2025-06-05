@@ -122,43 +122,43 @@ export function Cart({
 
   return (
     <div className="h-full flex flex-col">
-      <Card className="flex-1 glass-panel flex flex-col overflow-hidden">
+      <Card className="h-full glass-panel flex flex-col">
         <CartHeader itemCount={items.length} />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
-              {(showReceipt || showInvoice) ? (
-                <CartReceiptView
-                  showReceipt={showReceipt}
-                  showInvoice={showInvoice}
-                  items={items}
-                  subtotal={subtotal}
-                  totalDiscount={totalDiscount}
-                  total={total}
-                  onPrint={handlePrint}
-                  selectedClient={selectedClient}
-                  invoiceNumber={invoiceNumber}
-                  currentDate={currentDate}
-                />
-              ) : (
-                <CartItems
-                  items={items}
-                  onUpdateQuantity={onUpdateQuantity}
-                  onRemove={onRemove}
-                  onUpdateDiscount={onUpdateDiscount}
-                  onSetQuantity={onSetQuantity}
-                  hasOutOfStockItems={false}
-                  hasLowStockItems={false}
-                  availableStock={availableStock}
-                  onValidationChange={setHasValidationErrors}
-                />
-              )}
-            </div>
+        {/* Contenu principal avec hauteur fixe et scroll */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Zone scrollable pour les items */}
+          <div className="flex-1 overflow-y-auto min-h-0 p-4">
+            {(showReceipt || showInvoice) ? (
+              <CartReceiptView
+                showReceipt={showReceipt}
+                showInvoice={showInvoice}
+                items={items}
+                subtotal={subtotal}
+                totalDiscount={totalDiscount}
+                total={total}
+                onPrint={handlePrint}
+                selectedClient={selectedClient}
+                invoiceNumber={invoiceNumber}
+                currentDate={currentDate}
+              />
+            ) : (
+              <CartItems
+                items={items}
+                onUpdateQuantity={onUpdateQuantity}
+                onRemove={onRemove}
+                onUpdateDiscount={onUpdateDiscount}
+                onSetQuantity={onSetQuantity}
+                hasOutOfStockItems={false}
+                hasLowStockItems={false}
+                availableStock={availableStock}
+                onValidationChange={setHasValidationErrors}
+              />
+            )}
           </div>
 
-          {/* Zone fixe en bas pour le résumé et les actions */}
-          <div className="flex-shrink-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4 space-y-4">
+          {/* Zone fixe en bas - toujours visible */}
+          <div className="flex-shrink-0 bg-card border-t border-border p-4 space-y-4">
             {hasValidationErrors && (
               <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
                 ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement

@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Cart } from "@/components/pos/Cart";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
@@ -104,7 +103,8 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row h-screen bg-background">
+      {/* Conteneur principal avec hauteur forcée */}
+      <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] bg-background">
         <ProductSection
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -123,7 +123,9 @@ export default function POS() {
           availableStock={availableStock}
         />
 
+        {/* Section panier avec hauteur forcée */}
         <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full">
+          {/* Header fixe */}
           <div className="flex-shrink-0 p-4 space-y-4 bg-background border-b border-border/10">
             <div className="flex flex-col space-y-2">
               {!selectedClient && (
@@ -139,7 +141,8 @@ export default function POS() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-hidden">
+          {/* Cart avec hauteur forcée et scroll interne */}
+          <div className="flex-1 min-h-0">
             <Cart
               items={cart}
               onRemove={removeFromCart}
