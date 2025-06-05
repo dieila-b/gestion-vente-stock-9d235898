@@ -58,7 +58,7 @@ export function Cart({
   const handleClear = () => {
     if (clearCart) {
       clearCart();
-      setHasValidationErrors(false); // Reset validation errors when clearing cart
+      setHasValidationErrors(false);
       toast({
         title: "Panier annulé",
         description: "Le panier a été vidé"
@@ -121,65 +121,67 @@ export function Cart({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <Card className="w-full glass-panel flex flex-col h-full">
+    <Card className="w-full glass-panel flex flex-col h-full max-h-[calc(100vh-2rem)]">
       <CartHeader itemCount={items.length} />
 
-      <div className="flex-1 p-4">
-        {(showReceipt || showInvoice) ? (
-          <CartReceiptView
-            showReceipt={showReceipt}
-            showInvoice={showInvoice}
-            items={items}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto p-4">
+          {(showReceipt || showInvoice) ? (
+            <CartReceiptView
+              showReceipt={showReceipt}
+              showInvoice={showInvoice}
+              items={items}
+              subtotal={subtotal}
+              totalDiscount={totalDiscount}
+              total={total}
+              onPrint={handlePrint}
+              selectedClient={selectedClient}
+              invoiceNumber={invoiceNumber}
+              currentDate={currentDate}
+            />
+          ) : (
+            <CartItems
+              items={items}
+              onUpdateQuantity={onUpdateQuantity}
+              onRemove={onRemove}
+              onUpdateDiscount={onUpdateDiscount}
+              onSetQuantity={onSetQuantity}
+              hasOutOfStockItems={false}
+              hasLowStockItems={false}
+              availableStock={availableStock}
+              onValidationChange={setHasValidationErrors}
+            />
+          )}
+        </div>
+
+        <div className="flex-shrink-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
+          {hasValidationErrors && (
+            <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+              ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
+            </div>
+          )}
+          
+          <CartSummary
             subtotal={subtotal}
             totalDiscount={totalDiscount}
             total={total}
-            onPrint={handlePrint}
             selectedClient={selectedClient}
-            invoiceNumber={invoiceNumber}
-            currentDate={currentDate}
           />
-        ) : (
-          <CartItems
-            items={items}
-            onUpdateQuantity={onUpdateQuantity}
-            onRemove={onRemove}
-            onUpdateDiscount={onUpdateDiscount}
-            onSetQuantity={onSetQuantity}
-            hasOutOfStockItems={false}
-            hasLowStockItems={false}
-            availableStock={availableStock}
-            onValidationChange={setHasValidationErrors}
-          />
-        )}
-      </div>
 
-      <div className="sticky bottom-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
-        {hasValidationErrors && (
-          <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
-            ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
+          <div className="grid grid-cols-4 gap-2">
+            <CartActions
+              showReceipt={showReceipt}
+              showInvoice={showInvoice}
+              onBack={handleBack}
+              onClear={handleClear}
+              onCheckout={handleCheckout}
+              onPending={handlePending}
+              onRestore={handleRestore}
+              isLoading={isLoading}
+              itemCount={items.length}
+              selectedClient={!!selectedClient}
+            />
           </div>
-        )}
-        
-        <CartSummary
-          subtotal={subtotal}
-          totalDiscount={totalDiscount}
-          total={total}
-          selectedClient={selectedClient}
-        />
-
-        <div className="grid grid-cols-4 gap-2">
-          <CartActions
-            showReceipt={showReceipt}
-            showInvoice={showInvoice}
-            onBack={handleBack}
-            onClear={handleClear}
-            onCheckout={handleCheckout}
-            onPending={handlePending}
-            onRestore={handleRestore}
-            isLoading={isLoading}
-            itemCount={items.length}
-            selectedClient={!!selectedClient}
-          />
         </div>
       </div>
     </Card>
