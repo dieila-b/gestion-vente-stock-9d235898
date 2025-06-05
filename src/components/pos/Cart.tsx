@@ -121,14 +121,13 @@ export function Cart({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       <Card className="h-full glass-panel flex flex-col">
         <CartHeader itemCount={items.length} />
 
-        {/* Contenu principal avec hauteur fixe et scroll */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Zone scrollable pour les items */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-4">
+        {/* Zone scrollable - occupe tout l'espace disponible sauf le footer */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto pb-32">
             {(showReceipt || showInvoice) ? (
               <CartReceiptView
                 showReceipt={showReceipt}
@@ -143,49 +142,51 @@ export function Cart({
                 currentDate={currentDate}
               />
             ) : (
-              <CartItems
-                items={items}
-                onUpdateQuantity={onUpdateQuantity}
-                onRemove={onRemove}
-                onUpdateDiscount={onUpdateDiscount}
-                onSetQuantity={onSetQuantity}
-                hasOutOfStockItems={false}
-                hasLowStockItems={false}
-                availableStock={availableStock}
-                onValidationChange={setHasValidationErrors}
-              />
-            )}
-          </div>
-
-          {/* Zone fixe en bas - toujours visible */}
-          <div className="flex-shrink-0 bg-card border-t border-border p-4 space-y-4">
-            {hasValidationErrors && (
-              <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
-                ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
+              <div className="p-4">
+                <CartItems
+                  items={items}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemove={onRemove}
+                  onUpdateDiscount={onUpdateDiscount}
+                  onSetQuantity={onSetQuantity}
+                  hasOutOfStockItems={false}
+                  hasLowStockItems={false}
+                  availableStock={availableStock}
+                  onValidationChange={setHasValidationErrors}
+                />
               </div>
             )}
-            
-            <CartSummary
-              subtotal={subtotal}
-              totalDiscount={totalDiscount}
-              total={total}
-              selectedClient={selectedClient}
-            />
+          </div>
+        </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              <CartActions
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                onBack={handleBack}
-                onClear={handleClear}
-                onCheckout={handleCheckout}
-                onPending={handlePending}
-                onRestore={handleRestore}
-                isLoading={isLoading}
-                itemCount={items.length}
-                selectedClient={!!selectedClient}
-              />
+        {/* Footer fixe en bas - toujours visible */}
+        <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 space-y-4">
+          {hasValidationErrors && (
+            <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+              ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
             </div>
+          )}
+          
+          <CartSummary
+            subtotal={subtotal}
+            totalDiscount={totalDiscount}
+            total={total}
+            selectedClient={selectedClient}
+          />
+
+          <div className="grid grid-cols-4 gap-2">
+            <CartActions
+              showReceipt={showReceipt}
+              showInvoice={showInvoice}
+              onBack={handleBack}
+              onClear={handleClear}
+              onCheckout={handleCheckout}
+              onPending={handlePending}
+              onRestore={handleRestore}
+              isLoading={isLoading}
+              itemCount={items.length}
+              selectedClient={!!selectedClient}
+            />
           </div>
         </div>
       </Card>

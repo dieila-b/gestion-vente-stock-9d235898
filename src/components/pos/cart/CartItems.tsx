@@ -55,7 +55,7 @@ export function CartItems({
   return (
     <div className="space-y-4">
       {/* Header des colonnes */}
-      <div className="p-3 bg-muted/30 rounded-lg border sticky top-0 z-10">
+      <div className="p-3 bg-muted/30 rounded-lg border">
         <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
           <div className="col-span-4">Nom d'article</div>
           <div className="col-span-3 text-center">Quantité</div>
@@ -65,7 +65,7 @@ export function CartItems({
         </div>
       </div>
       
-      {/* Liste des items - sans contrainte de hauteur */}
+      {/* Liste des items */}
       <div className="space-y-3">
         {items.map((item) => (
           <CartItem
