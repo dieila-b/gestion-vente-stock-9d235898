@@ -121,71 +121,74 @@ export function Cart({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       <Card className="flex-1 glass-panel flex flex-col overflow-hidden">
         <CartHeader itemCount={items.length} />
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4">
-            {(showReceipt || showInvoice) ? (
-              <CartReceiptView
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                items={items}
-                subtotal={subtotal}
-                totalDiscount={totalDiscount}
-                total={total}
-                onPrint={handlePrint}
-                selectedClient={selectedClient}
-                invoiceNumber={invoiceNumber}
-                currentDate={currentDate}
-              />
-            ) : (
-              <CartItems
-                items={items}
-                onUpdateQuantity={onUpdateQuantity}
-                onRemove={onRemove}
-                onUpdateDiscount={onUpdateDiscount}
-                onSetQuantity={onSetQuantity}
-                hasOutOfStockItems={false}
-                hasLowStockItems={false}
-                availableStock={availableStock}
-                onValidationChange={setHasValidationErrors}
-              />
-            )}
-          </div>
-
-          <div className="flex-shrink-0 p-4 border-t border-white/10 space-y-4 bg-black/80 backdrop-blur-xl">
-            {hasValidationErrors && (
-              <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
-                ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
-              </div>
-            )}
-            
-            <CartSummary
-              subtotal={subtotal}
-              totalDiscount={totalDiscount}
-              total={total}
-              selectedClient={selectedClient}
-            />
-
-            <div className="grid grid-cols-4 gap-2">
-              <CartActions
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                onBack={handleBack}
-                onClear={handleClear}
-                onCheckout={handleCheckout}
-                onPending={handlePending}
-                onRestore={handleRestore}
-                isLoading={isLoading}
-                itemCount={items.length}
-                selectedClient={!!selectedClient}
-              />
+        <div className="flex-1 flex flex-col min-h-0 pb-32">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              {(showReceipt || showInvoice) ? (
+                <CartReceiptView
+                  showReceipt={showReceipt}
+                  showInvoice={showInvoice}
+                  items={items}
+                  subtotal={subtotal}
+                  totalDiscount={totalDiscount}
+                  total={total}
+                  onPrint={handlePrint}
+                  selectedClient={selectedClient}
+                  invoiceNumber={invoiceNumber}
+                  currentDate={currentDate}
+                />
+              ) : (
+                <CartItems
+                  items={items}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemove={onRemove}
+                  onUpdateDiscount={onUpdateDiscount}
+                  onSetQuantity={onSetQuantity}
+                  hasOutOfStockItems={false}
+                  hasLowStockItems={false}
+                  availableStock={availableStock}
+                  onValidationChange={setHasValidationErrors}
+                />
+              )}
             </div>
           </div>
         </div>
       </Card>
+
+      {/* Zone fixe en bas pour le résumé et les actions */}
+      <div className="absolute bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4 space-y-4">
+        {hasValidationErrors && (
+          <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+            ⚠️ Veuillez corriger les erreurs de quantité avant de procéder au paiement
+          </div>
+        )}
+        
+        <CartSummary
+          subtotal={subtotal}
+          totalDiscount={totalDiscount}
+          total={total}
+          selectedClient={selectedClient}
+        />
+
+        <div className="grid grid-cols-4 gap-2">
+          <CartActions
+            showReceipt={showReceipt}
+            showInvoice={showInvoice}
+            onBack={handleBack}
+            onClear={handleClear}
+            onCheckout={handleCheckout}
+            onPending={handlePending}
+            onRestore={handleRestore}
+            isLoading={isLoading}
+            itemCount={items.length}
+            selectedClient={!!selectedClient}
+          />
+        </div>
+      </div>
     </div>
   );
 }

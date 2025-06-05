@@ -43,7 +43,7 @@ export function CartItems({
 
   if (items.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+      <div className="flex items-center justify-center text-muted-foreground min-h-[200px]">
         <div className="text-center">
           <p className="text-lg mb-2">Panier vide</p>
           <p className="text-sm">Ajoutez des produits pour commencer</p>
@@ -53,8 +53,8 @@ export function CartItems({
   }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex-shrink-0 p-3 bg-muted/30 rounded-lg border">
+    <div className="space-y-4">
+      <div className="p-3 bg-muted/30 rounded-lg border">
         <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
           <div className="col-span-4">Nom d'article</div>
           <div className="col-span-3 text-center">Quantité</div>
@@ -64,7 +64,7 @@ export function CartItems({
         </div>
       </div>
       
-      <div className="flex-1 space-y-3 overflow-y-auto max-h-[60vh]">
+      <div className="space-y-3">
         {items.map((item) => (
           <CartItem
             key={item.id}

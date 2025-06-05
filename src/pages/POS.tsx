@@ -104,7 +104,7 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row h-screen bg-background">
+      <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
         <ProductSection
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -123,7 +123,7 @@ export default function POS() {
           availableStock={availableStock}
         />
 
-        <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full">
+        <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full overflow-hidden">
           <div className="flex-shrink-0 p-4 space-y-4 bg-background border-b border-border/10">
             <div className="flex flex-col space-y-2">
               {!selectedClient && (
@@ -139,7 +139,7 @@ export default function POS() {
             </div>
           </div>
           
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden relative">
             <Cart
               items={cart}
               onRemove={removeFromCart}
