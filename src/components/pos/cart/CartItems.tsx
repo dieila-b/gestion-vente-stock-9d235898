@@ -1,7 +1,6 @@
 
 import { CartItem as CartItemType } from "@/types/pos";
 import { CartItem } from "@/components/pos/CartItem";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useCallback } from "react";
 
 interface CartItemsProps {
@@ -42,47 +41,52 @@ export function CartItems({
     });
   }, [onValidationChange]);
 
-  return (
-    <div className="flex flex-col h-full min-h-0">
-      {items.length > 0 && (
-        <div className="flex-shrink-0 mb-4 p-3 bg-muted/30 rounded-lg border">
-          <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
-            <div className="col-span-4">Nom d'article</div>
-            <div className="col-span-3 text-center">Quantité</div>
-            <div className="col-span-2 text-center">Remise</div>
-            <div className="col-span-2 text-center">Prix / Total</div>
-            <div className="col-span-1 text-center">Action</div>
-          </div>
+  if (items.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+        <div className="text-center">
+          <p className="text-lg mb-2">Panier vide</p>
+          <p className="text-sm">Ajoutez des produits pour commencer</p>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full space-y-4">
+      <div className="flex-shrink-0 p-3 bg-muted/30 rounded-lg border">
+        <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
+          <div className="col-span-4">Nom d'article</div>
+          <div className="col-span-3 text-center">Quantité</div>
+          <div className="col-span-2 text-center">Remise</div>
+          <div className="col-span-2 text-center">Prix / Total</div>
+          <div className="col-span-1 text-center">Action</div>
+        </div>
+      </div>
       
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="space-y-3 pr-2 pb-4">
-            {items.map((item) => (
-              <CartItem
-                key={item.id}
-                item={item}
-                onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
-                onUpdateDiscount={(productId, discount) => onUpdateDiscount(item.id, discount)}
-                onRemove={() => onRemove(item.id)}
-                onSetQuantity={onSetQuantity ? (quantity) => onSetQuantity(item.id, quantity) : undefined}
-                availableStock={availableStock[item.id] || 0}
-                onValidationError={(hasError) => handleItemValidationError(item.id, hasError)}
-              />
-            ))}
-            
-            {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (
-              <div className="mt-4 p-3 border border-amber-500/30 rounded-lg bg-amber-500/10 text-amber-400 text-sm">
-                {hasOutOfStockItems ? (
-                  <p>⚠️ Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
-                ) : (
-                  <p>⚠️ Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
-                )}
-              </div>
+      <div className="flex-1 space-y-3 overflow-y-auto max-h-[60vh]">
+        {items.map((item) => (
+          <CartItem
+            key={item.id}
+            item={item}
+            onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
+            onUpdateDiscount={(productId, discount) => onUpdateDiscount(item.id, discount)}
+            onRemove={() => onRemove(item.id)}
+            onSetQuantity={onSetQuantity ? (quantity) => onSetQuantity(item.id, quantity) : undefined}
+            availableStock={availableStock[item.id] || 0}
+            onValidationError={(hasError) => handleItemValidationError(item.id, hasError)}
+          />
+        ))}
+        
+        {(hasOutOfStockItems || hasLowStockItems) && (
+          <div className="mt-4 p-3 border border-amber-500/30 rounded-lg bg-amber-500/10 text-amber-400 text-sm">
+            {hasOutOfStockItems ? (
+              <p>⚠️ Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
+            ) : (
+              <p>⚠️ Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
             )}
           </div>
-        </ScrollArea>
+        )}
       </div>
     </div>
   );
