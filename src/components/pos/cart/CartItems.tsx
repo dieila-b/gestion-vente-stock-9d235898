@@ -46,16 +46,19 @@ export function CartItems({
   return (
     <>
       {items.length > 0 && (
-        <div className="grid grid-cols-12 gap-2 px-2 mb-2 text-xs text-muted-foreground">
-          <div className="col-span-4 text-left">Nom d'article</div>
-          <div className="col-span-2 text-left">Qté</div>
-          <div className="col-span-2 text-left">Remise</div>
-          <div className="col-span-2 text-left">PU TTC</div>
-          <div className="col-span-2 text-left">Total</div>
+        <div className="mb-4 p-3 bg-muted/30 rounded-lg border">
+          <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
+            <div className="col-span-4">Nom d'article</div>
+            <div className="col-span-3 text-center">Quantité</div>
+            <div className="col-span-2 text-center">Remise</div>
+            <div className="col-span-2 text-center">Prix / Total</div>
+            <div className="col-span-1 text-center">Action</div>
+          </div>
         </div>
       )}
-      <ScrollArea className="h-[calc(100vh-26rem)]">
-        <div className="space-y-2 pr-4">
+      
+      <ScrollArea className="h-[calc(100vh-28rem)]">
+        <div className="space-y-3 pr-2">
           {items.map((item) => (
             <CartItem
               key={item.id}
@@ -68,12 +71,13 @@ export function CartItems({
               onValidationError={(hasError) => handleItemValidationError(item.id, hasError)}
             />
           ))}
+          
           {items.length > 0 && (hasOutOfStockItems || hasLowStockItems) && (
-            <div className="mt-4 p-3 border border-amber-500/30 rounded-md bg-amber-500/10 text-amber-400 text-sm">
+            <div className="mt-4 p-3 border border-amber-500/30 rounded-lg bg-amber-500/10 text-amber-400 text-sm">
               {hasOutOfStockItems ? (
-                <p>Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
+                <p>⚠️ Certains produits sont en rupture de stock et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
               ) : (
-                <p>Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
+                <p>⚠️ Certains produits n'ont pas suffisamment de stock disponible et seront précommandés. Vous serez notifié lorsqu'ils seront disponibles.</p>
               )}
             </div>
           )}

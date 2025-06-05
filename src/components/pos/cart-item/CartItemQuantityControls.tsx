@@ -1,5 +1,7 @@
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Minus, Plus } from "lucide-react";
 import { QuantityControlsProps } from "./CartItemTypes";
 
 export function CartItemQuantityControls({
@@ -15,17 +17,21 @@ export function CartItemQuantityControls({
   onQuantityDecrease,
 }: QuantityControlsProps) {
   return (
-    <div className="col-span-2 flex items-center text-left space-x-1">
-      <button
-        className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
+    <div className="flex items-center space-x-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-8 p-0 shrink-0"
         onClick={onQuantityDecrease}
         disabled={quantity <= 1}
       >
-        -
-      </button>
+        <Minus className="h-3 w-3" />
+      </Button>
+      
       <Input
         type="text"
-        className="h-7 w-16 text-center text-sm"
+        className="h-8 w-16 text-center text-sm"
         value={quantityInput}
         onChange={onQuantityChange}
         onFocus={onQuantityFocus}
@@ -33,13 +39,17 @@ export function CartItemQuantityControls({
         onKeyDown={onQuantityKeyDown}
         inputMode="numeric"
       />
-      <button
-        className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-sm hover:bg-primary/20 transition-colors"
+      
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-8 p-0 shrink-0"
         onClick={onQuantityIncrease}
         disabled={quantity >= availableStock}
       >
-        +
-      </button>
+        <Plus className="h-3 w-3" />
+      </Button>
     </div>
   );
 }

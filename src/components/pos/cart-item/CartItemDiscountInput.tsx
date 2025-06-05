@@ -7,14 +7,19 @@ export function CartItemDiscountInput({
   onDiscountChange,
 }: DiscountInputProps) {
   return (
-    <div className="col-span-2 text-left">
+    <div className="space-y-1">
       <Input
         type="number"
         min="0"
-        className="h-7 w-28 text-left"
+        step="0.01"
+        className="h-8 text-sm"
         value={discountValue}
         onChange={onDiscountChange}
+        placeholder="0"
       />
+      <div className="text-xs text-muted-foreground text-center">
+        GNF
+      </div>
     </div>
   );
 }
