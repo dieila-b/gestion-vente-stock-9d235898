@@ -53,9 +53,9 @@ export function CartItems({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full">
       {/* Header des colonnes */}
-      <div className="p-3 bg-muted/30 rounded-lg border">
+      <div className="p-3 bg-muted/30 rounded-lg border flex-shrink-0">
         <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
           <div className="col-span-4">Nom d'article</div>
           <div className="col-span-3 text-center">Quantité</div>
@@ -65,8 +65,8 @@ export function CartItems({
         </div>
       </div>
       
-      {/* Liste des items */}
-      <div className="space-y-3">
+      {/* Liste des items - zone scrollable */}
+      <div className="flex-1 space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
         {items.map((item) => (
           <CartItem
             key={item.id}
