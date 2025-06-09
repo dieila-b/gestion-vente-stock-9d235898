@@ -104,13 +104,34 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Container principal POS - 100vh sans aucun scroll */}
-      <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
-        {/* Grid layout responsive - occupe tout l'espace */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 h-full overflow-hidden">
+      <div className="p-6 space-y-6">
+        {/* Header avec sélection client */}
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-2xl font-bold">Vente au Comptoir</h1>
+            <p className="text-muted-foreground">
+              Gestion des ventes directes au point de vente
+            </p>
+          </div>
           
-          {/* Section des produits - utilise tout l'espace disponible */}
-          <div className="h-full flex flex-col bg-background border-r border-border/20 overflow-hidden">
+          <div className="space-y-2">
+            {!selectedClient && (
+              <div className="flex items-center text-red-500 text-sm">
+                <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Veuillez sélectionner un client pour effectuer une vente</span>
+              </div>
+            )}
+            <ClientSelect
+              selectedClient={selectedClient}
+              onClientSelect={(client: Client) => setSelectedClient(client as any)}
+            />
+          </div>
+        </div>
+
+        {/* Grid layout responsive - même structure que SalesInvoices */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Section des produits */}
+          <div className="space-y-4">
             <ProductSection
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -130,42 +151,25 @@ export default function POS() {
             />
           </div>
 
-          {/* Section panier - utilise tout l'espace disponible */}
-          <div className="h-full flex flex-col bg-background overflow-hidden">
-            {/* Header client - compact et fixe */}
-            <div className="flex-shrink-0 p-3 bg-background border-b border-border/20">
-              {!selectedClient && (
-                <div className="flex items-center text-red-500 text-sm mb-2">
-                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span>Veuillez sélectionner un client pour effectuer une vente</span>
-                </div>
-              )}
-              <ClientSelect
-                selectedClient={selectedClient}
-                onClientSelect={(client: Client) => setSelectedClient(client as any)}
-              />
-            </div>
-            
-            {/* Zone panier - flexible avec footer intégré */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <Cart
-                items={cart}
-                onRemove={removeFromCart}
-                onUpdateQuantity={(productId, delta) => {
-                  updateQuantity(productId, delta);
-                }}
-                onUpdateDiscount={handleUpdateDiscount}
-                subtotal={calculateSubtotal()}
-                total={calculateTotal()}
-                totalDiscount={calculateTotalDiscount()}
-                onCheckout={() => setIsPaymentDialogOpen(true)}
-                isLoading={isLoading}
-                selectedClient={selectedClient}
-                clearCart={clearCart}
-                onSetQuantity={setQuantity}
-                availableStock={availableStock}
-              />
-            </div>
+          {/* Section panier */}
+          <div className="space-y-4">
+            <Cart
+              items={cart}
+              onRemove={removeFromCart}
+              onUpdateQuantity={(productId, delta) => {
+                updateQuantity(productId, delta);
+              }}
+              onUpdateDiscount={handleUpdateDiscount}
+              subtotal={calculateSubtotal()}
+              total={calculateTotal()}
+              totalDiscount={calculateTotalDiscount()}
+              onCheckout={() => setIsPaymentDialogOpen(true)}
+              isLoading={isLoading}
+              selectedClient={selectedClient}
+              clearCart={clearCart}
+              onSetQuantity={setQuantity}
+              availableStock={availableStock}
+            />
           </div>
         </div>
       </div>

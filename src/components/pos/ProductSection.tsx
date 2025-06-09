@@ -45,89 +45,88 @@ export function ProductSection({
   availableStock
 }: ProductSectionProps) {
   return (
-    <div className="h-full flex flex-col p-3 gap-3 overflow-hidden">
-      {/* Contrôles de recherche et filtres - compacts */}
-      <div className="flex-shrink-0 space-y-2">
-        {/* Barre de recherche */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher un produit..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
+    <Card className="h-fit">
+      <div className="p-6">
+        <h2 className="text-lg font-semibold mb-4">Produits</h2>
+        
+        {/* Contrôles de recherche et filtres */}
+        <div className="space-y-4 mb-6">
+          {/* Barre de recherche */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Rechercher un produit..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+
+          {/* Sélection PDV */}
+          <Select value={selectedPDV} onValueChange={setSelectedPDV}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sélectionner un PDV" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">Tous les PDV</SelectItem>
+              {posLocations.map((location) => (
+                <SelectItem key={location.id} value={location.id}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtre catégories */}
+          <CategoryFilter 
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
           />
         </div>
-
-        {/* Sélection PDV */}
-        <Select value={selectedPDV} onValueChange={setSelectedPDV}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Sélectionner un PDV" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_all">Tous les PDV</SelectItem>
-            {posLocations.map((location) => (
-              <SelectItem key={location.id} value={location.id}>
-                {location.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Filtre catégories */}
-        <CategoryFilter 
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
+        
+        {/* Grille des produits */}
+        <div className="space-y-4">
+          <ScrollArea className="h-[400px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-2">
+              {currentProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={() => onAddToCart(product)}
+                  availableStock={availableStock[product.id] !== undefined ? availableStock[product.id] : product.stock}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPrevPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm whitespace-nowrap px-2">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-      
-      {/* Zone des produits - prend tout l'espace restant */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <Card className="h-full flex flex-col overflow-hidden">
-          <div className="flex-1 p-3 flex flex-col overflow-hidden">
-            {/* Grille des produits - scrollable */}
-            <ScrollArea className="flex-1">
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 pr-2">
-                {currentProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={() => onAddToCart(product)}
-                    availableStock={availableStock[product.id] !== undefined ? availableStock[product.id] : product.stock}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-            
-            {/* Pagination - compacte et fixe */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-2 pt-2 border-t flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToPrevPage}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm whitespace-nowrap px-2">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </Card>
-      </div>
-    </div>
+    </Card>
   );
 }

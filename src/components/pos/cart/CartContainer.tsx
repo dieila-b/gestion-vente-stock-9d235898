@@ -122,76 +122,72 @@ export function CartContainer({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <Card className="h-full flex flex-col overflow-hidden">
-        {/* Header - fixe */}
-        <div className="flex-shrink-0">
-          <CartHeader itemCount={items.length} />
-        </div>
+    <Card className="h-fit">
+      <div className="p-6">
+        {/* Header */}
+        <CartHeader itemCount={items.length} />
 
-        {/* Zone de contenu principal - flexible */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Contenu principal */}
+        <div className="space-y-4">
           {(showReceipt || showInvoice) ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <CartReceiptView
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                items={items}
-                subtotal={subtotal}
-                totalDiscount={totalDiscount}
-                total={total}
-                onPrint={handlePrint}
-                selectedClient={selectedClient}
-                invoiceNumber={invoiceNumber}
-                currentDate={currentDate}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <CartItems
-                items={items}
-                onUpdateQuantity={onUpdateQuantity}
-                onRemove={onRemove}
-                onUpdateDiscount={onUpdateDiscount}
-                onSetQuantity={onSetQuantity}
-                hasOutOfStockItems={false}
-                hasLowStockItems={false}
-                availableStock={availableStock}
-                onValidationChange={setHasValidationErrors}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Footer intégré - fixe en bas */}
-        <div className="flex-shrink-0 border-t border-border bg-card">
-          <div className="p-3 space-y-3">
-            <CartValidationAlert hasValidationErrors={hasValidationErrors} />
-            
-            <CartSummary
+            <CartReceiptView
+              showReceipt={showReceipt}
+              showInvoice={showInvoice}
+              items={items}
               subtotal={subtotal}
               totalDiscount={totalDiscount}
               total={total}
+              onPrint={handlePrint}
               selectedClient={selectedClient}
+              invoiceNumber={invoiceNumber}
+              currentDate={currentDate}
             />
+          ) : (
+            <>
+              <div className="min-h-[400px]">
+                <CartItems
+                  items={items}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemove={onRemove}
+                  onUpdateDiscount={onUpdateDiscount}
+                  onSetQuantity={onSetQuantity}
+                  hasOutOfStockItems={false}
+                  hasLowStockItems={false}
+                  availableStock={availableStock}
+                  onValidationChange={setHasValidationErrors}
+                />
+              </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              <CartActions
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                onBack={handleBack}
-                onClear={handleClear}
-                onCheckout={handleCheckout}
-                onPending={handlePending}
-                onRestore={handleRestore}
-                isLoading={isLoading}
-                itemCount={items.length}
-                selectedClient={!!selectedClient}
-              />
-            </div>
-          </div>
+              {/* Footer intégré */}
+              <div className="space-y-4 pt-4 border-t">
+                <CartValidationAlert hasValidationErrors={hasValidationErrors} />
+                
+                <CartSummary
+                  subtotal={subtotal}
+                  totalDiscount={totalDiscount}
+                  total={total}
+                  selectedClient={selectedClient}
+                />
+
+                <div className="grid grid-cols-4 gap-2">
+                  <CartActions
+                    showReceipt={showReceipt}
+                    showInvoice={showInvoice}
+                    onBack={handleBack}
+                    onClear={handleClear}
+                    onCheckout={handleCheckout}
+                    onPending={handlePending}
+                    onRestore={handleRestore}
+                    isLoading={isLoading}
+                    itemCount={items.length}
+                    selectedClient={!!selectedClient}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 }
