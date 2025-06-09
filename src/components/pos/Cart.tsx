@@ -121,14 +121,14 @@ export function Cart({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="h-full flex flex-col">
-      <Card className="h-full glass-panel flex flex-col">
+    <div className="flex flex-col h-full w-full">
+      <Card className="flex flex-col h-full w-full glass-panel">
         {/* Header - toujours visible */}
         <div className="flex-shrink-0">
           <CartHeader itemCount={items.length} />
         </div>
 
-        {/* Zone de contenu principal - scrollable */}
+        {/* Zone de contenu principal - flexible et scrollable */}
         <div className="flex-1 min-h-0 flex flex-col">
           {(showReceipt || showInvoice) ? (
             <div className="flex-1 overflow-y-auto">
@@ -146,7 +146,7 @@ export function Cart({
               />
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <CartItems
                 items={items}
                 onUpdateQuantity={onUpdateQuantity}
@@ -162,7 +162,7 @@ export function Cart({
           )}
         </div>
 
-        {/* Footer fixe - toujours visible en bas */}
+        {/* Footer ABSOLUMENT FIXE - toujours visible en bas */}
         <div className="flex-shrink-0 bg-card/95 backdrop-blur-sm border-t border-border">
           <div className="p-4 space-y-4">
             {hasValidationErrors && (

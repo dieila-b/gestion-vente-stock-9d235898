@@ -104,8 +104,8 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal avec hauteur fixe pour viewport */}
-      <div className="flex flex-col md:flex-row h-screen bg-background">
+      {/* Conteneur principal avec hauteur fixe pour viewport complet */}
+      <div className="flex flex-col md:flex-row h-[100vh] w-full bg-background overflow-hidden">
         <ProductSection
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -124,8 +124,8 @@ export default function POS() {
           availableStock={availableStock}
         />
 
-        {/* Section panier avec hauteur fixe */}
-        <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full">
+        {/* Section panier avec hauteur complète et layout fixe */}
+        <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full min-h-0">
           {/* Header fixe du panier */}
           <div className="flex-shrink-0 p-4 space-y-4 bg-background border-b border-border/10">
             <div className="flex flex-col space-y-2">
@@ -142,8 +142,8 @@ export default function POS() {
             </div>
           </div>
           
-          {/* Cart qui occupe tout l'espace restant */}
-          <div className="flex-1 min-h-0">
+          {/* Cart qui occupe tout l'espace restant avec layout flex */}
+          <div className="flex-1 min-h-0 flex flex-col">
             <Cart
               items={cart}
               onRemove={removeFromCart}

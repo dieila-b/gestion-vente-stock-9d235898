@@ -43,7 +43,7 @@ export function CartItems({
 
   if (items.length === 0) {
     return (
-      <div className="flex items-center justify-center text-muted-foreground min-h-[200px]">
+      <div className="flex items-center justify-center text-muted-foreground h-full">
         <div className="text-center">
           <p className="text-lg mb-2">Panier vide</p>
           <p className="text-sm">Ajoutez des produits pour commencer</p>
@@ -53,9 +53,9 @@ export function CartItems({
   }
 
   return (
-    <div className="space-y-4 h-full">
-      {/* Header des colonnes */}
-      <div className="p-3 bg-muted/30 rounded-lg border flex-shrink-0">
+    <div className="flex flex-col h-full p-4">
+      {/* Header des colonnes - fixe */}
+      <div className="flex-shrink-0 p-3 bg-muted/30 rounded-lg border mb-4">
         <div className="grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground">
           <div className="col-span-4">Nom d'article</div>
           <div className="col-span-3 text-center">Quantité</div>
@@ -65,8 +65,8 @@ export function CartItems({
         </div>
       </div>
       
-      {/* Liste des items - zone scrollable */}
-      <div className="flex-1 space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+      {/* Liste des items - zone scrollable qui occupe tout l'espace restant */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2">
         {items.map((item) => (
           <CartItem
             key={item.id}
