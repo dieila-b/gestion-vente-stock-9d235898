@@ -23,7 +23,7 @@ export function CartSummary({ subtotal, totalDiscount, total, selectedClient }: 
           <span>{formatGNF(subtotal)}</span>
         </div>
         {totalDiscount > 0 && (
-          <div className="flex justify-between items-center text-sm text-red-400">
+          <div className="flex justify-between items-center text-sm text-red-500">
             <span>Remises</span>
             <span>-{formatGNF(totalDiscount)}</span>
           </div>
