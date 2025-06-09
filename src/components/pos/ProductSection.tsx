@@ -1,12 +1,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { CategoryFilter } from "@/components/pos/CategoryFilter";
 import { ProductCard } from "@/components/pos/ProductCard";
 import { Product } from "@/types/pos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 interface ProductSectionProps {
   searchTerm: string;
@@ -27,6 +28,8 @@ interface ProductSectionProps {
 }
 
 export function ProductSection({
+  searchTerm,
+  setSearchTerm,
   selectedCategory,
   setSelectedCategory,
   selectedPDV,
@@ -42,15 +45,25 @@ export function ProductSection({
   availableStock
 }: ProductSectionProps) {
   return (
-    <div className="flex flex-col h-full">
-      {/* Header compact avec contrôles */}
-      <div className="flex-shrink-0 space-y-2 mb-3">
-        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-          <Select
-            value={selectedPDV}
-            onValueChange={setSelectedPDV}
-          >
-            <SelectTrigger className="w-full sm:w-[160px] glass-effect text-xs sm:text-sm">
+    <div className="h-full flex flex-col space-y-4">
+      {/* Contrôles de recherche et filtres */}
+      <div className="space-y-3">
+        {/* Barre de recherche */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher un produit..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        {/* Sélection PDV et catégories */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={selectedPDV} onValueChange={setSelectedPDV}>
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Sélectionner un PDV" />
             </SelectTrigger>
             <SelectContent>
@@ -63,6 +76,7 @@ export function ProductSection({
             </SelectContent>
           </Select>
         </div>
+
         <CategoryFilter 
           categories={categories}
           selectedCategory={selectedCategory}
@@ -71,10 +85,10 @@ export function ProductSection({
       </div>
       
       {/* Zone des produits avec scroll optimisé */}
-      <Card className="flex-1 enhanced-glass min-h-0">
-        <div className="h-full p-2 sm:p-3 flex flex-col">
+      <Card className="flex-1 min-h-0">
+        <div className="h-full p-3 flex flex-col">
           <ScrollArea className="flex-1">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 lg:gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               {currentProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -88,27 +102,25 @@ export function ProductSection({
           
           {/* Pagination compacte */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-2 sm:mt-3 flex-shrink-0">
+            <div className="flex justify-center items-center gap-2 mt-3 pt-3 border-t">
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
                 onClick={goToPrevPage}
                 disabled={currentPage === 1}
-                className="glass-effect h-7 w-7 sm:h-8 sm:w-8"
               >
-                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-xs whitespace-nowrap px-1">
-                {currentPage}/{totalPages}
+              <span className="text-sm whitespace-nowrap px-2">
+                {currentPage} / {totalPages}
               </span>
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="glass-effect h-7 w-7 sm:h-8 sm:w-8"
               >
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}

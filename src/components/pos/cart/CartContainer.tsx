@@ -123,16 +123,16 @@ export function CartContainer({
   return (
     <>
       <div className="flex flex-col h-full w-full">
-        <Card className="flex flex-col h-full w-full glass-panel">
+        <Card className="flex flex-col h-full w-full">
           {/* Header - toujours visible */}
           <div className="flex-shrink-0">
             <CartHeader itemCount={items.length} />
           </div>
 
-          {/* Zone de contenu principal - flexible et scrollable */}
+          {/* Zone de contenu principal - occupe tout l'espace disponible */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {(showReceipt || showInvoice) ? (
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto p-4">
                 <CartReceiptView
                   showReceipt={showReceipt}
                   showInvoice={showInvoice}

@@ -104,41 +104,45 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal POS - hauteur complète de la viewport */}
+      {/* Conteneur principal POS - 100vh sans scroll */}
       <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
-        {/* Layout POS responsive - utilise tout l'espace disponible */}
-        <div className="flex flex-col lg:flex-row flex-1 h-full">
-          {/* Section des produits - largeur adaptative */}
-          <div className="w-full lg:w-[45%] xl:w-[50%] h-full flex flex-col order-2 lg:order-1">
-            <div className="p-2 sm:p-3 lg:p-4 h-full flex flex-col">
-              <ProductSection
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedPDV={selectedPDV}
-                setSelectedPDV={setSelectedPDV}
-                posLocations={posLocations}
-                currentProducts={currentProducts}
-                categories={categories}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                goToPrevPage={goToPrevPage}
-                goToNextPage={goToNextPage}
-                onAddToCart={handleAddToCart}
-                availableStock={availableStock}
-              />
+        {/* Layout POS en grid responsive - 2 colonnes sur desktop, 1 colonne sur mobile */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 h-full overflow-hidden">
+          
+          {/* Section des produits - colonne gauche */}
+          <div className="h-full flex flex-col border-r border-border/10 overflow-hidden">
+            {/* Header produits - fixe */}
+            <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
+              <div className="space-y-3">
+                <ProductSection
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  selectedPDV={selectedPDV}
+                  setSelectedPDV={setSelectedPDV}
+                  posLocations={posLocations}
+                  currentProducts={currentProducts}
+                  categories={categories}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  goToPrevPage={goToPrevPage}
+                  goToNextPage={goToNextPage}
+                  onAddToCart={handleAddToCart}
+                  availableStock={availableStock}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Section panier - avec footer toujours visible */}
-          <div className="w-full lg:w-[55%] xl:w-[50%] h-full border-t lg:border-t-0 lg:border-l border-border/10 flex flex-col order-1 lg:order-2">
-            {/* Header compact du panier - fixe */}
-            <div className="flex-shrink-0 p-2 sm:p-3 lg:p-4 bg-background border-b border-border/10">
-              <div className="space-y-2 sm:space-y-3">
+          {/* Section panier - colonne droite */}
+          <div className="h-full flex flex-col overflow-hidden">
+            {/* Header panier - fixe */}
+            <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
+              <div className="space-y-3">
                 {!selectedClient && (
-                  <div className="flex items-center text-red-500 text-xs sm:text-sm">
-                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                  <div className="flex items-center text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
                     <span>Veuillez sélectionner un client pour effectuer une vente</span>
                   </div>
                 )}
@@ -149,8 +153,8 @@ export default function POS() {
               </div>
             </div>
             
-            {/* Cart avec hauteur calculée pour laisser place au footer fixe */}
-            <div className="flex-1 min-h-0 pb-36">
+            {/* Cart content - zone scrollable avec footer fixe */}
+            <div className="flex-1 min-h-0 pb-40">
               <Cart
                 items={cart}
                 onRemove={removeFromCart}
