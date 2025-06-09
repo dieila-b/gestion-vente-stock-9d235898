@@ -102,32 +102,7 @@ export default function POS() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b">
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-2xl font-bold">Vente au Comptoir</h1>
-            <p className="text-muted-foreground">
-              Gestion des ventes directes au point de vente
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            {!selectedClient && (
-              <div className="flex items-center text-red-500 text-sm">
-                <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span>Veuillez sélectionner un client pour effectuer une vente</span>
-              </div>
-            )}
-            <ClientSelect
-              selectedClient={selectedClient}
-              onClientSelect={(client: Client) => setSelectedClient(client as any)}
-            />
-          </div>
-        </div>
-      </div>
-
+    <div className="h-screen flex flex-col bg-background">
       {/* Content - Grid layout responsive */}
       <div className="flex-1 overflow-hidden">
         <div className="h-full grid grid-cols-1 lg:grid-cols-2">
@@ -149,6 +124,8 @@ export default function POS() {
               goToNextPage={goToNextPage}
               onAddToCart={handleAddToCart}
               availableStock={availableStock}
+              selectedClient={selectedClient}
+              setSelectedClient={(client: Client) => setSelectedClient(client as any)}
             />
           </div>
 

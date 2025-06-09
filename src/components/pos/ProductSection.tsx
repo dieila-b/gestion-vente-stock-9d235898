@@ -1,9 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, AlertCircle } from "lucide-react";
 import { CategoryFilter } from "@/components/pos/CategoryFilter";
 import { ProductCard } from "@/components/pos/ProductCard";
+import { ClientSelect } from "@/components/pos/ClientSelect";
 import { Product } from "@/types/pos";
+import { Client } from "@/types/client_unified";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,8 @@ interface ProductSectionProps {
   goToNextPage: () => void;
   onAddToCart: (product: Product) => void;
   availableStock: Record<string, number>;
+  selectedClient: Client | null;
+  setSelectedClient: (client: Client) => void;
 }
 
 export function ProductSection({
@@ -41,55 +45,80 @@ export function ProductSection({
   goToPrevPage,
   goToNextPage,
   onAddToCart,
-  availableStock
+  availableStock,
+  selectedClient,
+  setSelectedClient
 }: ProductSectionProps) {
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b">
-        <h2 className="text-lg font-semibold mb-4">Produits</h2>
-        
-        {/* Contrôles de recherche et filtres */}
-        <div className="space-y-4">
-          {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Rechercher un produit..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+      {/* Header avec tous les contrôles en ligne */}
+      <div className="flex-shrink-0 p-4 border-b bg-background">
+        <div className="space-y-3">
+          {/* Titre */}
+          <h1 className="text-xl font-bold">Vente au Comptoir</h1>
+          
+          {/* Ligne principale avec tous les contrôles */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+            {/* Sélection PDV */}
+            <Select value={selectedPDV} onValueChange={setSelectedPDV}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un PDV" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Tous les PDV</SelectItem>
+                {posLocations.map((location) => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Barre de recherche produit */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Rechercher un produit..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            {/* Filtre catégories */}
+            <div className="lg:col-span-1">
+              <CategoryFilter 
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+            </div>
+
+            {/* Bloc client requis */}
+            <div className="flex flex-col justify-center">
+              {!selectedClient ? (
+                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 px-3 py-2 rounded-md border border-red-200">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-xs">Client requis</span>
+                  <ClientSelect
+                    selectedClient={selectedClient}
+                    onClientSelect={setSelectedClient}
+                  />
+                </div>
+              ) : (
+                <div className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                  ✓ Client sélectionné
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Sélection PDV */}
-          <Select value={selectedPDV} onValueChange={setSelectedPDV}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sélectionner un PDV" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">Tous les PDV</SelectItem>
-              {posLocations.map((location) => (
-                <SelectItem key={location.id} value={location.id}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Filtre catégories */}
-          <CategoryFilter 
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
         </div>
       </div>
       
       {/* Grille des produits */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4">
           <ScrollArea className="h-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pr-2">
               {currentProducts.map((product) => (
