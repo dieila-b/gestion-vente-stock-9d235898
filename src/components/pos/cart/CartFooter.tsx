@@ -38,7 +38,7 @@ export function CartFooter({
   itemCount
 }: CartFooterProps) {
   return (
-    <div className="fixed bottom-0 right-0 w-full lg:w-[55%] xl:w-[50%] bg-card/98 backdrop-blur-md border-t border-border z-50 shadow-lg">
+    <div className="fixed bottom-0 right-0 w-full lg:w-[55%] xl:w-[50%] bg-card/98 backdrop-blur-md border-t border-border z-50 shadow-2xl">
       <div className="p-3 lg:p-4 space-y-3">
         <CartValidationAlert hasValidationErrors={hasValidationErrors} />
         

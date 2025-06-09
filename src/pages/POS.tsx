@@ -104,11 +104,11 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal optimisé avec hauteur fixe */}
+      {/* Conteneur principal POS - utilise toute la hauteur de l'écran */}
       <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
-        {/* Layout responsive avec hauteurs calculées */}
+        {/* Layout POS responsive optimisé sans header */}
         <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-          {/* Section des produits - hauteur flexible */}
+          {/* Section des produits - largeur adaptative */}
           <div className="w-full lg:w-[45%] xl:w-[50%] p-2 sm:p-3 lg:p-4 flex flex-col min-h-0 order-2 lg:order-1">
             <ProductSection
               searchTerm={searchTerm}
@@ -147,8 +147,8 @@ export default function POS() {
               </div>
             </div>
             
-            {/* Cart avec hauteur calculée pour laisser place au footer */}
-            <div className="flex-1 min-h-0 pb-24 lg:pb-28">
+            {/* Cart avec hauteur calculée pour laisser place au footer fixe */}
+            <div className="flex-1 min-h-0 pb-32">
               <Cart
                 items={cart}
                 onRemove={removeFromCart}
