@@ -1,12 +1,14 @@
 
 import { CartContainer as Cart } from "@/components/pos/cart/CartContainer";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
+import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
 import useEditOrder from "@/hooks/use-edit-order";
 import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 import { Client } from "@/types/client_unified";
 import { toast } from "sonner";
 
@@ -29,6 +31,8 @@ export default function POS() {
     availableStock,
     updateAvailableStock,
     setQuantity,
+
+    // UI state
     selectedClient,
     setSelectedClient,
     selectedCategory,
@@ -40,11 +44,17 @@ export default function POS() {
     isLoading,
     currentPage,
     totalPages,
+    
+    // Products and filtering
     currentProducts,
     categories,
+    
+    // POS/Location data
     posLocations,
     selectedPDV,
     setSelectedPDV,
+    
+    // Actions
     handlePayment,
     goToNextPage,
     goToPrevPage,
@@ -91,18 +101,6 @@ export default function POS() {
     updateDiscount(productId, discount);
   };
 
-  // Nouvelle fonction pour gérer la modification du client
-  const handleClientChange = (client: Client) => {
-    setSelectedClient(client);
-    toast.success("Client modifié avec succès");
-  };
-
-  // Nouvelle fonction pour gérer la suppression du client
-  const handleClearClient = () => {
-    setSelectedClient(null as any);
-    toast.success("Client supprimé du panier");
-  };
-
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Content - Grid layout responsive */}
@@ -131,7 +129,7 @@ export default function POS() {
             />
           </div>
 
-          {/* Section panier avec nouvelles fonctionnalités */}
+          {/* Section panier */}
           <div className="flex flex-col">
             <Cart
               items={cart}

@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Search, AlertCircle, X, Edit } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, AlertCircle } from "lucide-react";
 import { CategoryFilter } from "@/components/pos/CategoryFilter";
 import { ProductCard } from "@/components/pos/ProductCard";
 import { ClientSelect } from "@/components/pos/ClientSelect";
@@ -49,21 +49,17 @@ export function ProductSection({
   selectedClient,
   setSelectedClient
 }: ProductSectionProps) {
-  const handleClearClient = () => {
-    setSelectedClient(null as any);
-  };
-
   return (
     <div className="flex flex-col h-full">
-      {/* Header optimisé avec en-tête horizontal */}
+      {/* Header avec tous les contrôles en ligne */}
       <div className="flex-shrink-0 p-4 border-b bg-background">
         <div className="space-y-3">
           {/* Titre */}
           <h1 className="text-xl font-bold">Vente au Comptoir</h1>
           
-          {/* En-tête horizontal réorganisé */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-center">
-            {/* 1. Sélecteur PDV */}
+          {/* Ligne principale avec tous les contrôles */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+            {/* Sélection PDV */}
             <Select value={selectedPDV} onValueChange={setSelectedPDV}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un PDV" />
@@ -78,7 +74,7 @@ export function ProductSection({
               </SelectContent>
             </Select>
 
-            {/* 2. Barre de recherche produit */}
+            {/* Barre de recherche produit */}
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -90,7 +86,7 @@ export function ProductSection({
               />
             </div>
 
-            {/* 3. Filtres de catégorie */}
+            {/* Filtre catégories */}
             <div className="lg:col-span-1">
               <CategoryFilter 
                 categories={categories}
@@ -99,36 +95,20 @@ export function ProductSection({
               />
             </div>
 
-            {/* 4. Bloc client requis compact */}
+            {/* Bloc client requis */}
             <div className="flex flex-col justify-center">
               {!selectedClient ? (
                 <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 px-3 py-2 rounded-md border border-red-200">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-xs whitespace-nowrap">Client requis</span>
+                  <span className="text-xs">Client requis</span>
                   <ClientSelect
                     selectedClient={selectedClient}
                     onClientSelect={setSelectedClient}
                   />
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-md border border-green-200">
-                  <span className="text-xs font-medium truncate">
-                    {selectedClient.company_name || selectedClient.contact_name || "Client"}
-                  </span>
-                  <div className="flex gap-1">
-                    <ClientSelect
-                      selectedClient={selectedClient}
-                      onClientSelect={setSelectedClient}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearClient}
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                <div className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                  ✓ Client sélectionné
                 </div>
               )}
             </div>
