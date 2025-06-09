@@ -104,57 +104,50 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal POS - 100vh sans scroll */}
+      {/* Container principal POS - 100vh sans aucun scroll */}
       <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
-        {/* Layout POS en grid responsive - 2 colonnes sur desktop, 1 colonne sur mobile */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 h-full overflow-hidden">
+        {/* Grid layout responsive - occupe tout l'espace */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 h-full overflow-hidden">
           
-          {/* Section des produits - colonne gauche */}
-          <div className="h-full flex flex-col border-r border-border/10 overflow-hidden">
-            {/* Header produits - fixe */}
-            <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
-              <div className="space-y-3">
-                <ProductSection
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  selectedCategory={selectedCategory}
-                  setSelectedCategory={setSelectedCategory}
-                  selectedPDV={selectedPDV}
-                  setSelectedPDV={setSelectedPDV}
-                  posLocations={posLocations}
-                  currentProducts={currentProducts}
-                  categories={categories}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  goToPrevPage={goToPrevPage}
-                  goToNextPage={goToNextPage}
-                  onAddToCart={handleAddToCart}
-                  availableStock={availableStock}
-                />
-              </div>
-            </div>
+          {/* Section des produits - utilise tout l'espace disponible */}
+          <div className="h-full flex flex-col bg-background border-r border-border/20 overflow-hidden">
+            <ProductSection
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedPDV={selectedPDV}
+              setSelectedPDV={setSelectedPDV}
+              posLocations={posLocations}
+              currentProducts={currentProducts}
+              categories={categories}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              goToPrevPage={goToPrevPage}
+              goToNextPage={goToNextPage}
+              onAddToCart={handleAddToCart}
+              availableStock={availableStock}
+            />
           </div>
 
-          {/* Section panier - colonne droite */}
-          <div className="h-full flex flex-col overflow-hidden">
-            {/* Header panier - fixe */}
-            <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
-              <div className="space-y-3">
-                {!selectedClient && (
-                  <div className="flex items-center text-red-500 text-sm">
-                    <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>Veuillez sélectionner un client pour effectuer une vente</span>
-                  </div>
-                )}
-                <ClientSelect
-                  selectedClient={selectedClient}
-                  onClientSelect={(client: Client) => setSelectedClient(client as any)}
-                />
-              </div>
+          {/* Section panier - utilise tout l'espace disponible */}
+          <div className="h-full flex flex-col bg-background overflow-hidden">
+            {/* Header client - compact et fixe */}
+            <div className="flex-shrink-0 p-3 bg-background border-b border-border/20">
+              {!selectedClient && (
+                <div className="flex items-center text-red-500 text-sm mb-2">
+                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>Veuillez sélectionner un client pour effectuer une vente</span>
+                </div>
+              )}
+              <ClientSelect
+                selectedClient={selectedClient}
+                onClientSelect={(client: Client) => setSelectedClient(client as any)}
+              />
             </div>
             
-            {/* Cart content - zone scrollable avec footer fixe */}
-            <div className="flex-1 min-h-0 pb-40">
+            {/* Zone panier - flexible avec footer intégré */}
+            <div className="flex-1 min-h-0 overflow-hidden">
               <Cart
                 items={cart}
                 onRemove={removeFromCart}

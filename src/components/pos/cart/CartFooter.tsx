@@ -37,33 +37,7 @@ export function CartFooter({
   isLoading,
   itemCount
 }: CartFooterProps) {
-  return (
-    <div className="fixed bottom-0 right-0 w-full lg:w-1/2 bg-card/98 backdrop-blur-md border-t border-border z-50 shadow-2xl">
-      <div className="p-4 space-y-3">
-        <CartValidationAlert hasValidationErrors={hasValidationErrors} />
-        
-        <CartSummary
-          subtotal={subtotal}
-          totalDiscount={totalDiscount}
-          total={total}
-          selectedClient={selectedClient}
-        />
-
-        <div className="grid grid-cols-4 gap-2">
-          <CartActions
-            showReceipt={showReceipt}
-            showInvoice={showInvoice}
-            onBack={onBack}
-            onClear={onClear}
-            onCheckout={onCheckout}
-            onPending={onPending}
-            onRestore={onRestore}
-            isLoading={isLoading}
-            itemCount={itemCount}
-            selectedClient={!!selectedClient}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  // Ce composant n'est plus utilisé car le footer est maintenant intégré dans CartContainer
+  // On le garde pour la compatibilité mais il ne rend rien
+  return null;
 }
