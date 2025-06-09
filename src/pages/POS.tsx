@@ -1,5 +1,4 @@
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CartContainer as Cart } from "@/components/pos/cart/CartContainer";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { ClientSelect } from "@/components/pos/ClientSelect";
@@ -103,9 +102,9 @@ export default function POS() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
-        {/* Header avec sélection client */}
+    <div className="flex flex-col h-screen bg-background">
+      {/* Header */}
+      <div className="flex-shrink-0 p-6 border-b">
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold">Vente au Comptoir</h1>
@@ -127,11 +126,13 @@ export default function POS() {
             />
           </div>
         </div>
+      </div>
 
-        {/* Grid layout responsive - même structure que SalesInvoices */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Content - Grid layout responsive */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-2">
           {/* Section des produits */}
-          <div className="space-y-4">
+          <div className="flex flex-col border-r">
             <ProductSection
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -152,7 +153,7 @@ export default function POS() {
           </div>
 
           {/* Section panier */}
-          <div className="space-y-4">
+          <div className="flex flex-col">
             <Cart
               items={cart}
               onRemove={removeFromCart}
@@ -186,6 +187,6 @@ export default function POS() {
         }))}
         fullyDeliveredByDefault={true}
       />
-    </DashboardLayout>
+    </div>
   );
 }

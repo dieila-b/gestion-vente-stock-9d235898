@@ -1,5 +1,4 @@
 
-import { Card } from "@/components/ui/card";
 import { CartItem as CartItemType } from "@/types/pos";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -122,14 +121,16 @@ export function CartContainer({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <Card className="h-fit">
-      <div className="p-6">
-        {/* Header */}
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex-shrink-0 p-6 border-b">
         <CartHeader itemCount={items.length} />
+      </div>
 
-        {/* Contenu principal */}
-        <div className="space-y-4">
-          {(showReceipt || showInvoice) ? (
+      {/* Contenu principal */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {(showReceipt || showInvoice) ? (
+          <div className="flex-1 p-6">
             <CartReceiptView
               showReceipt={showReceipt}
               showInvoice={showInvoice}
@@ -142,9 +143,12 @@ export function CartContainer({
               invoiceNumber={invoiceNumber}
               currentDate={currentDate}
             />
-          ) : (
-            <>
-              <div className="min-h-[400px]">
+          </div>
+        ) : (
+          <>
+            {/* Cart Items - Section scrollable */}
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full p-6">
                 <CartItems
                   items={items}
                   onUpdateQuantity={onUpdateQuantity}
@@ -157,9 +161,11 @@ export function CartContainer({
                   onValidationChange={setHasValidationErrors}
                 />
               </div>
+            </div>
 
-              {/* Footer intégré */}
-              <div className="space-y-4 pt-4 border-t">
+            {/* Footer fixe en bas */}
+            <div className="flex-shrink-0 border-t bg-background">
+              <div className="p-6 space-y-4">
                 <CartValidationAlert hasValidationErrors={hasValidationErrors} />
                 
                 <CartSummary
@@ -184,10 +190,10 @@ export function CartContainer({
                   />
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }

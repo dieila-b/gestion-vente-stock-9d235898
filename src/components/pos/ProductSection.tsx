@@ -1,6 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { CategoryFilter } from "@/components/pos/CategoryFilter";
 import { ProductCard } from "@/components/pos/ProductCard";
@@ -45,12 +44,13 @@ export function ProductSection({
   availableStock
 }: ProductSectionProps) {
   return (
-    <Card className="h-fit">
-      <div className="p-6">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex-shrink-0 p-6 border-b">
         <h2 className="text-lg font-semibold mb-4">Produits</h2>
         
         {/* Contrôles de recherche et filtres */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4">
           {/* Barre de recherche */}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -85,11 +85,13 @@ export function ProductSection({
             onSelectCategory={setSelectedCategory}
           />
         </div>
-        
-        {/* Grille des produits */}
-        <div className="space-y-4">
-          <ScrollArea className="h-[400px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-2">
+      </div>
+      
+      {/* Grille des produits */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 p-6">
+          <ScrollArea className="h-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pr-2">
               {currentProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -100,33 +102,33 @@ export function ProductSection({
               ))}
             </div>
           </ScrollArea>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPrevPage}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm whitespace-nowrap px-2">
-                {currentPage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex-shrink-0 flex justify-center items-center gap-2 p-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm whitespace-nowrap px-2">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }
