@@ -34,7 +34,7 @@ export function CartActions({
           onClick={onBack}
           size="sm"
           variant="outline"
-          className="col-span-4 text-xs sm:text-sm h-8 sm:h-9"
+          className="col-span-4 text-xs sm:text-sm h-10 sm:h-11 font-medium"
         >
           Retour
         </Button>
@@ -50,7 +50,7 @@ export function CartActions({
         size="sm"
         onClick={onClear}
         disabled={isLoading || itemCount === 0}
-        className="col-span-2 text-xs h-8 sm:h-9"
+        className="col-span-2 text-xs h-10 sm:h-11"
       >
         Annuler
       </Button>
@@ -59,7 +59,7 @@ export function CartActions({
         size="sm"
         onClick={onRestore}
         disabled={isLoading}
-        className="text-xs h-8 sm:h-9"
+        className="text-xs h-10 sm:h-11"
       >
         Restaurer
       </Button>
@@ -68,7 +68,7 @@ export function CartActions({
         size="sm"
         onClick={onPending}
         disabled={isLoading || itemCount === 0}
-        className="text-xs h-8 sm:h-9"
+        className="text-xs h-10 sm:h-11"
       >
         En attente
       </Button>
@@ -76,9 +76,9 @@ export function CartActions({
         size="sm"
         onClick={onCheckout}
         disabled={isLoading || itemCount === 0 || !selectedClient}
-        className="bg-primary col-span-4 text-xs sm:text-sm h-8 sm:h-9 font-semibold"
+        className="bg-primary col-span-4 text-sm sm:text-base h-12 sm:h-14 font-bold text-white hover:bg-primary/90 shadow-lg"
       >
-        {isLoading ? "Chargement..." : "PAIEMENT"}
+        {isLoading ? "Chargement..." : "💳 PAIEMENT"}
       </Button>
     </>
   );

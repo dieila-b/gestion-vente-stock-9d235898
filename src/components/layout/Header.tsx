@@ -19,9 +19,9 @@ export function Header({ className }: HeaderProps) {
       <div className="flex h-14 md:h-16 items-center gap-4 px-4 md:px-6">
         <SidebarTrigger />
         
-        <div className="flex-1 flex items-center gap-4">
-          {/* Masquer la barre de recherche sur la page POS */}
-          {!isPOSPage && (
+        {/* Masquer complètement la zone de recherche sur la page POS */}
+        {!isPOSPage && (
+          <div className="flex-1 flex items-center gap-4">
             <div className="relative max-w-md flex-1 hidden md:flex">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -30,8 +30,8 @@ export function Header({ className }: HeaderProps) {
                 className="pl-8 bg-muted/50 border-white/10 focus:border-primary/50 transition-colors"
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
           <span className="text-sm font-medium text-primary">JD</span>

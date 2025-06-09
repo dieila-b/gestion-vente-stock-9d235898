@@ -121,65 +121,67 @@ export function CartContainer({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <Card className="flex flex-col h-full w-full glass-panel">
-        {/* Header - toujours visible */}
-        <div className="flex-shrink-0">
-          <CartHeader itemCount={items.length} />
-        </div>
+    <>
+      <div className="flex flex-col h-full w-full">
+        <Card className="flex flex-col h-full w-full glass-panel">
+          {/* Header - toujours visible */}
+          <div className="flex-shrink-0">
+            <CartHeader itemCount={items.length} />
+          </div>
 
-        {/* Zone de contenu principal - flexible et scrollable */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          {(showReceipt || showInvoice) ? (
-            <div className="flex-1 overflow-y-auto">
-              <CartReceiptView
-                showReceipt={showReceipt}
-                showInvoice={showInvoice}
-                items={items}
-                subtotal={subtotal}
-                totalDiscount={totalDiscount}
-                total={total}
-                onPrint={handlePrint}
-                selectedClient={selectedClient}
-                invoiceNumber={invoiceNumber}
-                currentDate={currentDate}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <CartItems
-                items={items}
-                onUpdateQuantity={onUpdateQuantity}
-                onRemove={onRemove}
-                onUpdateDiscount={onUpdateDiscount}
-                onSetQuantity={onSetQuantity}
-                hasOutOfStockItems={false}
-                hasLowStockItems={false}
-                availableStock={availableStock}
-                onValidationChange={setHasValidationErrors}
-              />
-            </div>
-          )}
-        </div>
+          {/* Zone de contenu principal - flexible et scrollable */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {(showReceipt || showInvoice) ? (
+              <div className="flex-1 overflow-y-auto">
+                <CartReceiptView
+                  showReceipt={showReceipt}
+                  showInvoice={showInvoice}
+                  items={items}
+                  subtotal={subtotal}
+                  totalDiscount={totalDiscount}
+                  total={total}
+                  onPrint={handlePrint}
+                  selectedClient={selectedClient}
+                  invoiceNumber={invoiceNumber}
+                  currentDate={currentDate}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <CartItems
+                  items={items}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemove={onRemove}
+                  onUpdateDiscount={onUpdateDiscount}
+                  onSetQuantity={onSetQuantity}
+                  hasOutOfStockItems={false}
+                  hasLowStockItems={false}
+                  availableStock={availableStock}
+                  onValidationChange={setHasValidationErrors}
+                />
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
 
-        {/* Footer ABSOLUMENT FIXE - toujours visible en bas */}
-        <CartFooter
-          hasValidationErrors={hasValidationErrors}
-          subtotal={subtotal}
-          totalDiscount={totalDiscount}
-          total={total}
-          selectedClient={selectedClient}
-          showReceipt={showReceipt}
-          showInvoice={showInvoice}
-          onBack={handleBack}
-          onClear={handleClear}
-          onCheckout={handleCheckout}
-          onPending={handlePending}
-          onRestore={handleRestore}
-          isLoading={isLoading}
-          itemCount={items.length}
-        />
-      </Card>
-    </div>
+      {/* Footer fixe toujours visible */}
+      <CartFooter
+        hasValidationErrors={hasValidationErrors}
+        subtotal={subtotal}
+        totalDiscount={totalDiscount}
+        total={total}
+        selectedClient={selectedClient}
+        showReceipt={showReceipt}
+        showInvoice={showInvoice}
+        onBack={handleBack}
+        onClear={handleClear}
+        onCheckout={handleCheckout}
+        onPending={handlePending}
+        onRestore={handleRestore}
+        isLoading={isLoading}
+        itemCount={items.length}
+      />
+    </>
   );
 }
