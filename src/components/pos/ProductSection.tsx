@@ -45,14 +45,15 @@ export function ProductSection({
   availableStock
 }: ProductSectionProps) {
   return (
-    <div className="w-full md:w-[45%] lg:w-[45%] p-4 overflow-hidden flex flex-col">
-      <div className="flex flex-col gap-4 mb-4">
-        <div className="flex gap-4 items-center">
+    <div className="flex flex-col h-full">
+      {/* Header compact avec contrôles */}
+      <div className="flex-shrink-0 space-y-3 mb-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center">
           <Select
             value={selectedPDV}
             onValueChange={setSelectedPDV}
           >
-            <SelectTrigger className="w-[200px] glass-effect">
+            <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] glass-effect text-sm">
               <SelectValue placeholder="Sélectionner un PDV" />
             </SelectTrigger>
             <SelectContent>
@@ -64,7 +65,9 @@ export function ProductSection({
               ))}
             </SelectContent>
           </Select>
-          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          <div className="w-full sm:flex-1">
+            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          </div>
         </div>
         <CategoryFilter 
           categories={categories}
@@ -73,10 +76,11 @@ export function ProductSection({
         />
       </div>
       
-      <Card className="flex-1 enhanced-glass">
-        <div className="h-full p-4">
-          <ScrollArea className="h-[calc(100vh-14rem)]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Zone des produits avec scroll optimisé */}
+      <Card className="flex-1 enhanced-glass min-h-0">
+        <div className="h-full p-3 lg:p-4 flex flex-col">
+          <ScrollArea className="flex-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-4">
               {currentProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -88,18 +92,19 @@ export function ProductSection({
             </div>
           </ScrollArea>
           
+          {/* Pagination compacte */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
+            <div className="flex justify-center items-center gap-2 lg:gap-4 mt-3 lg:mt-6 flex-shrink-0">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={goToPrevPage}
                 disabled={currentPage === 1}
-                className="glass-effect"
+                className="glass-effect h-8 w-8 lg:h-10 lg:w-10"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3 w-3 lg:h-4 lg:w-4" />
               </Button>
-              <span className="text-sm">
+              <span className="text-xs lg:text-sm whitespace-nowrap">
                 Page {currentPage} sur {totalPages}
               </span>
               <Button
@@ -107,9 +112,9 @@ export function ProductSection({
                 size="icon"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="glass-effect"
+                className="glass-effect h-8 w-8 lg:h-10 lg:w-10"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3 lg:h-4 lg:w-4" />
               </Button>
             </div>
           )}

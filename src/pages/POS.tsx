@@ -104,35 +104,38 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal avec hauteur fixe pour viewport complet */}
-      <div className="flex flex-col md:flex-row h-[100vh] w-full bg-background overflow-hidden">
-        <ProductSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          selectedPDV={selectedPDV}
-          setSelectedPDV={setSelectedPDV}
-          posLocations={posLocations}
-          currentProducts={currentProducts}
-          categories={categories}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          goToPrevPage={goToPrevPage}
-          goToNextPage={goToNextPage}
-          onAddToCart={handleAddToCart}
-          availableStock={availableStock}
-        />
+      {/* Conteneur principal optimisé pour utiliser tout l'espace disponible */}
+      <div className="flex flex-col lg:flex-row h-full w-full bg-background overflow-hidden">
+        {/* Section des produits */}
+        <div className="w-full lg:w-[45%] xl:w-[50%] p-3 lg:p-4 overflow-hidden flex flex-col">
+          <ProductSection
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedPDV={selectedPDV}
+            setSelectedPDV={setSelectedPDV}
+            posLocations={posLocations}
+            currentProducts={currentProducts}
+            categories={categories}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            goToPrevPage={goToPrevPage}
+            goToNextPage={goToNextPage}
+            onAddToCart={handleAddToCart}
+            availableStock={availableStock}
+          />
+        </div>
 
-        {/* Section panier avec hauteur complète et layout fixe */}
-        <div className="w-full md:w-[55%] lg:w-[55%] border-l border-border/10 flex flex-col h-full min-h-0">
-          {/* Header fixe du panier */}
-          <div className="flex-shrink-0 p-4 space-y-4 bg-background border-b border-border/10">
-            <div className="flex flex-col space-y-2">
+        {/* Section panier optimisée pour un meilleur usage de l'espace */}
+        <div className="w-full lg:w-[55%] xl:w-[50%] border-l border-border/10 flex flex-col h-full min-h-0">
+          {/* Header compact du panier */}
+          <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
+            <div className="space-y-3">
               {!selectedClient && (
-                <div className="flex items-center text-red-500 text-sm mb-2">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  <span>Veuillez sélectionner un client pour pouvoir effectuer une vente</span>
+                <div className="flex items-center text-red-500 text-sm">
+                  <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <span className="text-xs lg:text-sm">Veuillez sélectionner un client pour effectuer une vente</span>
                 </div>
               )}
               <ClientSelect
@@ -142,7 +145,7 @@ export default function POS() {
             </div>
           </div>
           
-          {/* Cart qui occupe tout l'espace restant avec layout flex */}
+          {/* Cart qui occupe tout l'espace restant */}
           <div className="flex-1 min-h-0 flex flex-col">
             <Cart
               items={cart}
