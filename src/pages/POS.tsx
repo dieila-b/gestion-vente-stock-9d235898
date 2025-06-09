@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CartContainer as Cart } from "@/components/pos/cart/CartContainer";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
@@ -103,66 +104,69 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal optimisé pour utiliser tout l'espace disponible */}
-      <div className="flex flex-col lg:flex-row h-full w-full bg-background overflow-hidden">
-        {/* Section des produits */}
-        <div className="w-full lg:w-[45%] xl:w-[50%] p-3 lg:p-4 overflow-hidden flex flex-col">
-          <ProductSection
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedPDV={selectedPDV}
-            setSelectedPDV={setSelectedPDV}
-            posLocations={posLocations}
-            currentProducts={currentProducts}
-            categories={categories}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            goToPrevPage={goToPrevPage}
-            goToNextPage={goToNextPage}
-            onAddToCart={handleAddToCart}
-            availableStock={availableStock}
-          />
-        </div>
-
-        {/* Section panier optimisée pour un meilleur usage de l'espace */}
-        <div className="w-full lg:w-[55%] xl:w-[50%] border-l border-border/10 flex flex-col h-full min-h-0">
-          {/* Header compact du panier */}
-          <div className="flex-shrink-0 p-3 lg:p-4 bg-background border-b border-border/10">
-            <div className="space-y-3">
-              {!selectedClient && (
-                <div className="flex items-center text-red-500 text-sm">
-                  <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="text-xs lg:text-sm">Veuillez sélectionner un client pour effectuer une vente</span>
-                </div>
-              )}
-              <ClientSelect
-                selectedClient={selectedClient}
-                onClientSelect={(client: Client) => setSelectedClient(client as any)}
-              />
-            </div>
-          </div>
-          
-          {/* Cart qui occupe tout l'espace restant */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <Cart
-              items={cart}
-              onRemove={removeFromCart}
-              onUpdateQuantity={(productId, delta) => {
-                updateQuantity(productId, delta);
-              }}
-              onUpdateDiscount={handleUpdateDiscount}
-              subtotal={calculateSubtotal()}
-              total={calculateTotal()}
-              totalDiscount={calculateTotalDiscount()}
-              onCheckout={() => setIsPaymentDialogOpen(true)}
-              isLoading={isLoading}
-              selectedClient={selectedClient}
-              clearCart={clearCart}
-              onSetQuantity={setQuantity}
+      {/* Conteneur principal optimisé pour mobile et desktop */}
+      <div className="flex flex-col h-full w-full bg-background overflow-hidden">
+        {/* Layout mobile/tablet (vertical) et desktop (horizontal) */}
+        <div className="flex flex-col lg:flex-row h-full w-full">
+          {/* Section des produits */}
+          <div className="w-full lg:w-[45%] xl:w-[50%] p-2 sm:p-3 lg:p-4 overflow-hidden flex flex-col order-2 lg:order-1">
+            <ProductSection
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedPDV={selectedPDV}
+              setSelectedPDV={setSelectedPDV}
+              posLocations={posLocations}
+              currentProducts={currentProducts}
+              categories={categories}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              goToPrevPage={goToPrevPage}
+              goToNextPage={goToNextPage}
+              onAddToCart={handleAddToCart}
               availableStock={availableStock}
             />
+          </div>
+
+          {/* Section panier - toujours visible avec bouton fixe */}
+          <div className="w-full lg:w-[55%] xl:w-[50%] border-t lg:border-t-0 lg:border-l border-border/10 flex flex-col h-full min-h-0 order-1 lg:order-2">
+            {/* Header compact du panier */}
+            <div className="flex-shrink-0 p-2 sm:p-3 lg:p-4 bg-background border-b border-border/10">
+              <div className="space-y-2 sm:space-y-3">
+                {!selectedClient && (
+                  <div className="flex items-center text-red-500 text-xs sm:text-sm">
+                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                    <span>Veuillez sélectionner un client pour effectuer une vente</span>
+                  </div>
+                )}
+                <ClientSelect
+                  selectedClient={selectedClient}
+                  onClientSelect={(client: Client) => setSelectedClient(client as any)}
+                />
+              </div>
+            </div>
+            
+            {/* Cart qui occupe tout l'espace restant avec footer fixe */}
+            <div className="flex-1 min-h-0 flex flex-col">
+              <Cart
+                items={cart}
+                onRemove={removeFromCart}
+                onUpdateQuantity={(productId, delta) => {
+                  updateQuantity(productId, delta);
+                }}
+                onUpdateDiscount={handleUpdateDiscount}
+                subtotal={calculateSubtotal()}
+                total={calculateTotal()}
+                totalDiscount={calculateTotalDiscount()}
+                onCheckout={() => setIsPaymentDialogOpen(true)}
+                isLoading={isLoading}
+                selectedClient={selectedClient}
+                clearCart={clearCart}
+                onSetQuantity={setQuantity}
+                availableStock={availableStock}
+              />
+            </div>
           </div>
         </div>
       </div>

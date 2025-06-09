@@ -38,8 +38,8 @@ export function CartFooter({
   itemCount
 }: CartFooterProps) {
   return (
-    <div className="flex-shrink-0 bg-card/95 backdrop-blur-sm border-t border-border">
-      <div className="p-4 space-y-4">
+    <div className="flex-shrink-0 bg-card/95 backdrop-blur-sm border-t border-border sticky bottom-0 z-10">
+      <div className="p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3">
         <CartValidationAlert hasValidationErrors={hasValidationErrors} />
         
         <CartSummary
@@ -49,7 +49,7 @@ export function CartFooter({
           selectedClient={selectedClient}
         />
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2">
           <CartActions
             showReceipt={showReceipt}
             showInvoice={showInvoice}
