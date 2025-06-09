@@ -1,14 +1,12 @@
 
 import { CartContainer as Cart } from "@/components/pos/cart/CartContainer";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
-import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
 import { usePOS } from "@/hooks/use-pos";
 import useEditOrder from "@/hooks/use-edit-order";
 import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
-import { AlertCircle } from "lucide-react";
 import { Client } from "@/types/client_unified";
 import { toast } from "sonner";
 
@@ -147,6 +145,7 @@ export default function POS() {
               clearCart={clearCart}
               onSetQuantity={setQuantity}
               availableStock={availableStock}
+              onClientSelect={(client: Client) => setSelectedClient(client as any)}
             />
           </div>
         </div>

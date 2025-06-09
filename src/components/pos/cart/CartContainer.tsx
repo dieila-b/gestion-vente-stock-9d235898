@@ -10,6 +10,7 @@ import { CartReceiptView } from "./CartReceiptView";
 import { CartValidationAlert } from "./CartValidationAlert";
 import { CartSummary } from "./CartSummary";
 import { CartActions } from "./CartActions";
+import { CartClientSelector } from "./CartClientSelector";
 
 interface CartContainerProps {
   items: CartItemType[];
@@ -25,6 +26,7 @@ interface CartContainerProps {
   clearCart?: () => void;
   onSetQuantity?: (productId: string, quantity: number) => void;
   availableStock?: Record<string, number>;
+  onClientSelect: (client: Client) => void;
 }
 
 export function CartContainer({ 
@@ -40,7 +42,8 @@ export function CartContainer({
   selectedClient,
   clearCart,
   onSetQuantity,
-  availableStock = {}
+  availableStock = {},
+  onClientSelect
 }: CartContainerProps) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -146,6 +149,14 @@ export function CartContainer({
           </div>
         ) : (
           <>
+            {/* Sélection client au-dessus du panier */}
+            <div className="flex-shrink-0 p-6 border-b">
+              <CartClientSelector
+                selectedClient={selectedClient}
+                onClientSelect={onClientSelect}
+              />
+            </div>
+
             {/* Cart Items - Section scrollable */}
             <div className="flex-1 overflow-hidden">
               <div className="h-full p-6">

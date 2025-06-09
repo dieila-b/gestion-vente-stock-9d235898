@@ -1,9 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Search, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { CategoryFilter } from "@/components/pos/CategoryFilter";
 import { ProductCard } from "@/components/pos/ProductCard";
-import { ClientSelect } from "@/components/pos/ClientSelect";
 import { Product } from "@/types/pos";
 import { Client } from "@/types/client_unified";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,14 +50,14 @@ export function ProductSection({
 }: ProductSectionProps) {
   return (
     <div className="flex flex-col h-full">
-      {/* Header avec tous les contrôles en ligne */}
+      {/* Header simplifié sans la sélection client */}
       <div className="flex-shrink-0 p-4 border-b bg-background">
         <div className="space-y-3">
           {/* Titre */}
           <h1 className="text-xl font-bold">Vente au Comptoir</h1>
           
-          {/* Ligne principale avec tous les contrôles */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+          {/* Ligne principale avec les contrôles (sans client) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {/* Sélection PDV */}
             <Select value={selectedPDV} onValueChange={setSelectedPDV}>
               <SelectTrigger>
@@ -87,30 +86,12 @@ export function ProductSection({
             </div>
 
             {/* Filtre catégories */}
-            <div className="lg:col-span-1">
+            <div>
               <CategoryFilter 
                 categories={categories}
                 selectedCategory={selectedCategory}
                 onSelectCategory={setSelectedCategory}
               />
-            </div>
-
-            {/* Bloc client requis */}
-            <div className="flex flex-col justify-center">
-              {!selectedClient ? (
-                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 px-3 py-2 rounded-md border border-red-200">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-xs">Client requis</span>
-                  <ClientSelect
-                    selectedClient={selectedClient}
-                    onClientSelect={setSelectedClient}
-                  />
-                </div>
-              ) : (
-                <div className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md border border-green-200">
-                  ✓ Client sélectionné
-                </div>
-              )}
             </div>
           </div>
         </div>
