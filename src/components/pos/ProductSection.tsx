@@ -50,31 +50,33 @@ export function ProductSection({
 }: ProductSectionProps) {
   return (
     <div className="flex flex-col h-full">
-      {/* Header simplifié sans la sélection client */}
+      {/* Header réorganisé */}
       <div className="flex-shrink-0 p-4 border-b bg-background">
         <div className="space-y-3">
           {/* Titre */}
           <h1 className="text-xl font-bold">Vente au Comptoir</h1>
           
-          {/* Ligne principale avec les contrôles (sans client) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {/* Sélection PDV */}
-            <Select value={selectedPDV} onValueChange={setSelectedPDV}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un PDV" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Tous les PDV</SelectItem>
-                {posLocations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* PDV et recherche produit sur la même ligne */}
+          <div className="flex gap-3">
+            {/* Sélection PDV à gauche */}
+            <div className="w-64">
+              <Select value={selectedPDV} onValueChange={setSelectedPDV}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un PDV" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Tous les PDV</SelectItem>
+                  {posLocations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Barre de recherche produit */}
-            <div className="relative">
+            {/* Barre de recherche produit à côté */}
+            <div className="flex-1 relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -84,15 +86,15 @@ export function ProductSection({
                 className="pl-8"
               />
             </div>
+          </div>
 
-            {/* Filtre catégories */}
-            <div>
-              <CategoryFilter 
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-              />
-            </div>
+          {/* Filtres catégories en dessous */}
+          <div>
+            <CategoryFilter 
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
           </div>
         </div>
       </div>
