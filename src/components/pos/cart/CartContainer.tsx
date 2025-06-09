@@ -121,15 +121,15 @@ export function CartContainer({
   const invoiceNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
 
   return (
-    <div className="flex flex-col h-full w-full relative">
-      <Card className="flex flex-col h-full w-full glass-panel relative">
+    <div className="flex flex-col h-full w-full">
+      <Card className="flex flex-col h-full w-full glass-panel">
         {/* Header - toujours visible */}
         <div className="flex-shrink-0">
           <CartHeader itemCount={items.length} />
         </div>
 
-        {/* Zone de contenu principal - avec padding pour le footer */}
-        <div className="flex-1 min-h-0 flex flex-col pb-[180px]">
+        {/* Zone de contenu principal - flexible et scrollable */}
+        <div className="flex-1 min-h-0 flex flex-col">
           {(showReceipt || showInvoice) ? (
             <div className="flex-1 overflow-y-auto">
               <CartReceiptView

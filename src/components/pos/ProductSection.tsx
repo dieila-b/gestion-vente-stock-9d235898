@@ -27,6 +27,8 @@ interface ProductSectionProps {
 }
 
 export function ProductSection({
+  searchTerm,
+  setSearchTerm,
   selectedCategory,
   setSelectedCategory,
   selectedPDV,
@@ -43,7 +45,7 @@ export function ProductSection({
 }: ProductSectionProps) {
   return (
     <div className="flex flex-col h-full">
-      {/* Header compact avec contrôles - SANS barre de recherche */}
+      {/* Header compact avec contrôles */}
       <div className="flex-shrink-0 space-y-2 mb-3">
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
           <Select

@@ -104,12 +104,12 @@ export default function POS() {
 
   return (
     <DashboardLayout>
-      {/* Conteneur principal avec hauteur viewport complète */}
-      <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
-        {/* Layout responsif optimisé */}
-        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-          {/* Section des produits - hauteur flexible */}
-          <div className="w-full lg:w-[45%] xl:w-[50%] p-2 sm:p-3 lg:p-4 flex flex-col min-h-0 order-2 lg:order-1">
+      {/* Conteneur principal optimisé pour mobile et desktop */}
+      <div className="flex flex-col h-full w-full bg-background overflow-hidden">
+        {/* Layout mobile/tablet (vertical) et desktop (horizontal) */}
+        <div className="flex flex-col lg:flex-row h-full w-full">
+          {/* Section des produits */}
+          <div className="w-full lg:w-[45%] xl:w-[50%] p-2 sm:p-3 lg:p-4 overflow-hidden flex flex-col order-2 lg:order-1">
             <ProductSection
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -129,9 +129,9 @@ export default function POS() {
             />
           </div>
 
-          {/* Section panier - hauteur flexible avec footer fixe */}
-          <div className="w-full lg:w-[55%] xl:w-[50%] border-t lg:border-t-0 lg:border-l border-border/10 flex flex-col min-h-0 order-1 lg:order-2">
-            {/* Header compact du panier - fixe */}
+          {/* Section panier - toujours visible avec bouton fixe */}
+          <div className="w-full lg:w-[55%] xl:w-[50%] border-t lg:border-t-0 lg:border-l border-border/10 flex flex-col h-full min-h-0 order-1 lg:order-2">
+            {/* Header compact du panier */}
             <div className="flex-shrink-0 p-2 sm:p-3 lg:p-4 bg-background border-b border-border/10">
               <div className="space-y-2 sm:space-y-3">
                 {!selectedClient && (
@@ -147,8 +147,8 @@ export default function POS() {
               </div>
             </div>
             
-            {/* Cart avec hauteur flexible et footer TOUJOURS visible */}
-            <div className="flex-1 min-h-0 flex flex-col relative">
+            {/* Cart qui occupe tout l'espace restant avec footer fixe */}
+            <div className="flex-1 min-h-0 flex flex-col">
               <Cart
                 items={cart}
                 onRemove={removeFromCart}
