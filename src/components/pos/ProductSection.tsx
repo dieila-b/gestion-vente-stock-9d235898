@@ -27,8 +27,6 @@ interface ProductSectionProps {
 }
 
 export function ProductSection({
-  searchTerm,
-  setSearchTerm,
   selectedCategory,
   setSelectedCategory,
   selectedPDV,
