@@ -1,6 +1,5 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Cart } from "@/components/pos/Cart";
+import { CartContainer as Cart } from "@/components/pos/cart/CartContainer";
 import { PaymentDialog } from "@/components/pos/PaymentDialog";
 import { ClientSelect } from "@/components/pos/ClientSelect";
 import { ProductSection } from "@/components/pos/ProductSection";
