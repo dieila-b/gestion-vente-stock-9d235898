@@ -63,6 +63,9 @@ export function usePOSPayment({
         deliveryStatus = 'awaiting';
       }
 
+      console.log('Starting payment processing...');
+      console.log('Cart before processing:', cart);
+
       // Process the order (create or update) - this now also creates the sales invoice
       const order = await processOrder(
         selectedClient,
@@ -77,8 +80,12 @@ export function usePOSPayment({
         editOrderId
       );
 
+      console.log('Order processed successfully:', order);
+
       // Record the payment
       await recordPayment(order.id, amount, method, notes, editOrderId);
+
+      console.log('Payment recorded successfully');
 
       // Refresh stock data
       refetchStock();
@@ -103,18 +110,22 @@ export function usePOSPayment({
       // Success message
       toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
       
-      // Clear the cart FIRST before closing dialog to ensure it's emptied
+      console.log('Clearing cart after successful payment...');
+      
+      // Clear the cart immediately - this is crucial for POS functionality
       clearCart();
       
-      // Small delay to ensure cart clearing is processed
+      console.log('Cart cleared, closing dialog...');
+      
+      // Close the payment dialog after a short delay to ensure cart clearing is processed
       setTimeout(() => {
-        // Close the payment dialog
         setIsPaymentDialogOpen(false);
-      }, 100);
+        console.log('Payment dialog closed');
+      }, 50);
       
     } catch (error) {
       console.error('Error processing payment:', error);
-      toast.error("Erreur lors du traitement du paiement");
+      toast.error("Erreur lors du traitement du paiement: " + (error as Error).message);
     } finally {
       setIsLoading(false);
     }

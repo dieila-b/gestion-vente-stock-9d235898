@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
@@ -17,6 +16,12 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     deliveredItems?: Record<string, { delivered: boolean, quantity: number }>,
     editOrderId?: string | null
   ) => {
+    // Get current user to ensure RLS compliance
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Utilisateur non authentifié");
+    }
+
     let order;
     
     // If we're editing an existing order, update it
@@ -33,7 +38,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
           payment_status: paidAmount >= total ? 'paid' : 'partial',
           paid_amount: paidAmount,
           remaining_amount: total - paidAmount,
-          comment: notes
+          comment: notes,
+          user_id: user.id // Ensure user_id is set for RLS
         })
         .eq('id', editOrderId)
         .select()
@@ -50,7 +56,7 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
         
       if (deleteItemsError) throw deleteItemsError;
     } else {
-      // Create a new order
+      // Create a new order with user_id for RLS compliance
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -63,7 +69,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
           payment_status: paidAmount >= total ? 'paid' : 'partial',
           paid_amount: paidAmount,
           remaining_amount: total - paidAmount,
-          comment: notes
+          comment: notes,
+          user_id: user.id // Essential for RLS compliance
         })
         .select()
         .single();
@@ -83,7 +90,7 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     await updateStockLevels(cart, stockItems, selectedPDV);
 
     // Create sales invoice automatically
-    await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus);
+    await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus, user.id);
 
     // Return the order object with all necessary information
     return {
@@ -110,12 +117,13 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     totalDiscount: number,
     total: number,
     paidAmount: number,
-    deliveryStatus: string
+    deliveryStatus: string,
+    userId: string
   ) => {
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     
-    // Create sales invoice
+    // Create sales invoice with user_id for RLS compliance
     const { data: salesInvoice, error: salesInvoiceError } = await supabase
       .from('sales_invoices')
       .insert({
@@ -126,7 +134,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
         paid_amount: paidAmount,
         remaining_amount: total - paidAmount,
         payment_status: paidAmount >= total ? 'paid' : paidAmount > 0 ? 'partial' : 'pending',
-        delivery_status: deliveryStatus
+        delivery_status: deliveryStatus,
+        user_id: userId // Essential for RLS compliance
       })
       .select()
       .single();
