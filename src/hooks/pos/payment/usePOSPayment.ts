@@ -63,7 +63,7 @@ export function usePOSPayment({
         deliveryStatus = 'awaiting';
       }
 
-      // Process the order (create or update)
+      // Process the order (create or update) - this now also creates the sales invoice
       const order = await processOrder(
         selectedClient,
         cart,
@@ -100,15 +100,18 @@ export function usePOSPayment({
         deliveredItems
       );
       
-      // Clear the cart
+      // Clear the cart AFTER successful processing
       clearCart();
-      toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès");
+      
+      // Close the payment dialog
+      setIsPaymentDialogOpen(false);
+      
+      toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
     } catch (error) {
       console.error('Error processing payment:', error);
       toast.error("Erreur lors du traitement du paiement");
     } finally {
       setIsLoading(false);
-      setIsPaymentDialogOpen(false);
     }
   };
 

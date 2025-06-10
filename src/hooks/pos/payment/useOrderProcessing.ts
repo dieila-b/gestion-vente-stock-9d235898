@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
@@ -81,6 +82,9 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     // Update stock levels
     await updateStockLevels(cart, stockItems, selectedPDV);
 
+    // Create sales invoice automatically
+    await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus);
+
     // Return the order object with all necessary information
     return {
       id: order.id,
@@ -95,6 +99,68 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       remaining_amount: order.remaining_amount,
       // Include any other properties needed for the invoice
     };
+  };
+
+  // Helper to create sales invoice
+  const createSalesInvoice = async (
+    order: any,
+    client: Client | null,
+    cart: CartItem[],
+    subtotal: number,
+    totalDiscount: number,
+    total: number,
+    paidAmount: number,
+    deliveryStatus: string
+  ) => {
+    // Generate invoice number
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    
+    // Create sales invoice
+    const { data: salesInvoice, error: salesInvoiceError } = await supabase
+      .from('sales_invoices')
+      .insert({
+        order_id: order.id,
+        client_id: client?.id,
+        invoice_number: invoiceNumber,
+        total_amount: total,
+        paid_amount: paidAmount,
+        remaining_amount: total - paidAmount,
+        payment_status: paidAmount >= total ? 'paid' : paidAmount > 0 ? 'partial' : 'pending',
+        delivery_status: deliveryStatus
+      })
+      .select()
+      .single();
+
+    if (salesInvoiceError) throw salesInvoiceError;
+
+    // Create sales invoice items
+    const salesInvoiceItems = cart.map(item => {
+      let deliveredQuantity = 0;
+      
+      if (deliveryStatus === 'delivered') {
+        deliveredQuantity = item.quantity;
+      } else if (deliveryStatus === 'partial') {
+        deliveredQuantity = Math.floor(item.quantity / 2); // Simplified logic
+      }
+
+      return {
+        sales_invoice_id: salesInvoice.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        discount: item.discount || 0,
+        total_price: (item.price * item.quantity) - ((item.discount || 0) * item.quantity),
+        delivered_quantity: deliveredQuantity
+      };
+    });
+
+    const { error: itemsError } = await supabase
+      .from('sales_invoice_items')
+      .insert(salesInvoiceItems);
+
+    if (itemsError) throw itemsError;
+
+    console.log('Sales invoice created successfully:', salesInvoice.invoice_number);
   };
 
   // Helper to create order items
