@@ -53,16 +53,16 @@ export function InvoiceDisplay({
   isReceipt = false
 }: InvoiceDisplayProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const currentDate = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: fr });
+  const currentDate = format(new Date(), "dd/MM/yyyy", { locale: fr });
 
   // Convert CartItemInfo to InvoiceItem with price and delivery information
   const invoiceItems: InvoiceItem[] = items.map(item => ({
     id: item.id,
     name: item.name,
     quantity: item.quantity,
-    price: item.price || totalAmount / items.reduce((acc, item) => acc + item.quantity, 1), // Use item price if available
+    price: item.price || totalAmount / items.reduce((acc, item) => acc + item.quantity, 1),
     discount: item.discount || 0,
-    deliveredQuantity: item.deliveredQuantity
+    deliveredQuantity: item.deliveredQuantity || 0
   }));
 
   // Calculate subtotal and total discount
@@ -72,7 +72,6 @@ export function InvoiceDisplay({
   if (isReceipt) {
     return (
       <div className="space-y-4">
-        {/* Share actions at the top */}
         <InvoiceShareActions
           invoiceNumber={invoiceNumber}
           clientName={client?.company_name || client?.contact_name || "Client comptoir"}
@@ -102,9 +101,33 @@ export function InvoiceDisplay({
     );
   }
 
+  // Helper function to convert number to words (simplified version)
+  const formatAmountInWords = (amount: number): string => {
+    return `${formatGNF(amount).replace(' GNF', '')} Franc Guinéen`;
+  };
+
+  // Helper functions to get readable status labels
+  const getPaymentStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'paid': 'Entièrement payé',
+      'partial': 'Partiellement payé', 
+      'pending': 'En attente de paiement'
+    };
+    return statusMap[status] || status;
+  };
+
+  const getDeliveryStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'delivered': 'Entièrement livré',
+      'partial': 'Partiellement livré',
+      'awaiting': 'En attente de livraison',
+      'pending': 'En attente'
+    };
+    return statusMap[status] || status;
+  };
+
   return (
     <div className="space-y-4">
-      {/* Share actions at the top */}
       <InvoiceShareActions
         invoiceNumber={invoiceNumber}
         clientName={client?.company_name || client?.contact_name || "Client comptoir"}
@@ -115,19 +138,19 @@ export function InvoiceDisplay({
         formatGNF={formatGNF}
       />
       
-      <div className="bg-white rounded-md border border-gray-200" ref={invoiceRef}>
-        {/* Logo and Company Info Header */}
-        <div className="grid grid-cols-2 border-b border-gray-200">
-          <div className="p-3 border-r border-gray-200">
+      <div className="bg-white rounded-sm border border-gray-400" ref={invoiceRef}>
+        {/* Header with logo and company info */}
+        <div className="grid grid-cols-2 border-b border-gray-400">
+          <div className="p-4 border-r border-gray-400 flex items-center justify-center">
             <img 
               src="/lovable-uploads/a4c01cc2-c7e7-4877-b12e-00121b9e346b.png" 
               alt="Company Logo"
               className="h-20 object-contain" 
             />
           </div>
-          <div className="p-3">
-            <h2 className="font-bold text-sm mb-1">Information de la société</h2>
-            <div className="text-xs space-y-0.5">
+          <div className="p-4 bg-gray-50">
+            <h2 className="font-bold text-base mb-3">Information de la société</h2>
+            <div className="text-sm space-y-1">
               <p><span className="font-bold">Nom:</span> Ets Aicha Business Alphaya</p>
               <p><span className="font-bold">Adresse:</span> Madina-Gare routière Kankan C/Matam</p>
               <p><span className="font-bold">Téléphone:</span> +224 613 98 11 24 / 625 72 76 93</p>
@@ -136,145 +159,152 @@ export function InvoiceDisplay({
           </div>
         </div>
         
-        {/* Invoice Title */}
-        <div className="p-1.5 border-b border-gray-200 font-bold text-base">
-          FACTURE
+        {/* Invoice title */}
+        <div className="border-b border-gray-400 p-3">
+          <h1 className="text-lg font-bold">FACTURE</h1>
         </div>
         
-        {/* Invoice Details and Client Info */}
-        <div className="grid grid-cols-2 border-b border-gray-200">
-          <div className="p-3 border-r border-gray-200">
-            <p className="text-xs"><span className="font-bold">DATE:</span> {currentDate}</p>
-            <p className="text-xs"><span className="font-bold">FACTURE N°:</span> {invoiceNumber}</p>
+        {/* Invoice details and client info */}
+        <div className="grid grid-cols-2 border-b border-gray-400">
+          <div className="p-4 border-r border-gray-400">
+            <div className="space-y-2">
+              <p><span className="font-bold">DATE:</span> {currentDate}</p>
+              <p><span className="font-bold">FACTURE N°:</span> {invoiceNumber}</p>
+            </div>
           </div>
-          <div className="p-3 bg-gray-50">
-            <p className="font-bold text-xs mb-1">CLIENT:</p>
-            <p className="text-xs"><span className="font-bold">Adresse:</span> {client?.address || "Madina C/Matam"}</p>
-            <p className="text-xs"><span className="font-bold">Email:</span> {client?.email || (client?.contact_name ? `${client?.contact_name.toLowerCase().replace(/\s+/g, '')}@gmail.com` : "client@example.com")}</p>
+          <div className="p-4 bg-gray-50">
+            <h3 className="font-bold mb-2">CLIENT:</h3>
+            <div className="space-y-1 text-sm">
+              <p><span className="font-bold">Nom:</span> {client?.company_name || client?.contact_name || "Client comptoir"}</p>
+              <p><span className="font-bold">Téléphone:</span> {client?.phone || ""}</p>
+              <p><span className="font-bold">Adresse:</span> {client?.address || "Madina C/Matam"}</p>
+              <p><span className="font-bold">Email:</span> {client?.email || ""}</p>
+              {client?.client_code && <p><span className="font-bold">Code:</span> {client.client_code}</p>}
+            </div>
           </div>
         </div>
         
-        {/* Invoice Items Table */}
-        <div className="border-b border-gray-200">
-          <div className="grid grid-cols-12 bg-gray-100 text-xs font-medium p-1.5 border-b border-gray-200">
-            <div className="col-span-1"></div>
-            <div className="col-span-4">Produit</div>
-            <div className="col-span-2 text-right">Prix unitaire</div>
-            <div className="col-span-1 text-right">Remise</div>
-            <div className="col-span-2 text-right">Prix net</div>
-            <div className="col-span-1 text-center">Qté</div>
-            <div className="col-span-1 text-right">Total</div>
-          </div>
-          
-          {invoiceItems.map((item, index) => {
-            const itemPrice = item.price;
-            const itemDiscount = item.discount || 0;
-            const netPrice = itemPrice - itemDiscount;
-            const totalPrice = netPrice * item.quantity;
-            
-            return (
-              <div key={index} className="grid grid-cols-12 text-xs p-1.5 border-b border-gray-100">
-                <div className="col-span-1">
-                  {/* Product image or placeholder */}
-                  <div className="w-6 h-6 bg-gray-100 flex items-center justify-center rounded">
-                    <span className="text-xxs text-gray-500">IMG</span>
-                  </div>
-                </div>
-                <div className="col-span-4">{item.name}</div>
-                <div className="col-span-2 text-right">{formatGNF(itemPrice)}</div>
-                <div className="col-span-1 text-right">{itemDiscount > 0 ? formatGNF(itemDiscount) : "-"}</div>
-                <div className="col-span-2 text-right">{formatGNF(netPrice)}</div>
-                <div className="col-span-1 text-center">{item.quantity}</div>
-                <div className="col-span-1 text-right">{formatGNF(totalPrice)}</div>
-              </div>
-            );
-          })}
+        {/* Products table */}
+        <div className="border-b border-gray-400">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-400">
+                <th className="border-r border-gray-400 p-3 text-left text-sm font-bold">Produit</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Prix unitaire</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Remise</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Prix net</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Qté</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Livré</th>
+                <th className="border-r border-gray-400 p-3 text-center text-sm font-bold">Restant</th>
+                <th className="p-3 text-center text-sm font-bold">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoiceItems.map((item, index) => {
+                const itemPrice = item.price;
+                const itemDiscount = item.discount || 0;
+                const netPrice = itemPrice - itemDiscount;
+                const totalPrice = netPrice * item.quantity;
+                const deliveredQty = item.deliveredQuantity || 0;
+                const remainingQty = item.quantity - deliveredQty;
+                
+                return (
+                  <tr key={index} className="border-b border-gray-200">
+                    <td className="border-r border-gray-200 p-3 text-sm">{item.name}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm">{formatGNF(itemPrice)}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm">{itemDiscount > 0 ? formatGNF(itemDiscount) : "-"}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm">{formatGNF(netPrice)}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm">{item.quantity}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm font-bold text-green-600">{deliveredQty}</td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm font-bold text-orange-600">{remainingQty}</td>
+                    <td className="p-3 text-center text-sm">{formatGNF(totalPrice)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
         
-        {/* Invoice Summary - WIDENED */}
-        <div className="border-b border-gray-200">
-          <div className="flex justify-end">
-            <table className="w-96 text-xs">
+        {/* Summary section */}
+        <div className="border-b border-gray-400">
+          <div className="flex justify-end p-4">
+            <table className="w-80">
               <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="p-1.5 font-bold">Montant Total</td>
-                  <td className="p-1.5 text-right">{formatGNF(subtotal)}</td>
+                <tr className="border-b border-gray-200">
+                  <td className="p-2 text-right font-bold">Montant Total</td>
+                  <td className="p-2 text-right">{formatGNF(subtotal)}</td>
                 </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="p-1.5 font-bold">Remise</td>
-                  <td className="p-1.5 text-right">{formatGNF(totalDiscount)}</td>
+                <tr className="border-b border-gray-200">
+                  <td className="p-2 text-right font-bold">Remise</td>
+                  <td className="p-2 text-right">{formatGNF(totalDiscount)}</td>
                 </tr>
                 <tr className="font-bold">
-                  <td className="p-1.5">Net À Payer</td>
-                  <td className="p-1.5 text-right">{formatGNF(totalAmount)}</td>
+                  <td className="p-2 text-right">Net à Payer</td>
+                  <td className="p-2 text-right">{formatGNF(totalAmount)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
         
-        {/* Amount in words - REDUCED */}
-        <div className="p-2 border-b border-gray-200 text-xs italic">
-          Arrêtée la présente facture à la somme de: {formatAmountInWords(totalAmount)}
+        {/* Amount in words */}
+        <div className="border-b border-gray-400 p-4">
+          <p className="text-sm italic">
+            <span className="font-bold">Arrêtée la présente facture à la somme de:</span> {formatAmountInWords(totalAmount)}
+          </p>
         </div>
         
-        {/* Payment and delivery status - SIMPLIFIED & REDUCED */}
-        {(paymentStatus !== 'pending' || deliveryStatus !== 'pending') && (
-          <div className="grid grid-cols-2 p-2 border-b border-gray-200 text-xxs">
-            {paymentStatus !== 'pending' && (
-              <div className="pr-2">
-                <h3 className="font-bold mb-0.5">Information de paiement</h3>
-                <p>Statut: <span className="font-medium">{getPaymentStatusLabel(paymentStatus)}</span></p>
-                {paidAmount > 0 && (
-                  <p>Montant payé: <span className="font-medium">{formatGNF(paidAmount)}</span></p>
-                )}
-                {remainingAmount > 0 && (
-                  <p>Reste à payer: <span className="font-medium">{formatGNF(remainingAmount)}</span></p>
-                )}
+        {/* Status section */}
+        <div className="grid grid-cols-2">
+          {/* Payment status */}
+          <div className="border-r border-gray-400 p-4">
+            <h3 className="font-bold mb-3">Statut de paiement</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Statut:</span>
+                <span className={`font-bold ${paymentStatus === 'paid' ? 'text-green-600' : paymentStatus === 'partial' ? 'text-orange-600' : 'text-red-600'}`}>
+                  {getPaymentStatusLabel(paymentStatus)}
+                </span>
               </div>
-            )}
+              <div className="flex justify-between">
+                <span>Montant payé:</span>
+                <span className="font-bold">{formatGNF(paidAmount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Montant restant:</span>
+                <span className="font-bold">{formatGNF(remainingAmount)}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Delivery status and remarks */}
+          <div className="p-4">
+            <h3 className="font-bold mb-3">Statut de livraison</h3>
+            <div className="space-y-2 text-sm mb-4">
+              <div className="flex justify-between">
+                <span>Statut:</span>
+                <span className={`font-bold ${deliveryStatus === 'delivered' ? 'text-green-600' : deliveryStatus === 'partial' ? 'text-orange-600' : 'text-red-600'}`}>
+                  {getDeliveryStatusLabel(deliveryStatus)}
+                </span>
+              </div>
+            </div>
             
-            {deliveryStatus !== 'pending' && (
-              <div className="pl-2">
-                <h3 className="font-bold mb-0.5">Information de livraison</h3>
-                <p>Statut: <span className="font-medium">{getDeliveryStatusLabel(deliveryStatus)}</span></p>
+            {/* Dynamic remarks based on status */}
+            {(paymentStatus === 'partial' || deliveryStatus === 'partial') && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mt-4">
+                <div className="text-xs space-y-1">
+                  {paymentStatus === 'partial' && (
+                    <p className="text-yellow-800">Un paiement partiel a été effectué sur cette facture.</p>
+                  )}
+                  {deliveryStatus === 'partial' && (
+                    <p className="text-yellow-800">Cette commande a été partiellement livrée.</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        )}
-        
-        {/* Additional client info - SMALLER TEXT */}
-        <div className="p-2 text-xs bg-gray-50">
-          <p className="mb-0.5"><span className="font-bold">Client:</span> {client?.company_name || client?.contact_name || "Client comptoir"}</p>
         </div>
       </div>
     </div>
   );
-}
-
-// Helper function to convert number to words (simplified version)
-function formatAmountInWords(amount: number): string {
-  // This is a placeholder. In a production app, you would use a proper
-  // number-to-words library or implementation like numberToWords from your lib
-  return `${formatGNF(amount).replace('GNF', 'Franc Guinéen')}`;
-}
-
-// Helper functions to get readable status labels
-function getPaymentStatusLabel(status: string): string {
-  const statusMap: Record<string, string> = {
-    'paid': 'Payé',
-    'partial': 'Partiellement payé',
-    'pending': 'En attente'
-  };
-  return statusMap[status] || status;
-}
-
-function getDeliveryStatusLabel(status: string): string {
-  const statusMap: Record<string, string> = {
-    'delivered': 'Livré',
-    'partial': 'Partiellement livré',
-    'awaiting': 'En attente de livraison',
-    'pending': 'En attente'
-  };
-  return statusMap[status] || status;
 }

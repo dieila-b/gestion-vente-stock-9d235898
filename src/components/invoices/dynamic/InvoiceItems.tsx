@@ -1,113 +1,86 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatGNF } from "@/lib/currency";
-import { ImageIcon } from "lucide-react";
 
-interface InvoiceItem {
+interface Item {
   id: string;
   name: string;
   quantity: number;
   price: number;
   discount?: number;
-  image?: string;
+  image?: string | null;
   deliveredQuantity?: number;
 }
 
 interface InvoiceItemsProps {
-  items: InvoiceItem[];
+  items: Item[];
   showDeliveryInfo?: boolean;
 }
 
 export function InvoiceItems({ items, showDeliveryInfo = false }: InvoiceItemsProps) {
   return (
     <div className="border-b border-black">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-100">
-            <TableHead className="w-12"></TableHead>
-            <TableHead>Produit</TableHead>
-            <TableHead className="text-right">Prix unitaire</TableHead>
-            <TableHead className="text-right">Remise</TableHead>
-            <TableHead className="text-right">Prix net</TableHead>
-            <TableHead className="text-center">Qté</TableHead>
+      <table className="w-full">
+        <thead>
+          <tr className="bg-gray-100 border-b border-black">
+            <th className="border-r border-black p-3 text-left text-sm font-bold">Produit</th>
+            <th className="border-r border-black p-3 text-center text-sm font-bold">Prix unitaire</th>
+            <th className="border-r border-black p-3 text-center text-sm font-bold">Remise</th>
+            <th className="border-r border-black p-3 text-center text-sm font-bold">Prix net</th>
+            <th className="border-r border-black p-3 text-center text-sm font-bold">Qté</th>
             {showDeliveryInfo && (
               <>
-                <TableHead className="text-center">Livré</TableHead>
-                <TableHead className="text-center">Restant</TableHead>
+                <th className="border-r border-black p-3 text-center text-sm font-bold">Livré</th>
+                <th className="border-r border-black p-3 text-center text-sm font-bold">Restant</th>
               </>
             )}
-            <TableHead className="text-right">Total</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => {
-            // Get the original price
-            const originalPrice = item.price;
-            
-            // Calculate discount per unit
-            const unitDiscount = item.discount || 0;
-            
-            // Calculate unit price after discount
-            const unitPriceAfterDiscount = Math.max(0, originalPrice - unitDiscount);
-            
-            // Calculate total as original price * quantity (before discount)
-            const totalBeforeDiscount = originalPrice * item.quantity;
-            
-            // Calculate total discount for this item
-            const totalDiscount = unitDiscount * item.quantity;
-            
-            // Calculate remaining quantity if delivery info is shown
+            <th className="p-3 text-center text-sm font-bold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, index) => {
+            const unitPrice = item.price;
+            const discount = item.discount || 0;
+            const netPrice = unitPrice - discount;
+            const total = netPrice * item.quantity;
             const deliveredQty = item.deliveredQuantity || 0;
             const remainingQty = item.quantity - deliveredQty;
-            
+
             return (
-              <TableRow key={item.id} className="border-t border-gray-200">
-                <TableCell>
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-10 h-10 object-cover rounded-md"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder.svg';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-md">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell className="text-right">{formatGNF(originalPrice)}</TableCell>
-                <TableCell className="text-right">
-                  {unitDiscount > 0 ? formatGNF(unitDiscount) : "-"}
-                </TableCell>
-                <TableCell className="text-right">{formatGNF(unitPriceAfterDiscount)}</TableCell>
-                <TableCell className="text-center">{item.quantity}</TableCell>
+              <tr key={index} className="border-b border-gray-200">
+                <td className="border-r border-gray-200 p-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    {item.image && (
+                      <img 
+                        src={item.image} 
+                        alt={item.name}
+                        className="w-8 h-8 object-cover rounded"
+                      />
+                    )}
+                    <span>{item.name}</span>
+                  </div>
+                </td>
+                <td className="border-r border-gray-200 p-3 text-center text-sm">{formatGNF(unitPrice)}</td>
+                <td className="border-r border-gray-200 p-3 text-center text-sm">
+                  {discount > 0 ? formatGNF(discount) : "-"}
+                </td>
+                <td className="border-r border-gray-200 p-3 text-center text-sm">{formatGNF(netPrice)}</td>
+                <td className="border-r border-gray-200 p-3 text-center text-sm">{item.quantity}</td>
                 {showDeliveryInfo && (
                   <>
-                    <TableCell className="text-center">
-                      <span className={deliveredQty > 0 ? "text-green-600 font-medium" : "text-gray-500"}>
-                        {deliveredQty}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className={remainingQty > 0 ? "text-amber-600 font-medium" : "text-gray-500"}>
-                        {remainingQty}
-                      </span>
-                    </TableCell>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm font-bold text-green-600">
+                      {deliveredQty}
+                    </td>
+                    <td className="border-r border-gray-200 p-3 text-center text-sm font-bold text-orange-600">
+                      {remainingQty}
+                    </td>
                   </>
                 )}
-                <TableCell className="text-right">
-                  {formatGNF(totalBeforeDiscount)}
-                </TableCell>
-              </TableRow>
+                <td className="p-3 text-center text-sm">{formatGNF(total)}</td>
+              </tr>
             );
           })}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 }

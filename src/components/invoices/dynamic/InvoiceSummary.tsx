@@ -15,36 +15,36 @@ export function InvoiceSummary({ subtotal, discount, total, shipping_cost = 0 }:
   
   return (
     <div className="space-y-0 text-black">
-      <div className="flex justify-end">
-        <div className="w-full md:w-2/3 lg:w-1/2">
-          <table className="w-full">
+      <div className="border-b border-black">
+        <div className="flex justify-end p-4">
+          <table className="w-80">
             <tbody>
-              <tr className="border border-gray-200">
-                <td className="p-1.5 font-semibold text-sm">Montant Total</td>
-                <td className="p-1.5 text-right text-sm">{formatGNF(subtotal)}</td>
+              <tr className="border-b border-gray-200">
+                <td className="p-2 text-right font-bold">Montant Total</td>
+                <td className="p-2 text-right">{formatGNF(subtotal)}</td>
               </tr>
-              <tr className="border border-gray-200">
-                <td className="p-1.5 font-semibold text-sm">Remise</td>
-                <td className="p-1.5 text-right text-sm">{formatGNF(discount)}</td>
+              <tr className="border-b border-gray-200">
+                <td className="p-2 text-right font-bold">Remise</td>
+                <td className="p-2 text-right">{formatGNF(discount)}</td>
               </tr>
               {shipping_cost > 0 && (
-                <tr className="border border-gray-200">
-                  <td className="p-1.5 font-semibold text-sm">Frais de transport</td>
-                  <td className="p-1.5 text-right text-sm">{formatGNF(shipping_cost)}</td>
+                <tr className="border-b border-gray-200">
+                  <td className="p-2 text-right font-bold">Frais de transport</td>
+                  <td className="p-2 text-right">{formatGNF(shipping_cost)}</td>
                 </tr>
               )}
-              <tr className="border border-gray-200 font-bold">
-                <td className="p-1.5 text-sm">Net A Payer</td>
-                <td className="p-1.5 text-right text-sm">{formatGNF(netTotal)}</td>
+              <tr className="font-bold">
+                <td className="p-2 text-right">Net A Payer</td>
+                <td className="p-2 text-right">{formatGNF(netTotal)}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
       
-      <div className="p-2 border-t border-black border-b text-xs">
-        <p className="font-semibold italic">
-          Arrêtée la présente facture à la somme de: {numberToWords(netTotal)} Franc Guinéen
+      <div className="border-b border-black p-4">
+        <p className="text-sm italic">
+          <span className="font-bold">Arrêtée la présente facture à la somme de:</span> {numberToWords(netTotal)} Franc Guinéen
         </p>
       </div>
     </div>
