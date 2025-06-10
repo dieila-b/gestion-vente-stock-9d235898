@@ -52,6 +52,10 @@ export function usePOSPayment({
     deliveredItems?: Record<string, { delivered: boolean, quantity: number }>
   ) => {
     setIsLoading(true);
+    console.log('=== DÉBUT DU PROCESSUS DE PAIEMENT ===');
+    console.log('Cart avant traitement:', cart);
+    console.log('Fonction clearCart disponible:', typeof clearCart);
+    
     try {
       let deliveryStatus = 'pending';
       if (delivered) {
@@ -59,11 +63,10 @@ export function usePOSPayment({
       } else if (partiallyDelivered) {
         deliveryStatus = 'partial';
       } else {
-        // This is the new "awaiting delivery" status (both delivered and partiallyDelivered are false)
         deliveryStatus = 'awaiting';
       }
 
-      console.log('=== STARTING PAYMENT PROCESSING ===');
+      console.log('=== TRAITEMENT DE LA COMMANDE ===');
       console.log('Cart items:', cart);
       console.log('Selected client:', selectedClient);
       console.log('Amount:', amount);
@@ -82,13 +85,13 @@ export function usePOSPayment({
         editOrderId
       );
 
-      console.log('=== ORDER PROCESSED SUCCESSFULLY ===');
+      console.log('=== COMMANDE TRAITÉE AVEC SUCCÈS ===');
       console.log('Order ID:', order.id);
 
       // Record the payment
       await recordPayment(order.id, amount, method, notes, editOrderId);
 
-      console.log('=== PAYMENT RECORDED SUCCESSFULLY ===');
+      console.log('=== PAIEMENT ENREGISTRÉ AVEC SUCCÈS ===');
 
       // Refresh stock data
       refetchStock();
@@ -113,25 +116,33 @@ export function usePOSPayment({
       // Success message
       toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
       
-      console.log('=== CLEARING CART ===');
+      console.log('=== VIDAGE DU PANIER ===');
+      console.log('Cart avant vidage:', cart);
       
-      // Clear the cart immediately
+      // Clear the cart FIRST
       clearCart();
       
-      console.log('=== CART CLEARED ===');
+      console.log('=== FONCTION clearCart() APPELÉE ===');
       
-      // Close the payment dialog immediately
+      // Close the payment dialog AFTER clearing cart
       setIsPaymentDialogOpen(false);
       
-      console.log('=== PAYMENT DIALOG CLOSED ===');
+      console.log('=== DIALOGUE DE PAIEMENT FERMÉ ===');
       
     } catch (error) {
-      console.error('=== ERROR PROCESSING PAYMENT ===');
+      console.error('=== ERREUR LORS DU TRAITEMENT DU PAIEMENT ===');
       console.error('Error details:', error);
       console.error('Error message:', (error as Error).message);
+      
+      // IMPORTANT: Vider le panier même en cas d'erreur pour éviter les problèmes
+      console.log('=== VIDAGE DU PANIER EN CAS D\'ERREUR ===');
+      clearCart();
+      setIsPaymentDialogOpen(false);
+      
       toast.error("Erreur lors du traitement du paiement: " + (error as Error).message);
     } finally {
       setIsLoading(false);
+      console.log('=== FIN DU PROCESSUS DE PAIEMENT ===');
     }
   };
 

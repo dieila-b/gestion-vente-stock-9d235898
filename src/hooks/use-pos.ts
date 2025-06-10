@@ -1,205 +1,221 @@
 
-import { useState, useEffect } from "react";
-import { useCartStore } from "@/store/cart";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Product, CartItem as POSCartItem } from "@/types/pos";
 import { Client } from "@/types/client";
-import { useQuery } from "@tanstack/react-query";
-import { usePOSProducts } from "./pos/use-pos-products";
+import { toast } from "sonner";
+import { usePOSCombined } from "./pos/use-pos-combined";
 import { usePOSPayment } from "./pos/payment";
-import { CartItem } from "@/types/pos";
+import { usePOSLocations } from "./pos/use-pos-locations";
+
+const ITEMS_PER_PAGE = 12;
 
 export function usePOS(editOrderId?: string | null) {
-  // Cart state from zustand store
-  const { 
-    cart, 
-    addItem, 
-    removeItem, 
-    updateQuantity, 
-    updateDiscount,
-    clearCart, 
-    setCart: storeSetCart,
-    addClient,
-    removeClient,
-    setQuantity: storeSetQuantity
-  } = useCartStore();
-
-  // Client selection state
-  const [selectedClient, setSelectedClient] = useState<Client | null>(cart.client);
+  const queryClient = useQueryClient();
   
-  // POS location state
-  const [selectedPDV, setSelectedPDV] = useState<string>("_all");
-  const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
+  // Cart state using Zustand
+  const {
+    cart,
+    addToCart: addToCartAction,
+    removeFromCart,
+    updateQuantity,
+    updateDiscount,
+    calculateSubtotal,
+    calculateTotal,
+    calculateTotalDiscount,
+    clearCart: clearCartAction,
+    setCart,
+    selectedClient,
+    setSelectedClient
+  } = usePOSCombined();
 
-  // Get POS locations
-  const { data: posLocations = [] } = useQuery({
-    queryKey: ['pos-locations'],
+  // Wrapper pour clearCart avec logs
+  const clearCart = useCallback(() => {
+    console.log('=== usePOS clearCart wrapper appelé ===');
+    console.log('Cart avant clearCart:', cart);
+    clearCartAction();
+    console.log('=== clearCart wrapper terminé ===');
+  }, [clearCartAction, cart]);
+
+  // Stock management
+  const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
+  
+  // UI state
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // POS Locations
+  const { 
+    posLocations, 
+    selectedPDV, 
+    setSelectedPDV,
+    activeRegister 
+  } = usePOSLocations();
+
+  // Stock items query
+  const { data: stockItems = [] } = useQuery({
+    queryKey: ['warehouse-stock', selectedPDV],
     queryFn: async () => {
-      const { data, error } = await supabase.from('pos_locations').select('*');
+      let query = supabase
+        .from('warehouse_stock')
+        .select(`
+          *,
+          catalog:product_id (
+            id,
+            name,
+            price,
+            category,
+            reference,
+            image_url
+          ),
+          warehouses:warehouse_id (
+            id,
+            name
+          ),
+          pos_locations:pos_location_id (
+            id,
+            name
+          )
+        `)
+        .gt('quantity', 0);
+
+      if (selectedPDV && selectedPDV !== "_all") {
+        query = query.eq('pos_location_id', selectedPDV);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
-    }
+      return data || [];
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Set default POS location if none selected
-  useEffect(() => {
-    if (selectedPDV === "_all" && posLocations.length > 0) {
-      setSelectedPDV(posLocations[0].id);
-    }
-  }, [posLocations, selectedPDV]);
-
-  // Get products with usePOSProducts hook
-  const productsData = usePOSProducts(selectedPDV);
-  
-  // Payment dialog state
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Create stock items state
-  const [stockItems, setStockItems] = useState<any[]>([]);
-  
-  // Add pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
-  const totalPages = Math.ceil((productsData.products?.length || 0) / itemsPerPage);
-  
-  // Get current products
-  const indexOfLastProduct = currentPage * itemsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
-  const currentProducts = productsData.products?.slice(indexOfFirstProduct, indexOfLastProduct) || [];
-  
-  // Pagination functions
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  // Fetch stock items whenever the selected POS location changes
-  useEffect(() => {
-    const fetchStockItems = async () => {
-      if (!selectedPDV || selectedPDV === "_all") return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('warehouse_stock')
-          .select('*')
-          .eq('pos_location_id', selectedPDV);
-        
-        if (error) throw error;
-        setStockItems(data || []);
-        
-        // Update available stock
-        const stockMap: Record<string, number> = {};
-        data?.forEach((item: any) => {
-          if (item.product_id && item.quantity !== undefined) {
-            stockMap[item.product_id] = item.quantity;
-          }
-        });
-        setAvailableStock(stockMap);
-      } catch (error) {
-        console.error('Error fetching stock:', error);
-      }
-    };
-    
-    fetchStockItems();
-  }, [selectedPDV]);
-
-  // Convenience function to update available stock
-  const updateAvailableStock = (productId: string, quantity: number) => {
-    setAvailableStock(prev => ({
-      ...prev,
-      [productId]: quantity
-    }));
-  };
-
-  // Refetch stock items
-  const refetchStock = async () => {
-    if (!selectedPDV || selectedPDV === "_all") return;
-    
-    try {
+  // Products query
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['catalog-products'],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from('warehouse_stock')
+        .from('catalog')
         .select('*')
-        .eq('pos_location_id', selectedPDV);
+        .order('name');
       
       if (error) throw error;
-      setStockItems(data || []);
-      
-      // Update available stock
-      const stockMap: Record<string, number> = {};
-      data?.forEach((item: any) => {
-        if (item.product_id && item.quantity !== undefined) {
-          stockMap[item.product_id] = item.quantity;
-        }
-      });
-      setAvailableStock(stockMap);
-    } catch (error) {
-      console.error('Error fetching stock:', error);
-    }
-  };
+      return data || [];
+    },
+  });
 
-  // Fonction setQuantity qui remplace directement la quantité
-  const setQuantity = (productId: string, quantity: number) => {
-    storeSetQuantity(productId, quantity);
-  };
+  // Categories
+  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
 
-  // Custom wrapper for setCart to ensure types are consistent
-  const setCart = (items: CartItem[]) => {
-    const completeItems = items.map(item => ({
-      ...item,
-      product_id: item.product_id || item.id,
-      category: item.category || '',
-      subtotal: item.price * item.quantity
-    }));
-    storeSetCart(completeItems);
-  };
+  // Filter products
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
-  // Use the payment hook
-  const { handlePayment } = usePOSPayment({
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Payment handling
+  const { 
+    isPaymentDialogOpen, 
+    setIsPaymentDialogOpen, 
+    isLoading, 
+    handlePayment 
+  } = usePOSPayment({
     selectedClient,
-    cart: cart.items,
-    calculateTotal: () => cart.total,
-    calculateSubtotal: () => cart.subtotal,
-    calculateTotalDiscount: () => cart.discount,
-    clearCart,
+    cart,
+    calculateTotal,
+    calculateSubtotal,
+    calculateTotalDiscount,
+    clearCart, // Utilise notre wrapper avec logs
     stockItems,
     selectedPDV,
-    activeRegister: null,
-    refetchStock,
+    activeRegister,
+    refetchStock: () => queryClient.invalidateQueries({ queryKey: ['warehouse-stock'] }),
     editOrderId
   });
 
-  // Sync cart client with selectedClient
-  useEffect(() => {
-    if (selectedClient) {
-      addClient(selectedClient);
+  // Add to cart with stock validation
+  const addToCart = useCallback((product: Product, maxStock: number) => {
+    const existingItem = cart.find(item => item.id === product.id);
+    const currentQuantity = existingItem ? existingItem.quantity : 0;
+    
+    if (currentQuantity >= maxStock) {
+      toast.error("Stock insuffisant");
+      return;
     }
-  }, [selectedClient, addClient]);
+    
+    addToCartAction(product);
+  }, [cart, addToCartAction]);
 
-  // Effect to update client state from cart
-  useEffect(() => {
-    if (cart.client) {
-      setSelectedClient(cart.client);
+  // Stock management functions
+  const updateAvailableStock = useCallback((productId: string, stock: number) => {
+    setAvailableStock(prev => ({
+      ...prev,
+      [productId]: stock
+    }));
+  }, []);
+
+  const setQuantity = useCallback((productId: string, quantity: number) => {
+    const stockItem = stockItems.find(item => item.product_id === productId);
+    const maxStock = stockItem ? stockItem.quantity : 0;
+    
+    if (quantity > maxStock) {
+      toast.error("Quantité supérieure au stock disponible");
+      return;
     }
-  }, [cart.client]);
+    
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    
+    // Update quantity by calculating the difference
+    const existingItem = cart.find(item => item.id === productId);
+    if (existingItem) {
+      const delta = quantity - existingItem.quantity;
+      updateQuantity(productId, delta);
+    }
+  }, [cart, stockItems, removeFromCart, updateQuantity]);
+
+  // Navigation
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchTerm]);
 
   return {
     // Cart state
-    cart: cart.items,
-    addToCart: addItem,
-    removeFromCart: removeItem,
+    cart,
+    addToCart,
+    removeFromCart,
     updateQuantity,
     updateDiscount,
-    calculateSubtotal: () => cart.subtotal,
-    calculateTotal: () => cart.total,
-    calculateTotalDiscount: () => cart.discount,
-    clearCart,
+    calculateSubtotal,
+    calculateTotal,
+    calculateTotalDiscount,
+    clearCart, // Notre wrapper avec logs
     setCart,
     availableStock,
     updateAvailableStock,
@@ -208,19 +224,19 @@ export function usePOS(editOrderId?: string | null) {
     // UI state
     selectedClient,
     setSelectedClient,
-    selectedCategory: productsData.selectedCategory,
-    setSelectedCategory: productsData.setSelectedCategory,
-    searchTerm: productsData.searchQuery,
-    setSearchTerm: productsData.setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    searchTerm,
+    setSearchTerm,
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
-    isLoading,
+    isLoading: isLoading || isLoadingProducts,
     currentPage,
     totalPages,
     
     // Products and filtering
     currentProducts,
-    categories: productsData.categories,
+    categories,
     
     // POS/Location data
     posLocations,
@@ -232,6 +248,5 @@ export function usePOS(editOrderId?: string | null) {
     goToNextPage,
     goToPrevPage,
     stockItems,
-    refetchStock
   };
 }
