@@ -31,11 +31,11 @@ export function ProductCard({ product, onAddToCart, availableStock }: ProductCar
 
   return (
     <Card 
-      className={`flex flex-col h-[220px] bg-black/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition-all duration-300 shadow-lg group rounded-xl overflow-hidden cursor-pointer ${isOutOfStock ? 'opacity-60' : ''}`}
+      className={`flex flex-col h-[160px] bg-black/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition-all duration-300 shadow-lg group rounded-xl overflow-hidden cursor-pointer ${isOutOfStock ? 'opacity-60' : ''}`}
       onClick={handleClick}
     >
-      <div className="p-3 flex flex-col gap-2 h-full">
-        <div className="h-28 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center group-hover:scale-95 transition-transform duration-300 overflow-hidden">
+      <div className="p-2 flex flex-col gap-1 h-full">
+        <div className="h-16 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center group-hover:scale-95 transition-transform duration-300 overflow-hidden">
           {product.image_url ? (
             <img 
               src={product.image_url} 
@@ -43,32 +43,32 @@ export function ProductCard({ product, onAddToCart, availableStock }: ProductCar
               className="w-full h-full object-cover"
             />
           ) : (
-            <Package className="h-10 w-10 text-white/60 group-hover:text-white/80 transition-colors" />
+            <Package className="h-6 w-6 text-white/60 group-hover:text-white/80 transition-colors" />
           )}
         </div>
         
         <div className="flex flex-col gap-1 flex-1">
-          <h3 className="font-semibold text-sm text-white line-clamp-1">{product.name}</h3>
+          <h3 className="font-semibold text-xs text-white line-clamp-2 leading-tight">{product.name}</h3>
           {isOutOfStock ? (
-            <Badge variant="destructive" className="text-[10px] self-start">
-              <AlertCircle className="h-2.5 w-2.5 mr-1" />
+            <Badge variant="destructive" className="text-[8px] self-start px-1 py-0">
+              <AlertCircle className="h-2 w-2 mr-0.5" />
               Rupture
             </Badge>
           ) : (
-            <Badge variant="secondary" className={`text-[10px] self-start ${getStockColor(effectiveStock)}`}>
+            <Badge variant="secondary" className={`text-[8px] self-start px-1 py-0 ${getStockColor(effectiveStock)}`}>
               Stock: {effectiveStock}
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-          <span className="text-sm font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between gap-1 pt-1 border-t border-white/10">
+          <span className="text-xs font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent truncate">
             {formatGNF(product.price)}
           </span>
           <Button
             size="icon"
             variant="secondary"
-            className="bg-white/10 hover:bg-white/20 transition-colors h-8 w-8 rounded-lg"
+            className="bg-white/10 hover:bg-white/20 transition-colors h-6 w-6 rounded-md"
             onClick={(e) => {
               e.stopPropagation();
               if (!isOutOfStock) {
@@ -77,7 +77,7 @@ export function ProductCard({ product, onAddToCart, availableStock }: ProductCar
             }}
             disabled={isOutOfStock}
           >
-            <Plus className="h-4 w-4 text-white" />
+            <Plus className="h-3 w-3 text-white" />
           </Button>
         </div>
       </div>

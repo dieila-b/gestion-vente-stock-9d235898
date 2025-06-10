@@ -103,7 +103,7 @@ export function ProductSection({
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 p-4">
           <ScrollArea className="h-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pr-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pr-2">
               {currentProducts.map((product) => (
                 <ProductCard
                   key={product.id}
