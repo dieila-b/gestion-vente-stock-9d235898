@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
@@ -16,16 +17,13 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     deliveredItems?: Record<string, { delivered: boolean, quantity: number }>,
     editOrderId?: string | null
   ) => {
-    // Get current user to ensure RLS compliance
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error("Utilisateur non authentifié");
-    }
-
+    console.log('Processing order - starting...');
+    
     let order;
     
     // If we're editing an existing order, update it
     if (editOrderId) {
+      console.log('Updating existing order:', editOrderId);
       const { data: updatedOrder, error: updateError } = await supabase
         .from('orders')
         .update({
@@ -38,14 +36,16 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
           payment_status: paidAmount >= total ? 'paid' : 'partial',
           paid_amount: paidAmount,
           remaining_amount: total - paidAmount,
-          comment: notes,
-          user_id: user.id // Ensure user_id is set for RLS
+          comment: notes
         })
         .eq('id', editOrderId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating order:', updateError);
+        throw updateError;
+      }
       order = updatedOrder;
       
       // Delete existing order items to replace them with new ones
@@ -54,9 +54,13 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
         .delete()
         .eq('order_id', editOrderId);
         
-      if (deleteItemsError) throw deleteItemsError;
+      if (deleteItemsError) {
+        console.error('Error deleting order items:', deleteItemsError);
+        throw deleteItemsError;
+      }
     } else {
-      // Create a new order with user_id for RLS compliance
+      // Create a new order without user_id since it's not in the schema
+      console.log('Creating new order...');
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -69,14 +73,17 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
           payment_status: paidAmount >= total ? 'paid' : 'partial',
           paid_amount: paidAmount,
           remaining_amount: total - paidAmount,
-          comment: notes,
-          user_id: user.id // Essential for RLS compliance
+          comment: notes
         })
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        throw orderError;
+      }
       order = newOrder;
+      console.log('Order created successfully:', order.id);
     }
 
     // Calculate whether items are delivered or partially delivered
@@ -90,7 +97,9 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     await updateStockLevels(cart, stockItems, selectedPDV);
 
     // Create sales invoice automatically
-    await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus, user.id);
+    await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus);
+
+    console.log('Order processing completed successfully');
 
     // Return the order object with all necessary information
     return {
@@ -117,13 +126,14 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     totalDiscount: number,
     total: number,
     paidAmount: number,
-    deliveryStatus: string,
-    userId: string
+    deliveryStatus: string
   ) => {
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     
-    // Create sales invoice with user_id for RLS compliance
+    console.log('Creating sales invoice:', invoiceNumber);
+    
+    // Create sales invoice without user_id since it's not in the schema
     const { data: salesInvoice, error: salesInvoiceError } = await supabase
       .from('sales_invoices')
       .insert({
@@ -134,13 +144,15 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
         paid_amount: paidAmount,
         remaining_amount: total - paidAmount,
         payment_status: paidAmount >= total ? 'paid' : paidAmount > 0 ? 'partial' : 'pending',
-        delivery_status: deliveryStatus,
-        user_id: userId // Essential for RLS compliance
+        delivery_status: deliveryStatus
       })
       .select()
       .single();
 
-    if (salesInvoiceError) throw salesInvoiceError;
+    if (salesInvoiceError) {
+      console.error('Error creating sales invoice:', salesInvoiceError);
+      throw salesInvoiceError;
+    }
 
     // Create sales invoice items
     const salesInvoiceItems = cart.map(item => {
@@ -167,7 +179,10 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       .from('sales_invoice_items')
       .insert(salesInvoiceItems);
 
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('Error creating sales invoice items:', itemsError);
+      throw itemsError;
+    }
 
     console.log('Sales invoice created successfully:', salesInvoice.invoice_number);
   };
@@ -181,6 +196,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     partiallyDelivered: boolean,
     deliveredItems?: Record<string, { delivered: boolean, quantity: number }>
   ) => {
+    console.log('Creating order items for order:', orderId);
+    
     const orderItems = cart.map(item => {
       let deliveredQuantity = 0;
       
@@ -205,11 +222,18 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
       .from('order_items')
       .insert(orderItems);
 
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('Error creating order items:', itemsError);
+      throw itemsError;
+    }
+    
+    console.log('Order items created successfully');
   };
 
   // Helper to update stock levels
   const updateStockLevels = async (cart: CartItem[], stockItems: any[], selectedPDV: string) => {
+    console.log('Updating stock levels...');
+    
     for (const item of cart) {
       const stockItem = stockItems.find(stock => stock.product_id === item.id && 
         (selectedPDV === "_all" || stock.pos_location_id === selectedPDV));
@@ -233,6 +257,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
         console.warn(`Stock not found for product ${item.id} at POS location ${selectedPDV}`);
       }
     }
+    
+    console.log('Stock levels updated successfully');
   };
 
   return { processOrder };

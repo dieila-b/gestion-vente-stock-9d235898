@@ -63,8 +63,10 @@ export function usePOSPayment({
         deliveryStatus = 'awaiting';
       }
 
-      console.log('Starting payment processing...');
-      console.log('Cart before processing:', cart);
+      console.log('=== STARTING PAYMENT PROCESSING ===');
+      console.log('Cart items:', cart);
+      console.log('Selected client:', selectedClient);
+      console.log('Amount:', amount);
 
       // Process the order (create or update) - this now also creates the sales invoice
       const order = await processOrder(
@@ -80,12 +82,13 @@ export function usePOSPayment({
         editOrderId
       );
 
-      console.log('Order processed successfully:', order);
+      console.log('=== ORDER PROCESSED SUCCESSFULLY ===');
+      console.log('Order ID:', order.id);
 
       // Record the payment
       await recordPayment(order.id, amount, method, notes, editOrderId);
 
-      console.log('Payment recorded successfully');
+      console.log('=== PAYMENT RECORDED SUCCESSFULLY ===');
 
       // Refresh stock data
       refetchStock();
@@ -110,21 +113,22 @@ export function usePOSPayment({
       // Success message
       toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
       
-      console.log('Clearing cart after successful payment...');
+      console.log('=== CLEARING CART ===');
       
-      // Clear the cart immediately - this is crucial for POS functionality
+      // Clear the cart immediately
       clearCart();
       
-      console.log('Cart cleared, closing dialog...');
+      console.log('=== CART CLEARED ===');
       
-      // Close the payment dialog after a short delay to ensure cart clearing is processed
-      setTimeout(() => {
-        setIsPaymentDialogOpen(false);
-        console.log('Payment dialog closed');
-      }, 50);
+      // Close the payment dialog immediately
+      setIsPaymentDialogOpen(false);
+      
+      console.log('=== PAYMENT DIALOG CLOSED ===');
       
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error('=== ERROR PROCESSING PAYMENT ===');
+      console.error('Error details:', error);
+      console.error('Error message:', (error as Error).message);
       toast.error("Erreur lors du traitement du paiement: " + (error as Error).message);
     } finally {
       setIsLoading(false);
