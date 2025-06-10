@@ -100,13 +100,18 @@ export function usePOSPayment({
         deliveredItems
       );
       
-      // Clear the cart AFTER successful processing
+      // Success message
+      toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
+      
+      // Clear the cart FIRST before closing dialog to ensure it's emptied
       clearCart();
       
-      // Close the payment dialog
-      setIsPaymentDialogOpen(false);
+      // Small delay to ensure cart clearing is processed
+      setTimeout(() => {
+        // Close the payment dialog
+        setIsPaymentDialogOpen(false);
+      }, 100);
       
-      toast.success(editOrderId ? "Facture modifiée avec succès" : "Paiement enregistré avec succès. Facture de vente créée automatiquement.");
     } catch (error) {
       console.error('Error processing payment:', error);
       toast.error("Erreur lors du traitement du paiement");

@@ -4,6 +4,7 @@ import { calculateSubtotal, calculateTotal } from './calculations';
 
 export const createUtilityActions = (set: any, get: any) => ({
   clearCart: () => {
+    console.log('Clearing cart...');
     set((state: any) => ({
       ...state,
       cart: {
@@ -15,6 +16,7 @@ export const createUtilityActions = (set: any, get: any) => ({
         notes: ''
       }
     }));
+    console.log('Cart cleared successfully');
   },
 
   updateNotes: (notes: string) => {
