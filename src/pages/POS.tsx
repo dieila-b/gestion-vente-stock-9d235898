@@ -74,11 +74,13 @@ export default function POS() {
 
   // Initialize available stock from product stock
   useEffect(() => {
-    currentProducts.forEach(product => {
-      if (availableStock[product.id] === undefined) {
-        updateAvailableStock(product.id, product.stock || 0);
-      }
-    });
+    if (currentProducts && currentProducts.length > 0) {
+      currentProducts.forEach(product => {
+        if (availableStock[product.id] === undefined) {
+          updateAvailableStock(product.id, product.stock || 0);
+        }
+      });
+    }
   }, [currentProducts, availableStock, updateAvailableStock]);
 
   const handleAddToCart = (product: Product) => {
@@ -99,6 +101,18 @@ export default function POS() {
     updateDiscount(productId, discount);
   };
 
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Chargement du point de vente...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Content - Grid layout responsive */}
@@ -113,9 +127,9 @@ export default function POS() {
               setSelectedCategory={setSelectedCategory}
               selectedPDV={selectedPDV}
               setSelectedPDV={setSelectedPDV}
-              posLocations={posLocations}
-              currentProducts={currentProducts}
-              categories={categories}
+              posLocations={posLocations || []}
+              currentProducts={currentProducts || []}
+              categories={categories || []}
               currentPage={currentPage}
               totalPages={totalPages}
               goToPrevPage={goToPrevPage}
@@ -130,7 +144,7 @@ export default function POS() {
           {/* Section panier */}
           <div className="flex flex-col">
             <Cart
-              items={cart}
+              items={cart || []}
               onRemove={removeFromCart}
               onUpdateQuantity={(productId, delta) => {
                 updateQuantity(productId, delta);
@@ -140,7 +154,7 @@ export default function POS() {
               total={calculateTotal()}
               totalDiscount={calculateTotalDiscount()}
               onCheckout={() => setIsPaymentDialogOpen(true)}
-              isLoading={isLoading}
+              isLoading={false}
               selectedClient={selectedClient}
               clearCart={clearCart}
               onSetQuantity={setQuantity}
@@ -156,7 +170,7 @@ export default function POS() {
         onClose={() => setIsPaymentDialogOpen(false)}
         totalAmount={calculateTotal()}
         onSubmitPayment={handlePayment}
-        items={cart.map(item => ({
+        items={(cart || []).map(item => ({
           id: item.id,
           name: item.name,
           quantity: item.quantity

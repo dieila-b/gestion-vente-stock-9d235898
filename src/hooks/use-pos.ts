@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePOSProducts } from "./pos/use-pos-products";
+import { usePOSLocations } from "./pos/use-pos-locations";
 import { usePOSPayment } from "./pos/payment";
 import { CartItem } from "@/types/pos";
 
@@ -26,29 +27,27 @@ export function usePOS(editOrderId?: string | null) {
   // Client selection state
   const [selectedClient, setSelectedClient] = useState<Client | null>(cart.client);
   
-  // POS location state
-  const [selectedPDV, setSelectedPDV] = useState<string>("_all");
+  // POS location state and data
+  const { 
+    posLocations, 
+    selectedPDV, 
+    setSelectedPDV, 
+    activeRegister,
+    isLoading: locationsLoading 
+  } = usePOSLocations();
+  
   const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
 
-  // Get POS locations
-  const { data: posLocations = [] } = useQuery({
-    queryKey: ['pos-locations'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('pos_locations').select('*');
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Set default POS location if none selected
-  useEffect(() => {
-    if (selectedPDV === "_all" && posLocations.length > 0) {
-      setSelectedPDV(posLocations[0].id);
-    }
-  }, [posLocations, selectedPDV]);
-
   // Get products with usePOSProducts hook
-  const productsData = usePOSProducts(selectedPDV);
+  const { 
+    products, 
+    categories, 
+    selectedCategory, 
+    setSelectedCategory, 
+    searchQuery, 
+    setSearchQuery,
+    isLoading: productsLoading 
+  } = usePOSProducts(selectedPDV);
   
   // Payment dialog state
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -60,12 +59,12 @@ export function usePOS(editOrderId?: string | null) {
   // Add pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
-  const totalPages = Math.ceil((productsData.products?.length || 0) / itemsPerPage);
+  const totalPages = Math.ceil((products?.length || 0) / itemsPerPage);
   
   // Get current products
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
-  const currentProducts = productsData.products?.slice(indexOfFirstProduct, indexOfLastProduct) || [];
+  const currentProducts = products?.slice(indexOfFirstProduct, indexOfLastProduct) || [];
   
   // Pagination functions
   const goToNextPage = () => {
@@ -83,15 +82,18 @@ export function usePOS(editOrderId?: string | null) {
   // Fetch stock items whenever the selected POS location changes
   useEffect(() => {
     const fetchStockItems = async () => {
-      if (!selectedPDV || selectedPDV === "_all") return;
+      if (!selectedPDV) return;
       
       try {
+        console.log('Fetching stock for PDV:', selectedPDV);
         const { data, error } = await supabase
           .from('warehouse_stock')
           .select('*')
           .eq('pos_location_id', selectedPDV);
         
         if (error) throw error;
+        
+        console.log('Stock items fetched:', data?.length || 0);
         setStockItems(data || []);
         
         // Update available stock
@@ -120,7 +122,7 @@ export function usePOS(editOrderId?: string | null) {
 
   // Refetch stock items
   const refetchStock = async () => {
-    if (!selectedPDV || selectedPDV === "_all") return;
+    if (!selectedPDV) return;
     
     try {
       const { data, error } = await supabase
@@ -170,7 +172,7 @@ export function usePOS(editOrderId?: string | null) {
     clearCart,
     stockItems,
     selectedPDV,
-    activeRegister: null,
+    activeRegister,
     refetchStock,
     editOrderId
   });
@@ -188,6 +190,9 @@ export function usePOS(editOrderId?: string | null) {
       setSelectedClient(cart.client);
     }
   }, [cart.client]);
+
+  // Combined loading state
+  const isAppLoading = locationsLoading || productsLoading;
 
   return {
     // Cart state
@@ -208,19 +213,19 @@ export function usePOS(editOrderId?: string | null) {
     // UI state
     selectedClient,
     setSelectedClient,
-    selectedCategory: productsData.selectedCategory,
-    setSelectedCategory: productsData.setSelectedCategory,
-    searchTerm: productsData.searchQuery,
-    setSearchTerm: productsData.setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    searchTerm: searchQuery,
+    setSearchTerm: setSearchQuery,
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
-    isLoading,
+    isLoading: isAppLoading || isLoading,
     currentPage,
     totalPages,
     
     // Products and filtering
     currentProducts,
-    categories: productsData.categories,
+    categories,
     
     // POS/Location data
     posLocations,
