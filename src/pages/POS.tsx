@@ -14,8 +14,6 @@ export default function POS() {
   const [searchParams] = useSearchParams();
   const editOrderId = searchParams.get('editOrder');
 
-  console.log("POS: Component rendering started");
-
   const {
     // Cart state
     cart,
@@ -61,13 +59,6 @@ export default function POS() {
     stockItems,
   } = usePOS(editOrderId);
 
-  console.log("POS: usePOS hook loaded", {
-    isLoading,
-    currentProductsCount: currentProducts?.length || 0,
-    cartItemsCount: cart?.length || 0,
-    selectedPDV
-  });
-
   // Get edit order data
   const editOrderData = useEditOrder();
 
@@ -83,17 +74,14 @@ export default function POS() {
 
   // Initialize available stock from product stock
   useEffect(() => {
-    if (currentProducts && currentProducts.length > 0) {
-      currentProducts.forEach(product => {
-        if (availableStock[product.id] === undefined) {
-          updateAvailableStock(product.id, product.stock || 0);
-        }
-      });
-    }
+    currentProducts.forEach(product => {
+      if (availableStock[product.id] === undefined) {
+        updateAvailableStock(product.id, product.stock || 0);
+      }
+    });
   }, [currentProducts, availableStock, updateAvailableStock]);
 
   const handleAddToCart = (product: Product) => {
-    console.log("POS: Adding product to cart", product.name);
     // Vérifier le stock disponible avant d'ajouter
     const stockItem = stockItems.find(item => item.product_id === product.id);
     const currentStock = stockItem ? stockItem.quantity : product.stock || 0;
@@ -111,24 +99,6 @@ export default function POS() {
     updateDiscount(productId, discount);
   };
 
-  console.log("POS: About to render", {
-    hasCurrentProducts: !!currentProducts,
-    hasCart: !!cart,
-    hasStockItems: !!stockItems
-  });
-
-  // Afficher un loader pendant le chargement initial
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement de la caisse...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Content - Grid layout responsive */}
@@ -143,15 +113,15 @@ export default function POS() {
               setSelectedCategory={setSelectedCategory}
               selectedPDV={selectedPDV}
               setSelectedPDV={setSelectedPDV}
-              posLocations={posLocations || []}
-              currentProducts={currentProducts || []}
-              categories={categories || []}
+              posLocations={posLocations}
+              currentProducts={currentProducts}
+              categories={categories}
               currentPage={currentPage}
               totalPages={totalPages}
               goToPrevPage={goToPrevPage}
               goToNextPage={goToNextPage}
               onAddToCart={handleAddToCart}
-              availableStock={availableStock || {}}
+              availableStock={availableStock}
               selectedClient={selectedClient}
               setSelectedClient={(client: Client) => setSelectedClient(client as any)}
             />
@@ -160,7 +130,7 @@ export default function POS() {
           {/* Section panier */}
           <div className="flex flex-col">
             <Cart
-              items={cart || []}
+              items={cart}
               onRemove={removeFromCart}
               onUpdateQuantity={(productId, delta) => {
                 updateQuantity(productId, delta);
@@ -174,7 +144,7 @@ export default function POS() {
               selectedClient={selectedClient}
               clearCart={clearCart}
               onSetQuantity={setQuantity}
-              availableStock={availableStock || {}}
+              availableStock={availableStock}
               onClientSelect={(client: Client) => setSelectedClient(client as any)}
             />
           </div>
@@ -186,7 +156,7 @@ export default function POS() {
         onClose={() => setIsPaymentDialogOpen(false)}
         totalAmount={calculateTotal()}
         onSubmitPayment={handlePayment}
-        items={(cart || []).map(item => ({
+        items={cart.map(item => ({
           id: item.id,
           name: item.name,
           quantity: item.quantity
