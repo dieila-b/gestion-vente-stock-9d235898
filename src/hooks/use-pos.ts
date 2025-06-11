@@ -12,6 +12,8 @@ import { usePOSLocations } from "./pos/use-pos-locations";
 const ITEMS_PER_PAGE = 12;
 
 export function usePOS(editOrderId?: string | null) {
+  console.log("usePOS: Hook initialization started");
+  
   const queryClient = useQueryClient();
   
   // Cart state using Zustand
@@ -54,10 +56,17 @@ export function usePOS(editOrderId?: string | null) {
     activeRegister 
   } = usePOSLocations();
 
+  console.log("usePOS: POS Locations loaded", { 
+    posLocationsCount: posLocations?.length || 0, 
+    selectedPDV 
+  });
+
   // Stock items query
-  const { data: stockItems = [] } = useQuery({
+  const { data: stockItems = [], isLoading: isLoadingStock } = useQuery({
     queryKey: ['warehouse-stock', selectedPDV],
     queryFn: async () => {
+      console.log("usePOS: Fetching stock items for PDV:", selectedPDV);
+      
       let query = supabase
         .from('warehouse_stock')
         .select(`
@@ -86,7 +95,12 @@ export function usePOS(editOrderId?: string | null) {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error("usePOS: Error fetching stock items:", error);
+        throw error;
+      }
+      
+      console.log("usePOS: Stock items fetched successfully:", data?.length || 0);
       return data || [];
     },
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -96,12 +110,19 @@ export function usePOS(editOrderId?: string | null) {
   const { data: products = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['catalog-products'],
     queryFn: async () => {
+      console.log("usePOS: Fetching catalog products");
+      
       const { data, error } = await supabase
         .from('catalog')
         .select('*')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error("usePOS: Error fetching products:", error);
+        throw error;
+      }
+      
+      console.log("usePOS: Catalog products fetched successfully:", data?.length || 0);
       return data || [];
     },
   });
@@ -124,11 +145,18 @@ export function usePOS(editOrderId?: string | null) {
     currentPage * ITEMS_PER_PAGE
   );
 
+  console.log("usePOS: Products processed", {
+    totalProducts: products.length,
+    filteredProducts: filteredProducts.length,
+    currentProducts: currentProducts.length,
+    categories: categories.length
+  });
+
   // Payment handling
   const { 
     isPaymentDialogOpen, 
     setIsPaymentDialogOpen, 
-    isLoading, 
+    isLoading: isPaymentLoading, 
     handlePayment 
   } = usePOSPayment({
     selectedClient,
@@ -205,9 +233,22 @@ export function usePOS(editOrderId?: string | null) {
     setCurrentPage(1);
   }, [selectedCategory, searchTerm]);
 
+  // Déterminer si on est en cours de chargement
+  const isLoading = isLoadingProducts || isLoadingStock || isPaymentLoading;
+
+  console.log("usePOS: Hook state summary", {
+    isLoading,
+    isLoadingProducts,
+    isLoadingStock,
+    isPaymentLoading,
+    cartItemsCount: cart?.length || 0,
+    currentProductsCount: currentProducts?.length || 0,
+    stockItemsCount: stockItems?.length || 0
+  });
+
   return {
     // Cart state
-    cart,
+    cart: cart || [],
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -230,16 +271,16 @@ export function usePOS(editOrderId?: string | null) {
     setSearchTerm,
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
-    isLoading: isLoading || isLoadingProducts,
+    isLoading,
     currentPage,
     totalPages,
     
     // Products and filtering
-    currentProducts,
-    categories,
+    currentProducts: currentProducts || [],
+    categories: categories || [],
     
     // POS/Location data
-    posLocations,
+    posLocations: posLocations || [],
     selectedPDV,
     setSelectedPDV,
     
@@ -247,6 +288,6 @@ export function usePOS(editOrderId?: string | null) {
     handlePayment,
     goToNextPage,
     goToPrevPage,
-    stockItems,
+    stockItems: stockItems || [],
   };
 }
