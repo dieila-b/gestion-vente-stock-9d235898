@@ -5,6 +5,7 @@ import { useStockEntries } from "./useStockEntries";
 import { useStockExits } from "./useStockExits";
 import { StockEntryForm, StockMovement } from "./useStockMovementTypes";
 import { toast } from "sonner";
+import { safeProduct, safeWarehouse } from "@/utils/supabase-safe-query";
 
 export function useStockMovements(type: 'in' | 'out' = 'in') {
   const queryClient = useQueryClient();
@@ -28,8 +29,15 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
             type,
             reason,
             created_at,
-            product:product_id(id, name, reference),
-            warehouse:warehouse_id(id, name)
+            product:product_id!warehouse_stock_movements_product_id_fkey (
+              id,
+              name,
+              reference
+            ),
+            warehouse:warehouse_id!warehouse_stock_movements_warehouse_id_fkey (
+              id,
+              name
+            )
           `)
           .eq('type', type)
           .order('created_at', { ascending: false });
@@ -41,12 +49,28 @@ export function useStockMovements(type: 'in' | 'out' = 'in') {
 
         console.log(`Found ${data.length} ${type} movements`);
         
-        // Conversion explicite du type string vers le type littéral 'in' | 'out'
-        const typedMovements: StockMovement[] = data.map(item => ({
-          ...item,
-          type: item.type === 'in' ? 'in' : 'out' as 'in' | 'out',
-          pos_location: undefined
-        }));
+        // Conversion explicite avec gestion sécurisée des données
+        const typedMovements: StockMovement[] = data.map(item => {
+          const product = safeProduct(item.product);
+          const warehouse = safeWarehouse(item.warehouse);
+          
+          return {
+            id: item.id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_value: item.total_value,
+            type: item.type === 'in' ? 'in' : 'out' as 'in' | 'out',
+            reason: item.reason,
+            created_at: item.created_at,
+            product: {
+              id: product.id,
+              name: product.name,
+              reference: product.reference
+            },
+            warehouse: warehouse,
+            pos_location: null
+          };
+        });
         
         return typedMovements;
       } catch (error) {

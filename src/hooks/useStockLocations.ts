@@ -1,18 +1,22 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { safeWarehouse, safePOSLocation } from "@/utils/supabase-safe-query";
 
 export function useStockLocations() {
   return useQuery({
     queryKey: ['stock-locations'],
     queryFn: async () => {
-      // Fetch warehouse data
+      // Fetch warehouse data with explicit column specification
       const { data: warehouseData, error: warehouseError } = await supabase
         .from('warehouse_stock')
         .select(`
           quantity,
           warehouse_id,
-          warehouse:warehouses!warehouse_stock_warehouse_id_fkey(name)
+          warehouse:warehouse_id!warehouse_stock_warehouse_id_fkey (
+            id,
+            name
+          )
         `)
         .not('warehouse_id', 'is', null);
 
@@ -21,13 +25,16 @@ export function useStockLocations() {
         throw warehouseError;
       }
 
-      // Fetch POS data
+      // Fetch POS data with explicit column specification
       const { data: posData, error: posError } = await supabase
         .from('warehouse_stock')
         .select(`
           quantity,
           pos_location_id,
-          pos_location:pos_locations(name)
+          pos_location:pos_location_id!warehouse_stock_pos_location_id_fkey (
+            id,
+            name
+          )
         `)
         .not('pos_location_id', 'is', null);
 
@@ -39,7 +46,8 @@ export function useStockLocations() {
       // Process warehouse data
       const warehouseMap = new Map();
       warehouseData.forEach(item => {
-        const warehouseName = item.warehouse?.name || 'Entrepôt inconnu';
+        const warehouse = safeWarehouse(item.warehouse);
+        const warehouseName = warehouse.name || 'Entrepôt inconnu';
         const quantity = item.quantity || 0;
         
         if (warehouseMap.has(warehouseName)) {
@@ -52,7 +60,8 @@ export function useStockLocations() {
       // Process POS data
       const posMap = new Map();
       posData.forEach(item => {
-        const posName = item.pos_location?.name || 'PDV inconnu';
+        const posLocation = safePOSLocation(item.pos_location);
+        const posName = posLocation.name || 'PDV inconnu';
         const quantity = item.quantity || 0;
         
         if (posMap.has(posName)) {
