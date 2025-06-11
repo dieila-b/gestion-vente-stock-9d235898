@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types/client";
 import { CartItem } from "@/types/pos";
@@ -93,8 +92,8 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     // Create order items
     await createOrderItems(order.id, cart, deliveryStatus, delivered, partiallyDelivered, deliveredItems);
     
-    // Update stock levels
-    await updateStockLevels(cart, stockItems, selectedPDV);
+    // Update stock levels - CORRECTION CRITIQUE ICI
+    await updateStockLevels(cart, selectedPDV);
 
     // Create sales invoice automatically
     await createSalesInvoice(order, selectedClient, cart, subtotal, totalDiscount, total, paidAmount, deliveryStatus);
@@ -230,35 +229,58 @@ export function useOrderProcessing(stockItems: any[], selectedPDV: string) {
     console.log('Order items created successfully');
   };
 
-  // Helper to update stock levels
-  const updateStockLevels = async (cart: CartItem[], stockItems: any[], selectedPDV: string) => {
-    console.log('Updating stock levels...');
+  // Helper to update stock levels - FONCTION CORRIGÉE
+  const updateStockLevels = async (cart: CartItem[], selectedPDV: string) => {
+    console.log('Updating stock levels for PDV:', selectedPDV);
+    console.log('Cart items:', cart);
     
     for (const item of cart) {
-      const stockItem = stockItems.find(stock => stock.product_id === item.id && 
-        (selectedPDV === "_all" || stock.pos_location_id === selectedPDV));
+      console.log(`Processing stock update for product ${item.id}, quantity: ${item.quantity}`);
       
-      if (stockItem) {
-        const newQuantity = Math.max(0, stockItem.quantity - item.quantity);
-        
-        const { error: stockError } = await supabase
+      try {
+        // Récupérer le stock actuel pour ce produit et ce PDV
+        const { data: currentStock, error: fetchError } = await supabase
           .from('warehouse_stock')
-          .update({
-            quantity: newQuantity,
-            total_value: newQuantity * stockItem.unit_price,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', stockItem.id);
-        
-        if (stockError) {
-          console.error('Error updating stock:', stockError);
+          .select('*')
+          .eq('product_id', item.id)
+          .eq('pos_location_id', selectedPDV)
+          .single();
+
+        if (fetchError) {
+          console.error(`Error fetching stock for product ${item.id}:`, fetchError);
+          continue; // Passer au produit suivant en cas d'erreur
         }
-      } else {
-        console.warn(`Stock not found for product ${item.id} at POS location ${selectedPDV}`);
+
+        if (currentStock) {
+          const newQuantity = Math.max(0, currentStock.quantity - item.quantity);
+          const newTotalValue = newQuantity * currentStock.unit_price;
+          
+          console.log(`Updating stock: ${currentStock.quantity} -> ${newQuantity}`);
+          
+          // Mettre à jour le stock
+          const { error: updateError } = await supabase
+            .from('warehouse_stock')
+            .update({
+              quantity: newQuantity,
+              total_value: newTotalValue,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', currentStock.id);
+          
+          if (updateError) {
+            console.error(`Error updating stock for product ${item.id}:`, updateError);
+          } else {
+            console.log(`Stock updated successfully for product ${item.id}`);
+          }
+        } else {
+          console.warn(`No stock found for product ${item.id} at POS location ${selectedPDV}`);
+        }
+      } catch (error) {
+        console.error(`Exception while updating stock for product ${item.id}:`, error);
       }
     }
     
-    console.log('Stock levels updated successfully');
+    console.log('Stock levels update completed');
   };
 
   return { processOrder };
