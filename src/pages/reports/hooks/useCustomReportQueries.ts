@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { safeProduct } from "@/utils/supabase-safe-query";
 
 export function useCustomReportQueries(startDate: string, endDate: string) {
   // Get sales by date
@@ -60,24 +61,30 @@ export function useCustomReportQueries(startDate: string, endDate: string) {
     }
   });
 
-  // Get product sales
+  // Get product sales with safe product access
   const { data: productsSold = [], isLoading: isLoadingProductsSold } = useQuery({
     queryKey: ['products-sold', startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('order_items')
-        .select('product_id, quantity, product:catalog(name)')
+        .select(`
+          product_id, 
+          quantity, 
+          product_id!inner(name)
+        `)
         .gte('created_at', `${startDate}T00:00:00`)
         .lte('created_at', `${endDate}T23:59:59`);
       
       if (error) throw error;
       
-      // Process the data to group by product
+      // Process the data to group by product with safe product access
       const productsSold = data.reduce((acc: Record<string, { name: string, quantity: number }>, curr) => {
+        const product = safeProduct(curr.product_id);
         const productId = curr.product_id;
+        
         if (!acc[productId]) {
           acc[productId] = {
-            name: curr.product?.name || 'Unknown Product',
+            name: product.name || 'Unknown Product',
             quantity: 0
           };
         }

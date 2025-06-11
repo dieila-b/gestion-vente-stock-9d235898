@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { safeProduct, safePOSLocation } from "@/utils/supabase-safe-query";
 
 export default function POSStock() {
   const [selectedLocation, setSelectedLocation] = useState<string>("_all");
@@ -36,11 +37,12 @@ export default function POSStock() {
 
   const { data: stockItems = [], isLoading } = useWarehouseStock(selectedLocation, true);
 
-  // Filtrer les articles en fonction de la recherche
-  const filteredItems = stockItems.filter(item => 
-    item.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.product?.reference?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtrer les articles en fonction de la recherche avec gestion sécurisée
+  const filteredItems = stockItems.filter(item => {
+    const product = safeProduct(item.product);
+    return product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           product.reference?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <DashboardLayout>
@@ -116,23 +118,28 @@ export default function POSStock() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">
-                          {item.product?.name}
-                        </TableCell>
-                        <TableCell>{item.product?.reference}</TableCell>
-                        <TableCell>{item.product?.category}</TableCell>
-                        <TableCell>{item.pos_location?.name || "Non assigné"}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">
-                          {item.unit_price?.toLocaleString('fr-FR')} GNF
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {item.total_value?.toLocaleString('fr-FR')} GNF
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredItems.map((item) => {
+                      const product = safeProduct(item.product);
+                      const posLocation = safePOSLocation(item.pos_location);
+                      
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">
+                            {product.name}
+                          </TableCell>
+                          <TableCell>{product.reference}</TableCell>
+                          <TableCell>{product.category}</TableCell>
+                          <TableCell>{posLocation.name || "Non assigné"}</TableCell>
+                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">
+                            {item.unit_price?.toLocaleString('fr-FR')} GNF
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.total_value?.toLocaleString('fr-FR')} GNF
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

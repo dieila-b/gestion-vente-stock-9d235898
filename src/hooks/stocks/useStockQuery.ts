@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StockMovement } from "./useStockMovementTypes";
 import { isSelectQueryError } from "@/utils/type-utils";
-import { safePOSLocation } from "@/utils/data-safe/entities/pos-location";
+import { safePOSLocation, safeProduct, safeWarehouse } from "@/utils/supabase-safe-query";
 
 export function useStockQuery(type: 'in' | 'out') {
   const { data: movements = [], isLoading } = useQuery({
@@ -20,16 +20,12 @@ export function useStockQuery(type: 'in' | 'out') {
             reason,
             type,
             created_at,
-            product:product_id (
+            product_id!inner (
               id,
               name,
               reference
             ),
-            warehouse:warehouse_id (
-              id,
-              name
-            ),
-            pos_location:pos_location_id (
+            warehouse_id!left (
               id,
               name
             )
@@ -44,17 +40,12 @@ export function useStockQuery(type: 'in' | 'out') {
 
         // Process the data to ensure it matches our type expectations
         return (data || []).map(item => {
-          // Handle possible SelectQueryError in pos_location
-          let processedItem = {
+          const processedItem = {
             ...item,
-            // Ensure type is strictly "in" or "out"
             type: item.type === 'in' ? 'in' : 'out' as const,
-            // Handle pos_location which might be a SelectQueryError
-            pos_location: item.pos_location ? 
-              (isSelectQueryError(item.pos_location) ? 
-                safePOSLocation(item.pos_location) : 
-                item.pos_location) : 
-              null
+            product: safeProduct(item.product_id),
+            warehouse: safeWarehouse(item.warehouse_id),
+            pos_location: null // Not available in this query
           };
 
           return processedItem as StockMovement;

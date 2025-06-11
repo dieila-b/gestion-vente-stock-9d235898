@@ -12,6 +12,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { safeProduct } from "@/utils/supabase-safe-query";
 
 export function ProductsChart() {
   const { data: stockData, isLoading } = useQuery({
@@ -19,12 +20,12 @@ export function ProductsChart() {
     queryFn: async () => {
       console.log("Fetching combined stock data...");
       
-      // Récupérer tous les stocks (entrepôts et points de vente)
+      // Récupérer tous les stocks (entrepôts et points de vente) avec une spécification explicite des colonnes
       const { data: stockData, error } = await supabase
         .from('warehouse_stock')
         .select(`
           quantity,
-          product:catalog(
+          product_id!inner(
             id,
             name
           )
@@ -32,15 +33,17 @@ export function ProductsChart() {
 
       if (error) throw error;
 
-      // Agréger les quantités par produit
+      // Agréger les quantités par produit avec gestion sécurisée des erreurs
       const combinedStock = stockData.reduce((acc, item) => {
-        if (!item.product?.name) return acc;
-        const existingProduct = acc.find(p => p.name === item.product.name);
+        const product = safeProduct(item.product_id);
+        if (!product?.name) return acc;
+        
+        const existingProduct = acc.find(p => p.name === product.name);
         if (existingProduct) {
           existingProduct.value += item.quantity;
         } else {
           acc.push({
-            name: item.product.name,
+            name: product.name,
             value: item.quantity
           });
         }

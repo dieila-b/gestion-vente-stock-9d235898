@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "@/types/date-range";
+import { safeClient } from "@/utils/supabase-safe-query";
 
 export interface UnpaidInvoice {
   id: string;
@@ -35,7 +36,7 @@ export function useUnpaidInvoices(date: DateRange, clientId?: string) {
           paid_amount,
           remaining_amount,
           payment_status,
-          client:clients(company_name)
+          client_id!inner(company_name)
         `)
         .in('payment_status', ['pending', 'partial'])
         .gte('created_at', date.from.toISOString())
@@ -49,18 +50,24 @@ export function useUnpaidInvoices(date: DateRange, clientId?: string) {
 
       if (error) throw error;
       
-      // Transform data to match expected structure
-      return data.map(order => ({
-        id: order.id,
-        created_at: order.created_at,
-        client: order.client,
-        client_id: order.client_id,
-        invoice_number: `FACT-${order.id.slice(0, 8)}`,
-        total_amount: order.final_total,
-        paid_amount: order.paid_amount,
-        remaining_amount: order.remaining_amount,
-        payment_status: order.payment_status
-      })) as UnpaidInvoice[];
+      // Transform data to match expected structure with safe client access
+      return data.map(order => {
+        const client = safeClient(order.client_id);
+        
+        return {
+          id: order.id,
+          created_at: order.created_at,
+          client: {
+            company_name: client.company_name
+          },
+          client_id: order.client_id,
+          invoice_number: `FACT-${order.id.slice(0, 8)}`,
+          total_amount: order.final_total,
+          paid_amount: order.paid_amount,
+          remaining_amount: order.remaining_amount,
+          payment_status: order.payment_status
+        };
+      }) as UnpaidInvoice[];
     }
   });
 }

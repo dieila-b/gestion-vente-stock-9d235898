@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import { StockTable } from "@/components/stocks/StockTable";
 import { useWarehouseStock } from "@/hooks/warehouse-stock/useWarehouseStock";
 import { toast } from "sonner";
 import { StockItem } from "@/hooks/stock-statistics/types";
+import { safeProduct, safeWarehouse, safePOSLocation } from "@/utils/supabase-safe-query";
 
 export default function MainStock() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("_all");
@@ -74,22 +76,26 @@ export default function MainStock() {
   // Transform warehouse stock data to match StockItem interface
   const transformedStockItems: StockItem[] = useMemo(() => {
     return warehouseStock.map((item) => {
-      // Get the location name from warehouse or pos_location
-      const locationName = item.warehouse?.name || item.pos_location?.name || "Emplacement inconnu";
+      // Get the location name from warehouse or pos_location with safe access
+      const warehouse = safeWarehouse(item.warehouse);
+      const posLocation = safePOSLocation(item.pos_location);
+      const locationName = warehouse.name || posLocation.name || "Emplacement inconnu";
+      
+      const product = safeProduct(item.product);
       
       return {
         id: item.id,
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_value: item.total_value,
-        name: locationName, // Add the required name property
-        warehouse_id: item.warehouse_id || item.pos_location_id || '', // Add the required warehouse_id property
-        product: item.product ? {
-          id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          category: item.product.category,
-          reference: item.product.reference
+        name: locationName,
+        warehouse_id: item.warehouse_id || item.pos_location_id || '',
+        product: product ? {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          reference: product.reference
         } : null
       };
     }).filter(item => item.product !== null); // Filter out items without product data
